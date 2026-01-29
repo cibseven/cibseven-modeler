@@ -1,0 +1,25 @@
+target/
+.settings/
+.classpath
+.project
+bin/
+.factorypath
+.vscode
+cibseven-modeler-web/src/main/resources/public/index.html
+
+# Environment variables
+.env
+.env.local
+
+# Local configuration overrides (not committed to version control)
+**/cibseven-modeler-local.yaml
+**/cibseven-modeler-local.properties
+
+# IntelliJ
+.idea/
+*.iml
+
+# MacOS
+.DS_Store
+
+*.db

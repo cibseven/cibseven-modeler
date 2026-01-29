@@ -1,0 +1,366 @@
+# Default values for cibseven-modeler.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Configuration shared by multiple cib (flow) charts
+global:
+  authentication:
+    jwtSecret: ""
+    tokenValidMinutes: 60
+    tokenProlongMinutes: 1440
+
+  host: ""
+
+  flow:
+    bpmnEngine:
+      name: "flow-camunda"
+
+  licenseFilePath: /opt/cib/conf/cibseven-license.txt
+
+  license:
+    expires:
+    signature:
+    customer:
+
+  image:
+    repository: harbor.cib.de/dev
+    pullPolicy: IfNotPresent
+
+  logging:
+    jsonFormat: true
+
+  otel:
+    # prometheus(default for cib docker images), otlp
+    metricsExporter: "prometheus"
+    # otlp, jaeger(deprecated)
+    tracesExporter: "otlp"
+    otlpTracesEndpoint: "http://observability-grafana-agent.observability:4317"
+    otlpTracesProtocol: "grpc" # see https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/#otel_exporter_otlp_traces_protocol
+
+  podLabels: { }
+
+  probes:
+    enabled: true
+
+  resources:
+    enabled: false
+
+application:
+  cibseven:
+    webclient:
+      license:
+        file:
+          path: "{{ .Values.global.licenseFilePath }}"
+      engineRest:
+        url: http://{{ .Release.Name }}-{{ .Values.global.flow.bpmnEngine.name }}:8080
+      user:
+        provider: org.cibseven.webapp.auth.GenericUserProvider
+      bpm:
+        provider: org.cibseven.webapp.providers.SevenProvider
+      # TODO IH: Is this for pure backend-to-backend communication? If not, we must use the commented url
+      # Auth url is the base url of the product itself:
+      # This is use in the UserProvider to regenerate the token so it is a service Url.
+      url: http://{{ .Release.Name }}-cibseven-webclient:8080/client
+      authentication: "{{ .Values.global.authentication | toYaml }}"
+      services:
+        basePath: services/v1
+      # RestTemplate configuration
+      rest:
+        # Whether the custom RestTemplate is enabled. If false, a default RestTemplate will be used.
+        enabled: true
+        # Whether the socket connection should be kept alive between requests.
+        keepAlive: true
+        # Socket read timeout in seconds (0 = infinite). Maximum time to wait for data from an established connection.
+        socketTimeout: 3600
+        # Time in seconds to establish connection (0 = infinite). Maximum time to wait while establishing a connection.
+        connectTimeout: 30
+        # Time to wait in seconds for a connection from the connection pool.
+        connectionRequestTimeout: 180
+        # Max response wait time in seconds (0 = infinite). If not set, the socketTimeout value will be used.
+        connectionResponseTimeout:
+        # Max HTTP connections per route. Limits the number of connections to a specific host.
+        maxConnPerRoute: 20
+        # Total max HTTP connections across all routes. Defaults to 2 * maxConnPerRoute if not specified.
+        maxConnTotal: 40
+        # Connection time to live in milliseconds. Maximum time a connection can be reused.
+        connectionTimeToLive: 50000
+        # Whether to enable connection pooling. Improves performance by reusing connections.
+        connectionPoolingEnabled: true
+        # Whether to enable connection reuse. Allows reusing connections for multiple requests.
+        connectionReuseEnabled: true
+        # Whether to enable Micrometer metrics for monitoring connection pool usage.
+        metricsEnabled: false
+        # Whether to enable request/response logging for debugging purposes.
+        requestLoggingEnabled: false
+        # Whether to automatically follow HTTP redirects (status codes 3xx).
+        followRedirects: true
+
+  spring:
+    banner:
+      location: classpath:cibseven-modeler-banner.txt
+
+    config:
+      import:
+        - optional:classpath:cibseven-modeler.yaml
+    datasource:
+      url: ""
+      username: ""
+      password: ""
+      driver-class-name: org.postgresql.Driver
+    jpa:
+      open-in-view: false
+      hibernate:
+        # TODO IH: in production this should not be 'update' but e.g. 'validate' instead. Do we have SQL init scripts for bootstrapping the DB?
+        ddl-auto: validate
+      properties:
+        hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
+    flyway:
+      # Flyway is the single source of truth for schema management and migrations
+      enabled: false
+      # Use vendor-specific migrations automatically. Flyway will resolve {vendor} to oracle, postgresql, mariadb, mysql, h2
+      locations: classpath:db/migration-{vendor},classpath:db/migration-common
+      baseline-on-migrate:
+      baseline-version:
+      # Allow adopting an existing empty schema
+      #baseline-on-migrate: false
+      #baseline-version: 0
+      # Allow adopting an existing none-empty schema
+      #baseline-on-migrate: true
+      #baseline-version: 1
+
+    servlet:
+      multipart:
+        # Configures the maximum size for each individual file upload.
+        max-file-size: 20MB
+        # Configures the maximum size allowed for the entire request, including all files and form data.
+        max-request-size: 1GB
+
+  # Activate "/actuator/info" and "/actuator/health" endpoints
+  management:
+    endpoints:
+      enabled-by-default: false # Disable all endpoints by default
+      web:
+        exposure:
+          include: health,info # Include only health and info endpoints
+    endpoint:
+      info:
+        enabled: true # Enable the info endpoint
+      health:
+        enabled: true # Enable the health endpoint
+        probes:
+          enabled: true # Enable health probes (if applicable)
+    info:
+      build:
+        enabled: true # Enable build information
+      git:
+        enabled: true # Enable git information
+        mode: full # Use full mode for git information
+      java:
+        enabled: true # Enable Java information (ensure your setup supports this)
+
+  springdoc:
+    swagger-ui:
+      path: /swagger-ui
+      operationsSorter: alpha
+      tagsSorter: alpha
+      doc-expansion: none
+    # cibsevenmodeler server url for the swagger-ui. Only needs to be set if the automatic detection is wrong.
+    cibsevenmodeler:
+      serverUrl: ""
+
+  # see https://springdoc.org/properties.html
+  api:
+    common:
+      title: "CIB seven Modeler API"
+      description: "This API exposes the functionality of CIB seven Modeler as a REST service."
+      termsOfService: "https://www.cib.de"
+      license: "Proprietary License of CIB software GmbH"
+      licenseUrl: "https://www.cib.de"
+      contact:
+        name: "CIB software GmbH"
+        url: "https://www.cib.de"
+        email: "support@cib.de"
+
+  cibsevenmodeler:
+    templates:
+      paths:
+        - public/templates/element-templates.json
+        #- public/templates/custom/element-templates.json
+
+    # Limit history version
+    historicMaxResults: 30
+
+    session:
+      expiresAfterMin: 10 # in minutes
+
+    deleteProcesses:
+      versionLimit: 50
+      cron: "0 0 0 * * ?"
+
+    deleteUsages:
+      usageLimit: 50
+      cron: "0 0 0 * * ?"
+
+uiConfig:
+  # ["my-template-*", "my-template-", "my-specific-id"]
+  excludeTemplates: []
+
+logging:
+  consoleAppenderLayout: >-
+    {{ if eq (.Values.global.logging.jsonFormat | toString) "true" -}}
+    <JsonTemplateLayout eventTemplateUri="classpath:LogstashJsonEventLayoutV1.json" />
+    {{- else -}}
+    <PatternLayout pattern="${defaultFormat}" />
+    {{- end }}
+
+configmaps:
+  env:
+    OTEL_SERVICE_NAME: "{{ .Release.Name }}-cibseven-modeler"
+    OTEL_METRICS_EXPORTER: "{{ .Values.global.otel.metricsExporter }}"
+    OTEL_TRACES_EXPORTER: "{{ .Values.global.otel.tracesExporter }}"
+    OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "{{ .Values.global.otel.otlpTracesEndpoint }}"
+    OTEL_EXPORTER_OTLP_TRACES_PROTOCOL: "{{ .Values.global.otel.otlpTracesProtocol }}"
+  files:
+    log4j2.xml:
+      path: /opt/cib/conf/log4j2.xml
+      value: |-
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Configuration status="WARN" monitorInterval="30">
+            <Appenders>
+                <Console name="console" target="SYSTEM_OUT">
+                    {{ .Values.logging.consoleAppenderLayout }}
+                </Console>
+            </Appenders>
+            <Loggers>
+                <Root level="INFO">
+                    <AppenderRef ref="console"/>
+                </Root>
+                <Logger name="de.cib.cibsevenmodeler" level="INFO">
+                    <AppenderRef ref="console" />
+                </Logger>
+                <Logger name="org.cibseven.webapp" level="INFO" additivity="false">
+                    <AppenderRef ref="console" />
+                </Logger>
+            </Loggers>
+        </Configuration>
+    config.json:
+      path: /usr/local/tomcat/webapps/cibseven-modeler/WEB-INF/classes/public/assets/config.json
+      value: |-
+        {
+          "excludeTemplates": {{ toJson .Values.uiConfig.excludeTemplates }},
+          "filterBpmn" : [
+            { "name": "User Task", "type": "bpmn:UserTask", "color": "#E10030" },
+            { "name": "Service Task", "type": "bpmn:ServiceTask", "color": "#003DE1" },
+            { "name": "Send Task", "type": "bpmn:SendTask", "color": "#2AD300" },
+            { "name": "Receive Task", "type": "bpmn:ReceiveTask", "color": "#BEB005" },
+            { "name": "Business Rule Task", "type": "bpmn:BusinessRuleTask", "color": "#A300CF" },
+            { "name": "Manual Task", "type": "bpmn:ManualTask", "color": "#9D3F05" },
+            { "name": "Script Task", "type": "bpmn:ScriptTask", "color": "#F9B100" },
+            { "name": "Call Activity", "type": "bpmn:CallActivity", "color": "#059DBB" }
+      
+          ],
+          "filterBpmnOpacity": "0.4"
+        }
+
+secrets:
+  env: { }
+  files:
+    application.yaml:
+      path: /opt/cib/conf/cibseven-modeler.yaml
+      value: |-
+        {{ .Values.application | toYaml | toString }}
+    cibseven-license.txt:
+      path: "{{ .Values.global.licenseFilePath }}"
+      value: |-
+        {{ .Values.global.license | toJson | toString }}
+
+volumes: { }
+
+initContainers: { }
+
+replicaCount: 1
+
+image:
+  repository: "{{ .Values.global.image.repository }}"
+  name: cibseven-modeler
+  pullPolicy: "{{ .Values.global.image.pullPolicy }}"
+  tag: ""
+
+imagePullSecrets: [ ]
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: false
+  annotations: { }
+  name: ""
+
+podLabels: "{{ .Values.global.podLabels | toYaml }}"
+
+podSecurityContext:
+  fsGroup: 1000
+
+securityContext:
+  capabilities:
+    drop:
+      - ALL
+  runAsNonRoot: true
+  runAsUser: 1000
+
+service:
+  ports:
+    http:
+      port: 8080
+      contexts:
+        - /cibseven-modeler
+    metrics:
+      port: 9464
+
+probes:
+  enabled: "{{ .Values.global.probes.enabled }}"
+  startupProbe:
+    httpGet:
+      path: /cibseven-modeler/actuator/health/liveness
+      port: http
+    initialDelaySeconds: 20
+    periodSeconds: 10
+    timeoutSeconds: 1
+    failureThreshold: 12
+  readinessProbe:
+    httpGet:
+      path: /cibseven-modeler/actuator/health/readiness
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 1
+    failureThreshold: 3
+  livenessProbe:
+    httpGet:
+      path: /cibseven-modeler/actuator/health/liveness
+      port: http
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+
+ingress:
+  enabled: false
+
+resources:
+  enabled: "{{ .Values.global.resources.enabled }}"
+  limits:
+    cpu: 500m
+    memory: 1000Mi
+  requests:
+    cpu: 200m
+    memory: 400Mi
+
+autoscaling:
+  enabled: false
+
+nodeSelector: { }
+
+tolerations: [ ]
+
+affinity: { }

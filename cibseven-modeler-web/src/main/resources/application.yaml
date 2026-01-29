@@ -1,0 +1,148 @@
+server:
+  servlet:
+    context-path: /cibseven-modeler
+
+spring:
+  banner:
+    location: classpath:cibseven-modeler-banner.txt
+  config:
+    import:
+      - optional:classpath:cibseven-modeler-local.yaml
+      - optional:classpath:cibseven-modeler.yaml
+
+  servlet:
+    multipart:
+      # Configures the maximum size for each individual file upload.
+      max-file-size: 100MB
+      # Configures the maximum size allowed for the entire request, including all files and form data.
+      max-request-size: 1GB
+  datasource:
+    url:
+    username:
+    password:
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    # Flyway is the single source of truth for schema management and migrations
+    enabled: false
+    # Use vendor-specific migrations automatically. Flyway will resolve {vendor} to oracle, postgresql, mariadb, mysql, h2
+    locations: classpath:db/migration-{vendor},classpath:db/migration-common
+    # Allow adopting an existing empty schema
+    baseline-on-migrate: false
+    baseline-version: 0
+    # Allow adopting an existing none-empty schema
+    #baseline-on-migrate: true
+    #baseline-version: 1
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui
+    operationsSorter: alpha
+    tagsSorter: alpha
+    doc-expansion: none 
+  # cibsevenmodeler server url for the swagger-ui. Only needs to be set if the automatic detection is wrong.
+  cibsevenmodeler:
+    serverUrl: ""
+
+# see https://springdoc.org/properties.html
+api:
+  common:
+    title: "CIB seven Modeler API"
+    description: "This API exposes the functionality of CIB seven Modeler as a REST service."
+    termsOfService: "https://www.cib.de"
+    license: "Proprietary License of CIB software GmbH"
+    licenseUrl: "https://www.cib.de"
+    contact:
+      name: "CIB software GmbH"
+      url: "https://www.cib.de"
+      email: "support@cib.de"
+
+cibseven:
+  webclient:
+    license:
+      file:
+        path:
+    engineRest:
+      url: http://localhost:8080
+    # This is use in the UserProvider to regenerate the token so it is a service Url.
+    url: http://localhost:8080/client
+    user:
+      provider: org.cibseven.webapp.auth.GenericUserProvider
+    bpm:
+      provider: org.cibseven.webapp.providers.SevenProvider
+    authentication:
+      jwtSecret:
+      tokenValidMinutes: 60
+      tokenProlongMinutes: 1440
+    services:
+      basePath: services/v1
+    # RestTemplate configuration
+    rest:
+      # Whether the custom RestTemplate is enabled. If false, a default RestTemplate will be used.
+      enabled: true
+      # Whether the socket connection should be kept alive between requests.
+      keepAlive: true
+      # Socket read timeout in seconds (0 = infinite). Maximum time to wait for data from an established connection.
+      socketTimeout: 3600
+      # Time in seconds to establish connection (0 = infinite). Maximum time to wait while establishing a connection.
+      connectTimeout: 30
+      # Time to wait in seconds for a connection from the connection pool.
+      connectionRequestTimeout: 180
+      # Max response wait time in seconds (0 = infinite). If not set, the socketTimeout value will be used.
+      connectionResponseTimeout:
+      # Max HTTP connections per route. Limits the number of connections to a specific host.
+      maxConnPerRoute: 20
+      # Total max HTTP connections across all routes. Defaults to 2 * maxConnPerRoute if not specified.
+      maxConnTotal: 40
+      # Connection time to live in milliseconds. Maximum time a connection can be reused.
+      connectionTimeToLive: 50000
+      # Whether to enable connection pooling. Improves performance by reusing connections.
+      connectionPoolingEnabled: true
+      # Whether to enable connection reuse. Allows reusing connections for multiple requests.
+      connectionReuseEnabled: true
+      # Whether to enable Micrometer metrics for monitoring connection pool usage.
+      metricsEnabled: false
+      # Whether to enable request/response logging for debugging purposes.
+      requestLoggingEnabled: false
+      # Whether to automatically follow HTTP redirects (status codes 3xx).
+      followRedirects: true
+
+cibsevenmodeler:
+  templates:
+    paths:
+      - public/templates/element-templates.json
+      - public/templates/custom/element-templates.json
+  historicMaxResults: 30
+  session:
+    expiresAfterMin: 10 # time in minutes
+  deleteProcesses:
+    versionLimit: 50
+    cron: "0 0 0 * * ?"
+  deleteUsages:
+    usageLimit: 50
+    cron: "0 0 0 * * ?"
+
+# Activate "/actuator/info" and "/actuator/health" endpoints
+management:
+  endpoints:
+    enabled-by-default: false # Disable all endpoints by default
+    web:
+      exposure:
+        include: health,info # Include only health and info endpoints
+  endpoint:
+    info:
+      enabled: true # Enable the info endpoint
+    health:
+      enabled: true # Enable the health endpoint
+      probes:
+        enabled: true # Enable health probes (if applicable)
+  info:
+    build:
+      enabled: true # Enable build information
+    git:
+      enabled: true # Enable git information
+      mode: full # Use full mode for git information
+    java:
+      enabled: true # Enable Java information (ensure your setup supports this)
