@@ -1,1 +1,0 @@
-import{_ as o,f as c,I as t,ac as n,e as a}from"./main-D04wL8F3.js";const r={},s={class:"app-container"};function _(p,i){const e=n("router-view");return a(),c("div",s,[t(e)])}const f=o(r,[["render",_],["__scopeId","data-v-5accc694"]]);export{f as default};

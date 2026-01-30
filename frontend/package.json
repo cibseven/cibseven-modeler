@@ -3,7 +3,8 @@
   "version": "1.0.0-SNAPSHOT",
   "type": "module",
   "license": "Apache-2.0",
-  "main": "./src/main.js",
+  "main": "./dist/cibseven-modeler.umd.js",
+  "module": "./dist/cibseven-modeler.es.js",
   "style": "dist/cibseven-modeler.css",
   "files": [
     "dist/cibseven-modeler.css",

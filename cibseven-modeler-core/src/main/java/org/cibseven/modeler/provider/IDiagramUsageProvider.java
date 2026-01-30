@@ -16,13 +16,10 @@
  */
 package org.cibseven.modeler.provider;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.cibseven.modeler.exception.SystemException;
 import org.cibseven.modeler.model.DiagramUsageEntity;
-import org.cibseven.modeler.model.ProcessDiagramEntity;
-import org.cibseven.modeler.model.ProcessDiagramReduce;
 
 public interface IDiagramUsageProvider {
 

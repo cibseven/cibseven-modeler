@@ -30,6 +30,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.*;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.core.MethodParameter;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.CacheControl;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.FormHttpMessageConverter;
@@ -51,22 +52,20 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.mvc.WebContentInterceptor;
-import org.cibseven.webapp.rest.CustomRestTemplate;
 
 @Configuration
+@EnableJpaRepositories(basePackages = "org.cibseven.modeler.repository")
 @ComponentScan(
 		basePackages = {
 				"org.cibseven.modeler",
-				"org.cibseven.webapp.rest",
 				"org.cibseven.webapp.providers",
 				"org.cibseven.webapp.auth"
 		},
 		excludeFilters = @ComponentScan.Filter(
 				type = FilterType.REGEX,
 				pattern = {
-						"org\\.cibseven\\.webapp\\.rest\\.AuthenticationService",
-						"org\\.cibseven\\.webapp\\.rest\\.InfoService",
-						"org\\.cibseven\\.webapp\\.providers\\.BpmProvider"
+						"org\\.cibseven\\.webapp\\.rest\\..*",  // Exclude all webclient REST services
+						"org\\.cibseven\\.webapp\\.providers\\.BpmProvider"  // Modeler has its own BpmProvider
 				}
 		)
 )
