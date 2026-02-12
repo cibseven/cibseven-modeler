@@ -60,7 +60,7 @@ public class FormEntity {
 	@Column(name = "active", nullable = false, columnDefinition = "boolean default true")
 	private Boolean active = true;
 
-	@JdbcTypeCode(SqlTypes.BINARY)
+	@JdbcTypeCode(SqlTypes.BLOB)
 	@Column(name = "form_schema", nullable = false)
 	private byte[] formSchema;
 
