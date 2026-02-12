@@ -33,7 +33,7 @@
 							<h6>{{ $t('bpmnFilter.title') }}:</h6>
 						</template>
 						<template #body>
-							<div ref="filterPopover" class="form-check form-switch" v-for="filter,index in config.filterBpmn">
+							<div ref="filterPopover" class="form-check form-switch" v-for="filter,index in config.modeler?.filterBpmn">
 								<input class="form-check-input" type="checkbox" :ref="el => filterPopover[index] = el" :id="`${filter.type}-${props.tabElement.id}-taskSwitch`" @change="popover.handleBpmnFilter($event, bpmnModeler, filter, filterPopover)">
 								<!-- :style="{ backgroundColor: filter.color }" -->
 								<label class="form-check-label text-secondary" :for="`${filter.type}-${props.tabElement.id}-taskSwitch`">{{ filter.name }}</label>

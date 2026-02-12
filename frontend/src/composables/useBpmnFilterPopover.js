@@ -63,14 +63,14 @@ export function useBpmnFilterPopover(config) {
         gfx.style.setProperty('opacity', '1', 'important') // removes the opacity if it exists
         rect.style.setProperty(
           'stroke',
-          getColorByType(element.type, config.filterBpmn),
+          getColorByType(element.type, config.modeler?.filterBpmn),
           'important'
         )
       } else if (element.type !== 'bpmn:Process' && element.type !== 'bpmn:Collaboration') {
         //it will add opacity for every element that is not contain in the bpmnFilterList array
-        gfx.style.setProperty('opacity', config.filterBpmnOpacity, 'important')
+        gfx.style.setProperty('opacity', config.modeler?.filterBpmnOpacity, 'important')
         rect.style.setProperty('stroke', 'black', 'important')
-        gfx.style.setProperty('opacity', config.filterBpmnOpacity, 'important')
+        gfx.style.setProperty('opacity', config.modeler?.filterBpmnOpacity, 'important')
       }
     })
     checkSwitches(popoverContent)

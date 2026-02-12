@@ -244,7 +244,7 @@ export const filterTemplates = (templates, config) => {
 	}
 
 	try {
-		let exclusionCriteria = config.excludeTemplates
+		let exclusionCriteria = config.modeler?.excludeTemplates
 
 		if (!exclusionCriteria || exclusionCriteria.length === 0) {
 			return templates

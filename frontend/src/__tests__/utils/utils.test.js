@@ -125,12 +125,14 @@ describe('Utils', () => {
                     { id: 'ex-template', name: 'Other Category - Another name' },
                 ]
                 let config = {
-                    excludeTemplates: ['*-template']
+                    modeler: {
+                        excludeTemplates: ['*-template']
+                    }
                 }
 
                 expect(filterTemplates(templates, config)).toEqual([template1])
 
-                config.excludeTemplates = ['*template'] // Without dash "-"
+                config.modeler.excludeTemplates = ['*template'] // Without dash "-"
                 expect(filterTemplates(templates, config)).toEqual([])
             })
 
@@ -146,7 +148,9 @@ describe('Utils', () => {
                 ]
 
                 const config = {
-                    excludeTemplates: ['*template*']
+                    modeler: {
+                        excludeTemplates: ['*template*']
+                    }
                 }
 
                 expect(filterTemplates(templates, config)).toEqual([])
@@ -161,11 +165,13 @@ describe('Utils', () => {
                     { id: 'ex-template3', name: 'Other Category - Another name' },
                 ]
                 let config = {
-                    excludeTemplates: ['ex-*']
+                    modeler: {
+                        excludeTemplates: ['ex-*']
+                    }
                 }
                 expect(filterTemplates(templates, config)).toEqual([template1])
 
-                config.excludeTemplates = ['ex*']
+                config.modeler.excludeTemplates = ['ex*']
                 expect(filterTemplates(templates, config)).toEqual([template1])
             })
 

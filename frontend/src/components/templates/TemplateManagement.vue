@@ -302,8 +302,8 @@ const categorizedTemplates = computed(() => {
 onMounted(async () => {
     try {
         // Initialize excludeTemplates in store from config
-        if (config && config.excludeTemplates) {
-            await store.dispatch('elementTemplates/setExcludeTemplates', config.excludeTemplates)
+        if (config && config.modeler?.excludeTemplates) {
+            await store.dispatch('elementTemplates/setExcludeTemplates', config.modeler.excludeTemplates)
         }
         
         // Templates are now fetched globally at application startup in CibsevenModeler.vue
