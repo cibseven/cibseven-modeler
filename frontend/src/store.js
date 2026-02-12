@@ -15,6 +15,10 @@
  *  limitations under the License.
  */
 import { createStore } from 'vuex'
+import elementTemplateStore from './stores/elementTemplateStore'
+import processStore from './stores/processStore'
+import formStore from './stores/formStore'
+import xmlStore from './stores/xmlStore'
 
 // Factory function to create a new store instance
 export const createModelerStore = (options = {}) => {
@@ -24,7 +28,6 @@ export const createModelerStore = (options = {}) => {
 				// Global application state
 				currentDiagram: null,
 				diagrams: [],
-				forms: [],
 				templates: [],
 				...options.state
 			}
@@ -36,9 +39,6 @@ export const createModelerStore = (options = {}) => {
 			},
 			setDiagrams(state, diagrams) {
 				state.diagrams = diagrams
-			},
-			setForms(state, forms) {
-				state.forms = forms
 			},
 			setTemplates(state, templates) {
 				state.templates = templates
@@ -53,9 +53,6 @@ export const createModelerStore = (options = {}) => {
 			updateDiagrams({ commit }, diagrams) {
 				commit('setDiagrams', diagrams)
 			},
-			updateForms({ commit }, forms) {
-				commit('setForms', forms)
-			},
 			updateTemplates({ commit }, templates) {
 				commit('setTemplates', templates)
 			},
@@ -63,6 +60,10 @@ export const createModelerStore = (options = {}) => {
 		},
 
 		modules: {
+			elementTemplates: elementTemplateStore,
+			processes: processStore,
+			forms: formStore,
+			xml: xmlStore,
 			...options.modules
 		}
 	})

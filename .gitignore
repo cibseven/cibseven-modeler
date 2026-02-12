@@ -5,7 +5,7 @@ target/
 bin/
 .factorypath
 .vscode
-cibseven-modeler-web/src/main/resources/public/index.html
+cibseven-modeler-web/src/main/resources/public/
 
 # Environment variables
 .env

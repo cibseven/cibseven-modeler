@@ -68,10 +68,6 @@
                             <div class="d-flex justify-content-start gap-2">
                                 <button @click="handleOpenFileInput" :title="$t('buttons.importFile')" type="button"
                                 class="btn border border-dark mdi mdi-import btn-light">{{ $t('buttons.importFile') }}</button>
-                                <button @click="manageTemplates" type="button" class="btn border border-dark-subtle mdi mdi-cog btn-light"
-                                    title="Manage templates">
-                                    {{ "Manage templates" }}
-                                </button>
                             </div>
                             <input ref="fileInput" type="file" accept=".bpmn,.dmn,.form" style="display: none;"
                                 @change="handleFileChange" />                            

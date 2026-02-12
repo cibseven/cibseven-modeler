@@ -19,6 +19,9 @@
 import './assets/css/main.css'
 import './assets/css/custom-bootstrap.css'
 
+// Import Bootstrap JavaScript for interactive components (dropdowns, modals, etc.)
+import 'bootstrap/dist/js/bootstrap.bundle.min.js'
+
 // Export modeler components
 import CibsevenModeler from './components/modeler/CibsevenModeler.vue'
 import BpmnModeler from './components/modeler/BpmnModeler.vue'
@@ -32,6 +35,12 @@ export { i18n, setLocale, messages, createI18n } from './i18n.js'
 export { parseXml, base64Decode, applyTheme, getTheme, loadFromPublic } from './utils.js'
 export { setAxiosInstance, getAxios } from './axiosConfig.js'
 export { setServicesBasePath, getServicesBasePath } from './services/servicesConfig.js'
+
+// Export store modules for consumer apps to register in their own store
+export { default as processStore } from './stores/processStore.js'
+export { default as formStore } from './stores/formStore.js'
+export { default as elementTemplateStore } from './stores/elementTemplateStore.js'
+export { default as xmlStore } from './stores/xmlStore.js'
 
 // Export translations for consumer apps to merge
 import translations_en from './resources/translations/translations_en.json'

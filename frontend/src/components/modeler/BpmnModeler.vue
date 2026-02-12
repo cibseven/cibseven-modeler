@@ -1,6 +1,6 @@
 <template>
 	<div class="container modeler d-flex position-relative" ref="containerModeler">
-		<div class="d-flex flex-column align-items-between">
+		<div class="d-flex flex-column align-items-between h-100">
 			<div class="d-flex flex-grow-1">
 				<div v-show="!props.isModelerVisible" class="canvas" ref="canvas" :style="styleCanvas" tabindex="0">
 				</div>
@@ -64,12 +64,12 @@
 			:sort-desc="typeOfSelector === 'changeVersion' ? true : undefined"
 			@item-selected="handleListSelection">
 
-			<!-- Not found templates || EasyForm templates search || Lade Ressourcen search -->
-			<template #cell(name)="{ item }" v-if="['templates', 'easyForm', 'ladeRessourcen'].includes(typeOfSelector)">
+			<!-- Not found templates -->
+			<template #cell(name)="{ item }" v-if="typeOfSelector === 'templates'">
 			  <div class="border-0 d-flex align-items-center entry" style="cursor:pointer;"
 				:data-id="item.id" :title="item.name" draggable="true">
 				<span>
-				  {{ typeOfSelector === 'templates' ? `${item.name} - ${item.id}` : item.name }}
+				  {{ `${item.name} - ${item.id}` }}
 				</span>
 			  </div>
 			</template>
@@ -208,15 +208,9 @@ const canvas = ref(null)
 const propertyPanel = ref(null)
 const monacoEditorConsole = ref(null)
 const consolePanel = ref(null)
-const versionButton = ref(null)
 
 //variables for the list selector component
-const inputNameFromEasyForm = ref(null)
-const inputNameLadeRessourcen = ref(null)
-const componentNameForListSelector = ref(null)
 const listSelector = ref(null)
-const eventFormTemplatesButton = ref(null)
-const dataListSelector = ref(null)
 const TYPEC7 = 'bpmn-c7'
 const TYPEC8 = 'bpmn-c8'
 const propertiesPanelComponent = ref(null)
@@ -225,7 +219,7 @@ const resizableDiv = ref(null)
 //for session blocked modal
 const notificationModal = ref(null)
 //config.js
-let config = inject('config')
+let config = inject('config', {})
 
 let customizedElementTemplatesData = null
 //popover for task filters
@@ -295,8 +289,6 @@ const {
 	isShowModalListSelector, // for showing listselector modal
 	listDataForSelector,
 	templatesList,
-	easyFormList,
-	resourcesList,
 	typeOfSelector, //to load the diferent selector components in slots	
 	// for the console
 	toggleConsole,
@@ -323,8 +315,6 @@ onMounted(async () => {
 	window.addEventListener('resize', updateParentHeight, true)
 
 	await _openDiagram(props.xml)
-	easyFormList.value = store.state.easyFormList ?? []
-	resourcesList.value = store.state.resourcesList ?? []
 	templatesList.value = checkJSON(props.xml, props.elementTemplateJson) ?? []
 	
 	if (templatesList.value.length > 0 && props.isActiveTab && !props.isModelerVisible) {
@@ -415,9 +405,6 @@ const initializeModeler = async () => {
 	minimapToggleDiv.classList.add('mdi', 'mdi-24px', 'mdi-map-legend', 'col', 'd-flex', 'justify-content-end', 'align-items-center')
 
 	bpmnModeler.on('element.click', async e => {
-		_addButtonForTemplates(e, 'UserTask', 'bio-properties-panel-custom-entry-user-task-easy-form-json', easyFormList.value, 'easyForm')
-		_addButtonForTemplates(e, 'ServiceTask', 'bio-properties-panel-custom-entry-datasource-load-resource', resourcesList.value, 'ladeRessourcen')
-		//check if element is a userTask
 		_setMonacoEditorToDiv(e, divScriptTaskID)
 		_detectListenerFromUserTask(e, 'TaskListener')
 		_detectListenerFromUserTask(e, 'ExecutionListener')
@@ -442,8 +429,6 @@ const initializeModeler = async () => {
 		_detectListenerFromUserTask(e, 'TaskListener')
 		_detectListenerFromUserTask(e, 'ExecutionListener')
 		_addingFormFieldToStartEvent(e.element)
-		_addButtonForTemplates(e, 'UserTask', 'bio-properties-panel-custom-entry-user-task-easy-form-json', easyFormList.value, 'easyForm')
-		_addButtonForTemplates(e, 'ServiceTask', 'bio-properties-panel-custom-entry-datasource-load-resource', resourcesList.value, 'ladeRessourcen')
 		if (e.element?.id) {
 			_addInstructionsToNotFoundTemplate(e.element.id)
 			addCustomizeTemplateButton(e)
@@ -559,47 +544,6 @@ const initializeCamunda7Modeler = () => {
 		}
 	}
 	)
-}
-
-//check in list selector who is calling it
-const fillInputComponent = (content, templateName) => {
-	let componentName = ''
-
-	if (templateName === 'easyForm') {
-		inputNameFromEasyForm.value.value = content
-		componentName = 'easyFormName'
-	}
-
-	if (templateName === 'ladeRessourcen') {
-		inputNameLadeRessourcen.value.value = content
-		componentName = 'resourceFilename' // change to the correct one
-	}
-	let foundElementInput = null
-
-	foundElementInput = eventFormTemplatesButton.value.element.di.bpmnElement.extensionElements.values.find((element) => {
-
-		if (element.inputParameters && element.inputParameters.length > 0) {
-			const found = element.inputParameters.find(el => {
-
-				if (el.name === componentName) {
-					el.value = content
-					return true
-				}
-			})
-			return found ? true : false
-		}
-	}) // in case the easy form name is in another index of the inputs
-
-	if (!foundElementInput) {
-		console.error('error finding template')
-		return
-	}
-
-	_removeClassOfDiv('data-entry-id', 'custom-entry-datasource-load-resource', 'has-error')
-	_removeChildDivById('data-entry-id', 'custom-entry-datasource-load-resource', 'bio-properties-panel-error')
-	_setupDiagramFunctions()
-	hideModalListSelector()
-	emit('toggleEnableSave', true, props.tabElementIndex)
 }
 
 const _setupTTLMonitoring = () => {
@@ -757,10 +701,6 @@ const handleListSelection = (item) => {
 			selectElementRegistryById(item.id)
 			hideModalListSelector()
 			return
-		case 'easyForm':
-		case 'ladeRessourcen':
-			fillInputComponent(item.name, typeOfSelector.value)
-			return
 		case 'changeVersion':
 			const diagram = item.diagram
 			const version = item.version
@@ -875,26 +815,6 @@ const _moveViewToElement = element => {
 const _updatetemplatesListButton = xml => {
 	templatesList.value = checkJSON(xml, props.elementTemplateJson)
 	emit('toggleOutdatedTemplateBtn', templatesList.value.length > 0)
-}
-
-const _removeChildDivById = (attributeName, divParentIdToRemoveChild, classOfDivToRemove) => {
-	let errorDivClassToRemove = propertyPanel.value.querySelector(`[${attributeName}*="${divParentIdToRemoveChild}"]`)
-
-	if (!errorDivClassToRemove) return
-
-	let divToRemove = errorDivClassToRemove.querySelector(`.${classOfDivToRemove}`)
-
-	if (!divToRemove) return
-
-	errorDivClassToRemove && errorDivClassToRemove.removeChild(divToRemove)
-}
-
-const _removeClassOfDiv = (attributeName, divIdToRemoveClass, classtoRemove) => {
-	let errorDivClassToRemove = propertyPanel.value.querySelector(`[${attributeName}*="${divIdToRemoveClass}"]`)
-
-	if (!errorDivClassToRemove) return
-
-	errorDivClassToRemove.classList.remove(classtoRemove) //removes class from input 
 }
 
 const _addingFormFieldToStartEvent = (element) => {
@@ -1018,59 +938,6 @@ const _replaceDivWithMonacoEditor = async (scriptDivId, element) => {
 		})
 	}, 50)
 
-}
-
-const _addButtonForTemplates = (e, taskName, taskDivId, data, selectorType) => {
-	try {
-		if (taskName === 'UserTask' || taskName === 'ServiceTask') {
-			eventFormTemplatesButton.value = e
-			setTimeout(() => {
-				//to search ids containing the name except the version because periods fail with the id
-				const inputName = propertyPanel.value.querySelector(`[id*="${taskDivId}"]`) // search the id containing the key word for the field
-
-				if (inputName) {
-					inputName.style.width = 'calc(100% - 30px)' // to make space for the search Button
-					inputName.style.display = 'inline'
-
-					//checks that the button is not created
-					let listSelectorButton = propertyPanel.value.querySelector(`#${taskDivId}-id`)
-
-					if (!listSelectorButton) {
-						listSelectorButton = document.createElement('button')
-						listSelectorButton.id = `${taskDivId}-id`
-						let spanButton = document.createElement('span')
-
-						listSelectorButton.classList.add('btn', 'border-0', 'shadow-0', 'p-1', 'pl-2', 'pr-2')
-						spanButton.classList.add('mdi', 'mdi-magnify')
-						listSelectorButton.appendChild(spanButton)
-						listSelectorButton.addEventListener('click', () => {
-							typeOfSelector.value = selectorType
-							isShowModalListSelector.value = true
-						})
-						inputName.parentNode.insertBefore(listSelectorButton, inputName.nextSibling)
-					}
-					dataListSelector.value = data
-
-					if (taskName === 'UserTask') {
-						typeOfSelector.value = 'easyForm'
-						componentNameForListSelector.value = 'easyForm'
-						inputNameFromEasyForm.value = inputName
-						return
-					}
-
-					if (taskName === 'ServiceTask') {
-						typeOfSelector.value = 'ladeRessourcen'
-						componentNameForListSelector.value = 'ladeRessourcen'
-						inputNameLadeRessourcen.value = inputName
-						return
-					}
-				}
-			}, 10)
-		}
-	}
-	catch (error) {
-		// no id found
-	}
 }
 
 const _toggleModalListSelectorFromActionButton = (comp, typeOfSelectorName) => {

@@ -1,14 +1,15 @@
 <template>
-	<DropZone @handleDropFile="handleFile">
-		<div class="custom-content position-relative w-100 h-100 justify-content-center align-items-center"
-			style="display: flex;  background-color: lightgray; font-size: 2em; opacity: 0.3; color: var(--bs-rimary);">
-			{{ $t("dropFileToLoad") }}
-			<div class="position-absolute"
-				style="border: 5px dashed var(--bs-primary); content: ''; bottom: 30px; left: 30px; right: 30px; top: 30px;">
+	<div>
+		<DropZone @handleDropFile="handleFile">
+			<div class="custom-content position-relative w-100 h-100 justify-content-center align-items-center"
+				style="display: flex;  background-color: lightgray; font-size: 2em; opacity: 0.3; color: var(--bs-rimary);">
+				{{ $t("dropFileToLoad") }}
+				<div class="position-absolute"
+					style="border: 5px dashed var(--bs-primary); content: ''; bottom: 30px; left: 30px; right: 30px; top: 30px;">
+				</div>
 			</div>
-		</div>
-	</DropZone>
-	<div class="d-flex flex-column h-100">
+		</DropZone>
+		<div class="d-flex flex-column h-100">
 	<TabNav ref="modelerTabNav" :activeTab="activeTab" @switchTabFromTabNav="switchTabFromTabNav"
 		:editorXML="editorXML" :tabNavWidth="tabNavWidth"
 		@selectedTab="selectedTab" :tabNavList="tabNavList" @openDiagramFromNavTab="openDiagramFromNavTabFromChild"
@@ -137,19 +138,18 @@
 		:modalData="modalData" :functionAfterAccepting="openDiagramFromModal"
 		:functionAfterCanceling="openDiagramFromChild">
 	</ConfirmModal>
-
+	</div>
 </template>
 
 <script setup>
 // Material Design Icons are provided by the host application (@mdi/font)
 
+import * as monaco from 'monaco-editor'
 import { useStore } from 'vuex'
 import { useRoute } from 'vue-router'
 import { compareXML, getTimeStamp, getTagValueFromXml, checkCamundaVersion, generateUniqueId, setTagValueOfXml, getProcessKeyFromBpmn, getBearerToken, filterTemplates, addHtmlErrorsToConsole } from '../../utils.js'
 import Clipboard from 'diagram-js/lib/features/clipboard/Clipboard'
-import { closeProcessSession } from '../../services/processService.js'
-import { fetchFormById } from '../../services/formService.js'
-import { ref, onMounted, nextTick, watch, onUnmounted, computed, inject } from 'vue'
+import { ref, onMounted, nextTick, watch, computed, inject, provide } from 'vue'
 import { useI18n } from 'vue-i18n'
 //import components
 import ModalDeploy from '../modals/ModalDeploy.vue'
@@ -166,12 +166,17 @@ import ConfirmModal from '../modals/ConfirmModal.vue'
 //for full screen drop files
 import DropZone from '../DropZone.vue'
 
+// Provide monaco for child components (MonacoEditor, MonacoConsole)
+// This is necessary when used as a library since the host app doesn't provide monaco
+monaco.editor.setTheme('vs')
+provide('monaco', monaco)
+
 const store = useStore()
 const route = useRoute()
 const { t } = useI18n()
 const modeler = ref({}) // to get the diferent modelers  and call functions inside components
-const processes = ref(store.state.processes?.data)
-const forms = ref(store.state.forms)
+const processes = ref(store.state.modeler?.processes?.processes)
+const forms = ref(store.state.modeler?.forms?.forms)
 const tabNavList = ref([])
 const tabNavListXml = ref([])
 const consoleErrorsList = ref([])
@@ -242,7 +247,7 @@ const modalConfirm = computed(() => {
 
 const _loadElementTemplatesByConfig = async () => {
 	// Get only template contents from store (optimized for bpmn.js)
-	const templateContents = store.getters['elementTemplates/allElementTemplateContents'] || []
+	const templateContents = store.getters['modeler/elementTemplates/allElementTemplateContents'] || []
 	
 	elementTemplateJson.value = filterTemplates(templateContents, config)
 
@@ -252,7 +257,7 @@ const _loadElementTemplatesByConfig = async () => {
 }
 
 // Watch for changes in element templates store and update immediately
-watch(() => store.getters['elementTemplates/allElementTemplateContents'], (newTemplates) => {
+watch(() => store.getters['modeler/elementTemplates/allElementTemplateContents'], (newTemplates) => {
 	console.log('Element templates changed in store, updating FlowModeler...')
 	const templateContents = newTemplates || []
 	elementTemplateJson.value = filterTemplates(templateContents, config)
@@ -359,8 +364,8 @@ const updateStoredLocalStorageTabNavList = async ({ processId, processName, proc
 //called when a process is updated
 const getStoredProcesses = async functionAfterExecution => {
 	if (startPage.value) startPage.value._toggleIsLoading(true)
-	await store.dispatch('processes/fetchProcesses')
-	processes.value = store.state.processes.processes
+	await store.dispatch('modeler/processes/fetchProcesses')
+	processes.value = store.state.modeler.processes.processes
 	//use it if you want to execute a function after an emit
 	functionAfterExecution && functionAfterExecution()
 	if (startPage.value) startPage.value._toggleIsLoading(false)
@@ -369,8 +374,8 @@ const getStoredProcesses = async functionAfterExecution => {
 //called when a form is updated
 const getStoredForms = async functionAfterExecution => {
 	if (startPage.value) startPage.value._toggleIsLoading(true)
-	await store.dispatch('forms/fetchForms')
-	forms.value = store.state.forms.forms
+	await store.dispatch('modeler/forms/fetchForms')
+	forms.value = store.state.modeler.forms.forms
 	//use it if you want to execute a function after an emit
 	functionAfterExecution && functionAfterExecution()
 	if (startPage.value) startPage.value._toggleIsLoading(false)
@@ -522,11 +527,11 @@ const selectedTab = async tabElementIndex => {
 	if (!editorXML.value[tabElementIndex] && tabElementIndex > -1) { // if the xml has not being loaded yet by clicking the tab
 		let selectedProcess = null
 		if (tabNavList.value[tabElementIndex].type !== 'form') {
-			await store.dispatch('processes/fetchProcessById', tabNavList.value[tabElementIndex].id) // search xml by id selected
-		 	selectedProcess = store.state.processes.processSelected
+			await store.dispatch('modeler/processes/fetchProcessById', tabNavList.value[tabElementIndex].id) // search xml by id selected
+		 	selectedProcess = store.state.modeler.processes.processSelected
 		}else {
-			await store.dispatch('forms/fetchFormById', tabNavList.value[tabElementIndex].id) // search xml by id selected
-			selectedProcess = store.state.forms.formSelected
+			await store.dispatch('modeler/forms/fetchFormById', tabNavList.value[tabElementIndex].id) // search xml by id selected
+			selectedProcess = store.state.modeler.forms.formSelected
 		}
 		
 		openDiagramFromNavTabFromChild(selectedProcess, tabElementIndex, null)
@@ -658,8 +663,8 @@ const _openFormFromImportedFile = async jsonExternal => {
 
 		let jsonFromEditor = _checkIfFormOpenInTab(jsonId)
 		if (!jsonFromEditor) {
-			await store.dispatch('forms/fetchFormById', foundForm.id) // search xml by id selected
-			jsonFromEditor = store.state.forms.formSelected//JSON.stringify(
+			await store.dispatch('modeler/forms/fetchFormById', foundForm.id) // search xml by id selected
+			jsonFromEditor = store.state.modeler.forms.formSelected//JSON.stringify(
 		}
 		let foundTabIndex = tabNavList.value.findIndex( el => el.key === jsonId)
 
@@ -711,8 +716,8 @@ const _openProcessFromImportedFile = async (resXmlExternalUrl, fileName, fileNam
 	if (foundModelerProcess) {
 		let xmlFromModeler = _checkIfProcessOpenInTab(foundExternalProcessKey)
 		if (!xmlFromModeler) {
-			await store.dispatch('processes/fetchProcessById', foundModelerProcess.id) // gets the xml from the database with the id
-			xmlFromModeler = store.state.processes.processSelected
+			await store.dispatch('modeler/processes/fetchProcessById', foundModelerProcess.id) // gets the xml from the database with the id
+			xmlFromModeler = store.state.modeler.processes.processSelected
 		}
 		modalData.value = { id: foundModelerProcess.id, name: foundModelerProcess.name, processkey: foundExternalProcessKey, xmlFromModeler, xmlExternalUrl: resXmlExternalUrl, diagramType }
 
@@ -786,15 +791,15 @@ const _openProcessFromExternalXml = async (xml, resExistingProcess, externalProc
 	}
 
 	if (resExistingProcess) { // if the process exists in the modelers database
-		if (resExistingProcess.id) await store.dispatch('processes/fetchProcessById', resExistingProcess.id) // gets the xml from the database with the id
+		if (resExistingProcess.id) await store.dispatch('modeler/processes/fetchProcessById', resExistingProcess.id) // gets the xml from the database with the id
 		else {
-			await store.dispatch('processes/fetchProcessByName', resExistingProcess) // gets the xml for the collaboration process by its name
+			await store.dispatch('modeler/processes/fetchProcessByName', resExistingProcess) // gets the xml for the collaboration process by its name
 			let foundProcess = processes.value.find(process => resExistingProcess === process.processkey)
 			resExistingProcess = foundProcess.id
 
 		}
 
-		const xmlFromModeler = store.state.processes.processSelected
+		const xmlFromModeler = store.state.modeler.processes.processSelected
 		const isEqual = compareXML(xmlFromModeler, resXmlExternalUrl)
 		//open existing process form modeler
 		isEqual && openDiagramFromModal(xmlFromModeler, resExistingProcess.id ?? resExistingProcess, resExistingProcess.name ?? resExistingProcess, foundExternalProcessKey, diagramType, true, false, false)
@@ -817,12 +822,12 @@ const _checkExistingProcessFromExternalReturn = async (decodedProcessId, externa
 
 		// Check if type parameter is 'dmn' to fetch decision diagram, otherwise fetch process diagram
 		if (type === 'dmn') {
-			await store.dispatch('xml/fetchDecisionDiagram', decodedProcessId) // gets the decision xml from the database with the id
+			await store.dispatch('modeler/xml/fetchDecisionDiagram', decodedProcessId) // gets the decision xml from the database with the id
 		} else {
-			await store.dispatch('xml/fetchDiagram', decodedProcessId) // gets the process xml from the database with the id
+			await store.dispatch('modeler/xml/fetchDiagram', decodedProcessId) // gets the process xml from the database with the id
 		}
 		
-		const xmlFromExternalReturn = store.state.xml.xmlFromExternalReturn
+		const xmlFromExternalReturn = store.state.modeler.xml.xmlFromExternalReturn
 		const resXmlExternalUrl = xmlFromExternalReturn.bpmn20Xml || xmlFromExternalReturn.dmnXml || xmlFromExternalReturn
 		if (!resExistingProcess) resExistingProcess = getTagValueFromXml(resXmlExternalUrl, 'collaboration', 'id')
 		//if (!resExistingProcess) resExistingProcess = getTagValueFromXml(resXmlExternalUrl, 'bpmn2:collaboration', 'id')
@@ -866,8 +871,8 @@ const _checkExternalReturn = () => {
 	} else if (url.href.includes('diagramId=')) {
 		let diagramId = route.query.diagramId
 		let diagram = processes.value.find(process => process.id === diagramId)
-		store.dispatch('processes/fetchProcessById', diagramId).then(() => {
-			const selectedDiagram = store.state.processes.processSelected
+		store.dispatch('modeler/processes/fetchProcessById', diagramId).then(() => {
+			const selectedDiagram = store.state.modeler.processes.processSelected
 			openDiagramFromChild(selectedDiagram, diagram.id, diagram.name, diagram.processkey, diagram.type, true, false, false)
 		})		
 	}

@@ -77,7 +77,7 @@ public class ProcessDiagramEntity {
 	@Column(name = "version", columnDefinition = "integer default 1", nullable = true)
 	private int version;
 
-	@JdbcTypeCode(SqlTypes.BINARY)
+	@JdbcTypeCode(SqlTypes.LONGVARBINARY)
 	@Column(name = "diagram")
 	@Audited(withModifiedFlag = true)
 	private byte[] diagram;

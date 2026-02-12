@@ -68,7 +68,7 @@ public class ElementTemplate {
 	@Column(name = "name", nullable = false, length = 200)
 	private String name;
 
-	@Lob
+	@JdbcTypeCode(SqlTypes.CLOB)
 	@Column(name = "description")
 	private String description;
 
@@ -77,7 +77,7 @@ public class ElementTemplate {
 	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
 	private ElementTemplateOrigin origin;
 
-	@Lob // TODO: migrate to @JdbcTypeCode(SqlTypes.LONGVARCHAR) with flyway scripts
+	@JdbcTypeCode(SqlTypes.CLOB)
 	@Column(name = "content")
 	private String content;
 
