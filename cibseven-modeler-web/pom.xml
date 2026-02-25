@@ -78,26 +78,6 @@
 			<artifactId>log4j-slf4j-impl</artifactId>
 		</dependency>
 
-		<!-- PostgreSQL -->
-		<dependency>
-			<groupId>org.flywaydb</groupId>
-			<artifactId>flyway-database-postgresql</artifactId>
-			<scope>runtime</scope>
-		</dependency>
-
-		<!-- Oracle -->
-		<dependency>
-			<groupId>org.flywaydb</groupId>
-			<artifactId>flyway-database-oracle</artifactId>
-			<scope>runtime</scope>
-		</dependency>
-
-		<!-- MySQL / MariaDB -->
-		<dependency>
-			<groupId>org.flywaydb</groupId>
-			<artifactId>flyway-mysql</artifactId>
-			<scope>runtime</scope>
-		</dependency>
 	</dependencies>
 
 	<build>
@@ -110,7 +90,6 @@
 					<include>*.jpg</include>
 					<include>*.xml</include>
 					<include>*.txt</include>
-					<include>db/**</include>
 				</includes>
 			</resource>
 		</resources>

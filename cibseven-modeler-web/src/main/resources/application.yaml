@@ -24,17 +24,6 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
-  flyway:
-    # Flyway is the single source of truth for schema management and migrations
-    enabled: false
-    # Use vendor-specific migrations automatically. Flyway will resolve {vendor} to oracle, postgresql, mariadb, mysql, h2
-    locations: classpath:db/migration-{vendor},classpath:db/migration-common
-    # Allow adopting an existing empty schema
-    baseline-on-migrate: false
-    baseline-version: 0
-    # Allow adopting an existing none-empty schema
-    #baseline-on-migrate: true
-    #baseline-version: 1
 
 springdoc:
   swagger-ui:
@@ -66,10 +55,9 @@ cibseven:
         path:
     engineRest:
       url: http://localhost:8080
-    # This is use in the UserProvider to regenerate the token so it is a service Url.
     url: http://localhost:8080/client
     user:
-      provider: org.cibseven.webapp.auth.GenericUserProvider
+      provider: org.cibseven.webapp.auth.SevenUserProvider
     bpm:
       provider: org.cibseven.webapp.providers.SevenProvider
     authentication:
@@ -113,7 +101,7 @@ cibsevenmodeler:
   templates:
     paths:
       - public/templates/element-templates.json
-      - public/templates/custom/element-templates.json
+      #- public/templates/custom/element-templates.json
   historicMaxResults: 30
   session:
     expiresAfterMin: 10 # time in minutes
