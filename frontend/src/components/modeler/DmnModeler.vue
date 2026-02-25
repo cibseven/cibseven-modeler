@@ -118,6 +118,7 @@ const propertiesPanelComponent = ref(null)
 const isDrdShowing = ref(true)
 let observerDecisionTables = null
 let dmnModeler = null
+let canvasFocusHandler = null
 
 const props = defineProps({
 	xml: String,
@@ -199,19 +200,34 @@ onMounted(async () => {
 	})
 
 	activeEditor.on('element.changed', () => {
-		emit('toggleEnableSave', true, props.tabElementIndex)
 		_setupDiagramFunctions()
 		updateParentWidth()
 	})
+
+	// Use commandStack.changed (not element.changed) to detect actual user edits.
+	// element.changed and views.changed also fire during initial XML import,
+	// causing false-positive dirty state and an unnecessary "unsaved changes" dialog on tab close.
+	const subscribedViewers = new Set()
+	const subscribeCommandStackToViewer = (viewer) => {
+		if (viewer && !subscribedViewers.has(viewer)) {
+			viewer.on('commandStack.changed', () => {
+				emit('toggleEnableSave', true, props.tabElementIndex)
+			})
+			subscribedViewers.add(viewer)
+		}
+	}
+	subscribeCommandStackToViewer(activeEditor)
 
 	propertiesPanelComponent.value = dmnModeler.getActiveViewer().get('propertiesPanel')
 
 	// Track view changes to update XML and download links
 	dmnModeler.on('views.changed', async () => {
+		// Subscribe commandStack.changed to each new active viewer (decision table, literal expression, etc.)
+		// so edits in those views are also tracked without false positives on view-switch
+		subscribeCommandStackToViewer(dmnModeler.getActiveViewer())
 		try {
 			const { xml } = await dmnModeler.saveXML({ format: true })
 			emit('updateEditorXML', xml, props.tabElementIndex)
-			emit('toggleEnableSave', true, props.tabElementIndex)
 			saveXmlAfterUpdate(false, xml, props.tabElementIndex, dmnModeler)
 		} catch (err) {
 			console.error(err)
@@ -222,11 +238,15 @@ onMounted(async () => {
 	window.addEventListener('resize', updateParentHeight, true)
 	await nextTick()
 	emit('resizeTabNav', canvasWidth.value)
+	preventCanvasFocusWhenPopupOpen()
 })
 
 onBeforeUnmount(() => {
 	window.removeEventListener('resize', updateParentWidth, true)
 	window.removeEventListener('resize', updateParentHeight, true)
+	if (canvas.value && canvasFocusHandler) {
+		canvas.value.removeEventListener('focus', canvasFocusHandler)
+	}
 	if (observerDecisionTables) observerDecisionTables.disconnect()
 })
 
@@ -275,6 +295,32 @@ const _setupDiagramFunctions = debounce(async () => {
 		console.error('Error saving DMN XML:', err)
 	}
 }, 5)
+
+const preventCanvasFocusWhenPopupOpen = () => {
+	const canvasElement = canvas.value
+	if (!canvasElement) return
+
+	// Override the DOM element's focus method to prevent focus when DMN popups are open
+	const originalFocus = canvasElement.focus
+	canvasElement.focus = (...args) => {
+		const hasOpenPopup = document.querySelector('.dms-select-options, .options, .type-ref-edit-select')
+		if (!hasOpenPopup) {
+			return originalFocus.apply(canvasElement, args)
+		}
+	}
+
+	// Prevent canvas focus events when DMN popups are open
+	canvasFocusHandler = (e) => {
+		const hasOpenPopup = document.querySelector('.dms-select-options, .options, .type-ref-edit-select')
+		if (hasOpenPopup) {
+			e.preventDefault()
+			e.stopPropagation()
+			canvasElement.blur()
+			return false
+		}
+	}
+	canvasElement.addEventListener('focus', canvasFocusHandler)
+}
 
 const createObserver = divToObserve => {
 	if (!divToObserve) return
@@ -330,3 +376,27 @@ defineExpose({
 	addLineWithErrorToConsole,
 })
 </script>
+
+<style scoped>
+:deep(.dmn-definitions) {
+  display: none !important;
+}
+:deep(.dmn-decision-table-container .allowed-values-edit .placeholder) {
+  color: #b9bcc6;
+  cursor: auto;
+  opacity: 1;
+  background: transparent;
+}
+:deep(.dmn-decision-table-container [contenteditable="true"]) {
+  cursor: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  user-select: text !important;
+  opacity: 1;
+  background: transparent;
+}
+:deep(.dmn-decision-table-container [contenteditable="true"]:focus) {
+  outline: none !important;
+  box-shadow: inset 0 -2px 0 0 rgba(0,0,0,0.06);
+}
+</style>
