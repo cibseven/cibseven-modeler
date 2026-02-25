@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 <template>
-	<div ref="editor" class="editor" style="width: 100vw; height: calc(100vh - 84px)"></div>
+	<div ref="editor" class="editor" style="width: 100%; height: 100%"></div>
 </template>
 
 <script setup>

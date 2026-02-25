@@ -15,108 +15,159 @@
    limitations under the License.
 -->
 <template>
-	<div class="form-modeler-container">
-		<div class="form-editor" ref="editor"></div>
+	<div class="container modeler d-flex position-relative" ref="formContainer">
+		<div class="d-flex flex-column align-items-between h-100">
+			<div class="d-flex flex-grow-1 overflow-hidden" style="min-height: 0;">
+				<div v-show="!props.isModelerVisible" class="canvas" ref="canvas" :style="styleCanvas" tabindex="0">
+				</div>
+				<div v-show="props.isModelerVisible" class="flex-grow-1 h-100">
+					<slot />
+				</div>
+			</div>
+			<PropertiesPanel :parent="formContainer" :parentWidth="parentWidth" v-show="isVisiblePropertyPanel"
+				@changeWidth="changeWidth" minWidth="300" ref="resizableDiv">
+				<div class="properties-panel-parent resizable-content h-100 border-start border-dark-subtle"
+					ref="propertyPanel">
+				</div>
+			</PropertiesPanel>
+			<MenuActionButtons :width="canvasWidth">
+				<template #leftButtons>
+					<slot name="menu" />
+				</template>
+			</MenuActionButtons>
+		</div>
+		<NotificationMessage ref="notificationModal">
+
+			<template #title>
+				<h5 class="modal-title fs-5" id="deployModalLabel">{{ $t('modalNotificacionMessageBlockedForm.title')
+					}}
+				</h5>
+			</template>
+			<template #body>
+				<div class="border-1">
+					<h6>{{ $t('blockedSession.form') }} : {{ notificationMessageData?.processName }}</h6>
+					<h5>{{ $t('modalNotificacionMessageBlockedForm.body') }}</h5>
+				</div>
+				<table class="table">
+					<thead>
+						<tr>
+							<th v-for="column in notificationMessageData?.header">{{ $t(column) }}</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td v-for="column in notificationMessageData?.body">{{ column }}</td>
+						</tr>
+
+					</tbody>
+				</table>
+			</template>
+			
+			<template #optionalButton>
+				<button type="button" @click.prevent="() => notificationModal.closeModal(true)"
+					class="btn btn-secondary">{{
+						$t("buttons.forceSave") }}</button>
+			</template>
+			
+		</NotificationMessage>
 	</div>
 </template>
-
 <script setup>
-import { ref, onMounted, defineExpose } from 'vue'
+import '@bpmn-io/form-js/dist/assets/form-js-base.css'
+import '@bpmn-io/form-js/dist/assets/form-js-editor-base.css'
+import '@bpmn-io/form-js/dist/assets/form-js-editor.css'
+import '@bpmn-io/form-js/dist/assets/properties-panel.css'
+import '@bpmn-io/form-js/dist/assets/form-js.css'
 
-const editor = ref(null)
+import MenuActionButtons from '../layout/MenuActionButtons.vue'
+import PropertiesPanel from '../layout/PropertiesPanel.vue'
+import usePropertiesPanel from '../../composables/usePropertiesPanel'
+import useForm from '../../composables/useForm'
 
-let formData = ref({
-	type: 'default',
-	components: []
+import { ref, onMounted, computed, onUpdated, watch, nextTick } from 'vue'
+import NotificationMessage from '../modals/NotificationMessage.vue'
+
+const resizableDiv = ref(null)
+const formContainer = ref(null)
+const canvas = ref(null)
+const propertyPanel = ref(null)
+const canvasHeight = ref(44)
+//for session blocked modal
+const notificationModal = ref(null)
+
+const props = defineProps({
+    json: String,
+    isModelerVisible: {
+        type: Boolean,
+        default: false
+    },  
+    isActiveTab: Boolean,
+    tabElementIndex : Number,
+	tabElement: {
+		type: Object,
+		required: true
+	}
 })
 
-const defaultForm = {
-	type: 'default',
-	components: [
-		{
-			key: 'textfield1',
-			type: 'textfield',
-			label: 'Text Field'
-		}
-	]
-}
 
-onMounted(() => {
-	formData.value = { ...defaultForm }
+const emit = defineEmits([
+	'resizeTabNav',
+    'updateEditorXML',
+	'updateDownloadLink',
+	'updateDownloadLinkSvg',
+    'isValidated',
+	'showToastMessage',
+	'toggleEnableSave',
+	'toggleIsSaved',
+	'toggleVersionNotSaved',
+	'updateIsButtonDisabled',
+	'updateStoredLocalStorageTabNavList',
+	'assignSessionIdToProcess',
+])
+const { initializeFormEditor, save, importJson, propertiesPanelComponent, saveXmlAfterUpdate, formEditor, restartFormJs, destroyFormJs, getFormId, notificationMessageData } = useForm(props, emit, canvas, propertyPanel, notificationModal)
+const { updateParentHeight, updateParentWidth,  parentWidth, parentHeight, changeWidth, canvasWidth, isVisiblePropertyPanel, togglePropertiesPanel } = usePropertiesPanel(props, emit, formContainer, resizableDiv, propertiesPanelComponent, propertyPanel)
+
+onMounted(async() => {
+    initializeFormEditor(props.tabElement.id)
+	window.addEventListener('resize', updateParentWidth, true)
+	window.addEventListener('resize', updateParentHeight, true)
+	await nextTick()
+	emit('resizeTabNav', canvasWidth.value)
 })
 
-const createNew = () => {
-	formData.value = { ...defaultForm }
+onUpdated(() => {
+	updateParentWidth()
+	updateParentHeight()
+})
+
+watch(() => props.isActiveTab, async newValue => { // when the editor gets hidden to update the xml
+	await restartFormJs(newValue)
+})
+
+const styleCanvas = computed(() => {
+	return { width: `${canvasWidth.value}px !important` }
+})
+
+const _saveDiagram = async () => {
+    save(notificationModal)
 }
 
-const openFile = () => {
-	const input = document.createElement('input')
-	input.type = 'file'
-	input.accept = '.json'
-	input.onchange = (e) => {
-		const file = e.target.files[0]
-		if (file) {
-			const reader = new FileReader()
-			reader.onload = (event) => {
-				try {
-					formData.value = JSON.parse(event.target.result)
-				} catch (err) {
-					console.error('Error loading form', err)
-				}
-			}
-			reader.readAsText(file)
-		}
-	}
-	input.click()
+const _saveXmlAfterUpdate = (isBpmn, updatedJson, tabElementIndex) => {
+	saveXmlAfterUpdate(updatedJson)
 }
 
-const save = () => {
-	try {
-		const json = JSON.stringify(formData.value, null, 2)
-		const blob = new Blob([json], { type: 'application/json' })
-		const url = URL.createObjectURL(blob)
-		const a = document.createElement('a')
-		a.href = url
-		a.download = 'form.json'
-		a.click()
-		URL.revokeObjectURL(url)
-	} catch (err) {
-		console.error('Error saving form', err)
-	}
-}
-
-const getJSON = () => {
-	return JSON.stringify(formData.value, null, 2)
-}
-
-const importJSON = (json) => {
-	try {
-		formData.value = typeof json === 'string' ? JSON.parse(json) : json
-	} catch (err) {
-		console.error('Error importing JSON', err)
-	}
+const _validate = async json => {
+	importJson(json)
 }
 
 defineExpose({
-	createNew,
-	openFile,
-	save,
-	getJSON,
-	importJSON
+    _validate,
+	_saveXmlAfterUpdate,
+	_saveDiagram,
+    togglePropertiesPanel,
+	destroyFormJs,
+	getFormId,
+	importJson
 })
+
 </script>
-
-<style scoped>
-.form-modeler-container {
-	display: flex;
-	height: 100%;
-	width: 100%;
-}
-
-.form-editor {
-	flex: 1;
-	height: 100%;
-	padding: 1rem;
-	overflow-y: auto;
-}
-</style>

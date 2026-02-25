@@ -15,150 +15,318 @@
    limitations under the License.
 -->
 <template>
-	<div class="dmn-modeler-container" ref="container">
-		<div class="canvas" ref="canvas"></div>
+	<div class="container modeler d-flex position-relative" ref="containerModeler">
+		<div class="d-flex flex-column align-items-between h-100">
+			<div class="d-flex flex-grow-1 overflow-auto" style="min-height: 0;">
+				<div v-show="!props.isModelerVisible" class="canvas" ref="canvas" :style="styleCanvas" tabindex="0">
+				</div>
+				<div v-show="props.isModelerVisible" class="flex-grow-1 h-100">
+					<slot />
+				</div>
+				<div v-show="isPropertyPanelVisible && !props.isModelerVisible">
+					<PropertiesPanel ref="resDiv" :parentWidth="parentWidth" @changeWidth="changeWidth" minWidth="300">
+						<div class="properties-panel-parent resizable-content h-100 border-start border-dark-subtle"
+							ref="dmnProperties"></div>
+					</PropertiesPanel>
+				</div>
+			</div>
+			<div>
+				<ConsolePanel ref="consolePanel" :isModelerVisible="props.isModelerVisible" :parentHeight="parentHeight"
+					:rightPos="canvasWidth" :processID="props.tabElement.id" @changeHeight="changeHeight"
+					@copy-line="copyLine" @clean-console="cleanConsole" @blur="focusLost"
+					@show-console-notification="emit('show-console-notification', $event)">
+					<MonacoThemeScope overrideTheme="consoleTheme" v-show="isConsoleOpen">
+						<MonacoConsole ref="monacoEditorConsole" theme="vs" :width="canvasWidth" :height="canvasHeight"
+							:consoleErrors="props.consoleErrors">
+						</MonacoConsole>
+					</MonacoThemeScope>
+				</ConsolePanel>
+				<MenuActionButtons :width="canvasWidth">
+					<template #leftButtons>
+						<slot name="menu" />
+					</template>
+				</MenuActionButtons>
+			</div>
+		</div>
+		<NotificationMessage ref="notificationModal">
+			<template #title>
+				<h5 class="modal-title fs-5" id="deployModalLabel">{{ $t('modalNotificacionMessageBlockedDiagram.title') }}</h5>
+			</template>
+			<template #body>
+				<div class="border-1">
+					<h6>{{ $t('blockedSession.dmn') }} : {{ notificationMessageData?.processName }}</h6>
+					<h5>{{ $t('modalNotificacionMessageBlockedDiagram.body') }}</h5>
+				</div>
+				<table class="table">
+					<thead>
+						<tr>
+							<th v-for="column in notificationMessageData?.header">{{ $t(column) }}</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td v-for="column in notificationMessageData?.body">{{ column }}</td>
+						</tr>
+					</tbody>
+				</table>
+			</template>
+			<template #optionalButton>
+				<button type="button" @click.prevent="() => notificationModal.closeModal(true)"
+					class="btn btn-secondary">{{ $t("buttons.forceSave") }}</button>
+			</template>
+		</NotificationMessage>
 	</div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, defineExpose } from 'vue'
-import DmnModeler from 'dmn-js/lib/Modeler'
+import { ref, computed, onMounted, onUpdated, onBeforeUnmount, watch, nextTick } from 'vue'
+import DmnJS from 'dmn-js/lib/Modeler'
+import { debounce } from 'min-dash'
+import { migrateDiagram } from '@bpmn-io/dmn-migrate'
+import camundaModdleDescriptor from 'camunda-dmn-moddle/resources/camunda.json'
+import { DmnPropertiesPanelModule, DmnPropertiesProviderModule, CamundaPropertiesProviderModule } from 'dmn-js-properties-panel'
 import 'dmn-js/dist/assets/diagram-js.css'
 import 'dmn-js/dist/assets/dmn-font/css/dmn.css'
 import 'dmn-js/dist/assets/dmn-js-shared.css'
 import 'dmn-js/dist/assets/dmn-js-drd.css'
 import 'dmn-js/dist/assets/dmn-js-decision-table.css'
 import 'dmn-js/dist/assets/dmn-js-literal-expression.css'
+import 'dmn-js-decision-table/assets/css/dmn-js-decision-table-controls.css'
+import 'dmn-js-decision-table/assets/css/dmn-js-decision-table.css'
+import 'dmn-js-properties-panel/dist/assets/properties-panel.css'
 
-const container = ref(null)
+import MenuActionButtons from '../layout/MenuActionButtons.vue'
+import PropertiesPanel from '../layout/PropertiesPanel.vue'
+import ConsolePanel from '../layout/ConsolePanel.vue'
+import MonacoConsole from '../monaco/MonacoConsole.vue'
+import MonacoThemeScope from '../layout/MonacoThemeScoped.vue'
+import NotificationMessage from '../modals/NotificationMessage.vue'
+import useModeler from '../../composables/useModeler.js'
+import usePropertiesPanel from '../../composables/usePropertiesPanel.js'
+import { getTagValueFromXml } from '../../utils.js'
+
+const containerModeler = ref(null)
 const canvas = ref(null)
+const notificationModal = ref(null)
+const monacoEditorConsole = ref(null)
+const consolePanel = ref(null)
+const canvasHeight = ref(44)
+const dmnProperties = ref(null)
+const resDiv = ref(null)
+const isPropertyPanelVisible = ref(true)
+const propertiesPanelComponent = ref(null)
+const isDrdShowing = ref(true)
+let observerDecisionTables = null
+let dmnModeler = null
 
-let modeler = null
+const props = defineProps({
+	xml: String,
+	tabElementIndex: { type: Number, required: true },
+	tabElement: { type: Object, required: true },
+	isModelerVisible: { type: Boolean, default: false },
+	isActiveTab: Boolean,
+	consoleErrors: { type: String, default: '' },
+})
 
-const defaultDiagram = `<?xml version="1.0" encoding="UTF-8"?>
-<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" 
-	xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" 
-	xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" 
-	id="Definitions_1" 
-	name="DRD" 
-	namespace="http://camunda.org/schema/1.0/dmn">
-	<decision id="Decision_1" name="Decision 1">
-		<decisionTable id="DecisionTable_1">
-			<input id="Input_1">
-				<inputExpression id="InputExpression_1" typeRef="string">
-					<text></text>
-				</inputExpression>
-			</input>
-			<output id="Output_1" typeRef="string"/>
-		</decisionTable>
-	</decision>
-	<dmndi:DMNDI>
-		<dmndi:DMNDiagram>
-			<dmndi:DMNShape dmnElementRef="Decision_1">
-				<dc:Bounds height="80" width="180" x="160" y="100"/>
-			</dmndi:DMNShape>
-		</dmndi:DMNDiagram>
-	</dmndi:DMNDI>
-</definitions>`
+const emit = defineEmits([
+	'resizeTabNav',
+	'updateEditorXML',
+	'updateDownloadLink',
+	'updateDownloadLinkSvg',
+	'isValidated',
+	'showToastMessage',
+	'toggleEnableSave',
+	'toggleIsSaved',
+	'toggleVersionNotSaved',
+	'updateIsButtonDisabled',
+	'updateStoredLocalStorageTabNavList',
+	'assignSessionIdToProcess',
+	'setTypeOfDiagramForModeler',
+	'toggleConsole',
+	'show-console-notification',
+])
+
+const {
+	saveDecisionTable,
+	validate,
+	saveXmlAfterUpdate,
+	notificationMessageData,
+	toggleConsole,
+	addLineWithErrorToConsole,
+	copyLine,
+	cleanConsole,
+	isConsolePanelShowing,
+	isConsoleOpen,
+} = useModeler(props, emit, monacoEditorConsole, consolePanel, notificationModal)
+
+const { updateParentHeight, updateParentWidth, parentWidth, parentHeight } = usePropertiesPanel(props, emit, containerModeler, resDiv, null, null)
+const canvasWidth = ref(0)
+const changeWidth = value => { canvasWidth.value = value }
 
 onMounted(async () => {
-	modeler = new DmnModeler({
-		container: canvas.value
+	dmnModeler = new DmnJS({
+		drd: {
+			propertiesPanel: { parent: dmnProperties.value },
+			additionalModules: [DmnPropertiesPanelModule, DmnPropertiesProviderModule, CamundaPropertiesProviderModule]
+		},
+		container: canvas.value,
+		moddleExtensions: {
+			camunda: camundaModdleDescriptor
+		}
 	})
 
-	try {
-		await modeler.importXML(defaultDiagram)
-	} catch (err) {
-		console.error('Error rendering DMN diagram', err)
+	if (props.xml) {
+		const migratedXml = await migrateDiagram(props.xml)
+		await validate(dmnModeler, migratedXml)
+		emit('updateIsButtonDisabled', false, props.tabElementIndex)
+		_setupDiagramFunctions()
+	}
+
+	const activeEditor = dmnModeler.getActiveViewer()
+
+	activeEditor.on('propertiesPanel.detach', async () => {
+		isDrdShowing.value = false
+		if (!props.isModelerVisible) togglePropertiesPanel(false)
+		await nextTick()
+		const decisionTableRef = containerModeler.value?.querySelector('.dmn-decision-table-container')
+		if (decisionTableRef) observerDecisionTables = createObserver(decisionTableRef)
+	})
+
+	activeEditor.on('propertiesPanel.attach', () => {
+		isDrdShowing.value = true
+		if (!props.isModelerVisible) togglePropertiesPanel(true)
+		observerDecisionTables?.disconnect()
+	})
+
+	activeEditor.on('element.changed', () => {
+		emit('toggleEnableSave', true, props.tabElementIndex)
+		_setupDiagramFunctions()
+		updateParentWidth()
+	})
+
+	propertiesPanelComponent.value = dmnModeler.getActiveViewer().get('propertiesPanel')
+
+	// Track view changes to update XML and download links
+	dmnModeler.on('views.changed', async () => {
+		try {
+			const { xml } = await dmnModeler.saveXML({ format: true })
+			emit('updateEditorXML', xml, props.tabElementIndex)
+			emit('toggleEnableSave', true, props.tabElementIndex)
+			saveXmlAfterUpdate(false, xml, props.tabElementIndex, dmnModeler)
+		} catch (err) {
+			console.error(err)
+		}
+	})
+
+	window.addEventListener('resize', updateParentWidth, true)
+	window.addEventListener('resize', updateParentHeight, true)
+	await nextTick()
+	emit('resizeTabNav', canvasWidth.value)
+})
+
+onBeforeUnmount(() => {
+	window.removeEventListener('resize', updateParentWidth, true)
+	window.removeEventListener('resize', updateParentHeight, true)
+	if (observerDecisionTables) observerDecisionTables.disconnect()
+})
+
+onUpdated(() => {
+	updateParentWidth()
+	updateParentHeight()
+})
+
+watch(() => props.xml, async newValue => {
+	if (newValue && dmnModeler) {
+		const migratedXml = await migrateDiagram(newValue)
+		_validate(migratedXml)
 	}
 })
 
-onUnmounted(() => {
-	if (modeler) {
-		modeler.destroy()
-	}
-})
-
-const createNew = async () => {
-	try {
-		await modeler.importXML(defaultDiagram)
-	} catch (err) {
-		console.error('Error creating new DMN diagram', err)
-	}
-}
-
-const openFile = () => {
-	const input = document.createElement('input')
-	input.type = 'file'
-	input.accept = '.dmn,.xml'
-	input.onchange = async (e) => {
-		const file = e.target.files[0]
-		if (file) {
-			const reader = new FileReader()
-			reader.onload = async (event) => {
-				try {
-					await modeler.importXML(event.target.result)
-				} catch (err) {
-					console.error('Error loading DMN diagram', err)
-				}
-			}
-			reader.readAsText(file)
+watch(() => props.isModelerVisible, async newValue => {
+	if (!newValue && dmnModeler) {
+		_setupDiagramFunctions()
+		if (isDrdShowing.value && propertiesPanelComponent.value) {
+			await nextTick()
+			propertiesPanelComponent.value.attachTo(dmnProperties.value)
+			togglePropertiesPanel(true)
 		}
 	}
-	input.click()
+	updateParentWidth()
+})
+
+watch(() => props.isActiveTab, async newValue => {
+	if (newValue && propertiesPanelComponent.value) {
+		propertiesPanelComponent.value.attachTo(dmnProperties.value)
+		await nextTick()
+		emit('resizeTabNav', resDiv.value?._changeWidth() ?? canvasWidth.value)
+	} else if (propertiesPanelComponent.value) {
+		propertiesPanelComponent.value.detach()
+	}
+})
+
+const styleCanvas = computed(() => ({ width: `${canvasWidth.value}px !important` }))
+
+const _setupDiagramFunctions = debounce(async () => {
+	try {
+		const { xml } = await dmnModeler.saveXML({ format: true })
+		emit('updateEditorXML', xml, props.tabElementIndex)
+		saveXmlAfterUpdate(false, xml, props.tabElementIndex, dmnModeler.getActiveViewer())
+	} catch (err) {
+		console.error('Error saving DMN XML:', err)
+	}
+}, 5)
+
+const createObserver = divToObserve => {
+	if (!divToObserve) return
+	const config = { attributes: false, childList: true, subtree: true }
+	const callback = mutationsList => {
+		for (const mutation of mutationsList) {
+			if (mutation.type === 'childList' || mutation.type === 'attributes') {
+				_setupDiagramFunctions()
+				emit('toggleEnableSave', true, props.tabElementIndex)
+			}
+		}
+	}
+	const observer = new MutationObserver(callback)
+	observer.observe(divToObserve, config)
+	return observer
 }
 
-const save = async () => {
-	try {
-		const { xml } = await modeler.saveXML({ format: true })
-		const blob = new Blob([xml], { type: 'application/xml' })
-		const url = URL.createObjectURL(blob)
-		const a = document.createElement('a')
-		a.href = url
-		a.download = 'diagram.dmn'
-		a.click()
-		URL.revokeObjectURL(url)
-	} catch (err) {
-		console.error('Error saving DMN diagram', err)
+const _saveDiagram = () => saveDecisionTable(dmnModeler, props.tabElement.type, notificationModal)
+
+const _saveXmlAfterUpdate = (isBpmn, updatedXml, tabElementIndex) => {
+	saveXmlAfterUpdate(false, updatedXml, tabElementIndex, dmnModeler)
+}
+
+const _validate = (xml) => validate(dmnModeler, xml)
+
+const _getTagValueFromXml = (tagName, attribute) => getTagValueFromXml(props.xml, tagName, attribute)
+
+const togglePropertiesPanel = value => {
+	isPropertyPanelVisible.value = value
+	if (!value) {
+		resDiv.value?._resetPropertiesPanelWidth()
+		canvasWidth.value = containerModeler.value?.parentNode.clientWidth ?? parentWidth.value
+		return
+	}
+	if (!props.isModelerVisible) {
+		resDiv.value?._restorePropertiesPanelWidth()
+		updateParentWidth()
 	}
 }
 
-const getXML = async () => {
-	try {
-		const { xml } = await modeler.saveXML({ format: true })
-		return xml
-	} catch (err) {
-		console.error('Error getting XML', err)
-		return null
-	}
-}
+const changeHeight = value => { canvasHeight.value = value }
 
-const importXML = async (xml) => {
-	try {
-		await modeler.importXML(xml)
-	} catch (err) {
-		console.error('Error importing XML', err)
-	}
-}
+const focusLost = () => monacoEditorConsole.value?.focusLost()
 
 defineExpose({
-	createNew,
-	openFile,
-	save,
-	getXML,
-	importXML
+	_validate,
+	_saveXmlAfterUpdate,
+	_saveDiagram,
+	_getTagValueFromXml,
+	togglePropertiesPanel,
+	toggleConsole,
+	isConsolePanelShowing,
+	addLineWithErrorToConsole,
 })
 </script>
-
-<style scoped>
-.dmn-modeler-container {
-	display: flex;
-	height: 100%;
-	width: 100%;
-}
-
-.canvas {
-	flex: 1;
-	height: 100%;
-}
-</style>

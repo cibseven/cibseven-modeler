@@ -56,9 +56,9 @@ const isDeleting = ref(false)
 
 const handleClickLoadSelectedFromList = async () => {
     if (!isDeleting.value) { // on click only when is not deleting the form
-        await store.dispatch('forms/fetchFormById', props.form.id) // search xml by id selected
+        await store.dispatch('modeler/forms/fetchFormById', props.form.id) // search xml by id selected
 
-        const selectedForm = store.state.forms.formSelected
+        const selectedForm = store.state.modeler.forms.formSelected
         emit('openDiagram', selectedForm, props.form.id, props.form.formId, props.form.formId, props.index, 'form')
     }
 }

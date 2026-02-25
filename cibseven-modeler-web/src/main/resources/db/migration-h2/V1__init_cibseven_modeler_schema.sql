@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS processes_diagrams (
     active BOOLEAN DEFAULT TRUE NOT NULL,
     type VARCHAR(50) NOT NULL DEFAULT 'bpmn-c7',
     version INTEGER,
-    diagram BINARY(255)
+    diagram BLOB
 );
 
 CREATE TABLE IF NOT EXISTS revinfo (
@@ -36,15 +36,15 @@ CREATE TABLE IF NOT EXISTS revinfo (
 CREATE TABLE IF NOT EXISTS processes_diagrams_aud (
     id VARCHAR(36) NOT NULL,
     name VARCHAR(255),
-    processkey VARCHAR(100) NOT NULL,
+    processkey VARCHAR(100),
     description VARCHAR(150),
-    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    active BOOLEAN DEFAULT TRUE NOT NULL,
-    type VARCHAR(50) NOT NULL DEFAULT 'bpmn-c7',
+    created TIMESTAMP,
+    updated TIMESTAMP,
+    active BOOLEAN DEFAULT TRUE,
+    type VARCHAR(50) DEFAULT 'bpmn-c7',
     version INTEGER,
-    diagram_mod BOOLEAN DEFAULT false NOT NULL,
-    diagram BINARY(255),
+    diagram_mod BOOLEAN DEFAULT false,
+    diagram BLOB,
     rev INT NOT NULL,
     revtype TINYINT,
     CONSTRAINT pk_resources_aud PRIMARY KEY (id, rev),

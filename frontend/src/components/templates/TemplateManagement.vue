@@ -261,7 +261,7 @@ const viewMode = ref('table')
 const focused = ref(null)
 
 // Use store state instead of local refs
-const templates = computed(() => store.getters['elementTemplates/allElementTemplates'])
+const templates = computed(() => store.getters['modeler/elementTemplates/allElementTemplates'])
 const filteredTemplates = ref([])
 
 // Lazy loading state
@@ -303,7 +303,7 @@ onMounted(async () => {
     try {
         // Initialize excludeTemplates in store from config
         if (config && config.modeler?.excludeTemplates) {
-            await store.dispatch('elementTemplates/setExcludeTemplates', config.modeler.excludeTemplates)
+            await store.dispatch('modeler/elementTemplates/setExcludeTemplates', config.modeler.excludeTemplates)
         }
         
         // Templates are now fetched globally at application startup in CibsevenModeler.vue
@@ -313,7 +313,7 @@ onMounted(async () => {
         const processedTemplates = templates.value.map(template => {
             if (template.active) {
                 // Check if template should be disabled based on config
-                const excludedInConfig = store.getters['elementTemplates/isTemplateExcluded'](template)
+                const excludedInConfig = store.getters['modeler/elementTemplates/isTemplateExcluded'](template)
                 if (excludedInConfig) {
                     template.active = false // Disable template if it's excluded in config
                 }
@@ -345,7 +345,7 @@ const parseToTemplateTypes = (appliesTo) => {
 }
 
 
-const isTemplatedExcludedInConfig = (template) => store.getters['elementTemplates/isTemplateExcluded'](template)
+const isTemplatedExcludedInConfig = (template) => store.getters['modeler/elementTemplates/isTemplateExcluded'](template)
 
 /**
  * Toggles template visibility using the new switchTemplateActiveState action
@@ -354,7 +354,7 @@ const isTemplatedExcludedInConfig = (template) => store.getters['elementTemplate
  */
 const toggleTemplateVisibility = async (template) => {
     try {
-        await store.dispatch('elementTemplates/switchTemplateActiveState', template.id)
+        await store.dispatch('modeler/elementTemplates/switchTemplateActiveState', template.id)
         
         // Reapply search filter after updating visibility
         handleSearch()
@@ -371,7 +371,7 @@ const toggleTemplateVisibility = async (template) => {
  */
 const setGroupVisibility = async (taskType, groupName, isVisible) => {
     try {
-        const result = await store.dispatch('elementTemplates/setGroupVisibility', {
+        const result = await store.dispatch('modeler/elementTemplates/setGroupVisibility', {
             taskType,
             groupName,
             isVisible
@@ -462,7 +462,7 @@ const getStatistics = () => {
 const exportAllTemplates = async () => {
     try {
         // Get only the content fields from all active templates
-        const templateContents = store.getters['elementTemplates/allElementTemplateContents'] || []
+        const templateContents = store.getters['modeler/elementTemplates/allElementTemplateContents'] || []
         
         // Create and download JSON file with array of content objects
         const dataStr = JSON.stringify(templateContents, null, 2)

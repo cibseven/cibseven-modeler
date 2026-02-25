@@ -62,9 +62,9 @@ const iconClass = {
 
 const handleClickLoadSelectedFromList = async () => {
     if (!isDeleting.value) { // on click only when is not deleting the process
-        await store.dispatch('processes/fetchProcessById', props.process.id) // search xml by id selected
+        await store.dispatch('modeler/processes/fetchProcessById', props.process.id) // search xml by id selected
 
-        const selectedProcess = store.state.processes.processSelected
+        const selectedProcess = store.state.modeler.processes.processSelected
         emit('openDiagram', selectedProcess, props.process.id, props.process.name, props.process.processkey, props.index, props.process.type)
     }
 }

@@ -579,14 +579,14 @@ const submitForm = async () => {
     let resultTemplate
     if (isEditMode.value) {
       // Update existing template
-      resultTemplate = await store.dispatch('elementTemplates/updateElementTemplateFull', {
+      resultTemplate = await store.dispatch('modeler/elementTemplates/updateElementTemplateFull', {
         templateId: editingTemplate.value.id,
         templateData: templateData
       })
       successMessage.value = t('templatesManagement.editTemplateDialog.updateSuccess', { name: form.name })
     } else {
       // Create new template
-      resultTemplate = await store.dispatch('elementTemplates/createElementTemplate', templateData)
+      resultTemplate = await store.dispatch('modeler/elementTemplates/createElementTemplate', templateData)
       successMessage.value = t('templatesManagement.addTemplateDialog.createSuccess', { name: form.name })
     }
     
@@ -767,7 +767,7 @@ const processMultipleFiles = async () => {
   
   // Import templates using store action
   try {
-    const result = await store.dispatch('elementTemplates/importTemplates', templates)
+    const result = await store.dispatch('modeler/elementTemplates/importTemplates', templates)
     
     // Update results
     templates.forEach((template, index) => {
@@ -834,7 +834,7 @@ const processBatchFile = async () => {
     }
     
     // Import templates
-    const result = await store.dispatch('elementTemplates/importTemplates', templates)
+    const result = await store.dispatch('modeler/elementTemplates/importTemplates', templates)
     
     successMessage.value = t('templatesManagement.addTemplateDialog.batchImported', { count: templates.length })
     

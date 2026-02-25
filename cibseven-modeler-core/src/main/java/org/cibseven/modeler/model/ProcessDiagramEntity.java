@@ -24,7 +24,6 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.NotAudited;
-import org.hibernate.envers.RelationTargetAuditMode;
 import org.hibernate.type.SqlTypes;
 
 import jakarta.persistence.CascadeType;
@@ -35,6 +34,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -54,8 +55,8 @@ public class ProcessDiagramEntity {
 	@Column(name = "name", length = 255)
 	private String name;
 
-	@Column(name = "processkey", unique = true, nullable = false, length = 100)
-	@Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+	@NotBlank
+	@Column(name = "processkey", unique = true, length = 100)
 	private String processkey;
 
 	@Column(name = "description", length = 150)
@@ -67,14 +68,16 @@ public class ProcessDiagramEntity {
 	@Column(name = "updated")
 	private Timestamp updated;
 
+	@NotNull
 	@JdbcTypeCode(SqlTypes.BOOLEAN)
-	@Column(name = "active", nullable = false, columnDefinition = "boolean default true")
+	@Column(name = "active", columnDefinition = "boolean default true")
 	private Boolean active = true;
 
-	@Column(name = "type", nullable = false)
+	@NotBlank
+	@Column(name = "type")
 	private String type = "bpmn-c7";
 
-	@Column(name = "version", columnDefinition = "integer default 1", nullable = true)
+	@Column(name = "version", columnDefinition = "integer default 1")
 	private int version;
 
 	@JdbcTypeCode(SqlTypes.BLOB)

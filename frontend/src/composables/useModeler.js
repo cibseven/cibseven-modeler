@@ -15,13 +15,13 @@
  *  limitations under the License.
  */
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useStore } from 'vuex'
 import { checkBeforeAction } from '../utils.js'
 //to update or save process
 import { saveDiagramProcess, updateDiagramProcess, checkProcessSession, closeProcessSession, createProcessSession } from '../services/processService.js'
 
-import store from '../store.js'
-
 export default function useModeler(propsRef, emitRef, monacoEditorConsole, consolePanel, notificationModalRef) {
+  const store = useStore()
   const props = propsRef
   const emit = emitRef
   const processHistoryListComp = ref(null)
@@ -98,7 +98,7 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
     let toastErrorMessage = checkBeforeAction(
       newProcessKey,
       keyTocompare,
-      store.state.processes,
+      store.state.modeler?.processes,
     'processkey'
     )
 
@@ -226,8 +226,8 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
   }
 
   const getProcessHistoryList = async () => {  
-    await store.dispatch('processes/fetchProcessHistoryList', processId.value) // search xml by id selected
-    processHistoryListComp.value = store.state.processes.processHistoryList
+    await store.dispatch('modeler/processes/fetchProcessHistoryList', processId.value) // search xml by id selected
+    processHistoryListComp.value = store.state.modeler.processes.processHistoryList
     activeVersion.value = processHistoryListComp.value[0]?.version ?? -1 // update version
     return processHistoryListComp.value
   }

@@ -15,12 +15,13 @@
  *  limitations under the License.
  */
 import { nextTick, onBeforeUnmount, onMounted, ref } from "vue"
+import { useStore } from 'vuex'
 import { FormEditor } from '@bpmn-io/form-js'
 import { saveForm, updateForm, createFormSession, checkFormSession, closeFormSession } from'../services/formService.js'
 import { checkBeforeAction } from '../utils.js'
-import store from '../store.js'
 
 export default function useForm(props, emit, canvas, propertyPanel, notificationModalRef) {
+    const store = useStore()
     const formEditor = ref(null)
     let schema = JSON.parse(props.json)
 	  const propertiesPanelComponent = ref(null)
@@ -52,6 +53,7 @@ export default function useForm(props, emit, canvas, propertyPanel, notification
         json = await formEditor.value.getSchema()
         emit('updateEditorXML', JSON.stringify(json, null, 2),  props.tabElementIndex)
         validateJson(json)
+        emit('updateIsButtonDisabled', false, props.tabElementIndex)
         propertiesPanelComponent.value = formEditor.value.get('propertiesPanel')
 
         formEditor.value.on("changed", async () => {
@@ -94,7 +96,7 @@ export default function useForm(props, emit, canvas, propertyPanel, notification
       let toastErrorMessage = checkBeforeAction(
         newFormId,
         keyTocompare,
-        store.state.forms,
+        store.state.modeler?.forms,
         'formId'
       )
       

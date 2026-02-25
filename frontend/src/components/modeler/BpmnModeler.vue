@@ -1,10 +1,10 @@
 <template>
 	<div class="container modeler d-flex position-relative" ref="containerModeler">
 		<div class="d-flex flex-column align-items-between h-100">
-			<div class="d-flex flex-grow-1">
+			<div class="d-flex flex-grow-1" style="min-height: 0;">
 				<div v-show="!props.isModelerVisible" class="canvas" ref="canvas" :style="styleCanvas" tabindex="0">
 				</div>
-				<div v-show="props.isModelerVisible">
+				<div v-show="props.isModelerVisible" class="flex-grow-1 h-100">
 					<slot />
 				</div>
 			</div>

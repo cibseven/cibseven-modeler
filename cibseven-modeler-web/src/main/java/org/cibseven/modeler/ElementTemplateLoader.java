@@ -22,7 +22,8 @@ import java.util.List;
 
 import org.cibseven.modeler.config.ElementTemplateProperties;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -43,12 +44,14 @@ public class ElementTemplateLoader implements InitializingBean {
 	private final ElementTemplateRepository elementTemplateRepository;
     private final ElementTemplateProperties properties;
     private final TransactionTemplate transactionTemplate;
+    private final ResourceLoader resourceLoader;
 
-	public ElementTemplateLoader(ElementTemplateRepository elementTemplateRepository, ObjectMapper mapper, ElementTemplateProperties properties, TransactionTemplate transactionTemplate) {
+	public ElementTemplateLoader(ElementTemplateRepository elementTemplateRepository, ObjectMapper mapper, ElementTemplateProperties properties, TransactionTemplate transactionTemplate, ResourceLoader resourceLoader) {
 	    this.elementTemplateRepository = elementTemplateRepository;
 	    this.mapper = mapper;
         this.properties = properties;
         this.transactionTemplate = transactionTemplate;
+        this.resourceLoader = resourceLoader;
 	}
 
 	@Override
@@ -66,7 +69,7 @@ public class ElementTemplateLoader implements InitializingBean {
 	private void loadElementTemplatesFromJson(String path) {
 		assert(path != null && !path.isBlank());
 
-        ClassPathResource resource = new ClassPathResource(path);
+        Resource resource = resourceLoader.getResource(path);
 
         if (!resource.exists()) {
             log.warn("Element templates file not found at '{}'. Skipping this file.", path);

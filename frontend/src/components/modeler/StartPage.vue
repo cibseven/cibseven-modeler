@@ -30,11 +30,11 @@
                                     {{ $t(`filterElements.${filterType}`) }}
                                 </button>
                                 <div class="dropdown-menu dropdown-menu-end">
-                                    <a class="dropdown-item" @click="filterElements('bpmn')" href="#">{{ $t('filterElements.bpmn') }}</a>
-                                    <a class="dropdown-item" @click="filterElements('dmn')" href="#">{{ $t('filterElements.dmn') }}</a>
-                                    <a class="dropdown-item" @click="filterElements('form')" href="#">{{ $t('filterElements.form') }}</a>
+                                    <button type="button" class="dropdown-item" @click="filterElements('bpmn')">{{ $t('filterElements.bpmn') }}</button>
+                                    <button type="button" class="dropdown-item" @click="filterElements('dmn')">{{ $t('filterElements.dmn') }}</button>
+                                    <button type="button" class="dropdown-item" @click="filterElements('form')">{{ $t('filterElements.form') }}</button>
                                     <div role="separator" class="dropdown-divider"></div>
-                                    <a class="dropdown-item" @click="filterElements('all')" href="#">{{ $t('filterElements.all') }}</a>
+                                    <button type="button" class="dropdown-item" @click="filterElements('all')">{{ $t('filterElements.all') }}</button>
                                 </div>
                     </div>
                 <div>
@@ -121,7 +121,6 @@ import { debounce } from 'min-dash'
 import { deleteProcessById } from '../../services/processService'
 import { deleteFormById } from '../../services/formService'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
 
 //starting files for new diagrams
 import diagramXMLC7 from '../../resources/camunda7.bpmn'
@@ -132,8 +131,6 @@ import ProcessDiagramElement from './ProcessDiagramElement.vue'
 import ConfirmModal from '../modals/ConfirmModal.vue'
 import formJson from '../../resources/formSchema.json'
 import FormElement from './FormElement.vue'
-
-const router = useRouter()
 
 //types of diagram
 const TYPEC7 = 'bpmn-c7'
@@ -241,10 +238,6 @@ const filterElements = type => {
 const handleOpenFileInput = () => {
     // trigger the click event on the hidden file input
     fileInput.value.click()
-}
-
-const manageTemplates = () => {
-    router.push('/templates')
 }
 
 const handleFileChange = event => {

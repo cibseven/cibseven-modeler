@@ -81,7 +81,7 @@ const props = defineProps({
     tabNavList: Object, 
     canSave: { type: Boolean, default: false }, 
     tabNavListXml: String, 
-    isXmlValidated: { type: Object, default: null }, 
+    isXmlValidated: { type: Object, default: () => ({ validation: false, text: '' }) }, 
     modeler: { type: Object, default: null }, 
     tabElement: { type: Object, required: true }, 
     isButtonDisabled: { type: Boolean, required: true, default: false },

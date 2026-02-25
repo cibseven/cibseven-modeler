@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div class="h-100">
 		<DropZone @handleDropFile="handleFile">
 			<div class="custom-content position-relative w-100 h-100 justify-content-center align-items-center"
 				style="display: flex;  background-color: lightgray; font-size: 2em; opacity: 0.3; color: var(--bs-rimary);">
@@ -18,7 +18,7 @@
 		@resizeTabNav="resizeTabNav" @orderTabNavListHiddenTab="orderTabNavListHiddenTab">
 	</TabNav>
 
-	<div ref="modelerTabPanes" class="tab-content h-100" :key="`modelerid1-i`">
+	<div ref="modelerTabPanes" class="tab-content flex-grow-1" style="min-height: 0;" :key="`modelerid1-i`">
 		<div class="tab-pane  bg-light fade" role="tabpanel" style="height: calc(100vh - 40px);"
 			:class="{ 'active show': activeTab === -1 }" :aria-labelledby="`dashboard-tab`" tabindex="0">
 			<StartPage ref="startPage" v-if="processes || forms " :processes="processes" :forms="forms"
@@ -48,7 +48,7 @@
 				@setTypeOfDiagramForModeler="setTypeOfDiagramForModeler" @toggleIsSaved="toggleIsSaved"
 				@toggleVersionNotSaved="toggleVersionNotSaved" @toggleOutdatedTemplateBtn="toggleOutdatedTemplateBtn"
 				@show-console-notification="showConsoleNotification" @assign-session-id-to-process="assignSessionIdToProcess">
-				<div v-if="tabElement.isModelerVisible">
+				<div v-if="tabElement.isModelerVisible" class="h-100">
 					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index]"
 						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index"></monaco-editor>
 				</div>
@@ -76,8 +76,9 @@
 				@toggleIsSaved="toggleIsSaved" @resizeTabNav="resizeTabNav" @toggleConsole="toggleConsole"
 				@show-console-notification="showConsoleNotification" @assign-session-id-to-process="assignSessionIdToProcess"
 				:isModelerVisible="tabNavList[index].isModelerVisible"
+				:consoleErrors="consoleErrorsList[index]"
 				>
-				<div v-if="tabElement.isModelerVisible">
+				<div v-if="tabElement.isModelerVisible" class="h-100">
 					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index]"
 						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index"></monaco-editor>
 				</div>
@@ -104,7 +105,7 @@
 				@toggleIsSaved="toggleIsSaved" @resizeTabNav="resizeTabNav" @toggleConsole="toggleConsole"
 				@show-console-notification="showConsoleNotification" @assign-session-id-to-process="assignSessionIdToProcess"
 				:isModelerVisible="tabNavList[index].isModelerVisible">
-				<div v-if="tabElement.isModelerVisible">
+				<div v-if="tabElement.isModelerVisible" class="h-100">
 					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index]"
 						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index" language='json'></monaco-editor>
 				</div>
@@ -251,7 +252,9 @@ const _loadElementTemplatesByConfig = async () => {
 	
 	elementTemplateJson.value = filterTemplates(templateContents, config)
 
-	if (!elementTemplateJson.value || elementTemplateJson.value.length === 0) {
+	// Only show error when there was an actual fetch failure, not when templates are just empty
+	const storeError = store.state.modeler?.elementTemplates?.error
+	if (storeError) {
 		showToastMessage({ isSuccess: false, toastText: 'toastLoadTemplateJson' })
 	}
 }

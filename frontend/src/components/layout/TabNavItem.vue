@@ -117,12 +117,12 @@ const selectTab = async (e) => {
     if (props.isSaved && !props.editorXML) { // only search in database if process is saved       
         let selectedItem = null
         if(props.tabNavList.type !== 'form') {
-            await store.dispatch('processes/fetchProcessById', props.navId) // search xml by id selected    
-            selectedItem = store.state.processes.processSelected
+            await store.dispatch('modeler/processes/fetchProcessById', props.navId) // search xml by id selected    
+            selectedItem = store.state.modeler.processes.processSelected
   
         } else {
-            await store.dispatch('forms/fetchFormById', props.navId) // search form by id selected
-            selectedItem = store.state.forms.formSelected
+            await store.dispatch('modeler/forms/fetchFormById', props.navId) // search form by id selected
+            selectedItem = store.state.modeler.forms.formSelected
         }
 
         emit('selectedTab', props.index)
