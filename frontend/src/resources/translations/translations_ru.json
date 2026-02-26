@@ -1,103 +1,67 @@
 {
-	"messages":{
-		"initial":"Search for matching forms, upload one you have created, start with a blank version or import a local file.",
-		"errorLoadingDiagram":"Ooops, we could not display the BPMN 2.0 diagram."
+	"titles": {
+		"search": "Search for matching, upload one you have created, start with a blank version or import a local file.",
+		"recent": "Recent"
 	},
-	"titles":{
-		"search":"Search for matching, upload one you have created, start with a blank version or import a local file.",
-		"recent":"Recent"	
+	"toastDeleteProcessSucess": {
+		"header": "Process deleted",
+		"body": "The process has been deleted successfully"
 	},
-	"input":{
-		"searchForm":"Search forms"
+	"toastDeleteProcessFail": {
+		"header": "Error deleting process",
+		"body": "There has been an error deleting the process"
 	},
-	"monacoeditor":{
-		"close":"Close",
-		"ok" :"Accept"
+	"toastFileNoLongerExists": {
+		"header": "File doesn't exits",
+		"body": "The file you are trying to load no longer exists"
 	},
-	"modalDeleteProcess":{
-		"header" : "Delete Process",
-		"body" : "Are you sure you want to delete the process?"
+	"toastDeploySucessDeploy": {
+		"header": "Success",
+		"body": "Deployment Successful"
 	},
-	"modalCloseProcessNotSaved":{
-		"header" : "Closing process not saved",
-		"body" : "Are you sure you want to close the unsaved process?"
+	"toastDeployErrorDeploy": {
+		"header": "Error",
+		"body": "Deployment has failed"
 	},
-	"toastDeleteProcessSucess":{
-		"header" : "Process deleted",
-		"body" :"The process has been deleted successfully"
+	"toastLoadErrorFileExtension": {
+		"header": "Not a bpmn file",
+		"body": "Ooops, this file is not a BPMN 2.0 diagram."
 	},
-	"toastDeleteProcessFail":{
-		"header" : "Error deleting process",
-		"body" :"There has been an error deleting the process"
+	"toastLoadErrorFile": {
+		"header": "Error loading file.",
+		"body": "The file could not be uploaded correctly."
 	},
-	"toastFileNoLongerExists":{
-		"header" :"File doesn't exits",
-		"body" : "The file you are trying to load no longer exists"
+	"toastCantSaveFailValidationXml": {
+		"header": "Validation error.",
+		"body": "Malformed XML. Please, solve it before saving"
 	},
-	"toastDeploySucessDeploy":{
-		"header":"Success",
-		"body":"Deployment Successful"
+	"toastCantDownloadFailValidationXml": {
+		"header": "Validation error.",
+		"body": "Malformed XML. Please, solve it before downloading"
 	},
-	"toastDeployErrorDeploy":{
-		"header":"Error",
-		"body":"Deployment has failed"
+	"toastCantDeployFailValidationXml": {
+		"header": "Validation error.",
+		"body": "Malformed XML. Please, solve it before deploying"
 	},
-	"toastLoadErrorFileExtension":{
-		"header":"Not a bpmn file",
-		"body":"Ooops, this file is not a BPMN 2.0 diagram."
+	"toastCantViewModelerFailValidationXml": {
+		"header": "Validation error.",
+		"body": "Malformed XML. Please, solve it before continuing"
 	},
-	"toastLoadErrorFile":{
-		"header":"Error loading file.",
-		"body":"The file could not be uploaded correctly."
+	"toastSaveSuccessful": {
+		"header": "Saved successfully",
+		"body": "The process has been successfully saved."
 	},
-	"toastCantSaveFailValidationXml":{
-		"header":"Validation error.",
-		"body":"Malformed XML. Please, solve it before saving"
+	"toastSaveErrorDuplicateKey": {
+		"header": "Process ID already exists",
+		"body": "Change the process ID to a unique"
 	},
-	"toastCantDownloadFailValidationXml":{
-		"header":"Validation error.",
-		"body":"Malformed XML. Please, solve it before downloading"
+	"toastUpdateSuccessful": {
+		"header": "Updated successfully",
+		"body": "The process has been successfully updated."
 	},
-	"toastCantDeployFailValidationXml":{
-		"header":"Validation error.",
-		"body":"Malformed XML. Please, solve it before deploying"
-	},
-	"toastCantViewModelerFailValidationXml":{
-		"header":"Validation error.",
-		"body":"Malformed XML. Please, solve it before continuing"
-	},
-	"toastSaveSuccessful":{
-		"header":"Saved successfully",
-		"body":"The process has been successfully saved."
-	},
-	"toastSaveErrorSaveNameNull":{
-		"header":"Name of the process required",
-		"body":"Please fill in the process name with a unique name before saving"
-	},
-	"toastSaveErrorSaveKeyNull":{
-		"header":"ID of the process required",
-		"body":"Please fill in the process ID with a unique ID before saving"
-	},
-	"toastSaveErrorDuplicateKey":{
-		"header":"Process ID already exists",
-		"body":"Change the process ID to a unique"
-	},
-	"toastSaveErrorDuplicateName":{
-		"header":"Nombre de proceso ya existe",
-		"body":"Modifique el nombre del proceso a uno único"
-	},
-
-	"toastUpdateSuccessful":{
-		"header":"Updated successfully",
-		"body":"The process has been successfully updated."
-	},
-	"toastSomethingWentWrong":{
-		"header" :"Error",
-		"body" :"Ooops, something went wrong"
-	},
-	"toastProcessIdUndefined":{
-		"header": "No Process ID",
-		"body":"Please, fill in the ID of the process before downloading the file"
+	"toastSomethingWentWrong": {
+		"header": "Error",
+		"body": "Ooops, something went wrong"
 	},
 	"ttlFieldRequired": "Это поле обязательно для развертывания",
 	"content": {
@@ -105,61 +69,38 @@
 		"createIt": "ERSTELLEN"
 	},
 	"buttons": {
-		"accept":"Accept",		
+		"accept": "Accept",
 		"saveDiagram": "Save diagram",
-		"search":"Search",
-		"diagramGalery":"Diagram's gallery",
-		"createDiagram" : "Create new diagram",
-		"newDmn":"DMN",
-		"newBpmnc7" :"BPMN 7",
-		"newBpmnc8" :"BPMN 8",
-		"importFile":"Import local file",
-		"edit":"Edit",
-		"delete":"Delete",
-		"prevDiagram":"Preview diagram",
+		"search": "Search",
+		"diagramGalery": "Diagram's gallery",
+		"createDiagram": "Create new diagram",
+		"newDmn": "DMN",
+		"newBpmnc7": "BPMN 7",
+		"newBpmnc8": "BPMN 8",
+		"importFile": "Import local file",
+		"edit": "Edit",
+		"delete": "Delete",
+		"prevDiagram": "Preview diagram",
 		"editor": "Editor",
 		"diagram": "Diagramm",
 		"download": "Herunterladen",
 		"deploy": "Bereitstellen",
-		"downloadDiagram":"Das BPMN-Diagramm herunterladen",
-		"close":"Cancel",
+		"downloadDiagram": "Das BPMN-Diagramm herunterladen",
+		"close": "Cancel",
 		"forceSave": "Force save"
 	},
 	"deployForm": {
-		"deployDiagram": "Diagramm bereitstellen",
 		"deploymentName": "Implementierungsname",
-		"optional": "Optional",
 		"tenantID": "Mandanten-ID",
-		"restEndpoint": "REST Endpunkt",
-		"defaultEndpoint": "Wählen Sie einen Standard CIB seven REST Schnittstellen-Endpunkt",
-		"ownEndpoint": "In einer anderen CIB seven-Instanz bereitstellen",
-		"ownEndpointUrl": "URL der CIB seven Instanz",
-		"cibsevenEndpoint": "Sollte auf einen aktiven CIB seven REST Schnittstellen-Endpunkt verweisen",
 		"authentication": "Authentifizierung",
 		"username": "Benutzername",
 		"password": "Passwort",
 		"token": "Token",
-		"rememberMe": "Angemeldet bleiben",
-		"includeFiles": "Beinhaltet zusätzliche Dateien:",
-		"done": "Erledigt",
-		"title": "Prozess bereitstellen"		
+		"title": "Prozess bereitstellen"
 	},
 	"authenticationOptions": {
-		"basicauth": "HTTP Basic",
-		"token": "Inhaber-Token"
+		"basicauth": "HTTP Basic"
 	},
-	"processNameError":"The name can't be empty.",
-
-	"error": {
-		"note": "Ooops, wir konnten das BPMN 2.0 Diagramm nicht anzeigen.",
-		"details": "Einzelheiten zu Importfehlern",
-		"deployError": "It seems that there has been an error. Try again later!",
-		"ttlError": "Для развертывания требуется время жизни."
-	},
-	"success": {
-		"deploySuccess": "Successful deployment!"
-	},
-	"Arrancable ":"Arrancable ",
 	"Close minimap": "Close minimap",
 	"Open minimap": "Open minimap",
 	"Version tag": "Version tag",
@@ -341,9 +282,9 @@
 	"no process or collaboration to display": "no process or collaboration to display",
 	"no shape type specified": "no shape type specified",
 	"out of bounds release": "out of bounds release",
-	"ID must not be empty":"ID must not be empty.",
-	"dropFileToLoad":"Drop the file to load it.",
-	"loading" : "Loading",
+	"ID must not be empty": "ID must not be empty.",
+	"dropFileToLoad": "Drop the file to load it.",
+	"loading": "Loading",
 	"noTemplates": "Нет шаблонов",
 	"templatesManagement": {
 		"title": "Управление шаблонами",
@@ -360,23 +301,23 @@
 			"cancel": "Отмена",
 			"save": "Сохранить",
 			"invalidJsonError": "Содержимое должно быть действительным JSON!",
-            "importMode": "Import Mode",
-            "singleTemplate": "Single Template",
-            "multipleFiles": "Multiple Files",
-            "batchFile": "Batch File",
-            "selectMultipleFiles": "Select Multiple Files",
-            "selectBatchFile": "Select Batch File",
-            "selectedFiles": "Selected Files",
-            "importAll": "Import All",
-            "singleFileHelp": "Upload a single JSON file containing one element template",
-            "multipleFilesHelp": "Upload multiple JSON files, each containing one element template",
-            "batchFileHelp": "Upload a single JSON file containing an array of multiple element templates",
-            "templatesImported": "{count} templates imported successfully!",
-            "batchImported": "{count} templates imported from batch file successfully!",
-            "noValidTemplates": "No valid templates found in the selected files",
-            "batchFileNotArray": "Batch file must contain an array of templates",
-            "batchFileEmpty": "Batch file is empty or contains no templates",
-            "invalidTemplateInBatch": "Invalid template at position {index}: missing required fields {fields}"
+			"importMode": "Import Mode",
+			"singleTemplate": "Single Template",
+			"multipleFiles": "Multiple Files",
+			"batchFile": "Batch File",
+			"selectMultipleFiles": "Select Multiple Files",
+			"selectBatchFile": "Select Batch File",
+			"selectedFiles": "Selected Files",
+			"importAll": "Import All",
+			"singleFileHelp": "Upload a single JSON file containing one element template",
+			"multipleFilesHelp": "Upload multiple JSON files, each containing one element template",
+			"batchFileHelp": "Upload a single JSON file containing an array of multiple element templates",
+			"templatesImported": "{count} templates imported successfully!",
+			"batchImported": "{count} templates imported from batch file successfully!",
+			"noValidTemplates": "No valid templates found in the selected files",
+			"batchFileNotArray": "Batch file must contain an array of templates",
+			"batchFileEmpty": "Batch file is empty or contains no templates",
+			"invalidTemplateInBatch": "Invalid template at position {index}: missing required fields {fields}"
 		},
 		"exportAll": "Экспортировать все",
 		"back": "Назад",

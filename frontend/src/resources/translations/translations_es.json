@@ -1,13 +1,7 @@
-{	
-	"messages":{
-		"initial":"Search for matching forms, upload one you have created, start with a blank version or import a local file."
-	},
-	"titles":{
-		"search":"Busque coincidentes, cargue uno creado, comience con una versión en blanco o importe un archivo local.",
-		"recent":"Recientes"		
-	},
-	"input":{
-		"searchForm":"Buscar formularios"
+{
+	"titles": {
+		"search": "Busque coincidentes, cargue uno creado, comience con una versión en blanco o importe un archivo local.",
+		"recent": "Recientes"
 	},
 	"modalNotificacionMessageBlockedProcess": {
 		"title": "Proceso bloqueado",
@@ -21,114 +15,98 @@
 		"title": "Diagrama bloqueado",
 		"body": "El diagrama que intentas abrir está bloqueado porque otro usuario lo está modificando."
 	},
-	"blockedSession":{
+	"blockedSession": {
 		"process": "Proceso",
-		"form" :"Formulario",
-		"dmn" :"Diagrama",
+		"form": "Formulario",
+		"dmn": "Diagrama",
 		"user": "Usuario",
 		"openedAt": "Abierto desde"
 	},
-	"modalMonacoEditor":{
-		"close":"Cerrar",
-		"ok" :"Aceptar"
+	"modalMonacoEditor": {
+		"close": "Cerrar",
+		"ok": "Aceptar"
 	},
-	"toastDeleteFormSucess":{
-		"title" : "Formulario borrado",
-		"body" :"El formulario ha sido borrado satisfactoriamente"
+	"toastDeleteFormSucess": {
+		"title": "Formulario borrado",
+		"body": "El formulario ha sido borrado satisfactoriamente"
 	},
-	"toastDeleteFormFail":{
-		"title" : "Error borrando formulario",
-		"body" :"Ha ocurrido un error borrando el formulario"
+	"toastDeleteFormFail": {
+		"title": "Error borrando formulario",
+		"body": "Ha ocurrido un error borrando el formulario"
 	},
-	"modalCloseNotSaved":{
-		"title" : "El {item} tiene cambios sin guardar",
-		"body" : "¿Está seguro de que desea cerrar el {item}?"
+	"modalCloseNotSaved": {
+		"title": "El {item} tiene cambios sin guardar",
+		"body": "¿Está seguro de que desea cerrar el {item}?"
 	},
-	"modalCloseFormNotSaved":{
-		"title" : "El formulario tiene cambios sin guardar",
-		"body" : "¿Está seguro de que desea cerrar el formulario?"
+	"modalCloseFormNotSaved": {
+		"title": "El formulario tiene cambios sin guardar",
+		"body": "¿Está seguro de que desea cerrar el formulario?"
 	},
-	"toastDeleteProcessSucess":{
-		"title" : "Proceso borrado",
-		"body" :"El proceso ha sido borrado satisfactoriamente"
+	"toastDeleteProcessSucess": {
+		"title": "Proceso borrado",
+		"body": "El proceso ha sido borrado satisfactoriamente"
 	},
-	"toastDeleteProcessFail":{
-		"title" : "Error borrando proceso",
-		"body" :"Ha ocurrido un error borrando el proceso"
+	"toastDeleteProcessFail": {
+		"title": "Error borrando proceso",
+		"body": "Ha ocurrido un error borrando el proceso"
 	},
-	"toastFileNoLongerExists":{
-		"title" :"El Archivo no existe",
-		"body" : "El archivo que está intentando cargar ya no existe"
+	"toastFileNoLongerExists": {
+		"title": "El Archivo no existe",
+		"body": "El archivo que está intentando cargar ya no existe"
 	},
-	"toastDeploySucessDeploy":{
-		"title":"Éxito",
-		"body":"Despliegue exitoso"
+	"toastDeploySucessDeploy": {
+		"title": "Éxito",
+		"body": "Despliegue exitoso"
 	},
 	"toastStartProcessSucess": {
 		"body": "Proceso iniciado"
-  	},
+	},
 	"toastStartProcessError": {
 		"body": "Error iniciando proceso"
-  	},
-	"toastDeployErrorDeploy":{
-		"title" : "Error",
-		"body":"Deployment has failed"
 	},
-	"toastLoadErrorFileExtension":{
-		"title":"Not a bpmn file",
-		"body":"Ooops, this file is not a BPMN 2.0 diagram."
+	"toastDeployErrorDeploy": {
+		"title": "Error",
+		"body": "Deployment has failed"
 	},
-	"toastLoadErrorFile":{
-		"title":"Error cargando archivo.",
-		"body":"El archivo no se ha podido cargar correctamente."
+	"toastLoadErrorFileExtension": {
+		"title": "Not a bpmn file",
+		"body": "Ooops, this file is not a BPMN 2.0 diagram."
 	},
-	"toastCantSaveFailValidationXml":{
-		"title":"Error de validación.",
-		"body":"XML mal formado. Por favor, resuélvalo antes de guardar"
+	"toastLoadErrorFile": {
+		"title": "Error cargando archivo.",
+		"body": "El archivo no se ha podido cargar correctamente."
 	},
-	"toastCantDownloadFailValidationXml":{
-		"title":"Error de validación.",
-		"body":"XML mal formado. Por favor, resuélvalo antes de descargarlo"
+	"toastCantSaveFailValidationXml": {
+		"title": "Error de validación.",
+		"body": "XML mal formado. Por favor, resuélvalo antes de guardar"
 	},
-	"toastCantDeployFailValidationXml":{
-		"title":"Error de validación.",
-		"body":"XML mal formado. Por favor, resuélvalo antes de desplegarlo"
+	"toastCantDownloadFailValidationXml": {
+		"title": "Error de validación.",
+		"body": "XML mal formado. Por favor, resuélvalo antes de descargarlo"
 	},
-	"toastCantViewModelerFailValidationXml":{
-		"title":"Error de validación.",
-		"body":"XML mal formado. Por favor, resuélvalo antes de seguir"
+	"toastCantDeployFailValidationXml": {
+		"title": "Error de validación.",
+		"body": "XML mal formado. Por favor, resuélvalo antes de desplegarlo"
 	},
-	"toastSaveSuccessful":{
-		"title":"Guardado con éxito",
-		"body":"El proceso ha sido guardado correctamente."
+	"toastCantViewModelerFailValidationXml": {
+		"title": "Error de validación.",
+		"body": "XML mal formado. Por favor, resuélvalo antes de seguir"
 	},
-	"toastUpdateSuccessful":{
-		"title":"Actualizado con éxito",
-		"body":"El proceso ha sido actualizado correctamente."
+	"toastSaveSuccessful": {
+		"title": "Guardado con éxito",
+		"body": "El proceso ha sido guardado correctamente."
 	},
-	"toastSaveErrorSaveNameNull":{
-		"title":"Nombre de proceso requerido",
-		"body":"Por favor, antes de guardar rellene el nombre del proceso"
+	"toastUpdateSuccessful": {
+		"title": "Actualizado con éxito",
+		"body": "El proceso ha sido actualizado correctamente."
 	},
-	"toastSaveErrorSaveKeyNull":{
-		"title":"ID de proceso requerida",
-		"body":"Antes de guardar rellene la ID del proceso con un ID único"
+	"toastSaveErrorDuplicateKey": {
+		"title": "ID de proceso ya existe",
+		"body": "Modifique la ID del proceso a una única"
 	},
-	"toastSaveErrorDuplicateKey":{
-		"title":"ID de proceso ya existe",
-		"body":"Modifique la ID del proceso a una única"
-	},
-	"toastSaveErrorDuplicateName":{
-		"title":"Nombre de proceso ya existe",
-		"body":"Modifique el nombre del proceso a uno único"
-	},
-	"toastSomethingWentWrong":{
-		"title" :"Error",
-		"body" :"Ups, algo ha salido mal"
-	},
-	"toastProcessIdUndefined":{
-		"title": "No Process ID",
-		"body":"Por favor, rellena el ID del proceso antes de descargar el archivos."
+	"toastSomethingWentWrong": {
+		"title": "Error",
+		"body": "Ups, algo ha salido mal"
 	},
 	"ttlFieldRequired": "Este campo es obligatorio para el despliegue",
 	"content": {
@@ -136,41 +114,39 @@
 		"createIt": "CRÉALO"
 	},
 	"buttons": {
-		"accept":"Aceptar",
+		"accept": "Aceptar",
 		"filter": "Seleccionar filtro",
 		"saveDiagram": "Guardar diagrama",
-		"search":"Buscar",
-		"createDiagram" : "Crear nuevo",
-		"newDmn":"DMN",
+		"search": "Buscar",
+		"createDiagram": "Crear nuevo",
+		"newDmn": "DMN",
 		"newForm": "Form",
-		"newBpmnc7" :"BPMN 7",
-		"newBpmnc8" :"BPMN 8",
-		"importFile":"Importar archivo local",
-		"edit":"Editar",
-		"prevDiagram":"Previsualizar diagrama",
+		"newBpmnc7": "BPMN 7",
+		"newBpmnc8": "BPMN 8",
+		"importFile": "Importar archivo local",
+		"edit": "Editar",
+		"prevDiagram": "Previsualizar diagrama",
 		"editor": "Editor",
 		"diagram": "Diagrama",
 		"download": "Descargar",
 		"deploy": "Desplegar",
 		"startProcess": "Iniciar proceso",
-		"downloadDiagram":"Descarga el diagrama BPMN",
-		"cancel":"Cancelar",
-		"searchTemplates":"Buscar templates",
-		"downloadSVG":"Descarga el diagrama BPMN en formato SVG",
+		"downloadDiagram": "Descarga el diagrama BPMN",
+		"cancel": "Cancelar",
+		"searchTemplates": "Buscar templates",
+		"downloadSVG": "Descarga el diagrama BPMN en formato SVG",
 		"console": "Consola",
 		"close": "Cerrar",
 		"delete": "Eliminar",
-	    "copy": "Copiar",
+		"copy": "Copiar",
 		"forceSave": "Forzar guardado",
 		"linkToProject": "Enlazar al proyecto"
 	},
-	"deployForm": {		
-		"deployDiagram": "Desplegar diagrama",
+	"deployForm": {
 		"deploymentName": {
 			"label": "Nombre del despliegue",
 			"tooltip": "El nombre del despliegue ayuda a identificar y administrar el proceso de forma única en el panel Despliegues. No es necesario que coincida con el ID del proceso"
 		},
-		"optional": "Optional",
 		"tenantID": {
 			"label": "ID del tenant",
 			"tooltip": "Opcionalmente especifica un tenant donde se desplegará el proceso. Cada tenant tiene su propio entorno aislado para procesos y datos"
@@ -183,39 +159,19 @@
 				"invalid": "Por favor, introduce una URL válida que comience con http:// o https://."
 			}
 		},
-		"restEndpoint": "REST endpoint",
-		"defaultEndpoint": "Elige una URL predefinida de CIB seven REST API endpoint",
-		"cibsevenEndpoint": "Debe apuntar a un endpoint de la API REST de CIB seven en funcionamiento.",
 		"authentication": "Autenticación",
 		"asAnotherUser": "Como otro usuario",
 		"username": "Nombre de usuario",
 		"password": "Contraseña",
 		"token": "Token",
-		"rememberMe": "Recuérdame",
-		"includeFiles": "Incluir archivos adicionales:",
-		"done": "Hecho",
-		"title": "Desplegar proceso"		
+		"title": "Desplegar proceso"
 	},
 	"authenticationOptions": {
-		"basicauth": "HTTP Básico",
-		"token": "Bearer token"
+		"basicauth": "HTTP Básico"
 	},
-	"processNameError":"El nombre no debe estar vacío.",
-	"error": {
-		
-		"note": "Ooops, no hemos podido mostrar el diagrama BPMN 2.0.",
-		"details": "Detalles del error de importación",
-		"deployError": "Parece que ha ocurrido un error. Inténtalo mas tarde.",
-		"ttlError": "El tiempo de vida es requerido para el despliegue."
-	},
-	"success": {
-		"deploySuccess": "Despliegue con éxito!"
-	},
-	"All": "Todo",
-	"Arrancable ":"Arrancable ",
-	"Close minimap":"Cerrar minimapa",
-	"Open minimap":"Abrir minimapa",
-	"Version tag":"Version tag",
+	"Close minimap": "Cerrar minimapa",
+	"Open minimap": "Abrir minimapa",
+	"Version tag": "Version tag",
 	"Documentation": "Documentación",
 	"Element documentation": "Documentación del elemento",
 	"History cleanup": "Limpieza histórica",
@@ -223,83 +179,83 @@
 	"Tasklist": "Lista de tareas",
 	"Startable": "Arrancable",
 	"Candidate starter": "Candidato inicial",
-	"Candidate starter groups":"Candidate starter groups",
-	"Specify more than one group as a comma separated list.":"Specify more than one group as a comma separated list.",
-	"Candidate starter users":"Canditate starter users",
-	"Specify more than one user as a comma separated list.":"Specify more then one user as a comma separated list.",
+	"Candidate starter groups": "Candidate starter groups",
+	"Specify more than one group as a comma separated list.": "Specify more than one group as a comma separated list.",
+	"Candidate starter users": "Canditate starter users",
+	"Specify more than one user as a comma separated list.": "Specify more then one user as a comma separated list.",
 	"External task": "Tarea externa",
-	"Job execution":"Job execution",
-	"Priority":"Priority",
+	"Job execution": "Job execution",
+	"Priority": "Priority",
 	"Template": "Template",
 	"Forms": "Formularios",
 	"Type": "Tipo",
-	"<none>": "Seleccione",	
-	"Start initiator":"Start initiator",
-	"Initiator":"Initiator",
-	"Asynchronous continuations":"Asynchronous continuations",
-	"Before":"Before",
-	"After":"After",	
-	"Execution listeners":"Execution listeners",
-	"Extension properties":"Extension properties",
-	"<empty>":"<empty>",
-	"Name":"Name",
-	"Value":"Value",
-	"Start: Java class":"Start: Java class",
-	"Field injections":"Field injections",
-	"Event type":"Event type",
-	"Listener type":"Listener type",
-	"Java class":"Java class",
-	"Create start event":"Create start event",
-	"Create end event":"Create end event",
-	"Create gateway":"Create gateway",
-	"Create task":"Create task",
-	"Create data object reference":"Create data object reference",
-	"Create data store reference":"Create data store reference",
-	"Create group":"Create group",
-	"Select":"Select",
-	"Local variable name":"Local variable name",
-	"Assignment type":"Assignment type",
-	"Start typing \"${}\" to create an expression.":"Start typing \"${}\" to create an expression.",
-	"Append text notation":"Append text notation",
-	"Set color":"Set color",
-	"Default":"Default",
-	"Blue":"Azul",
-	"Orange":"Naranja",
-	"Green":"Verde",
-	"Red":"Rojo",
-	"Purple":"Violeta",
-	"Task listeners":"Task listeners",
-	"Process variable name":"Process variable name",
-	"Message":"Message",
-	"Global message reference":"Global message reference",
-	"Script":"Script",
-	"Result variable":"Result variable",
-	"Called element":"Called element",
-	"Business key":"Business key",
-	"In mapping propagation":"In mapping propagation",
-	"Propagate all variables":"Propagate all variables",
-	"In mappings":"In mappings",
-	"Source":"Source",
-	"Target":"Target",
-	"Out mapping propagation":"Out mapping propagation",
-	"Data store reference":"Data store reference",
-	"Collecion":"Collecion",
-	"Participant ID":"Participant ID",
-	"Participant Name":"Participant Name",
-	"Process name":"Process name",
-	"Executable":"Executable",
-	"Empty pool/participant (removes content)":"Empty pool/participant (removes content)",
-	"Participant multiplicity":"Participant multiplicity",	
-	"Append task":"Append task",
-	"Append gateway":"Append gateway",
-	"Append end event":"Append end event",
-	"Append intermediate/boundary event":"Append intermediate/boundary event",
-	"Sub-process (expanded)":"Sub-process (expanded)",
+	"<none>": "Seleccione",
+	"Start initiator": "Start initiator",
+	"Initiator": "Initiator",
+	"Asynchronous continuations": "Asynchronous continuations",
+	"Before": "Before",
+	"After": "After",
+	"Execution listeners": "Execution listeners",
+	"Extension properties": "Extension properties",
+	"<empty>": "<empty>",
+	"Name": "Name",
+	"Value": "Value",
+	"Start: Java class": "Start: Java class",
+	"Field injections": "Field injections",
+	"Event type": "Event type",
+	"Listener type": "Listener type",
+	"Java class": "Java class",
+	"Create start event": "Create start event",
+	"Create end event": "Create end event",
+	"Create gateway": "Create gateway",
+	"Create task": "Create task",
+	"Create data object reference": "Create data object reference",
+	"Create data store reference": "Create data store reference",
+	"Create group": "Create group",
+	"Select": "Select",
+	"Local variable name": "Local variable name",
+	"Assignment type": "Assignment type",
+	"Start typing \"${}\" to create an expression.": "Start typing \"${}\" to create an expression.",
+	"Append text notation": "Append text notation",
+	"Set color": "Set color",
+	"Default": "Default",
+	"Blue": "Azul",
+	"Orange": "Naranja",
+	"Green": "Verde",
+	"Red": "Rojo",
+	"Purple": "Violeta",
+	"Task listeners": "Task listeners",
+	"Process variable name": "Process variable name",
+	"Message": "Message",
+	"Global message reference": "Global message reference",
+	"Script": "Script",
+	"Result variable": "Result variable",
+	"Called element": "Called element",
+	"Business key": "Business key",
+	"In mapping propagation": "In mapping propagation",
+	"Propagate all variables": "Propagate all variables",
+	"In mappings": "In mappings",
+	"Source": "Source",
+	"Target": "Target",
+	"Out mapping propagation": "Out mapping propagation",
+	"Data store reference": "Data store reference",
+	"Collecion": "Collecion",
+	"Participant ID": "Participant ID",
+	"Participant Name": "Participant Name",
+	"Process name": "Process name",
+	"Executable": "Executable",
+	"Empty pool/participant (removes content)": "Empty pool/participant (removes content)",
+	"Participant multiplicity": "Participant multiplicity",
+	"Append task": "Append task",
+	"Append gateway": "Append gateway",
+	"Append end event": "Append end event",
+	"Append intermediate/boundary event": "Append intermediate/boundary event",
+	"Sub-process (expanded)": "Sub-process (expanded)",
 	"Change element": "Cambia el elemento",
 	"Activate create/remove space tool": "Activar la herramienta de crear / eliminar espacio",
 	"Activate global connect tool": "Activar la herramienta de conexión global",
 	"Activate hand tool": "Activar la herramienta de mano",
-	"Activate lasso tool": "Activar la herramienta Lazo",		
+	"Activate lasso tool": "Activar la herramienta Lazo",
 	"Ad-hoc": "Ad-hoc",
 	"Add lane above": "Añadir línea arriba",
 	"Add lane below": "Agregar línea debajo",
@@ -393,54 +349,46 @@
 	"no process or collaboration to display": "ningún proceso o colaboración para mostrar",
 	"no shape type specified": "ningún tipo de forma especificada",
 	"out of bounds release": "lanzamiento fuera de límites",
-	"ID must not be empty." :"ID no debe estar vacío",
-	"dropFileToLoad":"Suelte el archivo para cargarlo",	
-	"loading" : "Cargando",
-	"modalImportedFile" :{
-		"title" : "Este {item} ya existe en el modeler",
-		"body" : "¿Quiere continuar con el {item} importado?"
+	"ID must not be empty.": "ID no debe estar vacío",
+	"dropFileToLoad": "Suelte el archivo para cargarlo",
+	"loading": "Cargando",
+	"modalImportedFile": {
+		"title": "Este {item} ya existe en el modeler",
+		"body": "¿Quiere continuar con el {item} importado?"
 	},
-	"notFound" : "No encontrado",
-	"modalNewDiagram" :{
-		"title" : "Ingrese un nombre y una ID para su {item}",
-		"processName" : "Nombre del {item}",
-		"processId" : "ID del {item}",
-		"cancel" : "Más tarde",
-		"qnameError" : "el ID debe ser un Qname válido",
-		"fillName": "El nombre es requerido",
+	"notFound": "No encontrado",
+	"modalNewDiagram": {
+		"title": "Ingrese un nombre y una ID para su {item}",
+		"processName": "Nombre del {item}",
+		"processId": "ID del {item}",
+		"cancel": "Más tarde",
+		"qnameError": "el ID debe ser un Qname válido",
 		"fillId": "El ID es requerido",
-		"duplicatedId":"El ID ya existe"
+		"duplicatedId": "El ID ya existe"
 	},
-	"modalListSelector" :{
-		"title":"Default"
-	},	
 	"noVersions": "No hay versiones",
 	"noTemplates": "No hay plantillas",
-	"noForms": "No hay formularios",
-	"noResources": "No hay recursos",
 	"noItems": "No hay elementos",
-	"toastLoadTemplateJson":{
-		"header" : "No encontrado",
-		"body" : "Error cargando element templates"
+	"toastLoadTemplateJson": {
+		"header": "No encontrado",
+		"body": "Error cargando element templates"
 	},
-	"version" : "Versión",
-	"history" : "Versión de historial",
-	"date" : "Fecha",
-	"currentVersion" : "Current",
-	"modalListSelectorchangeVersion":{
-		"title" : "Seleccionar versión de historial",
+	"version": "Versión",
+	"history": "Versión de historial",
+	"modalListSelectorchangeVersion": {
+		"title": "Seleccionar versión de historial",
 		"headerVersion": "Versión",
 		"headerDate": "Fecha",
-		"body" : "Los cambios no guardados se perderán. ¿Está seguro?",
+		"body": "Los cambios no guardados se perderán. ¿Está seguro?",
 		"search": "Buscar versión"
 	},
-	"modalChangeProcessVersion" :{
-		"title" : "Seleccionar versión",
-		"body" : "Los cambios no guardados se perderán. ¿Está seguro?"
+	"modalChangeProcessVersion": {
+		"title": "Seleccionar versión",
+		"body": "Los cambios no guardados se perderán. ¿Está seguro?"
 	},
-	"modalListSelectortemplates" :{
-		"title":"Templates no encontrados",
-		"search": "Buscar template"	
+	"modalListSelectortemplates": {
+		"title": "Templates no encontrados",
+		"search": "Buscar template"
 	},
 	"bpmnFilter": {
 		"title": "Mostrar sólo"
@@ -450,8 +398,8 @@
 		"body": "¿Está seguro de que desea borrar el {item}?"
 	},
 	"searchElementTemplates": {
-		"searchInput" :"Buscar templates",
-		"others" : "Otros",
+		"searchInput": "Buscar templates",
+		"others": "Otros",
 		"showInternal": "Mostrar plantillas internas (síncronas)",
 		"showExternal": "Mostrar plantillas externas (asíncronas)",
 		"internalTemplatesTip": "Muestra las plantillas que se ejecutan directamente dentro del motor de CIB seven. Son implementaciones basadas en Java que se ejecutan de manera síncrona dentro de la misma aplicación. Adecuadas para casos livianos.",
@@ -518,23 +466,23 @@
 			"noDescription": "Sin descripción disponible",
 			"formHelp": "Completa los detalles de la plantilla manualmente o usa la opción de importar archivo",
 			"uploadHelp": "Sube un archivo JSON que contenga la definición de la plantilla de elemento",
-            "importMode": "Import Mode",
-            "singleTemplate": "Single Template",
-            "multipleFiles": "Multiple Files",
-            "batchFile": "Batch File",
-            "selectMultipleFiles": "Select Multiple Files",
-            "selectBatchFile": "Select Batch File",
-            "selectedFiles": "Selected Files",
-            "importAll": "Import All",
-            "singleFileHelp": "Upload a single JSON file containing one element template",
-            "multipleFilesHelp": "Upload multiple JSON files, each containing one element template",
-            "batchFileHelp": "Upload a single JSON file containing an array of multiple element templates",
-            "templatesImported": "{count} templates imported successfully!",
-            "batchImported": "{count} templates imported from batch file successfully!",
-            "noValidTemplates": "No valid templates found in the selected files",
-            "batchFileNotArray": "Batch file must contain an array of templates",
-            "batchFileEmpty": "Batch file is empty or contains no templates",
-            "invalidTemplateInBatch": "Invalid template at position {index}: missing required fields {fields}"
+			"importMode": "Import Mode",
+			"singleTemplate": "Single Template",
+			"multipleFiles": "Multiple Files",
+			"batchFile": "Batch File",
+			"selectMultipleFiles": "Select Multiple Files",
+			"selectBatchFile": "Select Batch File",
+			"selectedFiles": "Selected Files",
+			"importAll": "Import All",
+			"singleFileHelp": "Upload a single JSON file containing one element template",
+			"multipleFilesHelp": "Upload multiple JSON files, each containing one element template",
+			"batchFileHelp": "Upload a single JSON file containing an array of multiple element templates",
+			"templatesImported": "{count} templates imported successfully!",
+			"batchImported": "{count} templates imported from batch file successfully!",
+			"noValidTemplates": "No valid templates found in the selected files",
+			"batchFileNotArray": "Batch file must contain an array of templates",
+			"batchFileEmpty": "Batch file is empty or contains no templates",
+			"invalidTemplateInBatch": "Invalid template at position {index}: missing required fields {fields}"
 		},
 		"exportAll": "Exportar todo",
 		"back": "Atrás",
@@ -574,7 +522,7 @@
 		"process": "Proceso",
 		"bpmn-c7": "Processo",
 		"bpmn-c8": "Processo",
-		"dmn": "Diagrama",		
+		"dmn": "Diagrama",
 		"form": "Formulario"
 	},
 	"filterElements": {

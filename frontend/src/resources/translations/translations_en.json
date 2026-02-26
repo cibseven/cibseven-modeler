@@ -1,215 +1,164 @@
 {
-  "messages": {
-    "errorLoadingDiagram": "Ooops, we could not display the BPMN 2.0 diagram."
-  },
-  "titles": {
-    "search": "Search for matching, upload one you have created, start with a blank version or import a local file.",
-    "recent": "Recent",
-    "prevForm": "Preview form"
-  },
-  "input": {
-    "searchForm": "Search forms"
-  },
-  "monacoeditor": {
-    "close": "Close",
-    "ok": "Accept"
-  },
-  "toastDeleteFormSucess": {
-    "title": "Form deleted",
-    "body": "The form has been deleted successfully"
-  },
-  "toastDeleteFormFail": {
-    "title": "Error deleting form",
-    "body": "There has been an error deleting the form"
-  },
-  "toastDeleteProcessSucess": {
-    "title": "Process deleted",
-    "body": "The process has been deleted successfully"
-  }, 
-  "toastDeleteProcessFail": {
-    "title": "Error deleting process",
-    "body": "There has been an error deleting the process"
-  },
-  "toastFileNoLongerExists": {
-    "title": "File doesn't exist",
-    "body": "The file you are trying to load no longer exists"
-  },
-  "modalNotificacionMessageBlockedProcess": {
-	"title": "Process blocked",
-	"body": "The process you are trying to open is blocked because another user is modifying it."
-  },
-  "modalNotificacionMessageBlockedForm": {
-	"title": "Formular blocked",
-	"body": "The formular you are trying to open is blocked because another user is modifying it."
-  },
-  "modalNotificacionMessageBlockedDiagram": {
-	"title": "Diagram blocked",
-	"body": "The diagram you are trying to open is blocked because another user is modifying it."
-  },
-  "blockedSession":{
-	"process": "Process",	
-	"dmn": "Diagram",
-	"form": "Form",
-	"user": "User",
-	"openedAt": "Opened at"
-  },
-  "modalCloseNotSaved": {
-    "title": "Closing {item} not saved",
-    "body": "Are you sure you want to close the unsaved {item}?"
-  }, 
-  "toastDeploySucessDeploy": {
-	"title": "Success",
-    "body": "Deployment successful"
-  },
-  "toastStartProcessSucess": {
-	"body": "Process started"
-  },
-  "toastStartProcessError": {
-	"body": "Error starting process"
-  },
-  "toastDeployErrorDeploy": {
-	"title" : "Error",
-    "body": "Deployment has failed"
-  },
-  "toastLoadErrorFileExtension": {
-    "title": "Not a bpmn file",
-    "body": "Ooops, this file is not a BPMN 2.0 diagram."
-  },
-  "toastLoadErrorFile": {
-    "title": "Error loading file.",
-    "body": "The file could not be loaded correctly."
-  },
-  "toastCantSaveFailValidationXml": {
-    "title": "Validation error.",
-    "body": "Malformed XML. Please, solve it before saving"
-  },
-  "toastCantDownloadFailValidationXml": {
-    "title": "Validation error.",
-    "body": "Malformed XML. Please, solve it before downloading"
-  },
-  "toastCantDeployFailValidationXml": {
-    "title": "Validation error.",
-    "body": "Malformed XML. Please, solve it before deploying"
-  },
-  "toastCantViewModelerFailValidationXml": {
-    "title": "Validation error.",
-    "body": "Malformed XML. Please, solve it before continuing"
-  },
-  "toastSaveSuccessful": {
-    "title": "Saved successfully",
-    "body": "The process has been successfully saved."
-  },
-
-  "toastSaveErrorSaveNameNull": {
-    "title": "Name of the process required",
-    "body": "Please fill in the process name before saving"
-  },
-  "toastSaveErrorSaveKeyNull": {
-    "title": "ID of the process required",
-    "body": "Please fill in the process ID with a unique ID before saving"
-  },
-  "toastSaveErrorDuplicateKey": {
-    "title": "Process ID already exists",
-    "body": "Change the process ID to a unique one"
-  },
-  "toastSaveErrorDuplicateName": {
-    "title": "Process name already exists",
-    "body": "Change the process name to a unique one"
-  },
-
-  "toastUpdateSuccessful": {
-    "title": "Updated successfully",
-    "body": "The process has been successfully updated."
-  },
-  "toastSomethingWentWrong": {
-    "title": "Error",
-    "body": "Ooops, something went wrong"
-  },
-  "toastProcessIdUndefined": {
-    "title": "No process ID",
-    "body": "Please, fill in the ID of the process before downloading the file"
-  },
-  "ttlFieldRequired": "This field is required for deployment",
-  "buttons": {
-    "accept": "Accept",
-	"filter": "Select filter",
-    "saveDiagram": "Save diagram",
-    "search": "Search",
-    "diagramGalery": "Diagram's gallery",
-    "createDiagram": "Create new",
-    "newDmn": "DMN",
-	"newForm": "Form",
-    "newBpmnc7": "BPMN 7",
-    "newBpmnc8": "BPMN 8",
-    "importFile": "Import local file",
-    "edit": "Edit",
-    "delDiagram": "Delete",
-    "prevDiagram": "Preview diagram",
-    "editor": "Editor",
-    "diagram": "Diagram",
-    "download": "Download",
-    "deploy": "Deploy",
-	"startProcess": "Start process",
-    "downloadDiagram": "Download BPMN diagram",
-    "cancel": "Cancel",
-    "searchTemplates": "Search templates",
-    "downloadSVG": "Download BPMN diagram in SVG format",
-    "console": "Console",
-    "close": "Close",
-	"delete": "Delete",
-	"copy": "Copy",
-	"forceSave": "Force save",	
-	"linkToProject": "Link to project"
-  },
-  "deployForm": {
-    "deployDiagram": "Deploy diagram",
-	"deploymentName": {
-		"label": "Deployment name",
-		"tooltip": "The deployment name helps uniquely identify and manage the process in the Deployments pane. It does not have to match the process ID"
+	"titles": {
+		"search": "Search for matching, upload one you have created, start with a blank version or import a local file.",
+		"recent": "Recent"
 	},
-    "optional": "Optional",
-    "tenantID": {
-		"label": "Tenant ID",
-		"tooltip": "Optionally specify a tenant to which the process will be deployed. Each tenant has its own isolated environment for processes and data"
+	"toastDeleteFormSucess": {
+		"title": "Form deleted",
+		"body": "The form has been deleted successfully"
 	},
-	"anotherEndpoint": {
-		"label": "Deploy in another instance",
-		"inputTitle": "Instance URL",
-		"errors": {
-			"required": "This field is required if deploying on another instance.",
-			"invalid": "Please enter a valid http:// or https:// url."
-		}
+	"toastDeleteFormFail": {
+		"title": "Error deleting form",
+		"body": "There has been an error deleting the form"
 	},
-    "restEndpoint": "REST endpoint",
-    "defaultEndpoint": "Choose a default CIB seven REST API endpoint",
-    "cibsevenEndpoint": "Should point to a running CIB seven REST API endpoint.",
-    "authentication": "Authentication",
-	"asAnotherUser": "As another user",
-    "username": "Username",
-    "password": "Password",
-    "token": "Token",
-    "rememberMe": "Remember me",
-    "includeFiles": "Include additional files:",
-    "done": "Done",
-    "title": "Deploy diagram"
-  },
-  "authenticationOptions": {
-    "basicauth": "HTTP Basic",
-    "token": "Bearer token"
-  },
-  "processNameError": "The name must not be empty",
-
-	"error": {
-		"note": "Ooops, we could not display the BPMN 2.0 diagram.",
-		"details": "Import error details",
-		"deployError": "It seems that there has been an error. Try again later!",
-		"ttlError": "History Time To Live (TTL) is required for deployment."
+	"toastDeleteProcessSucess": {
+		"title": "Process deleted",
+		"body": "The process has been deleted successfully"
 	},
-	"success": {
-		"deploySuccess": "Successful deployment!"
+	"toastDeleteProcessFail": {
+		"title": "Error deleting process",
+		"body": "There has been an error deleting the process"
 	},
-	"All": "All",
-	"Arrancable ":"Operational",
+	"toastFileNoLongerExists": {
+		"title": "File doesn't exist",
+		"body": "The file you are trying to load no longer exists"
+	},
+	"modalNotificacionMessageBlockedProcess": {
+		"title": "Process blocked",
+		"body": "The process you are trying to open is blocked because another user is modifying it."
+	},
+	"modalNotificacionMessageBlockedForm": {
+		"title": "Formular blocked",
+		"body": "The formular you are trying to open is blocked because another user is modifying it."
+	},
+	"modalNotificacionMessageBlockedDiagram": {
+		"title": "Diagram blocked",
+		"body": "The diagram you are trying to open is blocked because another user is modifying it."
+	},
+	"blockedSession": {
+		"process": "Process",
+		"dmn": "Diagram",
+		"form": "Form",
+		"user": "User",
+		"openedAt": "Opened at"
+	},
+	"modalCloseNotSaved": {
+		"title": "Closing {item} not saved",
+		"body": "Are you sure you want to close the unsaved {item}?"
+	},
+	"toastDeploySucessDeploy": {
+		"title": "Success",
+		"body": "Deployment successful"
+	},
+	"toastStartProcessSucess": {
+		"body": "Process started"
+	},
+	"toastStartProcessError": {
+		"body": "Error starting process"
+	},
+	"toastDeployErrorDeploy": {
+		"title": "Error",
+		"body": "Deployment has failed"
+	},
+	"toastLoadErrorFileExtension": {
+		"title": "Not a bpmn file",
+		"body": "Ooops, this file is not a BPMN 2.0 diagram."
+	},
+	"toastLoadErrorFile": {
+		"title": "Error loading file.",
+		"body": "The file could not be loaded correctly."
+	},
+	"toastCantSaveFailValidationXml": {
+		"title": "Validation error.",
+		"body": "Malformed XML. Please, solve it before saving"
+	},
+	"toastCantDownloadFailValidationXml": {
+		"title": "Validation error.",
+		"body": "Malformed XML. Please, solve it before downloading"
+	},
+	"toastCantDeployFailValidationXml": {
+		"title": "Validation error.",
+		"body": "Malformed XML. Please, solve it before deploying"
+	},
+	"toastCantViewModelerFailValidationXml": {
+		"title": "Validation error.",
+		"body": "Malformed XML. Please, solve it before continuing"
+	},
+	"toastSaveSuccessful": {
+		"title": "Saved successfully",
+		"body": "The process has been successfully saved."
+	},
+	"toastSaveErrorDuplicateKey": {
+		"title": "Process ID already exists",
+		"body": "Change the process ID to a unique one"
+	},
+	"toastUpdateSuccessful": {
+		"title": "Updated successfully",
+		"body": "The process has been successfully updated."
+	},
+	"toastSomethingWentWrong": {
+		"title": "Error",
+		"body": "Ooops, something went wrong"
+	},
+	"ttlFieldRequired": "This field is required for deployment",
+	"buttons": {
+		"accept": "Accept",
+		"filter": "Select filter",
+		"saveDiagram": "Save diagram",
+		"search": "Search",
+		"diagramGalery": "Diagram's gallery",
+		"createDiagram": "Create new",
+		"newDmn": "DMN",
+		"newForm": "Form",
+		"newBpmnc7": "BPMN 7",
+		"newBpmnc8": "BPMN 8",
+		"importFile": "Import local file",
+		"edit": "Edit",
+		"delDiagram": "Delete",
+		"prevDiagram": "Preview diagram",
+		"editor": "Editor",
+		"diagram": "Diagram",
+		"download": "Download",
+		"deploy": "Deploy",
+		"startProcess": "Start process",
+		"downloadDiagram": "Download BPMN diagram",
+		"cancel": "Cancel",
+		"searchTemplates": "Search templates",
+		"downloadSVG": "Download BPMN diagram in SVG format",
+		"console": "Console",
+		"close": "Close",
+		"delete": "Delete",
+		"copy": "Copy",
+		"forceSave": "Force save",
+		"linkToProject": "Link to project"
+	},
+	"deployForm": {
+		"deploymentName": {
+			"label": "Deployment name",
+			"tooltip": "The deployment name helps uniquely identify and manage the process in the Deployments pane. It does not have to match the process ID"
+		},
+		"tenantID": {
+			"label": "Tenant ID",
+			"tooltip": "Optionally specify a tenant to which the process will be deployed. Each tenant has its own isolated environment for processes and data"
+		},
+		"anotherEndpoint": {
+			"label": "Deploy in another instance",
+			"inputTitle": "Instance URL",
+			"errors": {
+				"required": "This field is required if deploying on another instance.",
+				"invalid": "Please enter a valid http:// or https:// url."
+			}
+		},
+		"authentication": "Authentication",
+		"asAnotherUser": "As another user",
+		"username": "Username",
+		"password": "Password",
+		"token": "Token",
+		"title": "Deploy diagram"
+	},
+	"authenticationOptions": {
+		"basicauth": "HTTP Basic"
+	},
 	"Close minimap": "Close minimap",
 	"Open minimap": "Open minimap",
 	"Version tag": "Version tag",
@@ -292,7 +241,7 @@
 	"Append end event": "Append end event",
 	"Append intermediate/boundary event": "Append intermediate/boundary event",
 	"Sub-process (expanded)": "Sub-process (expanded)",
-	"Change element": "Change element",	
+	"Change element": "Change element",
 	"Activate create/remove space tool": "Activate create/remove space tool",
 	"Activate global connect tool": "Activate global connect tool",
 	"Activate hand tool": "Activate hand tool",
@@ -390,54 +339,41 @@
 	"no process or collaboration to display": "no process or collaboration to display",
 	"no shape type specified": "no shape type specified",
 	"out of bounds release": "out of bounds release",
-	"ID must not be empty":"ID must not be empty.",
-	"dropFileToLoad":"Drop the file to load it.",
-	"loading" : "Loading",	
-	"modalImportedFile" :{
-		"title" : "This {item} already exists in the modeler",
-		"body" : "Do you want to continue working with the imported {item}?"
+	"ID must not be empty": "ID must not be empty.",
+	"dropFileToLoad": "Drop the file to load it.",
+	"loading": "Loading",
+	"modalImportedFile": {
+		"title": "This {item} already exists in the modeler",
+		"body": "Do you want to continue working with the imported {item}?"
 	},
-	"notFound" : "Not found",
-	"modalNewDiagram" :{
-		"title" : "Enter a name and ID for your {item}",
-		"processName" : "{item} name",
-		"processId" : "{item} ID",
-		"cancel" : "Do it later",
-		"qnameError":"ID must be a valid QName",
-		"fillName": "Name is required",
+	"notFound": "Not found",
+	"modalNewDiagram": {
+		"title": "Enter a name and ID for your {item}",
+		"processName": "{item} name",
+		"processId": "{item} ID",
+		"cancel": "Do it later",
+		"qnameError": "ID must be a valid QName",
 		"fillId": "ID is required",
-		"duplicatedId":"ID already exists"
-	},	
+		"duplicatedId": "ID already exists"
+	},
 	"noVersions": "No versions",
 	"noTemplates": "No templates",
-	"noForms": "No forms",
-	"noResources": "No resources",
 	"noItems": "No items",
-	"matches": "No matches | {count} match | {count} matches",
-	"version" : "Version",
-	"history" : "History version",
-	"date" : "Date",
-	"currentVersion" : "Current",	
-	"toastLoadTemplateJson":{
-		"title" : "Not found",
-		"body" : "Error loading element templates"
+	"version": "Version",
+	"history": "History version",
+	"toastLoadTemplateJson": {
+		"title": "Not found",
+		"body": "Error loading element templates"
 	},
-	"modalListSelectorTemplate":{
-		"title": "Select element template",
+	"modalChangeProcessVersion": {
+		"title": "Select version",
+		"body": "The unsaved changes will be lost. Are you sure?"
+	},
+	"modalListSelectortemplates": {
+		"title": "Templates not found",
 		"search": "Search template"
 	},
-	"modalChangeProcessVersion" :{
-		"title" : "Select version",
-		"body" : "The unsaved changes will be lost. Are you sure?"
-	},
-	"modalListSelectortemplates" :{
-		"title":"Templates not found",
-		"search": "Search template"
-	},
-	"modalListSelector" :{
-		"title":"Default"
-	},
-	"modalListSelectorchangeVersion" :{
+	"modalListSelectorchangeVersion": {
 		"title": "Select history version",
 		"headerVersion": "Version",
 		"headerDate": "Date",
@@ -452,8 +388,8 @@
 		"body": "Are you sure you want to delete the {item}"
 	},
 	"searchElementTemplates": {
-		"searchInput" :"Search for templates",
-		"others" : "Others",
+		"searchInput": "Search for templates",
+		"others": "Others",
 		"showInternal": "Show internal templates (synchronous)",
 		"showExternal": "Show external templates (asynchronous)",
 		"internalTemplatesTip": "Display templates that are executed directly inside the CIB seven engine. These are Java-based implementations that run synchronously within the same application. Suitable for lightweight cases.",
