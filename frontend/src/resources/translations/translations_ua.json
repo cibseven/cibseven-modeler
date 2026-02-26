@@ -403,5 +403,8 @@
 		"deleteConfirmTitle": "Удалить шаблон",
 		"deleteConfirmMessage": "Вы уверены, что хотите удалить шаблон \"{templateName}\"?\n\nЭто действие нельзя отменить.",
 		"deleteErrorMessage": "Ошибка удаления шаблона \"{templateName}\". Попробуйте еще раз."
+	},
+	"cib-header": {
+		"productName": "CIB seven Modeler"
 	}
 }

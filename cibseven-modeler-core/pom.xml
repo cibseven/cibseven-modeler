@@ -23,33 +23,6 @@
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
 
-		<!-- Core Flyway library (managed by Spring Boot BOM) -->
-		<dependency>
-			<groupId>org.flywaydb</groupId>
-			<artifactId>flyway-core</artifactId>
-		</dependency>
-
-		<!-- PostgreSQL -->
-		<dependency>
-			<groupId>org.flywaydb</groupId>
-			<artifactId>flyway-database-postgresql</artifactId>
-			<scope>runtime</scope>
-		</dependency>
-
-		<!-- Oracle -->
-		<dependency>
-			<groupId>org.flywaydb</groupId>
-			<artifactId>flyway-database-oracle</artifactId>
-			<scope>runtime</scope>
-		</dependency>
-
-		<!-- MySQL / MariaDB -->
-		<dependency>
-			<groupId>org.flywaydb</groupId>
-			<artifactId>flyway-mysql</artifactId>
-			<scope>runtime</scope>
-		</dependency>
-
 		<dependency>
 			<groupId>jakarta.persistence</groupId>
 			<artifactId>jakarta.persistence-api</artifactId>
@@ -58,6 +31,7 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
 		</dependency>
 
 		<!-- JDBC drivers provided at runtime; override via env DB_DRIVER when needed -->
@@ -111,7 +85,7 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-test</artifactId>
-
+			<scope>test</scope>
 		</dependency>
 
 		<dependency>
@@ -145,6 +119,7 @@
 		<groupId>org.springdoc</groupId>
 		<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 		<version>${version.openapi-starter-webmvc-ui}</version>
+		<optional>true</optional>
 	</dependency>
 
 	<!-- Include cibseven-webclient-core for REST service base classes (BaseService, BaseUserProvider, etc.) -->
