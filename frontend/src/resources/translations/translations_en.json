@@ -591,5 +591,8 @@
 		"ariaSortDes": "Sorted descending"
 	},
 	"Created by": "Created by",
-	"Actions": "Actions"
+	"Actions": "Actions",
+	"cib-header": {
+		"productName": "CIB seven Modeler"
+	}
 }

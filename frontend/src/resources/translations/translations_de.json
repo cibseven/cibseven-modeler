@@ -580,5 +580,8 @@
 	},
 	"Template ID": "Vorlagen-ID",
 	"Created by": "Erstellt von",
-	"Actions": "Aktionen"
+	"Actions": "Aktionen",
+	"cib-header": {
+		"productName": "CIB seven Modeler"
+	}
 }
