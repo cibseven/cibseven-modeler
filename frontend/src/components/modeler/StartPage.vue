@@ -81,10 +81,6 @@
                                             {{ $t('buttons.newBpmnc7') }}
                                         </button>
                                     </li>
-                                    <li> <button :title="$t('buttons.newBpmnc8')" type="button" class="dropdown-item" @click="handleClickCreateBpmnc8Diagram">
-                                            {{ $t('buttons.newBpmnc8') }}
-                                        </button>
-                                    </li>
                                     <li> <button :title="$t('buttons.newDmn')" type="button" class="dropdown-item" @click="handleClickCreateDmnDiagram">
                                             {{ $t('buttons.newDmn') }}
                                         </button>
@@ -124,7 +120,6 @@ import { useI18n } from 'vue-i18n'
 
 //starting files for new diagrams
 import diagramXMLC7 from '../../resources/camunda7.bpmn'
-import diagramXMLC8 from '../../resources/camunda8.bpmn'
 import dmnXML from '../../resources/dmn.dmn'
 //components
 import ProcessDiagramElement from './ProcessDiagramElement.vue'
@@ -134,7 +129,6 @@ import FormElement from './FormElement.vue'
 
 //types of diagram
 const TYPEC7 = 'bpmn-c7'
-const TYPEC8 = 'bpmn-c8'
 const TYPEDMN = 'dmn'
 const TYPEFORM = 'form'
 const functionAfterAccepting = ref(null)
@@ -148,8 +142,7 @@ const emit = defineEmits([
     'getStoredProcesses',
     'getStoredForms',
     'createNewDmnDiagram',
-    'createNewBpmnc7Diagram', 
-    'createNewBpmnc8Diagram',
+    'createNewBpmnc7Diagram',
     'createNewFormDiagram',
     'openSelectedFile',
     'openDiagram',
@@ -259,10 +252,6 @@ const handleClickCreateDmnDiagram = debounce(async () => {
 
 const handleClickCreateBpmnc7Diagram = debounce(async () => {
     emit('createNewBpmnc7Diagram', diagramXMLC7, TYPEC7)
-}, 500)
-
-const handleClickCreateBpmnc8Diagram = debounce(async () => {
-    emit('createNewBpmnc8Diagram', diagramXMLC8, TYPEC8)
 }, 500)
 
 const handleSearch = debounce(async () => {

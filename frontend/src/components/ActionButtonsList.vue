@@ -118,11 +118,6 @@ let modelProperties = { 'dmn' : {
         canExportSvg: true,
         canDeploy: true,
         canOpenConsole: true,
-    }, 'bpmn-c8': {
-        fileExtension: '.bpmn',
-        canExportSvg: true,
-        canDeploy: true,
-        canOpenConsole: true,
     }, 'form': {
         fileExtension: '.form',
         canExportSvg: false,
