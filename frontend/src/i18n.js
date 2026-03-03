@@ -37,13 +37,11 @@ const messages = {
 
 export function createI18n() {
 	const urlParams = new URLSearchParams(window.location.search)
-	language = urlParams.get('locale') || navigator.language.split('-')[0] || navigator.userLanguage
+	language = urlParams.get('locale') || localStorage.getItem('language') || navigator.language.split('-')[0] || navigator.userLanguage
 
 	if (!Object.hasOwn(messages, language)) {
 		language = defaultLanguage
 	}
-
-	localStorage.setItem('language', language)
 
 	return _createI18n({
 		legacy: false,
@@ -60,7 +58,6 @@ export const i18n = createI18n()
 export function setLocale(locale) {
 	if (Object.hasOwn(messages, locale)) {
 		language = locale
-		localStorage.setItem('language', language)
 		if (i18n.global) {
 			i18n.global.locale.value = locale
 		}
