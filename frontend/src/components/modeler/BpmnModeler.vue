@@ -158,11 +158,9 @@ import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css'
 
 import { debounce } from 'min-dash'
 
-import camunda8Templates from '../../resources/camunda8-templates.json' // for camunda 8
-
 //import bpmn modules
 import BpmnModeler from 'bpmn-js/lib/Modeler'
-import { BpmnPropertiesProviderModule, BpmnPropertiesPanelModule, CamundaPlatformPropertiesProviderModule, ZeebePropertiesProviderModule } from 'bpmn-js-properties-panel'
+import { BpmnPropertiesProviderModule, BpmnPropertiesPanelModule, CamundaPlatformPropertiesProviderModule } from 'bpmn-js-properties-panel'
 import { ElementTemplatesPropertiesProviderModule } from 'bpmn-js-element-templates'
 import ElementTemplateChooserModule from '@bpmn-io/element-template-chooser'
 import CamundaModdleDescriptors from 'camunda-bpmn-moddle/resources/camunda.json'
@@ -171,11 +169,7 @@ import TokenSimulationModule from 'bpmn-js-token-simulation'
 import lintModule from 'bpmn-js-bpmnlint'
 import linterConfig from '../../../linterConfig'
 
-// Camunda 8 behaviors
-import ZeebeBehaviorsModule from 'camunda-bpmn-js-behaviors/lib/camunda-cloud'
 import camundaPlatformBehaviors from 'camunda-bpmn-js-behaviors/lib/camunda-platform'
-import zeebeModdle from 'zeebe-bpmn-moddle/resources/zeebe.json'
-import camundaCloudBehaviors from 'camunda-bpmn-js-behaviors/lib/camunda-cloud'
 
 //color picker
 import BpmnColorPickerModule from 'bpmn-js-color-picker'
@@ -228,7 +222,6 @@ const consolePanel = ref(null)
 //variables for the list selector component
 const listSelector = ref(null)
 const TYPEC7 = 'bpmn-c7'
-const TYPEC8 = 'bpmn-c8'
 const propertiesPanelComponent = ref(null)
 const isVisiblePropertyPanel = ref(true)
 const resizableDiv = ref(null)
@@ -265,7 +258,7 @@ const emit = defineEmits([
 ])
 
 const props = defineProps({
-	diagramType: { type: String, default: null }, //'bpmn-c7','bpmn-c8','dmn'
+	diagramType: { type: String, default: null }, //'bpmn-c7','dmn'
 	clipboard: { type: Object, required: true },
 	xml: String,
 	tabElementIndex: {
@@ -323,7 +316,7 @@ const { updateParentHeight, updateParentWidth,  parentWidth, parentHeight } = us
 
 let bpmnModeler = null
 let isScriptTaskUpdate = false
-let typeOfDiagram = null //'bpmn-c7','bpmn-c8','dmn'
+let typeOfDiagram = null //'bpmn-c7','dmn'
 
 onMounted(async () => {
 	initializeModeler()
@@ -409,8 +402,6 @@ const initializeModeler = async () => {
 	switch (props.diagramType) {
 		case TYPEC7: initializeCamunda7Modeler()
 			break
-		case TYPEC8: initializeCamunda8Modeler()
-			break
 		default: initializeCamunda7Modeler()
 			break
 	}
@@ -490,40 +481,6 @@ const initializeModeler = async () => {
 	_setupDiagramFunctions()
 	customizedElementTemplatesData = customizedModalElementTemplatesData(bpmnModeler, containerModeler, elementTemplatesModal)
 	_setupTTLMonitoring()
-}
-
-const initializeCamunda8Modeler = () => {
-	typeOfDiagram = TYPEC8 // saves type of diagram
-	const customTranslateModule = {
-		translate: ['value', customTranslate]
-	}
-	bpmnModeler = new BpmnModeler({
-		container: canvas.value,
-		propertiesPanel: {
-			parent: propertyPanel.value
-		},
-		additionalModules: [
-
-			BpmnPropertiesPanelModule,
-			BpmnPropertiesProviderModule,
-			ZeebePropertiesProviderModule, // for camunda 8
-			ZeebeBehaviorsModule, // for camunda 8
-			ElementTemplatesPropertiesProviderModule,
-			ElementTemplateChooserModule,
-			minimapModule,
-			camundaCloudBehaviors,
-			SearchModule,
-			BpmnColorPickerModule,
-			customTranslateModule,
-			TokenSimulationModule,
-			{ clipboard: ['value', props.clipboard] }
-		],
-		elementTemplates: camunda8Templates, //templates for camunda 8
-		moddleExtensions: {
-			zeebe: zeebeModdle // for camunda 8
-		}
-	}
-	)
 }
 
 const initializeCamunda7Modeler = () => {

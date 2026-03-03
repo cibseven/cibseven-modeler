@@ -111,7 +111,6 @@
     "newDmn": "DMN",
     "newForm": "Form",
     "newBpmnc7": "BPMN 7",
-    "newBpmnc8": "BPMN 8",
     "importFile": "Lokale Datei importieren",
     "edit": "Bearbeiten",
     "delDiagram": "Löschen",
@@ -503,7 +502,6 @@
   "items": {
     "process": "Prozess",
     "bpmn-c7": "Prozess",
-    "bpmn-c8": "Prozess",
     "dmn": "Diagramm",
     "bpmn": "Prozess",
     "form": "Formular"
@@ -511,7 +509,6 @@
   "Items": {
     "process": "Prozess",
     "bpmn-c7": "Prozess",
-    "bpmn-c8": "Prozess",
     "dmn": "Diagramm",
     "form": "Formular"
   },

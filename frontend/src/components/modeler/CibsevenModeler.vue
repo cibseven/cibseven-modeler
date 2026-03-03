@@ -39,7 +39,7 @@
 			:class="{ 'active show': activeTab === -1 }" :aria-labelledby="`dashboard-tab`" tabindex="0">
 			<StartPage ref="startPage" v-if="processes || forms " :processes="processes" :forms="forms"
 				@openDiagram="openDiagramFromChild" @openSelectedFile="handleFile" @showToastMessage="showToastMessage"
-				@createNewBpmnc7Diagram="createNewBpmnDiagram" @createNewBpmnc8Diagram="createNewBpmnDiagram"
+				@createNewBpmnc7Diagram="createNewBpmnDiagram"
 				@createNewDmnDiagram="createNewDmnDiagram" @getStoredProcesses="getStoredProcesses" @getStoredForms="getStoredForms"
 				@createNewFormDiagram="createNewFormDiagram"
 				@closeRemovedProcessesOpenInTab="closeRemovedProcessesOpenInTab">
@@ -50,7 +50,7 @@
 			role="tabpanel" :aria-labelledby="`process${tabElement.keyOfTabNav}-tab`" tabindex="0"
 			v-on:keydown.ctrl.s="e => saveWithKeyboard(e, tabElement.name, index)">
 			<BpmnModeler
-				v-if="tabNavListXml[index] && waitToLoad && (tabNavList[index].type === 'bpmn-c7' || tabNavList[index].type === 'bpmn-c8')"
+				v-if="tabNavListXml[index] && waitToLoad && tabNavList[index].type === 'bpmn-c7'"
 				:tabElementIndex="index" :ref="el => modeler[index] = el" :tabElement="tabElement"
 				v-show="tabElement.isPropertyPanelVisible" :diagramType="tabNavList[index].type"
 				:isActiveTab="index === activeTab" :clipboard="clipboard" :xml="tabNavListXml[index]"
@@ -277,7 +277,6 @@ const _loadElementTemplatesByConfig = async () => {
 
 // Watch for changes in element templates store and update immediately
 watch(() => store.getters['modeler/elementTemplates/allElementTemplateContents'], (newTemplates) => {
-	console.log('Element templates changed in store, updating FlowModeler...')
 	const templateContents = newTemplates || []
 	elementTemplateJson.value = filterTemplates(templateContents, config)
 }, { deep: true })

@@ -16,10 +16,8 @@
  */
 
 const TYPEC7 = 'bpmn-c7'
-const TYPEC8 = 'bpmn-c8'
 const TYPEDMN = 'dmn'
 const BPMNC7TAG = 'xmlns:camunda'
-const BPMNC8TAG = 'xmlns:zeebe'
 
 export const getTimeStamp = () => {
 	const currentTime = new Date()
@@ -94,11 +92,9 @@ export const checkCamundaVersion = (xmlString) => {
 		let attr = attributes[i]
 		if (!attr) break
 		if (attr.name === 'modeler:executionPlatformVersion') {
-			if (Number(attr.value[0]) === 8) return TYPEC8
-			else return TYPEC7
+			return TYPEC7
 		}
 		if (attr.name === BPMNC7TAG) return TYPEC7
-		if (attr.name === BPMNC8TAG) return TYPEC8
 	}
 	return TYPEC7
 }
@@ -302,4 +298,4 @@ export const addHtmlErrorsToConsole = error => {
 	return error
 }
 
-export { TYPEC7, TYPEC8, TYPEDMN }
+export { TYPEC7, TYPEDMN }

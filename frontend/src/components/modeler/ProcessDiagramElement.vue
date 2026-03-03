@@ -56,7 +56,6 @@ const store = useStore()
 const isDeleting = ref(false)
 const iconClass = {
     'bpmn-c7' : 'mdi-map-legend',
-    'bpmn-c8' : 'mdi-map-legend',
     'dmn' : 'mdi-wall-sconce-flat-outline'
 }
 
