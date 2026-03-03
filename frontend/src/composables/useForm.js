@@ -48,8 +48,9 @@ export default function useForm(props, emit, canvas, propertyPanel, notification
                 parent: propertyPanel.value
             }
         })
-        if (typeof(schema) !== 'object') schema = JSON.parse(schema)
-        await formEditor.value.importSchema(schema)
+        let schemaToLoad = json || schema
+        if (typeof(schemaToLoad) !== 'object') schemaToLoad = JSON.parse(schemaToLoad)
+        await formEditor.value.importSchema(schemaToLoad)
         json = await formEditor.value.getSchema()
         emit('updateEditorXML', JSON.stringify(json, null, 2),  props.tabElementIndex)
         validateJson(json)
