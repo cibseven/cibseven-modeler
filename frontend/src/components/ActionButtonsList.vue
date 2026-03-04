@@ -121,7 +121,7 @@ let modelProperties = { 'dmn' : {
     }, 'form': {
         fileExtension: '.form',
         canExportSvg: false,
-        canDeploy: false,
+        canDeploy: true,
         canOpenConsole: false
     }
 }

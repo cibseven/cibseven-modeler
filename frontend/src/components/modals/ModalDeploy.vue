@@ -150,7 +150,7 @@
 								<button @click="deploy" class="btn btn-primary" :disabled="!canDeploy">
 									{{ $t('buttons.deploy') }}
 								</button>
-								<button @click="deployAndStart" type="button" class="btn btn-secondary mx-2" v-if="props.tabNavList.type !== 'dmn'" :disabled="!canStart">
+								<button @click="deployAndStart" type="button" class="btn btn-secondary mx-2" v-if="props.tabNavList.type !== 'dmn' && props.tabNavList.type !== 'form'" :disabled="!canStart">
 									{{ $t('buttons.startProcess') }}
 								</button>
 							</div>
@@ -291,6 +291,8 @@ const deploy = async () => {
 	let type = 'dmn'
 	if (props.tabNavList.type.startsWith('bpmn')) {
 		type = 'bpmn'
+	} else if (props.tabNavList.type === 'form') {
+		type = 'form'
 	}
 
 	let hasErrors = false
@@ -384,6 +386,14 @@ const _saveDeployValuesLocalStorage = (auth, cibsevenInstanceUrl, ownEndPoint) =
 }
 
 const _getProcessKeyForDeployName = () => {
+	if (props.tabNavList.type === 'form') {
+		try {
+			const formJson = JSON.parse(props.diagram)
+			return formJson.id || null
+		} catch {
+			return null
+		}
+	}
 	let foundExternalProcessKey = getProcessKeyFromBpmn(props.diagram) ?? getTagValueFromXml(props.diagram, 'definitions', 'id')
 	return foundExternalProcessKey
 }

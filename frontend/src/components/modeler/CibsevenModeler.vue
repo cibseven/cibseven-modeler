@@ -143,7 +143,7 @@
 
 	<ModalNewDiagram ref="modalNewDiagram" :showModal="isShowModalNewDiagram">
 	</ModalNewDiagram>
-	<modal-deploy :diagram="editorXML[activeTab]" v-if="activeTab > -1 && tabNavList[activeTab].type !== 'form'" :showModal="isShowModal"
+	<modal-deploy :diagram="editorXML[activeTab]" v-if="activeTab > -1" :showModal="isShowModal"
 		:tabNavList="tabNavList[activeTab]" @toggleModal="toggleModal" @showToastMessage="showToastMessage"
 		@add-error-message-to-console="addErrorMessageToConsole" @show-console-notification="showConsoleNotification">
 	</modal-deploy>
