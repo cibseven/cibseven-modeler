@@ -197,8 +197,6 @@ import ConfirmModal from '../modals/ConfirmModal.vue'
 import { getHeadersForSelector } from './SelectorHeaders'
 
 import { onMounted, inject, ref, onUpdated, watch, computed, nextTick, watchEffect } from 'vue'
-import { useStore } from 'vuex'
-
 //composables
 import useModeler from '../../composables/useModeler.js'
 import useCustomizedTemplateModal from '../../composables/customizedTemplateModal.js'
@@ -208,7 +206,6 @@ import useMonacoEditor from '../../composables/useMonacoEditor.js'
 //utils
 import { checkJSON, decodeBase64ToUtf8 } from '../../utils.js'
 
-const store = useStore() // to access the store
 const monaco = inject('monaco')
 const divScriptTaskID = 'bio-properties-panel-scriptValue'
 const canvasWidth = ref(0)
@@ -230,7 +227,6 @@ const notificationModal = ref(null)
 //config.js
 const config = inject('config', {})
 
-let customizedElementTemplatesData = null
 //popover for task filters
 const filterPopover = ref({})
 const popover = ref(null)
@@ -479,7 +475,7 @@ const initializeModeler = async () => {
 
 	propertiesPanelComponent.value = bpmnModeler.get('propertiesPanel')
 	_setupDiagramFunctions()
-	customizedElementTemplatesData = customizedModalElementTemplatesData(bpmnModeler, containerModeler, elementTemplatesModal)
+	customizedModalElementTemplatesData(bpmnModeler, containerModeler, elementTemplatesModal)
 	_setupTTLMonitoring()
 }
 

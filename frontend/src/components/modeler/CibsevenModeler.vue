@@ -164,7 +164,7 @@
 import * as monaco from 'monaco-editor'
 import { useStore } from 'vuex'
 import { useRoute } from 'vue-router'
-import { compareXML, getTimeStamp, getTagValueFromXml, checkCamundaVersion, generateUniqueId, setTagValueOfXml, getProcessKeyFromBpmn, getBearerToken, filterTemplates, addHtmlErrorsToConsole } from '../../utils.js'
+import { compareXML, getTimeStamp, getTagValueFromXml, checkCamundaVersion, generateUniqueId, setTagValueOfXml, getProcessKeyFromBpmn, filterTemplates } from '../../utils.js'
 import Clipboard from 'diagram-js/lib/features/clipboard/Clipboard'
 import { ref, onMounted, nextTick, watch, computed, inject, provide } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -495,7 +495,7 @@ const assignSessionIdToProcess = (tabElementIndex, processSessionId) => {
 	tabNavList.value[tabElementIndex].sessionId = processSessionId
 }
 
-const updateDiagramXml = async (valueFromChild, tabElementIndex, cansave, typeDiagram) => {
+const updateDiagramXml = async (valueFromChild, tabElementIndex, cansave, _typeDiagram) => {
 	tabNavListXml.value[tabElementIndex] = valueFromChild
 	modeler.value[tabElementIndex] && modeler.value[tabElementIndex]._validate(valueFromChild)
 	if (cansave !== null) {
@@ -642,37 +642,6 @@ const _copyArray = arrayRef => {
 	return arrayRef.value.map(element => element)
 }
 
-const compareJSON = (json1, json2) => {
-  // Check if both values are the same reference or primitives
-  if (json1 === json2) return true;
-
-  // Check if both are objects and not null
-  if (
-    typeof json1 !== "object" ||
-    typeof json2 !== "object" ||
-    json1 === null ||
-    json2 === null
-  ) {
-    return false;
-  }
-
-  // Get keys of both objects
-  const keys1 = Object.keys(json1);
-  const keys2 = Object.keys(json2);
-
-  // Check if the number of keys is different
-  if (keys1.length !== keys2.length) return false;
-
-  // Check if all keys and their values are equal recursively
-  for (const key of keys1) {
-    if (!keys2.includes(key) || !compareJSON(json1[key], json2[key])) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 const _openFormFromImportedFile = async jsonExternal => {
 	const jsonId = JSON.parse(jsonExternal)?.id
 	const foundForm = forms.value.find(form => form.formId === jsonId)	
@@ -795,7 +764,7 @@ const _addNewBpmnFromLoadedXml = (diagramType, xmlToLoad, foundExternalProcessKe
 	tabNavListXml.value.push(xmlToLoad)
 }
 
-const _openProcessFromExternalXml = async (xml, resExistingProcess, externalProcessKey, decodedProcessId) => {
+const _openProcessFromExternalXml = async (xml, resExistingProcess, externalProcessKey, _decodedProcessId) => {
 	const resXmlExternalUrl = xml
 	let diagramType = null
 	let foundExternalProcessKey = getTagValueFromXml(resXmlExternalUrl, 'process', 'id')

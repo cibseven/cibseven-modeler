@@ -273,7 +273,7 @@ onMounted(() => {
 	*/
 })
 
-watch(() => props.showModal, (newValue, prevValue) => {
+watch(() => props.showModal, (newValue) => {
 	if (newValue) {
 		_showModalComp()
 		emit('toggleModal', false)

@@ -44,6 +44,7 @@ import { ref, inject } from 'vue'
 import { useBpmnFilterPopover } from '../composables/useBpmnFilterPopover.js'
 
 export default {
+  name: 'BpmnFilterPopover',
   props: {
     container : Object,
     classesOn: {

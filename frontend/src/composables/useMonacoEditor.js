@@ -14,7 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { getTimeStamp } from '../utils.js'
 // Use inline workers to avoid path issues when library is consumed
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker&inline'

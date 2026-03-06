@@ -50,7 +50,7 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
   onMounted(async()=> {
     processId.value = props.tabElement.id
     processHistoryListComp.value = await getProcessHistoryList()
-    const { sessionResponse, forceSave } = await checkIfProcessBlocked(notificationModal, false)
+    const { sessionResponse } = await checkIfProcessBlocked(notificationModal, false)
     if(sessionResponse.sessionId) emit('assignSessionIdToProcess', props.tabElementIndex, sessionResponse.sessionId)
   })
 
@@ -250,11 +250,11 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
 
     try {
       canvas = modeler.get('canvas')
-    } catch (error) {
+    } catch {
         // If the above fails, try to get the canvas from the active viewer
         try {
             canvas = modeler.getActiveViewer().get('canvas')
-        } catch (innerError) {
+        } catch {
             canvas = null // or any other fallback action
         }
       }
@@ -302,10 +302,10 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
     let dontSaveSvg = false
     try {
       data = await modeler.saveSVG()
-    } catch (error) {
+    } catch {
       try {
         data = await modeler?.getActiveViewer()?.saveSVG()
-      } catch (error) {
+      } catch {
         dontSaveSvg = true
       }
     }  
