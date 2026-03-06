@@ -64,8 +64,8 @@ export function decodeBase64ToUtf8(base64) {
 }
 
 export const getTagValueFromXml = (resXmlExternalUrl, xmlTag, xmlProperty) => {
-	let attributes = new DOMParser().parseFromString(resXmlExternalUrl, 'text/xml')
-	let processElement = attributes.querySelector(`*|${xmlTag}`)
+	const attributes = new DOMParser().parseFromString(resXmlExternalUrl, 'text/xml')
+	const processElement = attributes.querySelector(`*|${xmlTag}`)
 	return processElement ? processElement.getAttribute(xmlProperty) : null
 }
 
@@ -78,18 +78,18 @@ export const getProcessKeyFromBpmn = (resXmlExternalUrl) => {
 }
 
 export const setTagValueOfXml = (resXmlExternalUrl, xmlTag, attribute, xmlPropertyValue) => {
-	let xmlDoc = new DOMParser()
-	let attributes = xmlDoc.parseFromString(resXmlExternalUrl, 'text/xml')
-	let processElements = attributes.getElementsByTagName(xmlTag)
+	const xmlDoc = new DOMParser()
+	const attributes = xmlDoc.parseFromString(resXmlExternalUrl, 'text/xml')
+	const processElements = attributes.getElementsByTagName(xmlTag)
 	processElements[0]?.setAttribute(attribute, xmlPropertyValue)
 	return new XMLSerializer().serializeToString(attributes)
 }
 
 export const checkCamundaVersion = (xmlString) => {
-	let xmlDoc = new DOMParser().parseFromString(xmlString, 'text/xml')
-	let attributes = xmlDoc.documentElement.attributes
+	const xmlDoc = new DOMParser().parseFromString(xmlString, 'text/xml')
+	const attributes = xmlDoc.documentElement.attributes
 	for (let i = attributes.length - 1; i >= 0; i--) {
-		let attr = attributes[i]
+		const attr = attributes[i]
 		if (!attr) break
 		if (attr.name === 'modeler:executionPlatformVersion') {
 			return TYPEC7
@@ -100,23 +100,23 @@ export const checkCamundaVersion = (xmlString) => {
 }
 
 export const getOnlyNameOfTemplate = (templateWithVersion) => {
-	let parts = templateWithVersion.split('-')
+	const parts = templateWithVersion.split('-')
 	return parts.slice(0, -1).join('-')
 }
 
 export const generateUniqueId = () => Math.random().toString(36).substring(2)
 
 export const checkJSON = (xml, template) => {
-	let xmlDoc = new DOMParser().parseFromString(xml, 'text/xml')
+	const xmlDoc = new DOMParser().parseFromString(xml, 'text/xml')
 	const camundaNamespace = 'http://camunda.org/schema/1.0/bpmn'
-	let nodesArray = []
+	const nodesArray = []
 
-	let allElements = Array.from(xmlDoc.getElementsByTagName('*'))
+	const allElements = Array.from(xmlDoc.getElementsByTagName('*'))
 
 	allElements.forEach((element) => {
-		let modelerTemplate = element.getAttributeNS(camundaNamespace, 'modelerTemplate')
+		const modelerTemplate = element.getAttributeNS(camundaNamespace, 'modelerTemplate')
 		if (modelerTemplate) {
-			let tagName = element.nodeName.replace(/\d+/g, '') // clean tag name
+			const tagName = element.nodeName.replace(/\d+/g, '') // clean tag name
 			nodesArray.push({
 				id: element.getAttribute('id'),
 				name: element.getAttribute('name'),
@@ -133,21 +133,21 @@ export const checkJSON = (xml, template) => {
 }
 
 export const checkIfIdFromTemplateExistsInJson = (template, node) => {
-	let checkId = node.nameOfTemplate
+	const checkId = node.nameOfTemplate
 	if (!checkId) return null
 	let isFound = false
-	let idToCheck = getOnlyNameOfTemplate(checkId)
+	const idToCheck = getOnlyNameOfTemplate(checkId)
 	const foundTemplates = template.find((el) => el.id === checkId)
 	if (foundTemplates) isFound = true
 	else {
 		for (let i = 0; i < template.length; i++) {
-			let obj = template[i]
-			let partialId = getOnlyNameOfTemplate(obj.id) // id until last dash
+			const obj = template[i]
+			const partialId = getOnlyNameOfTemplate(obj.id) // id until last dash
 			// If the object is found
 			if (partialId === idToCheck) {
 				//the name without the version matches
 				//check if the type of task matches
-				let foundIndex = obj.appliesTo.find(
+				const foundIndex = obj.appliesTo.find(
 					(el) => el.toLowerCase() === node.typeOfTask.toLowerCase()
 				)
 				if (!foundIndex) isFound = true
@@ -161,9 +161,9 @@ export const checkIfIdFromTemplateExistsInJson = (template, node) => {
 }
 
 export const compareXML = (xml1, xml2) => {
-	let parser = new DOMParser()
-	let xmlDoc1 = parser.parseFromString(xml1, 'text/xml')
-	let xmlDoc2 = parser.parseFromString(xml2, 'text/xml')
+	const parser = new DOMParser()
+	const xmlDoc1 = parser.parseFromString(xml1, 'text/xml')
+	const xmlDoc2 = parser.parseFromString(xml2, 'text/xml')
 	return xmlDoc1.isEqualNode(xmlDoc2)
 }
 
@@ -264,7 +264,7 @@ export const filterTemplates = (templates, config) => {
 				return true // Exact match by ID
 			}
 
-			let splitName = template.name.split('-').map(part => part.trim())
+			const splitName = template.name.split('-').map(part => part.trim())
 
 			if (splitName.length > 1) {
 				if (splitName[0].toLowerCase() === criteria.toLowerCase()) {

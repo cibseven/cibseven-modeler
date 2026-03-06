@@ -49,7 +49,7 @@
 							<h6>{{ $t('bpmnFilter.title') }}:</h6>
 						</template>
 						<template #body>
-							<div ref="filterPopover" class="form-check form-switch" v-for="filter,index in config.modeler?.filterBpmn">
+							<div ref="filterPopover" class="form-check form-switch" v-for="filter,index in config.modeler?.filterBpmn" :key="index">
 								<input class="form-check-input" type="checkbox" :ref="el => filterPopover[index] = el" :id="`${filter.type}-${props.tabElement.id}-taskSwitch`" @change="popover.handleBpmnFilter($event, bpmnModeler, filter, filterPopover)">
 								<!-- :style="{ backgroundColor: filter.color }" -->
 								<label class="form-check-label text-secondary" :for="`${filter.type}-${props.tabElement.id}-taskSwitch`">{{ filter.name }}</label>
@@ -122,12 +122,12 @@
 				<table class="table">
 					<thead>
 						<tr>
-							<th v-for="column in notificationMessageData?.header">{{ $t(column) }}</th>
+							<th v-for="(column, idx) in notificationMessageData?.header" :key="idx">{{ $t(column) }}</th>
 						</tr>
 					</thead>
 					<tbody>
 						<tr>
-							<td v-for="column in notificationMessageData?.body">{{ column }}</td>
+							<td v-for="(column, idx) in notificationMessageData?.body" :key="idx">{{ column }}</td>
 						</tr>
 					</tbody>
 				</table>
@@ -150,7 +150,6 @@ import 'bpmn-js/dist/assets/bpmn-js.css'
 import 'diagram-js-minimap/assets/diagram-js-minimap.css'
 import '@bpmn-io/element-template-chooser/dist/element-template-chooser.css'
 import 'bpmn-js-color-picker/colors/color-picker.css'
-import 'bpmn-js/dist/assets/diagram-js.css'
 import '@bpmn-io/properties-panel/assets/properties-panel.css'
 import 'bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css'
 import 'bpmn-js-bpmnlint/dist/assets/css/bpmn-js-bpmnlint.css'
@@ -197,8 +196,6 @@ import ConfirmModal from '../modals/ConfirmModal.vue'
 import { getHeadersForSelector } from './SelectorHeaders'
 
 import { onMounted, inject, ref, onUpdated, watch, computed, nextTick, watchEffect } from 'vue'
-import { useStore } from 'vuex'
-
 //composables
 import useModeler from '../../composables/useModeler.js'
 import useCustomizedTemplateModal from '../../composables/customizedTemplateModal.js'
@@ -208,7 +205,6 @@ import useMonacoEditor from '../../composables/useMonacoEditor.js'
 //utils
 import { checkJSON, decodeBase64ToUtf8 } from '../../utils.js'
 
-const store = useStore() // to access the store
 const monaco = inject('monaco')
 const divScriptTaskID = 'bio-properties-panel-scriptValue'
 const canvasWidth = ref(0)
@@ -228,9 +224,8 @@ const resizableDiv = ref(null)
 //for session blocked modal
 const notificationModal = ref(null)
 //config.js
-let config = inject('config', {})
+const config = inject('config', {})
 
-let customizedElementTemplatesData = null
 //popover for task filters
 const filterPopover = ref({})
 const popover = ref(null)
@@ -479,7 +474,7 @@ const initializeModeler = async () => {
 
 	propertiesPanelComponent.value = bpmnModeler.get('propertiesPanel')
 	_setupDiagramFunctions()
-	customizedElementTemplatesData = customizedModalElementTemplatesData(bpmnModeler, containerModeler, elementTemplatesModal)
+	customizedModalElementTemplatesData(bpmnModeler, containerModeler, elementTemplatesModal)
 	_setupTTLMonitoring()
 }
 
@@ -592,7 +587,7 @@ const _validate = async xml => {
 const _saveDiagram = async () => await saveProcess(bpmnModeler, typeOfDiagram, _setupDiagramFunctions, _updatetemplatesListButton, notificationModal)
 
 const _createMonacoEditor = (scriptDivId, textArea) => {
-	let divMonaco = document.createElement('div')
+	const divMonaco = document.createElement('div')
 	divMonaco.id = `${scriptDivId}`
 	divMonaco.style.width = '100%'
 	divMonaco.style.minHeight = '200px'
@@ -611,7 +606,7 @@ const _createMonacoEditor = (scriptDivId, textArea) => {
 	}
 
 	textArea.style.display = 'none'
-	let { createMonacoEditorForScripts } = useMonacoEditor(monaco, props)
+	const { createMonacoEditorForScripts } = useMonacoEditor(monaco, props)
 
 	return createMonacoEditorForScripts(divMonaco, textArea.value)
 }
@@ -623,8 +618,8 @@ const hideModalListSelector = () => {
 
 const selectElementRegistryById = elementId => {
 	const elementRegistry = bpmnModeler.get('elementRegistry')
-	let foundElementRegistry = elementRegistry.get(elementId)
-	let selection = bpmnModeler.get('selection')
+	const foundElementRegistry = elementRegistry.get(elementId)
+	const selection = bpmnModeler.get('selection')
 
 	if (!foundElementRegistry || !selection) return
 
@@ -657,9 +652,9 @@ const togglePropertiesPanel = value => {
 }
 
 //region History selection
-var showConfirmDialog = ref(false)
-var modalData = ref({})
-var selectedItem = null
+const showConfirmDialog = ref(false)
+const modalData = ref({})
+let selectedItem = null
 
 const _showModal = () => showConfirmDialog.value = true
 const _hideModal = () => showConfirmDialog.value = false
@@ -674,7 +669,7 @@ const handleListSelection = (item) => {
 			selectElementRegistryById(item.id)
 			hideModalListSelector()
 			return
-		case 'changeVersion':
+		case 'changeVersion': {
 			const diagram = item.diagram
 			const version = item.version
 			modalData.value = { encodedXml: diagram, version }
@@ -688,6 +683,7 @@ const handleListSelection = (item) => {
 			}
 			
 			return
+		}
 		default:
 			return null
 	}
@@ -715,7 +711,7 @@ const _setMonacoEditorToDiv = (e, divId) => {
 	}
 
 	setTimeout(() => { // needed to load the component in the propertypanel		
-		let element = e.context?.element ?? e.element // if it is called in different commandStacks it will take the right route
+		const element = e.context?.element ?? e.element // if it is called in different commandStacks it will take the right route
 		// alternative with another events e.element.type
 
 		if (element.type !== 'bpmn:ScriptTask') {// continues only if a script task has being loaded
@@ -723,7 +719,7 @@ const _setMonacoEditorToDiv = (e, divId) => {
 		}
 		// to get the value of the selected script task
 
-		let textAreaScriptTask = propertyPanel.value.querySelector(`#${divId}`)
+		const textAreaScriptTask = propertyPanel.value.querySelector(`#${divId}`)
 
 		if (!textAreaScriptTask) { // if the textarea is not loaded or created it will not continue
 			return
@@ -769,10 +765,10 @@ const _openDiagram = async xml => {
 
 //centers the view in the element
 const _moveViewToElement = element => {
-	let canvas = bpmnModeler.get('canvas')
-	let currentViewbox = canvas.viewbox()
+	const canvas = bpmnModeler.get('canvas')
+	const currentViewbox = canvas.viewbox()
 
-	let elementMid = {
+	const elementMid = {
 		x: element.x + element.width / 2,
 		y: element.y + element.height / 2
 	}
@@ -791,7 +787,7 @@ const _updatetemplatesListButton = xml => {
 }
 
 const _addingFormFieldToStartEvent = (element) => {
-	let bpmnElement = element.di.bpmnElement
+	const bpmnElement = element.di.bpmnElement
 
 	// to add form fields when the form type is embedded or external
 	if (bpmnElement.$type === 'bpmn:StartEvent' && bpmnElement?.extensionElements?.$type === 'bpmn:ExtensionElements') {
@@ -811,7 +807,7 @@ const _openCalledElementWhenCalActivity = async e => {
 	await nextTick()
 	if (e && e.element?.type === 'bpmn:CallActivity') {
 		//finds the id with that id and adds the open class to its children to uncollapse it
-		let targetDiv = _simulateClickOnDiv('div[data-group-id="group-CamundaPlatform__CallActivity"]', '.bio-properties-panel-group-header')	
+		const targetDiv = _simulateClickOnDiv('div[data-group-id="group-CamundaPlatform__CallActivity"]', '.bio-properties-panel-group-header')	
 		if (!targetDiv) {
 			setTimeout(() => {
 				_simulateClickOnDiv('div[data-group-id="group-CamundaPlatform__CallActivity', '.bio-properties-panel-group-header')
@@ -822,7 +818,7 @@ const _openCalledElementWhenCalActivity = async e => {
 
 //simulate a click on a div to uncollapse it
 const _simulateClickOnDiv = async (parentDivId, divToClick) => {
-	let targetDiv = containerModeler.value.querySelector(parentDivId)
+	const targetDiv = containerModeler.value.querySelector(parentDivId)
 	let foundDivToClick = null
 	if (targetDiv) {
 		foundDivToClick = targetDiv.querySelector(divToClick)
@@ -841,15 +837,15 @@ const _addInstructionsToNotFoundTemplate = id => {
 		const found = templatesList.value.find(el => el.id === id)
 
 		if (!found) return
-		let divExists = containerModeler.value.querySelector(`#template-not-found-${id}`)
+		const divExists = containerModeler.value.querySelector(`#template-not-found-${id}`)
 		if (divExists) return
 
-		let divElementTemplateNotFound = containerModeler.value.querySelector(`[data-group-id="group-ElementTemplates__Template"]`)
-		let templateInfo = document.createElement('h3')
+		const divElementTemplateNotFound = containerModeler.value.querySelector(`[data-group-id="group-ElementTemplates__Template"]`)
+		const templateInfo = document.createElement('h3')
 		templateInfo.id = `template-not-found-${id}`
 		templateInfo.classList.add('d-flex', 'fw-bold')
 		templateInfo.style.paddingLeft = "12px" // same margin left as the Template's title
-		let textOfInfoOutdatedTemplate = translateValue('notFound')
+		const textOfInfoOutdatedTemplate = translateValue('notFound')
 		templateInfo.textContent = `${textOfInfoOutdatedTemplate} : ${found.nameOfTemplate.value}`
 		divElementTemplateNotFound.append(templateInfo)
 
@@ -858,12 +854,12 @@ const _addInstructionsToNotFoundTemplate = id => {
 
 const _detectListenerFromUserTask = async (e, listenerName) => {
 	await nextTick()
-	let bpmnElement = e.context?.element.di.bpmnElement ?? e.element.di.bpmnElement
+	const bpmnElement = e.context?.element.di.bpmnElement ?? e.element.di.bpmnElement
 
 	// to add form fields when the form type is embedded or external
 	if (bpmnElement?.extensionElements?.$type === 'bpmn:ExtensionElements') {
 
-		let divElementToclick = containerModeler.value.querySelector(`[data-group-id="group-CamundaPlatform__${listenerName}"] .bio-properties-panel-group-header`)
+		const divElementToclick = containerModeler.value.querySelector(`[data-group-id="group-CamundaPlatform__${listenerName}"] .bio-properties-panel-group-header`)
 
 		if (!divElementToclick) {
 			return
@@ -894,7 +890,7 @@ const _replaceTaskListenerScriptWithMonacoEditor = (bpmnElement, listenerName) =
 const _replaceDivWithMonacoEditor = async (scriptDivId, element) => {
 	setTimeout(() => {
 		// to get the value of the selected script task
-		let textAreaScriptTask = propertyPanel.value.querySelector(`#${scriptDivId}`)
+		const textAreaScriptTask = propertyPanel.value.querySelector(`#${scriptDivId}`)
 
 		if (!textAreaScriptTask) { // if the textarea is not loaded or created it will not continue
 			return

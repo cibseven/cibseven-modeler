@@ -45,8 +45,8 @@ router.beforeEach(async (to, from, next) => {
 		} else {
 			await getSelfInfo().catch(error => {
 				if (error.response) {
-					var res = error.response
-					var params = res.data.params && res.data.params.length > 0
+					const res = error.response
+					const params = res.data.params && res.data.params.length > 0
 					if (res.data && res.data.type === 'TokenExpiredException' && params) {
 						console && console.info('Prolonged token')
 						if (sessionStorage.getItem('token')) {
@@ -70,7 +70,7 @@ router.beforeEach(async (to, from, next) => {
 		}
 
 		async function getSelfInfo() {
-			var inst = axios.create() // bypass standard error handling
+			const inst = axios.create() // bypass standard error handling
 			// Check if token was passed via URL query param
 			const params = new URLSearchParams(window.location.search)
 			const urlToken = params.get('token')
@@ -82,7 +82,7 @@ router.beforeEach(async (to, from, next) => {
 
 			// When running as a library inside cibseven-webclient, the token
 			// is already in sessionStorage/localStorage (shared context)
-			var token = sessionStorage.getItem('token') || localStorage.getItem('token')
+			const token = sessionStorage.getItem('token') || localStorage.getItem('token')
 			if (token) {
 				return inst.get('auth', { headers: { authorization: token } }).then(res => {
 					if (sessionStorage.getItem('token')) {

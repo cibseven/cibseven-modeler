@@ -97,12 +97,12 @@ import { onMounted, ref, watch, computed } from 'vue'
 import { useStore } from 'vuex'
 
 let modalBootstrap = null
-let filteredElementTemplates = ref()
-let modelerEvent = ref(null)
-let searchTemplate = ref('')
-let inputSearchValue = ref('')
-let externSwitchValue = ref(true)
-let internSwitchValue = ref(true)
+const filteredElementTemplates = ref()
+const modelerEvent = ref(null)
+const searchTemplate = ref('')
+const inputSearchValue = ref('')
+const externSwitchValue = ref(true)
+const internSwitchValue = ref(true)
 const notificationModal = ref(null)
 
 const store = useStore()
@@ -126,11 +126,11 @@ watch(modelerEvent, newValue => {
 })
 
 const handleSearch = debounce(async () => {
-  let taskElementTemplates = elementTemplates.value[modelerEvent.value?.element?.type] ?? elementTemplates.value
+  const taskElementTemplates = elementTemplates.value[modelerEvent.value?.element?.type] ?? elementTemplates.value
   filteredElementTemplates.value = JSON.parse(JSON.stringify(taskElementTemplates))
-  let taskElementTemplatesArray = Object.entries(taskElementTemplates)
+  const taskElementTemplatesArray = Object.entries(taskElementTemplates)
 
-  for (let [parentKey, childArray] of taskElementTemplatesArray) {
+  for (const [parentKey, childArray] of taskElementTemplatesArray) {
     const groupMatches = inputSearchValue.value.trim() !== '' && parentKey.trim().toLowerCase().includes(inputSearchValue.value.trim().toLowerCase())
 
     filteredElementTemplates.value[parentKey] = childArray.length > 0 && childArray?.filter(childEl =>

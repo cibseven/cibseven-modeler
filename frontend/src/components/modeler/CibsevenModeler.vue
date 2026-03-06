@@ -166,7 +166,7 @@
 import * as monaco from 'monaco-editor'
 import { useStore } from 'vuex'
 import { useRoute } from 'vue-router'
-import { compareXML, getTimeStamp, getTagValueFromXml, checkCamundaVersion, generateUniqueId, setTagValueOfXml, getProcessKeyFromBpmn, getBearerToken, filterTemplates, addHtmlErrorsToConsole } from '../../utils.js'
+import { compareXML, getTimeStamp, getTagValueFromXml, checkCamundaVersion, generateUniqueId, setTagValueOfXml, getProcessKeyFromBpmn, filterTemplates } from '../../utils.js'
 import Clipboard from 'diagram-js/lib/features/clipboard/Clipboard'
 import { ref, onMounted, nextTick, watch, computed, inject, provide } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -219,21 +219,21 @@ const startPage = ref(null)
 const modalNewDiagram = ref(null)
 const elementTemplateJson = ref(null)
 //one clipboard instance that we can pass around to every bpmn-js instance that we create.
-let clipboard = new Clipboard()
-let withDiagram = ref(false)
-let isButtonDisabled = ref({})
-let editorXML = ref([])
+const clipboard = new Clipboard()
+const withDiagram = ref(false)
+const isButtonDisabled = ref({})
+const editorXML = ref([])
 //for the toast messages
-let isSuccess = ref(false)
-let toastText = ref('toastLoadErrorFile')
-let toastBodyTextAlt = ref(null)
+const isSuccess = ref(false)
+const toastText = ref('toastLoadErrorFile')
+const toastBodyTextAlt = ref(null)
 //check if xml from modeler is validates
-let isXmlValidated = ref({ validation: false, text: '' })
-let isShowModal = ref(false)
-let isShowModalNewDiagram = ref(false)
-let toastComponent = ref(null)
-let activeTab = ref(-1) // to switch active tab pane
-let sessionIds = ref([])
+const isXmlValidated = ref({ validation: false, text: '' })
+const isShowModal = ref(false)
+const isShowModalNewDiagram = ref(false)
+const toastComponent = ref(null)
+const activeTab = ref(-1) // to switch active tab pane
+const sessionIds = ref([])
 const config = inject('config', {})
 
 onMounted(async () => {
@@ -308,7 +308,7 @@ const createNewBpmnDiagram = async (diagramXML, type) => {
 const createNewDmnDiagram = async (dmnXML, type) => {
 	await modalNewDiagram.value._toggleModalNewDiagram(true, async (nameUpdated, idUpdated) => {
 		const uniqueId = idUpdated ? idUpdated.trim() : _assignUniqueId('Dmn', generateUniqueId())
-		let name = nameUpdated ? nameUpdated.trim() : uniqueId
+		const name = nameUpdated ? nameUpdated.trim() : uniqueId
 		let finalXml = setTagValueOfXml(await _fetchDefaultDiagramXML(dmnXML), 'definitions', 'id', uniqueId)
 
 		if (nameUpdated) finalXml = setTagValueOfXml(finalXml, 'definitions', 'name', name)
@@ -542,7 +542,7 @@ const assignSessionIdToProcess = (tabElementIndex, processSessionId) => {
 	tabNavList.value[tabElementIndex].sessionId = processSessionId
 }
 
-const updateDiagramXml = async (valueFromChild, tabElementIndex, cansave, typeDiagram) => {
+const updateDiagramXml = async (valueFromChild, tabElementIndex, cansave, _typeDiagram) => {
 	tabNavListXml.value[tabElementIndex] = valueFromChild
 	modeler.value[tabElementIndex] && modeler.value[tabElementIndex]._validate(valueFromChild)
 	if (cansave !== null) {
@@ -646,7 +646,7 @@ const resizeTabWindow = () => { //to be called from the listener and not be pass
 }
 
 const addErrorMessageToConsole = (id, error) => {
-	let correctTabIndex = checkCorrectTab(id)
+	const correctTabIndex = checkCorrectTab(id)
 	modeler.value[correctTabIndex].addLineWithErrorToConsole(error)
 	showConsoleNotification(id)
 }
@@ -689,39 +689,8 @@ const _copyArray = arrayRef => {
 	return arrayRef.value.map(element => element)
 }
 
-const compareJSON = (json1, json2) => {
-  // Check if both values are the same reference or primitives
-  if (json1 === json2) return true;
-
-  // Check if both are objects and not null
-  if (
-    typeof json1 !== "object" ||
-    typeof json2 !== "object" ||
-    json1 === null ||
-    json2 === null
-  ) {
-    return false;
-  }
-
-  // Get keys of both objects
-  const keys1 = Object.keys(json1);
-  const keys2 = Object.keys(json2);
-
-  // Check if the number of keys is different
-  if (keys1.length !== keys2.length) return false;
-
-  // Check if all keys and their values are equal recursively
-  for (const key of keys1) {
-    if (!keys2.includes(key) || !compareJSON(json1[key], json2[key])) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 const _openFormFromImportedFile = async jsonExternal => {
-	let jsonId = JSON.parse(jsonExternal)?.id
+	const jsonId = JSON.parse(jsonExternal)?.id
 	const foundForm = forms.value.find(form => form.formId === jsonId)	
 	
 	if (foundForm) {		
@@ -731,11 +700,11 @@ const _openFormFromImportedFile = async jsonExternal => {
 			await store.dispatch('modeler/forms/fetchFormById', foundForm.id) // search xml by id selected
 			jsonFromEditor = store.state.modeler.forms.formSelected//JSON.stringify(
 		}
-		let foundTabIndex = tabNavList.value.findIndex( el => el.key === jsonId)
+		const foundTabIndex = tabNavList.value.findIndex( el => el.key === jsonId)
 
 		modalData.value = { id: foundForm.id, name: jsonId, processkey: foundForm.formId, xmlFromModeler : jsonFromEditor, xmlExternalUrl: jsonExternal, diagramType: 'form' }
 		let jsonFromEditorStringify = JSON.stringify(JSON.parse(jsonFromEditor)).replace(/\\/g, '')
-		let jsonExternalStringify = JSON.stringify(JSON.parse(jsonExternal))
+		const jsonExternalStringify = JSON.stringify(JSON.parse(jsonExternal))
 		if ( jsonFromEditorStringify.startsWith('"') && jsonFromEditorStringify.endsWith('"') ) jsonFromEditorStringify = jsonFromEditorStringify.slice(1, -1)
 		const isEqual = jsonFromEditorStringify === jsonExternalStringify	
 	
@@ -842,7 +811,7 @@ const _addNewBpmnFromLoadedXml = (diagramType, xmlToLoad, foundExternalProcessKe
 	tabNavListXml.value.push(xmlToLoad)
 }
 
-const _openProcessFromExternalXml = async (xml, resExistingProcess, externalProcessKey, decodedProcessId) => {
+const _openProcessFromExternalXml = async (xml, resExistingProcess, externalProcessKey, _decodedProcessId) => {
 	const resXmlExternalUrl = xml
 	let diagramType = null
 	let foundExternalProcessKey = getTagValueFromXml(resXmlExternalUrl, 'process', 'id')
@@ -859,7 +828,7 @@ const _openProcessFromExternalXml = async (xml, resExistingProcess, externalProc
 		if (resExistingProcess.id) await store.dispatch('modeler/processes/fetchProcessById', resExistingProcess.id) // gets the xml from the database with the id
 		else {
 			await store.dispatch('modeler/processes/fetchProcessByName', resExistingProcess) // gets the xml for the collaboration process by its name
-			let foundProcess = processes.value.find(process => resExistingProcess === process.processkey)
+			const foundProcess = processes.value.find(process => resExistingProcess === process.processkey)
 			resExistingProcess = foundProcess.id
 
 		}
@@ -912,7 +881,7 @@ const checkCorrectTab = id => {
 
 //checks if the console is closed to show the notification
 const showConsoleNotification = id => {
-	let correctTabIndex = checkCorrectTab(id)
+	const correctTabIndex = checkCorrectTab(id)
 	//check that the panel is not open to show the notification
 
 	if (!modeler.value[correctTabIndex].isConsolePanelShowing()) actionButton.value[correctTabIndex].showConsoleNotification(true)
@@ -928,14 +897,14 @@ const _checkExternalReturn = () => {
 		const type = hashParams.get('type')
 				
 		if (processId) {
-			let decodedProcessId = decodeURIComponent(decodeURIComponent(processId))
-			let checkLength = decodedProcessId.split(':')
-			let processName = checkLength[0] ?? 'process'
+			const decodedProcessId = decodeURIComponent(decodeURIComponent(processId))
+			const checkLength = decodedProcessId.split(':')
+			const processName = checkLength[0] ?? 'process'
 			_checkExistingProcessFromExternalReturn(decodedProcessId, processName, type)
 		}
 	} else if (url.href.includes('diagramId=')) {
-		let diagramId = route.query.diagramId
-		let diagram = processes.value.find(process => process.id === diagramId)
+		const diagramId = route.query.diagramId
+		const diagram = processes.value.find(process => process.id === diagramId)
 		store.dispatch('modeler/processes/fetchProcessById', diagramId).then(() => {
 			const selectedDiagram = store.state.modeler.processes.processSelected
 			openDiagramFromChild(selectedDiagram, diagram.id, diagram.name, diagram.processkey, diagram.type, true, false, false)

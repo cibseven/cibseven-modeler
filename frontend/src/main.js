@@ -44,7 +44,7 @@ export function getTheme(currentConfig) {
 		const hrefParams = new URL(window.location.href).searchParams
 		const fromSearch = hrefParams.get('theme')
 		if (fromSearch) return fromSearch
-	} catch (e) { /* ignore */ }
+	} catch { /* ignore */ }
 
 	// Then try hash-based query
 	const cleanedHash = window.location.hash.replace(/^#\/?/, '')

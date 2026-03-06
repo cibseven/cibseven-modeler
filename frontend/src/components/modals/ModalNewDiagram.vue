@@ -63,7 +63,7 @@ import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle.js'
 import { onMounted, ref, computed } from 'vue'
 import { useStore } from 'vuex'
 import { useI18n } from 'vue-i18n'
-const { t } = useI18n()                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+const { t } = useI18n()
 
 const modalNewDiagram = ref(null)
 let functionOnCallback = null
@@ -80,7 +80,7 @@ const isValidId = computed(() => {
 
 let modalBootstrap = null
 
-let type = ref('bpmn-c7')
+const type = ref('bpmn-c7')
 
 onMounted(() => {
     if (!modalNewDiagram.value) return
@@ -131,7 +131,7 @@ const _toggleModalNewDiagram = async (comp, callback, elementType) => {
 
 const _checkIfProcessExists = id => {
     if (!processes.value) return false
-    let foundProcess = processes.value.find(el => el.processkey === id)
+    const foundProcess = processes.value.find(el => el.processkey === id)
     if (foundProcess) return true
     return false
 }

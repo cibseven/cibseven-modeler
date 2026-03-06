@@ -23,7 +23,7 @@ import { ref, onMounted, computed, inject } from 'vue'
 //composables
 import useMonacoEditor from '../../composables/useMonacoEditor.js'
 
-let monaco = inject('monaco')
+const monaco = inject('monaco')
 
 const props = defineProps({
     height: Number,
@@ -35,7 +35,7 @@ const props = defineProps({
     }
 })
 const editor = ref(null)
-let { createMonacoForConsole, addLineWithError, cleanConsole, copyLine, focusLost } = useMonacoEditor(monaco, props, null)
+const { createMonacoForConsole, addLineWithError, cleanConsole, copyLine, focusLost } = useMonacoEditor(monaco, props, null)
 
 onMounted(() => {
     createMonacoForConsole(editor.value)

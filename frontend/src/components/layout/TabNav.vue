@@ -59,7 +59,7 @@ import { ref, watch, onMounted, nextTick, computed } from 'vue'
 import TabNavItem from '../layout/TabNavItem.vue'
 import ConfirmModal from '../modals/ConfirmModal.vue'
 
-const { t } = useI18n()                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+const { t } = useI18n()
 
 const tabNav = ref(null)
 const props = defineProps({
@@ -122,9 +122,9 @@ const tabsVisibleAndCalculate = () => {
     const dashboardTabWidth = document.querySelector('.dashboard').offsetWidth ?? 60
     const tabs = document.querySelectorAll('.calculated-tab')
 
-    let visibleTabs = []
+    const visibleTabs = []
     let sumSizeTabs = dashboardTabWidth + 50  // size of dashboard tab
-    let sumOfTabsSizaArr = []
+    const sumOfTabsSizaArr = []
     for (let i = 0; i < props.tabNavList.length; i++) {
         sumSizeTabs += tabs[i]?.offsetWidth ?? maxTabItemWidth + 20 // if the tab is hidden set space to maxwidth plus a margin
         if (sumSizeTabs >= props.tabNavWidth) {
@@ -172,7 +172,7 @@ const selectTab = index => {
 
 const _calculateTabsVisible = () => {
     let maxTabs = 0
-    let visibleTabs = []
+    const visibleTabs = []
     for (let i = 0; i < sizeOfTabItems.value.length; i++) {
         if (sizeOfTabItems.value[i] >= props.tabNavWidth) {
             isVisibleTabDropdown.value = true

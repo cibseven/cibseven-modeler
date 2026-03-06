@@ -70,7 +70,7 @@ export function mergeModelerTranslations(i18n, lang) {
 }
 
 // Vue plugin install function
-const install = (app, options = {}) => {
+const install = (app, _options = {}) => {
 	// Register components globally
 	app.component('CibsevenModeler', CibsevenModeler)
 	app.component('BpmnModeler', BpmnModeler)

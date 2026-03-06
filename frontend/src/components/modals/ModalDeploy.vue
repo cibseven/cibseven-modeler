@@ -186,32 +186,32 @@ const emit = defineEmits([
 ])
 
 // Deployment info
-let deploymentName = ref('')
-let tenantID = ref('')
+const deploymentName = ref('')
+const tenantID = ref('')
 
 // Auth info
-let useCustomEndpoint = ref(false)
-let customEndpoint = ref(null)
-let isCustomEndpointValid = ref(false)
+const useCustomEndpoint = ref(false)
+const customEndpoint = ref(null)
+const isCustomEndpointValid = ref(false)
 
-let asAnotherUser = ref(false)
+const asAnotherUser = ref(false)
 
 const alternateAuthOptions = [
 	{ text: 'HTTP Basic', value: 'http', id: 'http' },
 	{ text: 'Bearer token', value: 'token', id: 'token' },
 ]
-let selected = ref('http')
+const selected = ref('http')
 
-let username = ref('')
-let password = ref('')
-let token = ref('')
-let rememberMe = ref(false)
+const username = ref('')
+const password = ref('')
+const token = ref('')
+const rememberMe = ref(false)
 
 // Other
 let modalBootstrap = null
-let modalDeploy = ref(null)
-let disableDeployButton = ref(false)
-let isExecutable = ref(false)
+const modalDeploy = ref(null)
+const disableDeployButton = ref(false)
+const isExecutable = ref(false)
 
 const canStart = computed(() => { // its only startable if the checkbox executable of the process is true
 	if (!isExecutable.value) {
@@ -273,7 +273,7 @@ onMounted(() => {
 	*/
 })
 
-watch(() => props.showModal, (newValue, prevValue) => {
+watch(() => props.showModal, (newValue) => {
 	if (newValue) {
 		_showModalComp()
 		emit('toggleModal', false)
@@ -297,7 +297,7 @@ const deploy = async () => {
 
 	let hasErrors = false
 
-	let errors = await deployProcess(
+	const errors = await deployProcess(
 		_getAuthType(),
 		_getToken(),
 		_getUsername(),
@@ -331,7 +331,7 @@ const deploy = async () => {
 				const jsonMatch = errorMessage.match(/\{.*\}$/s)
 				const parsedError = jsonMatch && JSON.parse(jsonMatch[0])
 				if (parsedError?.message) errorMessage = parsedError.message
-			} catch {}
+			} catch { /* ignore JSON parse error, keep original message */ }
 		}
 		emit('addErrorMessageToConsole', props.tabNavList.id, `${errorMessage}\n`)
 		return errorMessage
@@ -394,7 +394,7 @@ const _getProcessKeyForDeployName = () => {
 			return null
 		}
 	}
-	let foundExternalProcessKey = getProcessKeyFromBpmn(props.diagram) ?? getTagValueFromXml(props.diagram, 'definitions', 'id')
+	const foundExternalProcessKey = getProcessKeyFromBpmn(props.diagram) ?? getTagValueFromXml(props.diagram, 'definitions', 'id')
 	return foundExternalProcessKey
 }
 

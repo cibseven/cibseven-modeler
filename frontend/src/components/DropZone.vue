@@ -34,8 +34,8 @@ const emit = defineEmits([
   'handleDropFile'
 ])
 
-let visible = ref(false)
-let lastTarget = ref(null)
+const visible = ref(false)
+const lastTarget = ref(null)
 
 const classes = computed(() => {
   return {

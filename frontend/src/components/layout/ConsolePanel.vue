@@ -56,10 +56,10 @@ const emit = defineEmits([
 ])
 
 const MARGIN_TOP = 350
-let height = ref(0)
-let bottomPos = ref(0)
+const height = ref(0)
+const bottomPos = ref(0)
 
-const style = computed(() => isVisible ? { height: `${height.value}px ` } : { height: 0 })
+const style = computed(() => isVisible.value ? { height: `${height.value}px ` } : { height: 0 })
 
 const styleNav = computed(() => {
     return { bottom: `${bottomPos.value}px`, left: 0 }

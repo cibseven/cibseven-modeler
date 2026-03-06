@@ -249,11 +249,11 @@
 import { ref, inject, onMounted, computed } from 'vue'
 import { useStore } from 'vuex'
 import CibsevenTable from '../CibsevenTable.vue'
-import { applicableTaskTypes, categorizeTemplates } from './elementTemplateUtils';
+import { categorizeTemplates } from './elementTemplateUtils';
 import AddElementTemplateModal from './AddElementTemplateModal.vue';
 import CategorizedTemplateView from './CategorizedTemplateView.vue';
 
-let config = inject('config')
+const config = inject('config')
 const store = useStore()
 
 const searchInput = ref('')
@@ -332,19 +332,6 @@ onMounted(async () => {
     }
 })
 
-/**
- * Tries to get a proper/pretty name for the template type from the `config.json` itself.
- * @param appliesTo {List} The "type" or "appliesTo" property of the template.
- */
-const parseToTemplateTypes = (appliesTo) => {
-    if (!Array.isArray(appliesTo)) {
-        return '-' // Cannot parse
-    }
-
-    return appliesTo.map(type => applicableTaskTypes[type] ?? type).join(', ')
-}
-
-
 const isTemplatedExcludedInConfig = (template) => store.getters['modeler/elementTemplates/isTemplateExcluded'](template)
 
 /**
@@ -371,7 +358,7 @@ const toggleTemplateVisibility = async (template) => {
  */
 const setGroupVisibility = async (taskType, groupName, isVisible) => {
     try {
-        const result = await store.dispatch('modeler/elementTemplates/setGroupVisibility', {
+        await store.dispatch('modeler/elementTemplates/setGroupVisibility', {
             taskType,
             groupName,
             isVisible
@@ -444,7 +431,7 @@ const editTemplate = (template) => {
     }
 }
 
-const handleTemplateCreated = (template) => {
+const handleTemplateCreated = () => {
     // Refresh the templates list to show the changes
     handleSearch()
     
