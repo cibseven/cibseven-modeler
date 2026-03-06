@@ -331,7 +331,7 @@ const deploy = async () => {
 				const jsonMatch = errorMessage.match(/\{.*\}$/s)
 				const parsedError = jsonMatch && JSON.parse(jsonMatch[0])
 				if (parsedError?.message) errorMessage = parsedError.message
-			} catch {}
+			} catch { /* ignore JSON parse error, keep original message */ }
 		}
 		emit('addErrorMessageToConsole', props.tabNavList.id, `${errorMessage}\n`)
 		return errorMessage

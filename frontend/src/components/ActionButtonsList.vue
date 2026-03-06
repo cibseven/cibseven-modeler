@@ -104,7 +104,7 @@ const downloadName = ref()
 const downloadNameSvg = ref()
 const downloadLink = ref('#')
 const downloadLinkSvg = ref('#')
-const width = ref(0)
+const containerWidth = ref(0)
 const hasConsoleNotification = ref(false)
 const haslinkToProject = ref(false)
 const consoleVisible = ref(false)
@@ -193,7 +193,7 @@ const openConsole = () => {
 }
 
 const changeWidth = value => {
-    width.value = value
+    containerWidth.value = value
 }
 
 const _updateDownloadFileSvg = (downloadLinkSvgValue, downloadNameSvgValue) => {
