@@ -80,7 +80,7 @@ const isValidId = computed(() => {
 
 let modalBootstrap = null
 
-let type = ref('bpmn-c7')
+const type = ref('bpmn-c7')
 
 onMounted(() => {
     if (!modalNewDiagram.value) return
@@ -131,7 +131,7 @@ const _toggleModalNewDiagram = async (comp, callback, elementType) => {
 
 const _checkIfProcessExists = id => {
     if (!processes.value) return false
-    let foundProcess = processes.value.find(el => el.processkey === id)
+    const foundProcess = processes.value.find(el => el.processkey === id)
     if (foundProcess) return true
     return false
 }

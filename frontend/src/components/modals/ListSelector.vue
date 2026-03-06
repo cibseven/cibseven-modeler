@@ -117,7 +117,7 @@ const props = defineProps({
 const filteredData = ref([])
 const inputValue = ref('')
 
-let modalBootstrap = ref(null)
+const modalBootstrap = ref(null)
 
 onMounted(() => {
     if (!modalListTemplate.value) {

@@ -23,17 +23,17 @@ import { checkBeforeAction } from '../utils.js'
 export default function useForm(props, emit, canvas, propertyPanel, notificationModalRef) {
     const store = useStore()
     const formEditor = ref(null)
-    let schema = JSON.parse(props.json)
+    const schema = JSON.parse(props.json)
 	  const propertiesPanelComponent = ref(null)
     const notificationModal = ref(notificationModalRef)
 
-    let notificationMessageData = ref({})
+    const notificationMessageData = ref({})
     let json = null
     if (!props.json) return
 
     onMounted(async()=> {
       //check if you have a session already opened for that form
-      let { sessionResponse } = await checkIfFormBlocked(notificationModal, false)
+      const { sessionResponse } = await checkIfFormBlocked(notificationModal, false)
       if(sessionResponse.sessionId) emit('assignSessionIdToProcess', props.tabElementIndex, sessionResponse.sessionId)
     })
 
@@ -86,15 +86,15 @@ export default function useForm(props, emit, canvas, propertyPanel, notification
     }
 
     const save = async (notificationModal) => {
-      let { sessionResponse } = await checkIfFormBlocked(notificationModal, true)
+      const { sessionResponse } = await checkIfFormBlocked(notificationModal, true)
 
       emit('updateEditorXML', JSON.stringify(json, null, 2),  props.tabElementIndex)
-      let newFormId = json.id
-      let stringifyJson = JSON.stringify(json, null, 2)
+      const newFormId = json.id
+      const stringifyJson = JSON.stringify(json, null, 2)
       let keyTocompare = props.tabElement.key
       if (!props.tabElement.isSaved) keyTocompare = ""
 
-      let toastErrorMessage = checkBeforeAction(
+      const toastErrorMessage = checkBeforeAction(
         newFormId,
         keyTocompare,
         store.state.modeler?.forms,
@@ -205,7 +205,7 @@ export default function useForm(props, emit, canvas, propertyPanel, notification
      
       //called from monaco editor to update the form editor
       const saveXmlAfterUpdate = updatedJson => {
-        let json = JSON.parse(updatedJson)
+        const json = JSON.parse(updatedJson)
         formEditor.value.importSchema(json)
         setEncondedJson(json)
       }
@@ -220,7 +220,7 @@ export default function useForm(props, emit, canvas, propertyPanel, notification
         })
     }
     const getFormId = async() => {
-      let json = await formEditor.value.getSchema()
+      const json = await formEditor.value.getSchema()
       return json?.id
     }
 

@@ -32,6 +32,7 @@ export default [
       '**/dist-ssr/**',
       '**/coverage/**',
       '**/target/**',
+      'linterConfig.js',
     ],
   },
 

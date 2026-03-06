@@ -100,15 +100,15 @@ const emit = defineEmits([
 ])
 const isOutdatedTemplateWarning = ref(false)
 
-let downloadName = ref()
-let downloadNameSvg = ref()
-let downloadLink = ref('#')
-let downloadLinkSvg = ref('#')
-let width = ref(0)
-let hasConsoleNotification = ref(false)
-let haslinkToProject = ref(false)
-let consoleVisible = ref(false)
-let modelProperties = { 'dmn' : {
+const downloadName = ref()
+const downloadNameSvg = ref()
+const downloadLink = ref('#')
+const downloadLinkSvg = ref('#')
+const width = ref(0)
+const hasConsoleNotification = ref(false)
+const haslinkToProject = ref(false)
+const consoleVisible = ref(false)
+const modelProperties = { 'dmn' : {
         fileExtension: '.dmn',
         canExportSvg: true,
         canDeploy: true,

@@ -61,9 +61,9 @@ export default {
   },
   setup(props, { expose }) {
     //config.js - provide default to avoid injection warning
-    let config = inject('config', {})
+    const config = inject('config', {})
     const popoverButton = ref(null)
-    let { isFilterOn, togglePopover, handleBpmnFilter, bpmnFilter, isVisible } = useBpmnFilterPopover(config)
+    const { isFilterOn, togglePopover, handleBpmnFilter, bpmnFilter, isVisible } = useBpmnFilterPopover(config)
 
     expose({
       handleBpmnFilter,

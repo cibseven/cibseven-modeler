@@ -31,7 +31,7 @@ const fetchProcesses = () => {
 }
 
 const fetchProcessByName = name => {
-  let formData = new FormData()
+  const formData = new FormData()
   formData.append('name', name)
   return getAxios().post(getModelerServicePath() + '/process/find-by-name/data', formData,{
     headers: {
@@ -50,7 +50,7 @@ const deleteProcessById = id => {
 
 const saveDiagramProcess = (name, processkey, blob, type) => {
 
-  let formData = new FormData()
+  const formData = new FormData()
   formData.append('name', name)
   formData.append('processkey', processkey)
   formData.append('diagram', blob)
@@ -61,7 +61,7 @@ const saveDiagramProcess = (name, processkey, blob, type) => {
 }
 
 const updateDiagramProcess = (id, name, processkey, blob, type) => {
-  let formData = new FormData()
+  const formData = new FormData()
   formData.append('id', id)
   formData.append('name', name)
   formData.append('processkey', processkey)
@@ -75,7 +75,7 @@ const updateDiagramProcess = (id, name, processkey, blob, type) => {
 
 const createProcessSession = (name, id, blob, type) => {
 
-  let formData = new FormData()
+  const formData = new FormData()
   formData.append('name', name)
   formData.append('id', id)
   formData.append('type', type)
@@ -87,7 +87,7 @@ const createProcessSession = (name, id, blob, type) => {
 }
 
 const closeProcessSession = (sessionIds, type) => {
-  let formData = new FormData()
+  const formData = new FormData()
   formData.append('sessionId', sessionIds)
   formData.append('type', type)
   return getAxios().post(getModelerServicePath() + '/session/close', formData, {

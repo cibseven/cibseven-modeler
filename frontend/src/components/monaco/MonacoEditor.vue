@@ -46,7 +46,7 @@ const emit = defineEmits([
 	'updateFromEditor'
 ])
 
-let { createMonacoEditorEditable } = useMonacoEditor(monaco, props, emit)
+const { createMonacoEditorEditable } = useMonacoEditor(monaco, props, emit)
 
 onMounted(() => {
 	// create the editor

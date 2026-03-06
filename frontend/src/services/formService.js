@@ -29,7 +29,7 @@ const fetchFormById = id => {
 const saveForm = (id, formJson) => {
   const blob = new Blob([JSON.stringify(formJson)], { type: 'application/json' })
 
-  let formData = new FormData()
+  const formData = new FormData()
   formData.append('formid', id)
   formData.append('form_schema', blob)
 
@@ -41,7 +41,7 @@ const saveForm = (id, formJson) => {
 const updateForm = (id, formid, formJson) => {
   const blob = new Blob([JSON.stringify(formJson)], { type: 'application/json' })
 
-  let formData = new FormData() 
+  const formData = new FormData() 
   formData.append('id', id)
   formData.append('formid', formid)
   formData.append('form_schema', blob)
@@ -58,7 +58,7 @@ const deleteFormById = id => {
 
 const createFormSession = (name, id, blob, type) => {
 
-  let formData = new FormData()
+  const formData = new FormData()
   formData.append('name', name)
   formData.append('id', id)
   formData.append('type', type)
@@ -70,7 +70,7 @@ const createFormSession = (name, id, blob, type) => {
 }
 
 const closeFormSession = (sessionIds, type) => {
-  let formData = new FormData()
+  const formData = new FormData()
   formData.append('sessionId', sessionIds)
   formData.append('type', type)
   return axios.post(getModelerServicePath() + '/session/close', formData, {
