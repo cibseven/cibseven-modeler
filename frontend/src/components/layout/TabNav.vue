@@ -59,7 +59,7 @@ import { ref, watch, onMounted, nextTick, computed } from 'vue'
 import TabNavItem from '../layout/TabNavItem.vue'
 import ConfirmModal from '../modals/ConfirmModal.vue'
 
-const { t } = useI18n()                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+const { t } = useI18n()
 
 const tabNav = ref(null)
 const props = defineProps({

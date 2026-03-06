@@ -132,7 +132,7 @@ const TYPEC7 = 'bpmn-c7'
 const TYPEDMN = 'dmn'
 const TYPEFORM = 'form'
 const functionAfterAccepting = ref(null)
-const { t } = useI18n()                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+const { t } = useI18n()
 const props = defineProps({
     processes: Array,
     forms: Array
