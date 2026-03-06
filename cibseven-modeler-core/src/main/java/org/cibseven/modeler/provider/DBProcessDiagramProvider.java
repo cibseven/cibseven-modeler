@@ -24,6 +24,8 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -49,8 +51,11 @@ public class DBProcessDiagramProvider implements IProcessDiagramProvider {
 	private AuditDiagram auditDiagram;
 
 	@Override
-	public List<ProcessDiagramReduce> getDiagrams() throws SystemException {
-		return processDiagramDao.findAllReduced();
+	public List<ProcessDiagramReduce> getDiagrams(String keyword, String diagramType, int firstResult, int maxResults) throws SystemException {
+		String kw = keyword == null ? "" : keyword;
+		String dt = diagramType == null ? "" : diagramType;
+		PageRequest page = PageRequest.of(firstResult / maxResults, maxResults, Sort.by("updated").descending());
+		return processDiagramDao.findAllFiltered(kw, dt, page);
 	}
 
 	@Override
@@ -65,7 +70,7 @@ public class DBProcessDiagramProvider implements IProcessDiagramProvider {
 	
 	@Override
 	public ProcessDiagramEntity findByProcessKey(String key) throws SystemException {
-		return processDiagramDao.findByProcessKey(key);
+		return processDiagramDao.findByProcesskey(key);
 	}
 
 	@Override

@@ -26,9 +26,16 @@ import org.cibseven.modeler.model.ProcessDiagramReduce;
 public interface IProcessDiagramProvider {
 
 	/**
-	 * Get all diagrams
+	 * Get all diagrams with optional keyword and diagram type filters.
 	 */
-	List<ProcessDiagramReduce> getDiagrams() throws SystemException;
+	List<ProcessDiagramReduce> getDiagrams(String keyword, String diagramType, int firstResult, int maxResults) throws SystemException;
+
+	/**
+	 * Get all diagrams without filters.
+	 */
+	default List<ProcessDiagramReduce> getDiagrams(int firstResult, int maxResults) throws SystemException {
+		return getDiagrams("", "", firstResult, maxResults);
+	}
 	
 	/**
 	 * Find diagram by id

@@ -40,7 +40,7 @@
                 <div>
                     <h6 class="mt-4">{{ $t("titles.recent") }}</h6>
                     <div v-if="filteredDashboardElements !== null">
-                        <div class="list-group shadow-sm overflow-auto " style="max-height: calc(100vh - 400px)">
+                        <div ref="listContainer" @scroll="handleListScroll" class="list-group shadow-sm overflow-auto" style="max-height: 50vh">
                             <div class="d-flex align-items-center justify-content-center">
                                 <div class="spinner-border text-dark m-4 bg-light" v-if="isLoading" role="status">
                                     <span class="visually-hidden">{{ $t("loading") }}...</span>
@@ -60,7 +60,12 @@
                                         @openDiagram="openDiagramEmitFromChild" :form="element" @toggleModal="toggleModal"
                                         :isHovered="element.isHovered">
                                     </FormElement>
-                                </div>                              
+                                </div>
+                                <div v-if="isLoadingMore" class="d-flex align-items-center justify-content-center py-2">
+                                    <div class="spinner-border spinner-border-sm text-secondary" role="status">
+                                        <span class="visually-hidden">{{ $t("loading") }}...</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -135,7 +140,11 @@ const functionAfterAccepting = ref(null)
 const { t } = useI18n()                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
 const props = defineProps({
     processes: Array,
-    forms: Array
+    forms: Array,
+    hasMore: {
+        type: Boolean,
+        default: false
+    }
  })
 const emit = defineEmits([
     'closeRemovedProcessesOpenInTab',
@@ -146,10 +155,14 @@ const emit = defineEmits([
     'createNewFormDiagram',
     'openSelectedFile',
     'openDiagram',
-    'showToastMessage'
+    'showToastMessage',
+    'loadMore',
+    'search'
 ])
 const inputSearchValue = ref('')
 const fileInput = ref(null)
+const listContainer = ref(null)
+const isLoadingMore = ref(false)
 const processes = ref(props.processes)
 const showModalAcceptCancelMessage = ref(false)
 const forms = ref(props.forms)
@@ -167,6 +180,15 @@ onMounted(async () => {
     _addIsHoveredElement()
 })
 
+const handleListScroll = () => {
+    if (!listContainer.value || isLoadingMore.value || !props.hasMore) return
+    const { scrollTop, scrollHeight, clientHeight } = listContainer.value
+    if (scrollTop + clientHeight >= scrollHeight - 50) {
+        isLoadingMore.value = true
+        emit('loadMore')
+    }
+}
+
 const modalTitle = computed(() => {
       return { title: t('modalDelete.title', {
         item: t(`items.${itemKey.value}`)
@@ -175,11 +197,13 @@ const modalTitle = computed(() => {
       } )  }
 })
 
-watch(() => props.processes, (newValue, oldValue) => {
+watch(() => props.processes, () => {
+    isLoadingMore.value = false
     resetDashboardElements()    
 })
 
-watch(() => props.forms, (newValue, oldValue) => {
+watch(() => props.forms, () => {
+    isLoadingMore.value = false
     resetDashboardElements() 
 })
 
@@ -201,7 +225,6 @@ const resetDashboardElements = () => {
         return dateB - dateA
     })
     filteredDashboardElements.value = JSON.parse(JSON.stringify(dashboardElements.value))
-    if (filterType.value !== 'all') filterElements(filterType.value) // so it will refresh and show only the option in the filter
 }
 
 //changes state of hover to show actions
@@ -225,7 +248,8 @@ const toggleModal = (isShowing, processId, processName, indexList, type) => {
 
 const filterElements = type => {
     filterType.value = type
-    filteredDashboardElements.value = dashboardElements.value.filter( el => (el.type.includes(type) || type === 'all') && searchDashBoardElement(el))
+    const keyword = inputSearchValue.value.length >= 3 ? inputSearchValue.value : ''
+    emit('search', { keyword, diagramType: type === 'all' ? '' : type })
 }
 
 const handleOpenFileInput = () => {
@@ -254,15 +278,12 @@ const handleClickCreateBpmnc7Diagram = debounce(async () => {
     emit('createNewBpmnc7Diagram', diagramXMLC7, TYPEC7)
 }, 500)
 
-const handleSearch = debounce(async () => {
-    filteredDashboardElements.value = dashboardElements.value.filter(element => searchDashBoardElement(element))
-}, 100)
-
-const searchDashBoardElement = element => {
-   if (!element.type.includes(filterType.value) && filterType.value !== 'all' ) return false
-    if (element.type !== 'form') return element.name.toLowerCase().includes(inputSearchValue.value.toLowerCase()) || element.processkey.toLowerCase().includes(inputSearchValue.value.toLowerCase())
-    else return element.formId.toLowerCase().includes(inputSearchValue.value.toLowerCase())    
-}
+const handleSearch = debounce(() => {
+    const len = inputSearchValue.value.length
+    if (len >= 3 || len === 0) {
+        emit('search', { keyword: inputSearchValue.value, diagramType: filterType.value === 'all' ? '' : filterType.value })
+    }
+}, 300)
 
 const handleClickCreateFormDiagram = debounce(async () => {
     emit('createNewFormDiagram', formJson, TYPEFORM)

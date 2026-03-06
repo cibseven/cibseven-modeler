@@ -63,12 +63,12 @@ const mutations = {
 }
 
 const actions = {
-  async fetchProcesses({ commit }) {
+  async fetchProcesses({ commit }, { firstResult, maxResults, keyword = '', diagramType = '' }) {
     commit('setLoading', true)
     commit('clearError')
     
     try {
-      const processes = await fetchProcesses()
+      const processes = await fetchProcesses(firstResult, maxResults, keyword, diagramType)
       commit('setProcesses', processes)
     } catch (error) {
       console.error(error)

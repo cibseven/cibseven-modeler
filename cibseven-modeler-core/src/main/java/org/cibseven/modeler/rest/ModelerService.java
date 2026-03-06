@@ -93,11 +93,17 @@ public class ModelerService extends BaseService {
     private boolean authenticationEnabled;
 	
 	@RequestMapping(value = "/processes", method = RequestMethod.GET)
-	public List<ProcessDiagramReduce> getDiagrams(HttpServletRequest rq) {
+	public List<ProcessDiagramReduce> getDiagrams(
+		HttpServletRequest rq,
+		@RequestParam int firstResult, 
+		@RequestParam int maxResults,
+		@RequestParam(required = false) String diagramType,
+		@RequestParam(required = false) String keyword
+	) {
 		if (authenticationEnabled) {
 			checkAuthorization(rq, true);
 		}
-		return dbProcessDiagramProvider.getDiagrams();
+		return dbProcessDiagramProvider.getDiagrams(keyword, diagramType, firstResult, maxResults);
 	}
 	
 	@RequestMapping(value = "/deployment/create", method = RequestMethod.POST)
@@ -570,11 +576,14 @@ public class ModelerService extends BaseService {
 	}
 	
 	@RequestMapping(value = "/forms", method = RequestMethod.GET)
-	public List<FormEntity> getForms(HttpServletRequest rq) {
+	public List<FormEntity> getForms(
+		HttpServletRequest rq,
+		@RequestParam int firstResult,
+		@RequestParam int maxResults) {
 		if (authenticationEnabled) {
 			checkAuthorization(rq, true);
 		}
-		return formProvider.getForms();
+		return formProvider.getForms(firstResult, maxResults);
 	}
 	
 	@RequestMapping(value = "/form/{id}/data", method = RequestMethod.GET)

@@ -26,8 +26,15 @@ const fetchDecisionDiagram = decisionId => {
 }
 
 // get list of processes
-const fetchProcesses = () => {
-  return getAxios().get(getModelerServicePath() + '/processes')
+const fetchProcesses = (firstResult, maxResults, keyword = '', diagramType = '') => {
+  return getAxios().get(getModelerServicePath() + '/processes', {
+    params: {
+      firstResult,
+      maxResults,
+      keyword,
+      diagramType
+    }
+  })
 }
 
 const fetchProcessByName = name => {

@@ -16,12 +16,19 @@
  */
 package org.cibseven.modeler.repository;
 
+import java.util.List;
+
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import org.cibseven.modeler.model.FormEntity;
 
 @Repository
 public interface FormRepository extends JpaRepository<FormEntity, String> {
+
+	@Query("select f from FormEntity f")
+	List<FormEntity> findAllPaginated(Pageable pageable);
 
 }

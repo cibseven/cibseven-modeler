@@ -18,8 +18,10 @@ import { axios } from '../axiosConfig'
 import { getModelerServicePath } from './servicesConfig'
 
 // get list of forms
-const fetchForms = () => {
-  return axios.get(getModelerServicePath() + '/forms')
+const fetchForms = (firstResult, maxResults, keyword = '') => {
+  return axios.get(getModelerServicePath() + '/forms', {
+    params: { firstResult, maxResults, keyword }
+  })
 }
 
 const fetchFormById = id => {

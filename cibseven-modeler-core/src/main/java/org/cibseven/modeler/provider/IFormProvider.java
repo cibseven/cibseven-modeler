@@ -27,7 +27,7 @@ public interface IFormProvider {
 	/**
 	 * Get all forms
 	 */
-	List<FormEntity> getForms() throws SystemException;
+	List<FormEntity> getForms(int firstResult, int maxResults) throws SystemException;
 	
 	/**
 	 * Find form by id

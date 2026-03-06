@@ -50,12 +50,12 @@ const mutations = {
 }
 
 const actions = {
-  async fetchForms({ commit }) {
+  async fetchForms({ commit }, { firstResult, maxResults, keyword = '' }) {
     commit('setLoading', true)
     commit('clearError')
     
     try {
-      const forms = await fetchForms()
+      const forms = await fetchForms(firstResult, maxResults, keyword)
       commit('setForms', forms)
     } catch (error) {
       console.error(error)

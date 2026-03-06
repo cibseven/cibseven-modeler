@@ -18,6 +18,7 @@ package org.cibseven.modeler.repository;
 
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -31,14 +32,20 @@ import org.cibseven.modeler.model.ProcessDiagramReduce;
 @Repository
 public interface ProcessDiagramRepository extends JpaRepository<ProcessDiagramEntity, String> {
 
-	@Query(value = "select * from processes_diagrams where name = :name", nativeQuery = true)
-	ProcessDiagramEntity findByName(@Param("name") String name);
+	ProcessDiagramEntity findByName(String name);
 
-	@Query(value = "select * from processes_diagrams where processkey = :processkey", nativeQuery = true)
-	ProcessDiagramEntity findByProcessKey(@Param("processkey") String key);
+	ProcessDiagramEntity findByProcesskey(String processkey);
 
-	@Query("select p.id as id, p.active as active, p.created as created, p.updated as updated, p.description as description, p.name as name, p.processkey as processkey, p.type as type, p.version as version from ProcessDiagramEntity p")
-	List<ProcessDiagramReduce> findAllReduced();
+	List<ProcessDiagramReduce> findAllBy(Pageable pageable);
+
+	@Query("select p from ProcessDiagramEntity p " +
+		"where (lower(p.name) like lower(concat('%', :keyword, '%')) " +
+		"or lower(p.processkey) like lower(concat('%', :keyword, '%'))) " +
+		"and (:diagramType = '' or lower(p.type) like lower(concat(:diagramType, '%')))")
+	List<ProcessDiagramReduce> findAllFiltered(
+		@Param("keyword") String keyword,
+		@Param("diagramType") String diagramType,
+		Pageable pageable);
 
 	@Transactional
 	@Modifying

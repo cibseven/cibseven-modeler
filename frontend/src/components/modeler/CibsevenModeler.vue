@@ -37,13 +37,15 @@
 	<div ref="modelerTabPanes" class="tab-content flex-grow-1" style="min-height: 0;" :key="`modelerid1-i`">
 		<div class="tab-pane  bg-light fade" role="tabpanel" style="height: calc(100vh - 40px);"
 			:class="{ 'active show': activeTab === -1 }" :aria-labelledby="`dashboard-tab`" tabindex="0">
-			<StartPage ref="startPage" v-if="processes || forms " :processes="processes" :forms="forms"
-				@openDiagram="openDiagramFromChild" @openSelectedFile="handleFile" @showToastMessage="showToastMessage"
-				@createNewBpmnc7Diagram="createNewBpmnDiagram"
-				@createNewDmnDiagram="createNewDmnDiagram" @getStoredProcesses="getStoredProcesses" @getStoredForms="getStoredForms"
-				@createNewFormDiagram="createNewFormDiagram"
-				@closeRemovedProcessesOpenInTab="closeRemovedProcessesOpenInTab">
-			</StartPage>
+		<StartPage ref="startPage" v-if="processes || forms " :processes="processes" :forms="forms"
+			:hasMore="hasMoreProcesses || hasMoreForms"
+			@openDiagram="openDiagramFromChild" @openSelectedFile="handleFile" @showToastMessage="showToastMessage"
+			@createNewBpmnc7Diagram="createNewBpmnDiagram"
+			@createNewDmnDiagram="createNewDmnDiagram" @getStoredProcesses="getStoredProcesses" @getStoredForms="getStoredForms"
+			@loadMore="loadMore" @search="handleSearch"
+			@createNewFormDiagram="createNewFormDiagram"
+			@closeRemovedProcessesOpenInTab="closeRemovedProcessesOpenInTab">
+		</StartPage>
 		</div>
 		<div v-for="(tabElement, index) in tabNavList" :key="`process${tabElement.keyOfTabNav}-tp`"
 			class="tab-pane fade h-100" :class="{ 'active show': activeTab === index }" :navId="tabElement.keyOfTabNav"
@@ -194,6 +196,13 @@ const { t } = useI18n()
 const modeler = ref({}) // to get the diferent modelers  and call functions inside components
 const processes = ref(store.state.modeler?.processes?.processes)
 const forms = ref(store.state.modeler?.forms?.forms)
+const processOffset = ref(0)
+const formOffset = ref(0)
+const hasMoreProcesses = ref(true)
+const hasMoreForms = ref(true)
+const PAGE_SIZE = 10
+const currentKeyword = ref('')
+const currentDiagramType = ref('')
 const tabNavList = ref([])
 const tabNavListXml = ref([])
 const consoleErrorsList = ref([])
@@ -382,8 +391,17 @@ const updateStoredLocalStorageTabNavList = async ({ processId, processName, proc
 //called when a process is updated
 const getStoredProcesses = async functionAfterExecution => {
 	if (startPage.value) startPage.value._toggleIsLoading(true)
-	await store.dispatch('modeler/processes/fetchProcesses')
-	processes.value = store.state.modeler.processes.processes
+	processOffset.value = 0
+	const skipProcesses = currentDiagramType.value === 'form'
+	if (skipProcesses) {
+		processes.value = []
+		hasMoreProcesses.value = false
+	} else {
+		await store.dispatch('modeler/processes/fetchProcesses', { firstResult: 0, maxResults: PAGE_SIZE, keyword: currentKeyword.value, diagramType: currentDiagramType.value })
+		const fetchedProcesses = store.state.modeler.processes.processes ?? []
+		processes.value = fetchedProcesses
+		hasMoreProcesses.value = fetchedProcesses.length === PAGE_SIZE
+	}
 	//use it if you want to execute a function after an emit
 	functionAfterExecution && functionAfterExecution()
 	if (startPage.value) startPage.value._toggleIsLoading(false)
@@ -392,11 +410,43 @@ const getStoredProcesses = async functionAfterExecution => {
 //called when a form is updated
 const getStoredForms = async functionAfterExecution => {
 	if (startPage.value) startPage.value._toggleIsLoading(true)
-	await store.dispatch('modeler/forms/fetchForms')
-	forms.value = store.state.modeler.forms.forms
+	formOffset.value = 0
+	const skipForms = currentDiagramType.value === 'bpmn' || currentDiagramType.value === 'dmn'
+	if (skipForms) {
+		forms.value = []
+		hasMoreForms.value = false
+	} else {
+		await store.dispatch('modeler/forms/fetchForms', { firstResult: 0, maxResults: PAGE_SIZE, keyword: currentKeyword.value })
+		const fetchedForms = store.state.modeler.forms.forms ?? []
+		forms.value = fetchedForms
+		hasMoreForms.value = fetchedForms.length === PAGE_SIZE
+	}
 	//use it if you want to execute a function after an emit
 	functionAfterExecution && functionAfterExecution()
 	if (startPage.value) startPage.value._toggleIsLoading(false)
+}
+
+const handleSearch = async ({ keyword, diagramType }) => {
+	currentKeyword.value = keyword ?? ''
+	currentDiagramType.value = diagramType ?? ''
+	await Promise.all([getStoredProcesses(), getStoredForms()])
+}
+
+const loadMore = async () => {
+	if (hasMoreProcesses.value && currentDiagramType.value !== 'form') {
+		processOffset.value += PAGE_SIZE
+		await store.dispatch('modeler/processes/fetchProcesses', { firstResult: processOffset.value, maxResults: PAGE_SIZE, keyword: currentKeyword.value, diagramType: currentDiagramType.value })
+		const fetched = store.state.modeler.processes.processes ?? []
+		processes.value = [...(processes.value ?? []), ...fetched]
+		hasMoreProcesses.value = fetched.length === PAGE_SIZE
+	}
+	if (hasMoreForms.value && currentDiagramType.value !== 'bpmn' && currentDiagramType.value !== 'dmn') {
+		formOffset.value += PAGE_SIZE
+		await store.dispatch('modeler/forms/fetchForms', { firstResult: formOffset.value, maxResults: PAGE_SIZE, keyword: currentKeyword.value })
+		const fetched = store.state.modeler.forms.forms ?? []
+		forms.value = [...(forms.value ?? []), ...fetched]
+		hasMoreForms.value = fetched.length === PAGE_SIZE
+	}
 }
 
 //checks type of diagram to then save it or load if from the database 
