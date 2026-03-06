@@ -41,7 +41,7 @@ public interface ProcessDiagramRepository extends JpaRepository<ProcessDiagramEn
 	@Query("select p from ProcessDiagramEntity p " +
 		"where (lower(p.name) like lower(concat('%', :keyword, '%')) " +
 		"or lower(p.processkey) like lower(concat('%', :keyword, '%'))) " +
-		"and (:diagramType = '' or lower(p.type) like lower(concat(:diagramType, '%')))")
+		"and (:diagramType = '' or p.type like concat('%', :diagramType, '%'))")
 	List<ProcessDiagramReduce> findAllFiltered(
 		@Param("keyword") String keyword,
 		@Param("diagramType") String diagramType,

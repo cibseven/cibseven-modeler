@@ -240,10 +240,9 @@ onMounted(async () => {
 	// Templates are now loaded by the parent AppContainer component
 	await _loadElementTemplatesByConfig()
 	_initializeTabSize()
-	const storedProcessesPromise = getStoredProcesses()
-	const storedFormsPromise = getStoredForms()
-	// Wait for both promises to resolve
-	await Promise.all([storedFormsPromise, storedProcessesPromise])
+	await Promise.all([getStoredProcesses(), getStoredForms()])
+	await nextTick()
+	if (startPage.value) startPage.value._toggleIsLoading(false)
 	_loadTabNavList()
 	_checkExternalReturn()
 	window.addEventListener('resize', resizeTabWindow)
@@ -390,7 +389,6 @@ const updateStoredLocalStorageTabNavList = async ({ processId, processName, proc
 
 //called when a process is updated
 const getStoredProcesses = async functionAfterExecution => {
-	if (startPage.value) startPage.value._toggleIsLoading(true)
 	processOffset.value = 0
 	const skipProcesses = currentDiagramType.value === 'form'
 	if (skipProcesses) {
@@ -404,12 +402,10 @@ const getStoredProcesses = async functionAfterExecution => {
 	}
 	//use it if you want to execute a function after an emit
 	functionAfterExecution && functionAfterExecution()
-	if (startPage.value) startPage.value._toggleIsLoading(false)
 }
 
 //called when a form is updated
 const getStoredForms = async functionAfterExecution => {
-	if (startPage.value) startPage.value._toggleIsLoading(true)
 	formOffset.value = 0
 	const skipForms = currentDiagramType.value === 'bpmn' || currentDiagramType.value === 'dmn'
 	if (skipForms) {
@@ -423,13 +419,14 @@ const getStoredForms = async functionAfterExecution => {
 	}
 	//use it if you want to execute a function after an emit
 	functionAfterExecution && functionAfterExecution()
-	if (startPage.value) startPage.value._toggleIsLoading(false)
 }
 
 const handleSearch = async ({ keyword, diagramType }) => {
 	currentKeyword.value = keyword ?? ''
 	currentDiagramType.value = diagramType ?? ''
+	if (startPage.value) startPage.value._toggleIsLoading(true)
 	await Promise.all([getStoredProcesses(), getStoredForms()])
+	if (startPage.value) startPage.value._toggleIsLoading(false)
 }
 
 const loadMore = async () => {

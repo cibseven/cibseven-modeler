@@ -247,6 +247,7 @@ const toggleModal = (isShowing, processId, processName, indexList, type) => {
 }
 
 const filterElements = type => {
+    if (filterType.value === type) return
     filterType.value = type
     const keyword = inputSearchValue.value.length >= 3 ? inputSearchValue.value : ''
     emit('search', { keyword, diagramType: type === 'all' ? '' : type })
