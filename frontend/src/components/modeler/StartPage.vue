@@ -150,9 +150,7 @@ const emit = defineEmits([
 ])
 const inputSearchValue = ref('')
 const fileInput = ref(null)
-const processes = ref(props.processes)
 const showModalAcceptCancelMessage = ref(false)
-const forms = ref(props.forms)
 const searchElementsList = ref({})
 const isLoading = ref(true)
 
@@ -175,12 +173,12 @@ const modalTitle = computed(() => {
       } )  }
 })
 
-watch(() => props.processes, (newValue, oldValue) => {
-    resetDashboardElements()    
+watch(() => props.processes, () => {
+    resetDashboardElements()
 })
 
-watch(() => props.forms, (newValue, oldValue) => {
-    resetDashboardElements() 
+watch(() => props.forms, () => {
+    resetDashboardElements()
 })
 
 const resetDashboardElements = () => {

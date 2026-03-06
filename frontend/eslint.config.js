@@ -65,6 +65,19 @@ export default [
       'no-duplicate-imports': 'error',
       'no-var': 'error',
       'prefer-const': 'error',
+      'no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }],
+    },
+  },
+
+  // bpmnlint-plugin-local rules are CommonJS files — declare node globals
+  {
+    files: ['bpmnlint-plugin-local/**/*.js'],
+    languageOptions: {
+      globals: {
+        module: 'writable',
+        require: 'readonly',
+        exports: 'writable',
+      },
     },
   },
 

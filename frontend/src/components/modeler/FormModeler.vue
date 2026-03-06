@@ -91,7 +91,6 @@ const resizableDiv = ref(null)
 const formContainer = ref(null)
 const canvas = ref(null)
 const propertyPanel = ref(null)
-const canvasHeight = ref(44)
 //for session blocked modal
 const notificationModal = ref(null)
 
@@ -124,8 +123,8 @@ const emit = defineEmits([
 	'updateStoredLocalStorageTabNavList',
 	'assignSessionIdToProcess',
 ])
-const { initializeFormEditor, save, importJson, propertiesPanelComponent, saveXmlAfterUpdate, formEditor, restartFormJs, destroyFormJs, getFormId, notificationMessageData } = useForm(props, emit, canvas, propertyPanel, notificationModal)
-const { updateParentHeight, updateParentWidth,  parentWidth, parentHeight, changeWidth, canvasWidth, isVisiblePropertyPanel, togglePropertiesPanel } = usePropertiesPanel(props, emit, formContainer, resizableDiv, propertiesPanelComponent, propertyPanel)
+const { initializeFormEditor, save, importJson, propertiesPanelComponent, saveXmlAfterUpdate, restartFormJs, destroyFormJs, getFormId, notificationMessageData } = useForm(props, emit, canvas, propertyPanel, notificationModal)
+const { updateParentHeight, updateParentWidth,  parentWidth, changeWidth, canvasWidth, isVisiblePropertyPanel, togglePropertiesPanel } = usePropertiesPanel(props, emit, formContainer, resizableDiv, propertiesPanelComponent, propertyPanel)
 
 onMounted(async() => {
     initializeFormEditor(props.tabElement.id)
@@ -152,7 +151,7 @@ const _saveDiagram = async () => {
     save(notificationModal)
 }
 
-const _saveXmlAfterUpdate = (isBpmn, updatedJson, tabElementIndex) => {
+const _saveXmlAfterUpdate = (isBpmn, updatedJson, _tabElementIndex) => {
 	saveXmlAfterUpdate(updatedJson)
 }
 

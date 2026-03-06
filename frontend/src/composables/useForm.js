@@ -178,7 +178,6 @@ export default function useForm(props, emit, canvas, propertyPanel, notification
               return false
             }
           }
-          if (functionToExecute) functionToExecute(xml)
     }
 
     const destroyFormJs = () => {
