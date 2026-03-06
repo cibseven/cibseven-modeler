@@ -579,11 +579,12 @@ public class ModelerService extends BaseService {
 	public List<FormEntity> getForms(
 		HttpServletRequest rq,
 		@RequestParam int firstResult,
-		@RequestParam int maxResults) {
+		@RequestParam int maxResults,
+		@RequestParam(required = false) String keyword) {
 		if (authenticationEnabled) {
 			checkAuthorization(rq, true);
 		}
-		return formProvider.getForms(firstResult, maxResults);
+		return formProvider.getForms(keyword, firstResult, maxResults);
 	}
 	
 	@RequestMapping(value = "/form/{id}/data", method = RequestMethod.GET)

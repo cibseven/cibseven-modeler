@@ -43,9 +43,10 @@ public class FormProvider implements IFormProvider {
 	
 
 	@Override
-	public List<FormEntity> getForms(int firstResult, int maxResults) throws SystemException {
-		return formRepositoryDao.findAllPaginated(
-			PageRequest.of(firstResult / maxResults, maxResults, Sort.by("updated").descending()));
+	public List<FormEntity> getForms(String keyword, int firstResult, int maxResults) throws SystemException {
+		String kw = keyword == null ? "" : keyword;
+		PageRequest page = PageRequest.of(firstResult / maxResults, maxResults, Sort.by("updated").descending());
+		return formRepositoryDao.findAllFiltered(kw, page);
 	}
 
 	@Override

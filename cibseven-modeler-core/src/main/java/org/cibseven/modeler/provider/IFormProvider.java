@@ -25,9 +25,16 @@ import org.cibseven.modeler.model.FormEntity;
 public interface IFormProvider {
 
 	/**
-	 * Get all forms
+	 * Get all forms with optional keyword filter.
 	 */
-	List<FormEntity> getForms(int firstResult, int maxResults) throws SystemException;
+	List<FormEntity> getForms(String keyword, int firstResult, int maxResults) throws SystemException;
+
+	/**
+	 * Get all forms without filters.
+	 */
+	default List<FormEntity> getForms(int firstResult, int maxResults) throws SystemException {
+		return getForms("", firstResult, maxResults);
+	}
 	
 	/**
 	 * Find form by id
