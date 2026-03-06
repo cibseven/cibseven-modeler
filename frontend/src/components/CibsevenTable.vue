@@ -79,6 +79,7 @@
 <script>
 export default {
   name: 'CibsevenTable',
+  emits: ['mouseenter', 'mouseleave', 'rowSelected'],
   props: {
     /**
      * Items content. They require to possess a property that matches the `key` of the `fields` (header).

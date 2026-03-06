@@ -60,12 +60,12 @@
 				<table class="table">
 					<thead>
 						<tr>
-							<th v-for="column in notificationMessageData?.header">{{ $t(column) }}</th>
+							<th v-for="(column, idx) in notificationMessageData?.header" :key="idx">{{ $t(column) }}</th>
 						</tr>
 					</thead>
 					<tbody>
 						<tr>
-							<td v-for="column in notificationMessageData?.body">{{ column }}</td>
+							<td v-for="(column, idx) in notificationMessageData?.body" :key="idx">{{ column }}</td>
 						</tr>
 					</tbody>
 				</table>

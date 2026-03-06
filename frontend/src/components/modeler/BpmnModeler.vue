@@ -49,7 +49,7 @@
 							<h6>{{ $t('bpmnFilter.title') }}:</h6>
 						</template>
 						<template #body>
-							<div ref="filterPopover" class="form-check form-switch" v-for="filter,index in config.modeler?.filterBpmn">
+							<div ref="filterPopover" class="form-check form-switch" v-for="filter,index in config.modeler?.filterBpmn" :key="index">
 								<input class="form-check-input" type="checkbox" :ref="el => filterPopover[index] = el" :id="`${filter.type}-${props.tabElement.id}-taskSwitch`" @change="popover.handleBpmnFilter($event, bpmnModeler, filter, filterPopover)">
 								<!-- :style="{ backgroundColor: filter.color }" -->
 								<label class="form-check-label text-secondary" :for="`${filter.type}-${props.tabElement.id}-taskSwitch`">{{ filter.name }}</label>
@@ -122,12 +122,12 @@
 				<table class="table">
 					<thead>
 						<tr>
-							<th v-for="column in notificationMessageData?.header">{{ $t(column) }}</th>
+							<th v-for="(column, idx) in notificationMessageData?.header" :key="idx">{{ $t(column) }}</th>
 						</tr>
 					</thead>
 					<tbody>
 						<tr>
-							<td v-for="column in notificationMessageData?.body">{{ column }}</td>
+							<td v-for="(column, idx) in notificationMessageData?.body" :key="idx">{{ column }}</td>
 						</tr>
 					</tbody>
 				</table>
