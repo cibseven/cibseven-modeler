@@ -30,7 +30,7 @@ const deploy = async (myAuthorization, deploymentName, deployUrl, tenantID, diag
   }
 
   // creates a reference for the form
-  let myFormData = ref(new FormData())
+  const myFormData = ref(new FormData())
   
   // get the URL  BPMN of the file
     const blob = new Blob([diagram], { type: 'text/plain' })
@@ -61,10 +61,10 @@ const deployProcess = async (
   type
 ) => {
   const baseDeploymentUrl = getBaseDeploymentUrl()
-  let deployUrl = ownEndPoint
+  const deployUrl = ownEndPoint
     ? cibsevenInstanceUrl + '/' + getServicesBasePath() + '/modeler-service/deployment'
     : baseDeploymentUrl
-  let headers = _generateHeaders(method, token, username, password, deployUrl)
+  const headers = _generateHeaders(method, token, username, password, deployUrl)
 
   if (headers) {
     return deploy(
@@ -88,11 +88,11 @@ const startProcess = async (
   ownEndPoint
 ) => {
   const baseDeploymentUrl = getBaseDeploymentUrl()
-  let startUrl = ownEndPoint
+  const startUrl = ownEndPoint
     ? cibsevenInstanceUrl + '/' + getServicesBasePath() + '/modeler-service/process'
     : baseDeploymentUrl
 
-  let headers = _generateHeaders(method, token, username, password, startUrl)
+  const headers = _generateHeaders(method, token, username, password, startUrl)
 
   if (headers) {
     axios.defaults.headers.common.authorization = headers['headers']['authorization']
@@ -113,8 +113,8 @@ const startProcess = async (
 }
 
 const _generateBasicAuthToken = (username, password) => {
-  var token = username + ':' + password
-  var hash = btoa(token)
+  const token = username + ':' + password
+  const hash = btoa(token)
   return 'Basic ' + hash
 }
 

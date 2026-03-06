@@ -18,23 +18,23 @@ import { nextTick, ref } from 'vue'
 import {  translateValue } from "../i18n.js"
 
 export default function useCustomizedTemplateModal() {
-  let containerModeler = ref(null)
-  let elementTemplatesModal = ref(null)
+  const containerModeler = ref(null)
+  const elementTemplatesModal = ref(null)
   let modeler = null
 
   const addCustomizeTemplateButton = async e => {
     if(e.element.type !== 'bpmn:UserTask' && e.element.type !== 'bpmn:ServiceTask' && e.element.type !== 'bpmn:StartEvent') return
     await nextTick()
-    let divElementTemplateNotFound = containerModeler.value.querySelector(
+    const divElementTemplateNotFound = containerModeler.value.querySelector(
       `[data-group-id="group-ElementTemplates__Template"]`
     )
     if (!divElementTemplateNotFound) return
-    let button = divElementTemplateNotFound.querySelector(
+    const button = divElementTemplateNotFound.querySelector(
        '.bio-properties-panel-select-template-button'
     )
     if (!button) return
     const modalButton = document.createElement('button')
-    let spanButton = document.createElement('span')
+    const spanButton = document.createElement('span')
     spanButton.classList.add('mdi','mdi-18px', 'mdi-plus')
     modalButton.appendChild(spanButton)
     modalButton.classList.add('btn', 'border-0', 'shadow-0')

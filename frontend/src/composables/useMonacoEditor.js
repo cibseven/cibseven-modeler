@@ -41,9 +41,9 @@ self.MonacoEnvironment = {
   }
 }
 export default function useMonacoEditor(monacoRef, props, emit) {
-  let monaco = monacoRef
+  const monaco = monacoRef
   let monacoEditor = null
-  let lineContent = ref(-1)
+  const lineContent = ref(-1)
 
   const checkBeforeCreation = container => {
     if (!monaco) {
@@ -104,7 +104,7 @@ export default function useMonacoEditor(monacoRef, props, emit) {
     })  
   }
   const createMonacoEditorEditable = container => {
-    let editorValue = props.xml
+    const editorValue = props.xml
     checkBeforeCreation(container)
     monacoEditor = monaco.editor.create(container, {
       value: editorValue,

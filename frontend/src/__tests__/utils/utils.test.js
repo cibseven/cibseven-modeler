@@ -124,7 +124,7 @@ describe('Utils', () => {
                     { id: 'ex-template', name: 'My Category - Some name 2' },
                     { id: 'ex-template', name: 'Other Category - Another name' },
                 ]
-                let config = {
+                const config = {
                     modeler: {
                         excludeTemplates: ['*-template']
                     }
@@ -164,7 +164,7 @@ describe('Utils', () => {
                     { id: 'ex-template2', name: 'My Category - Some name 2' },
                     { id: 'ex-template3', name: 'Other Category - Another name' },
                 ]
-                let config = {
+                const config = {
                     modeler: {
                         excludeTemplates: ['ex-*']
                     }

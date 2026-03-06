@@ -31,9 +31,9 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
   const typeOfSelector = ref(null)
   const isShowModalListSelector = ref(false)
   const activeVersion = ref(-1) // the actual selected version of the diagram
-  let notificationMessageData = ref({})
+  const notificationMessageData = ref({})
   const notificationModal = ref(notificationModalRef)
-  let isConsoleOpen = ref(false)
+  const isConsoleOpen = ref(false)
 
   const listDataForSelector = computed(() => {
     switch (typeOfSelector.value) {
@@ -50,7 +50,7 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
   onMounted(async()=> {
     processId.value = props.tabElement.id
     processHistoryListComp.value = await getProcessHistoryList()
-    let { sessionResponse, forceSave } = await checkIfProcessBlocked(notificationModal, false)
+    const { sessionResponse, forceSave } = await checkIfProcessBlocked(notificationModal, false)
     if(sessionResponse.sessionId) emit('assignSessionIdToProcess', props.tabElementIndex, sessionResponse.sessionId)
   })
 
@@ -76,9 +76,9 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
 
    const saveDecisionTable = async (modeler, typeOfDiagram, notificationModal) =>{
     
-    let { sessionResponse, forceSave } = await checkIfProcessBlocked(notificationModal, true)
+    const { sessionResponse, forceSave } = await checkIfProcessBlocked(notificationModal, true)
     if (!forceSave) return 
-    let dmn = modeler.getViews()[0]
+    const dmn = modeler.getViews()[0]
     if (!dmn) return
     const { xml } = await modeler.saveXML({ format: true })
     const blob = new Blob([xml], { type: 'text/plain' })
@@ -95,7 +95,7 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
 
     if (!props.tabElement.isSaved) keyTocompare = ""
 
-    let toastErrorMessage = checkBeforeAction(
+    const toastErrorMessage = checkBeforeAction(
       newProcessKey,
       keyTocompare,
       store.state.modeler?.processes,
@@ -211,7 +211,7 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
   }
 
   const saveProcess = async (modeler, typeOfDiagram, _setupDiagramFunctions, functionToExecute, notificationModal) => {
-    let { sessionResponse, forceSave } = await checkIfProcessBlocked(notificationModal, true)
+    const { sessionResponse, forceSave } = await checkIfProcessBlocked(notificationModal, true)
     if (!forceSave) return
   
     if(_setupDiagramFunctions) _setupDiagramFunctions() // updates the xml
@@ -268,7 +268,7 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
     const foundProcess = Object.values(elementsRegistry).find(
       (entry) => entry.element.type.toLowerCase() === type.toLowerCase()
     )
-    let foundProcessId = foundProcess ? foundProcess.element.id : null
+    const foundProcessId = foundProcess ? foundProcess.element.id : null
     return foundProcessId
   }
 

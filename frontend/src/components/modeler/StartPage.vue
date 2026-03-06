@@ -156,13 +156,13 @@ const forms = ref(props.forms)
 const searchElementsList = ref({})
 const isLoading = ref(true)
 
-let processIdForDelete = ref('') // saves the id to delete id from the modal
-let processNameForDelete = ref('')
-let searchListIndex = ref(null)
-let itemKey = ref('process')
-let filterType = ref('all')
-let dashboardElements = ref([])
-let filteredDashboardElements = ref([])
+const processIdForDelete = ref('') // saves the id to delete id from the modal
+const processNameForDelete = ref('')
+const searchListIndex = ref(null)
+const itemKey = ref('process')
+const filterType = ref('all')
+const dashboardElements = ref([])
+const filteredDashboardElements = ref([])
 onMounted(async () => {
     _addIsHoveredElement()
 })

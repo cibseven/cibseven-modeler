@@ -20,8 +20,8 @@ import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle.js'
 export function useBpmnFilterPopover(config) {
   const popoverInstance = ref(null)
   const isVisible = ref(false)
-  let bpmnFilterList = ref([])
-  let isFilterOn = ref(false)
+  const bpmnFilterList = ref([])
+  const isFilterOn = ref(false)
 
   const togglePopover = (container, position, popoverButton) => {
     if (!popoverInstance.value) {
@@ -48,10 +48,10 @@ export function useBpmnFilterPopover(config) {
   }
 
   const bpmnFilter = (bpmnModeler, popoverContent) => {
-    let elementRegistry = bpmnModeler.get('elementRegistry')
+    const elementRegistry = bpmnModeler.get('elementRegistry')
     
     elementRegistry.forEach((element) => {
-      let gfx = elementRegistry.getGraphics(element)
+      const gfx = elementRegistry.getGraphics(element)
       const rect = gfx.querySelector('rect')
       if (bpmnFilterList.value.length === 0) {
         // if the array of the filter is empty it will remove all the style classes

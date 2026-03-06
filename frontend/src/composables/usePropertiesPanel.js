@@ -16,12 +16,12 @@
  */
 import { ref } from "vue"
 export default function usePropertiesPanel(props, emit, containerModeler, resizableDiv, propertiesPanelComponent, propertyPanel) {
-    let parentWidth = ref(700)
-    let parentHeight = ref(700)
-    let container = ref(containerModeler)
-    let resizablePanel = ref(resizableDiv)
-    let canvasWidth = ref(0)
-    let isVisiblePropertyPanel = ref(true)
+    const parentWidth = ref(700)
+    const parentHeight = ref(700)
+    const container = ref(containerModeler)
+    const resizablePanel = ref(resizableDiv)
+    const canvasWidth = ref(0)
+    const isVisiblePropertyPanel = ref(true)
     const updateParentHeight = () => {
         if (props.isActiveTab) {
             parentHeight.value = container.value?.parentNode.clientHeight

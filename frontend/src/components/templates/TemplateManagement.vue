@@ -253,7 +253,7 @@ import { applicableTaskTypes, categorizeTemplates } from './elementTemplateUtils
 import AddElementTemplateModal from './AddElementTemplateModal.vue';
 import CategorizedTemplateView from './CategorizedTemplateView.vue';
 
-let config = inject('config')
+const config = inject('config')
 const store = useStore()
 
 const searchInput = ref('')
