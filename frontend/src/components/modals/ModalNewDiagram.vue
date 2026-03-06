@@ -63,7 +63,7 @@ import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle.js'
 import { onMounted, ref, computed } from 'vue'
 import { useStore } from 'vuex'
 import { useI18n } from 'vue-i18n'
-const { t } = useI18n()                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+const { t } = useI18n()
 
 const modalNewDiagram = ref(null)
 let functionOnCallback = null
