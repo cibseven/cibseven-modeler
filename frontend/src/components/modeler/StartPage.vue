@@ -25,7 +25,7 @@
                     <div class="input-group" role="group">
                             <button @click.stop="handleSearch" class="btn btn-secondary" :title="$t('buttons.search')" aria-hidden="true" type="button">                               <span class="mdi mdi-magnify" style="line-height: initial;"></span>
                             </button> 
-                        <input class="form-control" type="text" :title="$t('titles.search')" :placeholder="$t('titles.search')" autofocus="autofocus" autocomplete="off" v-model="inputSearchValue" @input="handleSearch">                            
+                        <input class="form-control" type="text" :title="$t('titles.search')" :placeholder="$t('titles.search')" :aria-label="$t('titles.search')" autofocus="autofocus" autocomplete="off" v-model="inputSearchValue" @input="handleSearch">                            
                                 <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" :title="$t(`filterElements.${filterType}`)">
                                     {{ $t(`filterElements.${filterType}`) }}
                                 </button>
@@ -51,12 +51,14 @@
                                    <ProcessDiagramElement v-if="element.type !== 'form'"
                                         @mouseleave="setHoverElement(index, false)" :index="index"
                                         :ref="el => searchElementsList[index] = el" @mouseover="setHoverElement(index, true)"
+                                        @focusin="setHoverElement(index, true)" @focusout="setHoverElement(index, false)"
                                         @openDiagram="openDiagramEmitFromChild" :process="element" @toggleModal="toggleModal"
                                         :isHovered="element.isHovered">
                                     </ProcessDiagramElement>
                                     <FormElement v-else
                                         @mouseleave="setHoverElement(index, false)" :index="index"
                                         :ref="el => searchElementsList[index] = el" @mouseover="setHoverElement(index, true)"
+                                        @focusin="setHoverElement(index, true)" @focusout="setHoverElement(index, false)"
                                         @openDiagram="openDiagramEmitFromChild" :form="element" @toggleModal="toggleModal"
                                         :isHovered="element.isHovered">
                                     </FormElement>
@@ -69,7 +71,7 @@
                                 <button @click="handleOpenFileInput" :title="$t('buttons.importFile')" type="button"
                                 class="btn border border-dark mdi mdi-import btn-light">{{ $t('buttons.importFile') }}</button>
                             </div>
-                            <input ref="fileInput" type="file" accept=".bpmn,.dmn,.form" style="display: none;"
+                            <input ref="fileInput" type="file" accept=".bpmn,.dmn,.form" :aria-label="$t('buttons.importFile')" style="display: none;"
                                 @change="handleFileChange" />                            
                             <div class="dropdown float-right">
                                 <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"

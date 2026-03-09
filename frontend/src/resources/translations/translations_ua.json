@@ -129,7 +129,8 @@
     "delete": "Видалити",
     "copy": "Копіювати",
     "forceSave": "Примусово зберегти",
-    "linkToProject": "Посилання на проект"
+    "linkToProject": "Посилання на проект",
+    "moreTabs": "Більше вкладок"
   },
   "deployForm": {
     "deploymentName": {

@@ -32,14 +32,14 @@
         </div>
         <div v-show="!props.isButtonDisabled" class="btn-menu mx-1">
             <a @click="canBeDownloaded" :href="downloadLink" :download="downloadName" :name="downloadName"
-                :title="$t('buttons.downloadDiagram')" class="btn btn-outline-light border-0 btn-sm"
+                :title="$t('buttons.downloadDiagram')" :aria-label="$t('buttons.downloadDiagram')" class="btn btn-outline-light border-0 btn-sm"
                 :class="{ 'disabled': props.isButtonDisabled }">
                 <span class="mdi mdi-24px mdi-download"></span>
             </a>
         </div>
         <div v-show="!props.isButtonDisabled && modelProperties[props.tabElement.type] && modelProperties[props.tabElement.type].canExportSvg" class="btn-menu mx-1">
             <a @click="canBeDownloaded" :href="downloadLinkSvg" :download="downloadNameSvg" :name="downloadNameSvg"
-                :title="$t('buttons.downloadSVG')" class="btn btn-outline-light border-0 btn-sm"
+                :title="$t('buttons.downloadSVG')" :aria-label="$t('buttons.downloadSVG')" class="btn btn-outline-light border-0 btn-sm"
                 :class="{ 'disabled': props.isButtonDisabled || props.tabElement.isModelerVisible }">
                 <span class="mdi mdi-24px mdi-file-image-outline"></span>
             </a>

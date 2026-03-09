@@ -34,7 +34,7 @@
 
             <li class="nav-item dropdown tab-dropdown" v-if="isVisibleTabDropdown && tabNavList.length > 0">
                 <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button"
-                    style="height: 40px; border-color: #CCD7E4;" aria-expanded="false"></a>
+                    style="height: 40px; border-color: #CCD7E4;" aria-expanded="false"><span class="visually-hidden">{{ $t('buttons.moreTabs') }}</span></a>
                 <ul class="dropdown-menu">
                     <li v-for="(navItem, index) in hiddenItems" :key="navItem.id">
                         <a class="dropdown-item" href="#" @click="selectHiddenTab(index)">

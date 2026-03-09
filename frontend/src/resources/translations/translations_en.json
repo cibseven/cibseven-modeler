@@ -129,7 +129,8 @@
 		"delete": "Delete",
 		"copy": "Copy",
 		"forceSave": "Force save",
-		"linkToProject": "Link to project"
+		"linkToProject": "Link to project",
+		"moreTabs": "More tabs"
 	},
 	"deployForm": {
 		"deploymentName": {

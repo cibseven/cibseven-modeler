@@ -16,6 +16,7 @@
 -->
 <template>
     <div class="m-0 p-0">
+        <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -->
         <div v-if="props.isDashboard" class="nav-item bg-light dashboard" @keyup.enter.stop="selectTab" @click.stop="selectTab">
             <div ref="tabItem" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard-tab-pane"
                 style="height: 41px;" :class="{ 'active': props.activeTab === props.index }" role="tab"
@@ -38,7 +39,7 @@
 
                 </div>
                 <div>
-                    <span class="mdi mdi-close ms-2 float-end px-2" aria-label="Close" style="cursor: pointer;" tabindex="0"
+                    <span class="mdi mdi-close ms-2 float-end px-2" role="button" aria-label="Close" style="cursor: pointer;" tabindex="0"
                     @keyup.enter="checkIfProcessIsSaved"  @click.stop="checkIfProcessIsSaved"></span>
                 </div>
             </div>

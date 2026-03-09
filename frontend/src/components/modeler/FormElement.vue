@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 <template>
-    <div role="button" :tabindex="props.index" @click="handleClickLoadSelectedFromList"
+    <div role="button" tabindex="0" @click="handleClickLoadSelectedFromList" @keyup.enter="handleClickLoadSelectedFromList"
     class="list-group-item border-0 d-flex align-items-center justify-content-between" :class="{ 'bg-light': form.isHovered }">
     <span class="w-10 mdi mdi-18px mdi-form-select justify-content-center mr-2"> </span>
         <span class="w-80 flex-grow-1 mx-2">{{props.form.formId }}.{{ props.form.type.startsWith('bpmn') ? 'bpmn' : props.form.type }}

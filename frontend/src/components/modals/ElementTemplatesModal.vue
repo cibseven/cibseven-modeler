@@ -70,7 +70,9 @@
                   <div class="flex-grow-1 border-top border-secondary"></div>
                 </div>
                 <div class="d-flex flex-column py-1" style="cursor: pointer;"
+                     role="button" tabindex="0"
                      v-for="childElement in parentElement" :key="childElement.id" @click.stop="selectTemplate(childElement.id)"
+                     @keyup.enter.stop="selectTemplate(childElement.id)"
                      :title="childElement.tooltip">
                   <h5 class="m-0">{{ childElement.name }}</h5>
                   <div class="text-muted"><span v-if="!isUserTask">{{ childElement.extern ? 'Extern' : 'Intern' }} •︎</span> {{ $t('version') }} {{

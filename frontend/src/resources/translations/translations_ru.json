@@ -129,7 +129,8 @@
     "delete": "Удалить",
     "copy": "Копировать",
     "forceSave": "Принудительно сохранить",
-    "linkToProject": "Ссылка на проект"
+    "linkToProject": "Ссылка на проект",
+    "moreTabs": "Больше вкладок"
   },
   "deployForm": {
     "deploymentName": {
