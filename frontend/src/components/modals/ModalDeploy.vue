@@ -62,8 +62,9 @@
 						</div>
 
 						<div v-if="useCustomEndpoint" class="mb-3">
-							<label>{{ $t('deployForm.anotherEndpoint.inputTitle') }}</label>
-							<input
+						<label for="customEndpoint">{{ $t('deployForm.anotherEndpoint.inputTitle') }}</label>
+						<input
+							id="customEndpoint"
 								type="text"
 								class="form-control form-control-sm"
 								v-model="customEndpoint"
@@ -89,7 +90,8 @@
 						<div v-if="asAnotherUser" class="mb-5">
 							<hr />
 							<div class="mb-3">
-								<label class="form-label">
+							<!-- eslint-disable-next-line vuejs-accessibility/label-has-for -->
+							<label class="form-label">
 									{{ $t('deployForm.authentication') }}
 								</label>
 								<div>

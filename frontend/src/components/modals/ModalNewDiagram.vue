@@ -25,12 +25,12 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3" v-if="type !=='form'">
-                        <label class="form-label">{{ modalNewDiagramText.processName }}</label>
-                        <input type="text" class="form-control form-control-sm" v-model="nameOfProcess">
+                        <label class="form-label" for="processNameInput">{{ modalNewDiagramText.processName }}</label>
+                        <input id="processNameInput" type="text" class="form-control form-control-sm" v-model="nameOfProcess">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">{{ modalNewDiagramText.processId }}</label>
-                        <input type="text" class="form-control form-control-sm" v-model="idOfProcess">
+                        <label class="form-label" for="processIdInput">{{ modalNewDiagramText.processId }}</label>
+                        <input id="processIdInput" type="text" class="form-control form-control-sm" v-model="idOfProcess">
                         <div v-if="!isValidId && idOfProcess !== ''" tabindex="-1" role="alert" aria-live="assertive"
                             aria-atomic="true" class="d-block invalid-feedback">{{
                         $t("modalNewDiagram.qnameError") }}

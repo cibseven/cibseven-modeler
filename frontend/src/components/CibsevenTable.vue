@@ -17,13 +17,12 @@
 
 -->
 <template>
-  <table class="table table-hover" :class="computedTableClass" :style="computedTableStyles" role="table" ref="table">
-    <thead v-if="showHeaders" :class="theadClass" role="rowgroup">
-      <tr class="d-flex" role="row">
+  <table class="table table-hover" :class="computedTableClass" :style="computedTableStyles" ref="table">
+    <thead v-if="showHeaders" :class="theadClass">
+      <tr class="d-flex">
         <th v-for="(field, index) in fields"
           :key="index"
           :class="[field.class, field.thClass, getSortClass(field)]"
-          role="columnheader"
           :aria-sort="getAriaSort(field)"
           @click.stop="handleColumnClick(field)"
           :style="{
@@ -41,6 +40,7 @@
 
           <span v-if="field.label">{{ $t(prefix + field.label) }}</span>
 
+          <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -->
           <span
             v-if="resizable"
             :style="resizeHandleStyle"
@@ -49,18 +49,19 @@
         </th>
       </tr>
     </thead>
-    <tbody role="rowgroup">
+    <tbody>
+      <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -->
       <tr v-for="(item, index) in sortedItems" :key="index" class="d-flex" :class="getRowClass(item)"
         @mouseenter="$emit('mouseenter', item)"
         @mouseleave="$emit('mouseleave', item)"
-        @click.stop="$emit('rowSelected', item)"
-        role="row">
+        @focusin="$emit('mouseenter', item)"
+        @focusout="$emit('mouseleave', item)"
+        @click.stop="$emit('rowSelected', item)">
         <td v-for="(field, colIndex) in fields"
           :key="field.key"
           class="d-flex align-items-center"
           :class="[field.class, field.tdClass]"
-          :style="resizable ? { width: columnWidths[colIndex] } : {}"
-          role="cell">
+          :style="resizable ? { width: columnWidths[colIndex] } : {}">
           <slot :name="'cell(' + field.key +')'" :item="item" :value="item[field.key]" :index="index">
             {{ item[field.key] }}
           </slot>
