@@ -132,6 +132,9 @@
 		"linkToProject": "Link to project",
 		"moreTabs": "More tabs"
 	},
+	"tabs": {
+		"unsavedChanges": "Unsaved changes"
+	},
 	"deployForm": {
 		"deploymentName": {
 			"label": "Deployment name",
