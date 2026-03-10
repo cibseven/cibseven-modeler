@@ -124,5 +124,10 @@ public class DBProcessDiagramProvider implements IProcessDiagramProvider {
 
 	}
 
+	@Override
+	public List<ProcessDiagramReduce> getDiagrams(int firstResult, int maxResults) throws SystemException {
+		return processDiagramDao.findAllBy(PageRequest.of(firstResult / maxResults, maxResults).withSort(Sort.by("updated").descending()));
+	}
+
 
 }

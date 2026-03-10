@@ -37,6 +37,18 @@ const fetchProcesses = (firstResult, maxResults, keyword = '', diagramType = '')
   })
 }
 
+// get unified paginated list of processes and forms
+const fetchUnifiedDiagrams = (firstResult, maxResults, keyword, type ) => {
+  return getAxios().get(getModelerServicePath() + '/unified-diagrams', {
+    params: {
+      firstResult,
+      maxResults,
+      keyword,
+      type
+    }
+  })
+}
+
 const fetchProcessByName = name => {
   const formData = new FormData()
   formData.append('name', name)
@@ -119,6 +131,7 @@ export {
   fetchDiagram,
   fetchDecisionDiagram,
   fetchProcesses,
+  fetchUnifiedDiagrams,
   fetchProcessByName,
   fetchProcessById,
   saveDiagramProcess,

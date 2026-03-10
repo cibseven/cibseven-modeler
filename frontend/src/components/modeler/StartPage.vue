@@ -139,8 +139,7 @@ const TYPEFORM = 'form'
 const functionAfterAccepting = ref(null)
 const { t } = useI18n()
 const props = defineProps({
-    processes: Array,
-    forms: Array,
+    diagrams: Array,
     hasMore: {
         type: Boolean,
         default: false
@@ -148,8 +147,7 @@ const props = defineProps({
  })
 const emit = defineEmits([
     'closeRemovedProcessesOpenInTab',
-    'getStoredProcesses',
-    'getStoredForms',
+    'getStoredDiagrams',
     'createNewDmnDiagram',
     'createNewBpmnc7Diagram',
     'createNewFormDiagram',
@@ -163,11 +161,9 @@ const inputSearchValue = ref('')
 const fileInput = ref(null)
 const listContainer = ref(null)
 const isLoadingMore = ref(false)
-const processes = ref(props.processes)
 const showModalAcceptCancelMessage = ref(false)
 const searchElementsList = ref({})
 const isLoading = ref(true)
-
 const processIdForDelete = ref('') // saves the id to delete id from the modal
 const processNameForDelete = ref('')
 const searchListIndex = ref(null)
@@ -176,6 +172,7 @@ const filterType = ref('all')
 const dashboardElements = ref([])
 const filteredDashboardElements = ref([])
 onMounted(async () => {
+    resetDashboardElements()
     _addIsHoveredElement()
 })
 
@@ -196,34 +193,14 @@ const modalTitle = computed(() => {
       } )  }
 })
 
-watch(() => props.processes, () => {
+watch(() => props.diagrams, () => {
     isLoadingMore.value = false
-    resetDashboardElements()    
-})
-
-watch(() => props.forms, () => {
-    isLoadingMore.value = false
-    resetDashboardElements() 
+    resetDashboardElements()
 })
 
 const resetDashboardElements = () => {
-    dashboardElements.value = props.processes ?? []
-    let copiedForms = []
-    if (props.forms && props.forms.length >0) {
-        copiedForms = JSON.parse(JSON.stringify(props.forms))
-        if (Array.isArray(copiedForms)) {
-            copiedForms.forEach( el => el.type = 'form')
-        }
-    }
-
-    dashboardElements.value = dashboardElements.value.concat(copiedForms)
-
-    if (dashboardElements.value.length >0 && Array.isArray(dashboardElements.value)) dashboardElements.value = dashboardElements.value.sort((a,b) => {
-        const dateA = new Date(a.updated)
-        const dateB = new Date(b.updated)
-        return dateB - dateA
-    })
-    filteredDashboardElements.value = JSON.parse(JSON.stringify(dashboardElements.value))
+    dashboardElements.value = props.diagrams ? JSON.parse(JSON.stringify(props.diagrams)) : []
+    filteredDashboardElements.value = dashboardElements.value
 }
 
 //changes state of hover to show actions
@@ -304,7 +281,7 @@ const deleteProcessWithId = async processId => {
     try {
         searchElementsList.value[searchListIndex.value]._processingDeletingItem(true)
         await deleteProcessById(processId)
-        emit('getStoredProcesses', () => { // to execute it after the function of the emit has finished
+        emit('getStoredDiagrams', () => { // to execute it after the function of the emit has finished
             emit('closeRemovedProcessesOpenInTab', processId)
             emit('showToastMessage', { isSuccess: true, toastText: 'toastDeleteProcessSucess' })
         })
@@ -321,7 +298,7 @@ const deleteFormWithId = async formId => {
     try {
         searchElementsList.value[searchListIndex.value]._processingDeletingItem(true)
         await deleteFormById(formId)
-        emit('getStoredForms', () => { // to execute it after the function of the emit has finished
+        emit('getStoredDiagrams', () => { // to execute it after the function of the emit has finished
             emit('closeRemovedProcessesOpenInTab', formId)
             emit('showToastMessage', { isSuccess: true, toastText: 'toastDeleteFormSucess' })
         })

@@ -33,9 +33,7 @@ public interface IProcessDiagramProvider {
 	/**
 	 * Get all diagrams without filters.
 	 */
-	default List<ProcessDiagramReduce> getDiagrams(int firstResult, int maxResults) throws SystemException {
-		return getDiagrams("", "", firstResult, maxResults);
-	}
+	List<ProcessDiagramReduce> getDiagrams(int firstResult, int maxResults) throws SystemException;
 	
 	/**
 	 * Find diagram by id

@@ -26,6 +26,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.cibseven.modeler.model.UnifiedDiagram;
 import org.cibseven.modeler.model.ProcessDiagramEntity;
 import org.cibseven.modeler.model.ProcessDiagramReduce;
 
@@ -45,6 +46,23 @@ public interface ProcessDiagramRepository extends JpaRepository<ProcessDiagramEn
 	List<ProcessDiagramReduce> findAllFiltered(
 		@Param("keyword") String keyword,
 		@Param("diagramType") String diagramType,
+		Pageable pageable);
+
+	@Query(value =
+		"SELECT p.id, p.name, p.type, p.processkey, NULL AS formid, p.description, p.created, p.updated, p.version " +
+		"FROM processes_diagrams p " +
+		"WHERE (:keyword = '' OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.processkey) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+		"AND (:type = '' OR p.type LIKE CONCAT(:type, '%')) " +
+		"UNION ALL " +
+		"SELECT f.id, f.formid, 'form', f.formid, f.formid, f.description, f.created, f.updated, f.version " +
+		"FROM forms f " +
+		"WHERE (:keyword = '' OR LOWER(f.formid) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+		"AND (:type = '' OR :type = 'form') " +
+		"ORDER BY updated DESC",
+		nativeQuery = true)
+	List<UnifiedDiagram> findAllUnified(
+		@Param("keyword") String keyword,
+		@Param("type") String type,
 		Pageable pageable);
 
 	@Transactional

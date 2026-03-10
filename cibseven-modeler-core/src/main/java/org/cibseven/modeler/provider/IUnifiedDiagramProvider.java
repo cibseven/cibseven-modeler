@@ -17,52 +17,21 @@
 package org.cibseven.modeler.provider;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.cibseven.modeler.exception.SystemException;
-import org.cibseven.modeler.model.FormEntity;
+import org.cibseven.modeler.model.UnifiedDiagram;
 
-public interface IFormProvider {
-
-	/**
-	 * Get all forms with optional keyword filter.
-	 */
-	List<FormEntity> getForms(String keyword, int firstResult, int maxResults) throws SystemException;
+public interface IUnifiedDiagramProvider {
 
 	/**
-	 * Get all forms without filters.
+	 * Returns a paginated, sorted list of all diagrams (processes and forms)
+	 * matching the optional keyword and type filter.
+	 *
+	 * @param keyword    substring to match against name/processkey/formId ('' = no filter)
+	 * @param type       exact type to match, e.g. 'bpmn-c7', 'dmn', 'form' ('' = all)
+	 * @param firstResult zero-based offset
+	 * @param maxResults  page size
 	 */
-	List<FormEntity> getForms(int firstResult, int maxResults) throws SystemException;
-	
-	/**
-	 * Find form by id
-	 * 
-	 * @param id
-	 */
-	Optional<FormEntity> findById(String id) throws SystemException;
-    
-    /**
-	 * Create a new form.
-	 * 
-	 * @param entity
-	 */
-	FormEntity createForm(FormEntity entity) throws SystemException;    
+	List<UnifiedDiagram> getDiagrams(String keyword, String type, int firstResult, int maxResults) throws SystemException;
 
-	 /**
-	 * Deletes a form.
-	 * 
-	 * @param entity
-	 */    
-	void delete(String id) throws SystemException;
-	
-    /**
-	 * Update a form.
-	 * 
-	 * @param entity
-	 */
-	FormEntity updateForm(FormEntity entity) throws SystemException;
-	
-
-	
-	
 }

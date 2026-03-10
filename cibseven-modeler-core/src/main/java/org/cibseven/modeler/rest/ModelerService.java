@@ -57,6 +57,7 @@ import org.cibseven.modeler.exception.SystemException;
 import org.cibseven.modeler.model.DiagramUsageEntity;
 import org.cibseven.modeler.model.FormEntity;
 import org.cibseven.modeler.model.FormUsageEntity;
+import org.cibseven.modeler.model.UnifiedDiagram;
 import org.cibseven.modeler.model.ProcessDiagramEntity;
 import org.cibseven.modeler.model.ProcessDiagramReduce;
 import org.cibseven.modeler.model.UserSessionEntity;
@@ -64,6 +65,7 @@ import org.cibseven.modeler.provider.DBProcessDiagramProvider;
 import org.cibseven.modeler.provider.DiagramUsageProvider;
 import org.cibseven.modeler.provider.FormProvider;
 import org.cibseven.modeler.provider.FormUsageProvider;
+import org.cibseven.modeler.provider.UnifiedDiagramProvider;
 import org.cibseven.modeler.provider.UserSessionProvider;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -85,9 +87,9 @@ public class ModelerService extends BaseService {
 	@Autowired DBProcessDiagramProvider dbProcessDiagramProvider;
 	@Autowired DiagramUsageProvider diagramUsageProvider;
 	@Autowired FormUsageProvider formUsageProvider;
-
 	@Autowired UserSessionProvider userSessionProvider;
 	@Autowired FormProvider formProvider;
+	@Autowired UnifiedDiagramProvider unifiedDiagramProvider;
 
     @Value("${cibsevenmodeler.authentication.enabled:true}")
     private boolean authenticationEnabled;
@@ -106,6 +108,19 @@ public class ModelerService extends BaseService {
 		return dbProcessDiagramProvider.getDiagrams(keyword, diagramType, firstResult, maxResults);
 	}
 	
+	@RequestMapping(value = "/unified-diagrams", method = RequestMethod.GET)
+	public List<UnifiedDiagram> getUnifiedDiagrams(
+		HttpServletRequest rq,
+		@RequestParam int firstResult,
+		@RequestParam int maxResults,
+		@RequestParam(required = false) String keyword,
+		@RequestParam(required = false) String type) {
+		if (authenticationEnabled) {
+			checkAuthorization(rq, true);
+		}
+		return unifiedDiagramProvider.getDiagrams(keyword, type, firstResult, maxResults);
+	}
+
 	@RequestMapping(value = "/deployment/create", method = RequestMethod.POST)
 	public Deployment deployBpmn(
 			@Parameter(description = "Metadata of the diagram to be deployed (deployment-name, deployment-source, deploy-changed-only)") @RequestParam MultiValueMap<String, Object> data,

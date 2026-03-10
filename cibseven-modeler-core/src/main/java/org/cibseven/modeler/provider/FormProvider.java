@@ -73,4 +73,9 @@ public class FormProvider implements IFormProvider {
 	public void delete(String id) throws SystemException {
 		formRepositoryDao.deleteById(id);
 	}
+
+	@Override
+	public List<FormEntity> getForms(int firstResult, int maxResults) throws SystemException {
+		return formRepositoryDao.findAllBy(PageRequest.of(firstResult / maxResults, maxResults).withSort(Sort.by("updated").descending()));
+	}
 }
