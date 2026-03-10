@@ -146,7 +146,7 @@ export default defineConfig({
           fileName: (format) => `cibseven-modeler.${format}.js`,
         },
         rollupOptions: {
-          external: ['vue', /^\/assets\/images\//, 'bootstrap', 'vue-i18n', 'vue-router', 'axios'],
+          external: ['vue', /^\/assets\/images\//, 'bootstrap', 'vue-i18n', 'vue-router', 'axios', 'vuex', 'bpmn-js', 'dmn-js', '@bpmn-io/form-js'],
           output: {
             globals: {
               vue: 'Vue',
@@ -154,6 +154,10 @@ export default defineConfig({
               'vue-i18n': 'VueI18n',
               'vue-router': 'VueRouter',
               axios: 'axios',
+              vuex: 'Vuex',
+              'bpmn-js': 'BpmnJS',
+              'dmn-js': 'DmnJS',
+              '@bpmn-io/form-js': 'FormJS',
             },
             // Ensure CSS is extracted and placed in the dist folder
             assetFileNames: 'cibseven-modeler.[ext]',
