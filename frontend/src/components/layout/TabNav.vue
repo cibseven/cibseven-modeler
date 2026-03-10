@@ -37,7 +37,8 @@
                     style="height: 40px; border-color: #CCD7E4;" aria-expanded="false"><span class="visually-hidden">{{ $t('buttons.moreTabs') }}</span></a>
                 <ul class="dropdown-menu">
                     <li v-for="(navItem, index) in hiddenItems" :key="navItem.id">
-                        <a class="dropdown-item" href="#" @click.prevent="selectHiddenTab(index)">
+                        <a class="dropdown-item d-flex align-items-center gap-2" href="#" @click.prevent="selectHiddenTab(index)">
+                            <span v-if="navItem.canSave" class="mdi mdi-18px mdi-circle-medium text-warning" :title="$t('tabs.unsavedChanges')" :aria-label="$t('tabs.unsavedChanges')"></span>
                             {{ navItem.name !== 'undefined' && navItem.name !== '' ? navItem.name : '(' + navItem.key + ')'
                             }}
                         </a>

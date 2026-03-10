@@ -90,7 +90,6 @@
 						<div v-if="asAnotherUser" class="mb-5">
 							<hr />
 							<div class="mb-3">
-							<!-- eslint-disable-next-line vuejs-accessibility/label-has-for -->
 							<label class="form-label">
 									{{ $t('deployForm.authentication') }}
 								</label>

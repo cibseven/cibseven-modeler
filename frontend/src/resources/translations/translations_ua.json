@@ -132,6 +132,9 @@
     "linkToProject": "Посилання на проект",
     "moreTabs": "Більше вкладок"
   },
+  "tabs": {
+    "unsavedChanges": "Незбережені зміни"
+  },
   "deployForm": {
     "deploymentName": {
       "label": "Назва розгортання",

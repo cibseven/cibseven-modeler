@@ -132,6 +132,9 @@
     "linkToProject": "Link zum Projekt",
     "moreTabs": "Weitere Tabs"
   },
+  "tabs": {
+    "unsavedChanges": "Ungespeicherte Änderungen"
+  },
   "deployForm": {
     "deploymentName": {
       "label": "Deployment-Name",

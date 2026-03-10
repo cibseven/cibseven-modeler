@@ -132,6 +132,9 @@
     "linkToProject": "Ссылка на проект",
     "moreTabs": "Больше вкладок"
   },
+  "tabs": {
+    "unsavedChanges": "Несохранённые изменения"
+  },
   "deployForm": {
     "deploymentName": {
       "label": "Имя развёртывания",

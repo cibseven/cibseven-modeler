@@ -16,7 +16,6 @@
 -->
 <template>
     <div class="m-0 p-0">
-        <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -->
         <div v-if="props.isDashboard" class="nav-item bg-light dashboard" @keyup.enter.stop="selectTab" @click.stop="selectTab">
             <div ref="tabItem" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard-tab-pane"
                 style="height: 41px;" :class="{ 'active': props.activeTab === props.index }" role="tab"
@@ -36,10 +35,10 @@
                     :aria-controls="`process${props.keyOfTabNav}-tab-pane`" tabindex="0"
                     :aria-selected="props.activeTab === props.index">
                     {{ tabTitle }}
-
                 </div>
-                <div>
-                    <span class="mdi mdi-close ms-2 float-end px-2" role="button" aria-label="Close" style="cursor: pointer;" tabindex="0"
+                <span v-if="props.tabNavList.canSave" class="mdi mdi-18px mdi-circle-medium text-warning align-self-center" :title="$t('tabs.unsavedChanges')" :aria-label="$t('tabs.unsavedChanges')"></span>
+                <div class="d-flex align-items-center">
+                    <span class="mdi mdi-close ms-2 float-end px-2" role="button" :aria-label="$t('buttons.close')" style="cursor: pointer;" tabindex="0"
                     @keyup.enter="checkIfProcessIsSaved"  @click.stop="checkIfProcessIsSaved"></span>
                 </div>
             </div>
