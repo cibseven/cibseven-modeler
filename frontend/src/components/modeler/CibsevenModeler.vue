@@ -36,8 +36,8 @@
 
 	<div ref="modelerTabPanes" class="tab-content flex-grow-1" style="min-height: 0;" :key="`modelerid1-i`">
 		<div class="tab-pane  bg-light fade" role="tabpanel" style="height: calc(100vh - 40px);"
-			:class="{ 'active show': activeTab === -1 }" :aria-labelledby="`dashboard-tab`" tabindex="0">
-			<StartPage ref="startPage" v-if="processes || forms " :processes="processes" :forms="forms"
+			:class="{ 'active show': activeTab === -1 && !hasDirectDiagram }" :aria-labelledby="`dashboard-tab`" tabindex="0">
+			<StartPage ref="startPage" v-if="(processes || forms) && !hasDirectDiagram" :processes="processes" :forms="forms"
 				@openDiagram="openDiagramFromChild" @openSelectedFile="handleFile" @showToastMessage="showToastMessage"
 				@createNewBpmnc7Diagram="createNewBpmnDiagram"
 				@createNewDmnDiagram="createNewDmnDiagram" @getStoredProcesses="getStoredProcesses" @getStoredForms="getStoredForms"
@@ -163,7 +163,8 @@
 
 import * as monaco from 'monaco-editor'
 import { useStore } from 'vuex'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+
 import { compareXML, getTimeStamp, getTagValueFromXml, checkCamundaVersion, generateUniqueId, setTagValueOfXml, getProcessKeyFromBpmn, filterTemplates } from '../../utils.js'
 import Clipboard from 'diagram-js/lib/features/clipboard/Clipboard'
 import { ref, onMounted, nextTick, watch, computed, inject, provide } from 'vue'
@@ -190,6 +191,8 @@ provide('monaco', monaco)
 
 const store = useStore()
 const route = useRoute()
+const router = useRouter()
+
 const { t } = useI18n()
 const modeler = ref({}) // to get the diferent modelers  and call functions inside components
 const processes = ref(store.state.modeler?.processes?.processes)
@@ -211,6 +214,7 @@ const modalNewDiagram = ref(null)
 const elementTemplateJson = ref(null)
 //one clipboard instance that we can pass around to every bpmn-js instance that we create.
 const clipboard = new Clipboard()
+const hasDirectDiagram = ref(!!(route.params.diagramId || new URL(window.location.href).href.includes('processId=')))
 const withDiagram = ref(false)
 const isButtonDisabled = ref({})
 const editorXML = ref([])
@@ -236,7 +240,8 @@ onMounted(async () => {
 	// Wait for both promises to resolve
 	await Promise.all([storedFormsPromise, storedProcessesPromise])
 	_loadTabNavList()
-	_checkExternalReturn()
+	await _checkExternalReturn()
+	hasDirectDiagram.value = false
 	window.addEventListener('resize', resizeTabWindow)
 	waitToLoad.value = true
 })
@@ -451,8 +456,34 @@ const updateIsButtonDisabled = (isDisabled, tabElementIndex) => {
 	isButtonDisabled.value[tabElementIndex] = isDisabled
 }
 
-const switchTabFromTabNav = selectedTabIndex => {
+const switchTabFromTabNav = async selectedTabIndex => {
 	activeTab.value = selectedTabIndex
+	const tab = tabNavList.value[selectedTabIndex]
+	if (tab?.isSaved && tab?.id) {
+		router.replace({ params: { diagramId: tab.id } }).catch(() => {})
+	} else if (route.params.diagramId) {
+		router.replace({ path: route.path.replace('/' + route.params.diagramId, '') }).catch(() => {})
+	}
+	// Fetch XML if not already loaded for saved tabs
+	if (selectedTabIndex > -1 && !editorXML.value[selectedTabIndex] && !tabNavListXml.value[selectedTabIndex]) {
+		let selectedProcess = null
+		if (tabNavList.value[selectedTabIndex].type !== 'form') {
+			await store.dispatch('modeler/processes/fetchProcessById', tabNavList.value[selectedTabIndex].id)
+			selectedProcess = store.state.modeler.processes.processSelected
+		} else {
+			await store.dispatch('modeler/forms/fetchFormById', tabNavList.value[selectedTabIndex].id)
+			selectedProcess = store.state.modeler.forms.formSelected
+		}
+		if (selectedProcess) {
+			openDiagramFromNavTabFromChild(selectedProcess, selectedTabIndex)
+		} else {
+			showToastMessage({ isSuccess: false, toastText: 'toastFileNoLongerExists', bodyTextAlt: '' })
+			removeSelectedTab(selectedTabIndex)
+			return
+		}
+	}
+	await nextTick()
+	if (modelerTabNav.value) resizeTabNav(modelerTabNav.value.clientWidth)
 }
 
 // nav tab behaviour when closing tab
@@ -541,21 +572,7 @@ const openDiagram = (valueFromChild, processId, processName, processKey, typeOfD
 }
 
 const selectedTab = async tabElementIndex => {
-	switchTabFromTabNav(tabElementIndex)
-	if (!editorXML.value[tabElementIndex] && tabElementIndex > -1) { // if the xml has not being loaded yet by clicking the tab
-		let selectedProcess = null
-		if (tabNavList.value[tabElementIndex].type !== 'form') {
-			await store.dispatch('modeler/processes/fetchProcessById', tabNavList.value[tabElementIndex].id) // search xml by id selected
-		 	selectedProcess = store.state.modeler.processes.processSelected
-		}else {
-			await store.dispatch('modeler/forms/fetchFormById', tabNavList.value[tabElementIndex].id) // search xml by id selected
-			selectedProcess = store.state.modeler.forms.formSelected
-		}
-		
-		openDiagramFromNavTabFromChild(selectedProcess, tabElementIndex, null)
-	}
-	await nextTick()
-	resizeTabNav(modelerTabNav.value.clientWidth)
+	await switchTabFromTabNav(tabElementIndex)
 }
 
 const removeSelectedTab = tabElementIndex => {
@@ -841,7 +858,7 @@ const showConsoleNotification = id => {
 }
 
 // method to handle file selection when a file is dropped onto the component
-const _checkExternalReturn = () => {
+const _checkExternalReturn = async () => {
 	const url = new URL(window.location.href)
 	if (url.href.includes('processId=')) {
 		// Parse query parameters from hash fragment
@@ -853,15 +870,23 @@ const _checkExternalReturn = () => {
 			const decodedProcessId = decodeURIComponent(decodeURIComponent(processId))
 			const checkLength = decodedProcessId.split(':')
 			const processName = checkLength[0] ?? 'process'
-			_checkExistingProcessFromExternalReturn(decodedProcessId, processName, type)
+			await _checkExistingProcessFromExternalReturn(decodedProcessId, processName, type)
 		}
-	} else if (url.href.includes('diagramId=')) {
-		const diagramId = route.query.diagramId
+	} else if (route.params.diagramId) {
+		const diagramId = route.params.diagramId
 		const diagram = processes.value.find(process => process.id === diagramId)
-		store.dispatch('modeler/processes/fetchProcessById', diagramId).then(() => {
+		if (diagram) {
+			await store.dispatch('modeler/processes/fetchProcessById', diagramId)
 			const selectedDiagram = store.state.modeler.processes.processSelected
 			openDiagramFromChild(selectedDiagram, diagram.id, diagram.name, diagram.processkey, diagram.type, true, false, false)
-		})		
+		} else {
+			const form = forms.value.find(f => f.id === diagramId)
+			if (form) {
+				await store.dispatch('modeler/forms/fetchFormById', diagramId)
+				const selectedForm = store.state.modeler.forms.formSelected
+				openDiagramFromChild(selectedForm, form.id, form.formId, form.formId, 'form', true, false, false)
+			}
+		}
 	}
 }
 

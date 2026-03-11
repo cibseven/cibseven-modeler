@@ -48,12 +48,10 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { useStore } from 'vuex'
 import { checkProcessSession, closeProcessSession } from '../../services/processService'
 import { checkFormSession, closeFormSession } from'../../services/formService.js'
 
 const tabItem = ref(null)
-const store = useStore()
 const props = defineProps({
     id: { type: String },
     tabNavList: Object,
@@ -112,32 +110,9 @@ const removeSelectedTab = async() => {
  
 }
 
-const selectTab = async (e) => {
+const selectTab = (e) => {
     e.preventDefault()
-    if (props.isSaved && !props.editorXML) { // only search in database if process is saved       
-        let selectedItem = null
-        if(props.tabNavList.type !== 'form') {
-            await store.dispatch('modeler/processes/fetchProcessById', props.navId) // search xml by id selected    
-            selectedItem = store.state.modeler.processes.processSelected
-  
-        } else {
-            await store.dispatch('modeler/forms/fetchFormById', props.navId) // search form by id selected
-            selectedItem = store.state.modeler.forms.formSelected
-        }
-
-        emit('selectedTab', props.index)
-
-        if (selectedItem) {
-            emit('openDiagram', selectedItem, props.index)
-        } else {
-            emit('showToastMessage', { isSuccess: false, toastText: 'toastFileNoLongerExists', bodyTextAlt: '' }) // to pass the text of the error to the toast
-            emit('removeSelectedTab', props.index)
-        }
-        emit('switchTabFromTabNavItem', props.index)
-
-    } else {
-        emit('switchTabFromTabNavItem', props.index)
-    }
+    emit('switchTabFromTabNavItem', props.index)
 }
 
 defineExpose({

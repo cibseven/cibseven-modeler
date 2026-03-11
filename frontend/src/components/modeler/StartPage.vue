@@ -165,6 +165,9 @@ const dashboardElements = ref([])
 const filteredDashboardElements = ref([])
 onMounted(async () => {
     _addIsHoveredElement()
+    if (props.processes || props.forms) {
+        isLoading.value = false
+    }
 })
 
 const modalTitle = computed(() => {
@@ -173,14 +176,6 @@ const modalTitle = computed(() => {
       } ), body: t('modalDelete.body', {
         item: t(`items.${itemKey.value}`)
       } )  }
-})
-
-watch(() => props.processes, () => {
-    resetDashboardElements()
-})
-
-watch(() => props.forms, () => {
-    resetDashboardElements()
 })
 
 const resetDashboardElements = () => {
@@ -203,6 +198,14 @@ const resetDashboardElements = () => {
     filteredDashboardElements.value = JSON.parse(JSON.stringify(dashboardElements.value))
     if (filterType.value !== 'all') filterElements(filterType.value) // so it will refresh and show only the option in the filter
 }
+
+watch(() => props.processes, () => {
+    resetDashboardElements()
+}, { immediate: true })
+
+watch(() => props.forms, () => {
+    resetDashboardElements()
+}, { immediate: true })
 
 //changes state of hover to show actions
 const setHoverElement = (index, value) => {
