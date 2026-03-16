@@ -14,7 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, inject } from 'vue'
 import { useStore } from 'vuex'
 import { checkBeforeAction } from '../utils.js'
 //to update or save process
@@ -24,6 +24,7 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
   const store = useStore()
   const props = propsRef
   const emit = emitRef
+  const afterXmlUpdateHook = inject('afterXmlUpdateHook', null)
   const processHistoryListComp = ref(null)
   const processId = ref(null)
   const processInformation = ref(null)
@@ -298,23 +299,9 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
   }
 
   const _setEncondedSvgAndXml = async (updateXml, tabElementIndex, modeler, isBpmn) => {
-    let data = null
-    let dontSaveSvg = false
-    try {
-      data = await modeler.saveSVG()
-    } catch {
-      try {
-        data = await modeler?.getActiveViewer()?.saveSVG()
-      } catch {
-        dontSaveSvg = true
-      }
-    }  
-
-    let fileNameAndData = isBpmn ? _setEncoded(updateXml, tabElementIndex, '.bpmn') : _setEncoded(updateXml, tabElementIndex, '.dmn')
+    const fileNameAndData = isBpmn ? _setEncoded(updateXml, tabElementIndex, '.bpmn') : _setEncoded(updateXml, tabElementIndex, '.dmn')
     emit('updateDownloadLink',{ href: `data:application/bpmn20-xml;charset=UTF-8,${fileNameAndData.encodedData}`, download: fileNameAndData.fileName, tabElementIndex: tabElementIndex })
-    if (!data || dontSaveSvg) return
-    fileNameAndData = _setEncoded(data.svg, tabElementIndex, '.svg')
-    emit('updateDownloadLinkSvg',{ href: `data:image/svg+xml;charset=UTF-8,${fileNameAndData.encodedData}`, download: fileNameAndData.fileName, tabElementIndex: tabElementIndex })
+    if (afterXmlUpdateHook) await afterXmlUpdateHook(modeler, tabElementIndex, props.tabElement.key)
   }
   
   const _setEncoded = (data, tabElementIndex, extension) => {
