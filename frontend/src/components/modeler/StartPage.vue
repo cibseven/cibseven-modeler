@@ -73,12 +73,12 @@
                             </div>
                             <input ref="fileInput" type="file" accept=".bpmn,.dmn,.form" :aria-label="$t('buttons.importFile')" style="display: none;"
                                 @change="handleFileChange" />                            
-                            <div class="dropdown float-right">
+                            <div class="dropup float-right">
                                 <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
                                     aria-expanded="false">
                                     {{ $t('buttons.createDiagram') }}
                                 </button>
-                                <ul class="dropdown-menu">
+                                <ul class="dropdown-menu dropdown-menu-end">
                                     <li> <button :title="$t('buttons.newBpmnc7')" type="button" class="dropdown-item" @click="handleClickCreateBpmnc7Diagram">
                                             {{ $t('buttons.newBpmnc7') }}
                                         </button>
