@@ -247,7 +247,6 @@ const emit = defineEmits([
 	'showPropertyPanel',
 	'toggleVersionNotSaved',
 	'updateDownloadLink',
-	'updateDownloadLinkSvg',
 	'showConsoleNotification',
 	'assignSessionIdToProcess'
 ])

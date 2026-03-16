@@ -59,7 +59,7 @@
 				@updateStoredProcesses="getStoredProcesses" @showPropertyPanel="showPropertyPanel"
 				@toggleEnableSave="toggleEnableSave" @showDiagram="showDiagram" @updateEditorXML="updateEditorXML"
 				@updateIsButtonDisabled="updateIsButtonDisabled" @updateDownloadLink="_updateDownloadLink"
-				@resizeTabNav="resizeTabNav" @updateDownloadLinkSvg="_updateDownloadLinkSvg"
+				@resizeTabNav="resizeTabNav"
 				@updateStoredLocalStorageTabNavList="updateStoredLocalStorageTabNavList" @isValidated="isValidated"
 				@setTypeOfDiagramForModeler="setTypeOfDiagramForModeler" @toggleIsSaved="toggleIsSaved"
 				@toggleVersionNotSaved="toggleVersionNotSaved" @toggleOutdatedTemplateBtn="toggleOutdatedTemplateBtn"
@@ -85,7 +85,7 @@
 				:isActiveTab="index === activeTab" :tabElement="tabElement" :ref="el => modeler[index] = el"
 				:tabElementIndex="index" @isValidated="isValidated" @updateEditorXML="updateEditorXML"
 				:xml="tabNavListXml[index]" @updateIsButtonDisabled="updateIsButtonDisabled"
-				@updateDownloadLink="_updateDownloadLink" @updateDownloadLinkSvg="_updateDownloadLinkSvg"
+				@updateDownloadLink="_updateDownloadLink"
 				@toggleEnableSave="toggleEnableSave" @toggleVersionNotSaved="toggleVersionNotSaved"
 				@updateStoredLocalStorageTabNavList="updateStoredLocalStorageTabNavList"
 				@showToastMessage="showToastMessage" @setTypeOfDiagramForModeler="setTypeOfDiagramForModeler"
@@ -114,7 +114,7 @@
 			<FormModeler v-if="tabNavListXml[index] && tabNavList[index].type === 'form'" :json="tabNavListXml[index]" :isActiveTab="index === activeTab" :tabElement="tabElement" :ref="el => modeler[index] = el"
 				:tabElementIndex="index" @isValidated="isValidated" @updateEditorXML="updateEditorXML"
 				:xml="tabNavListXml[index]" @updateIsButtonDisabled="updateIsButtonDisabled"
-				@updateDownloadLink="_updateDownloadLinkForm" @updateDownloadLinkSvg="_updateDownloadLinkSvg"
+				@updateDownloadLink="_updateDownloadLinkForm"
 				@toggleEnableSave="toggleEnableSave" @toggleVersionNotSaved="toggleVersionNotSaved"
 				@updateStoredLocalStorageTabNavList="updateStoredLocalStorageTabNavList"
 				@showToastMessage="showToastMessage" @setTypeOfDiagramForModeler="setTypeOfDiagramForModeler"
@@ -135,6 +135,9 @@
 						@toggleEditor="toggleEditor" @toggleModal="toggleModal"
 						@show-console-notification="showConsoleNotification" @toggleConsole="toggleConsole">
 					</ActionButtonsList>
+				</template>
+				<template #tools="toolProps">
+					<slot name="form-tools" v-bind="toolProps" />
 				</template>
 			</FormModeler>
 		</div>
@@ -626,10 +629,6 @@ const _updateDownloadLink = ({ href, download, tabElementIndex }) => {
 }
 const _updateDownloadLinkForm = ({ href, download, tabElementIndex }) => {
 	actionButton?.value[tabElementIndex]._updateDownloadFile(href, download)
-}
-
-const _updateDownloadLinkSvg = ({ href, download, tabElementIndex }) => {
-	actionButton?.value[tabElementIndex]._updateDownloadFileSvg(href, download)
 }
 
 //when removing a process if it is opened in a tab it will close

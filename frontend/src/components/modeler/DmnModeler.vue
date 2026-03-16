@@ -133,7 +133,6 @@ const emit = defineEmits([
 	'resizeTabNav',
 	'updateEditorXML',
 	'updateDownloadLink',
-	'updateDownloadLinkSvg',
 	'isValidated',
 	'showToastMessage',
 	'toggleEnableSave',
