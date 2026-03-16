@@ -69,11 +69,10 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
-import org.springframework.mock.web.MockMultipartFile;
+import org.cibseven.modeler.util.ByteArrayMultipartFile;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 
 @ApiResponses({
 	@ApiResponse(responseCode = "500", description = "An unexpected system error occured"),
@@ -195,26 +194,16 @@ public class ModelerService extends BaseService {
 	}
 	
 	private MultiValueMap<String, MultipartFile> byteArrayToMultiValueMap(byte[] bytes, String fileName, String type) {
-	    InputStream inputStream = new ByteArrayInputStream(bytes);
-	    MultipartFile mockMultipartFile;
-		try {
-			mockMultipartFile = new MockMultipartFile(fileName, fileName + "." + type, "application/octet-stream", inputStream);
-		    MultiValueMap<String, MultipartFile> multiValueMap = new LinkedMultiValueMap<>();
-		    multiValueMap.add(fileName + "." + type, mockMultipartFile);
-		    return multiValueMap;			
-		} catch (IOException e) {
-			throw new SystemException(e);
-		}
+	    MultipartFile multipartFile = new ByteArrayMultipartFile(fileName, fileName + "." + type, "application/octet-stream", bytes);
+	    MultiValueMap<String, MultipartFile> multiValueMap = new LinkedMultiValueMap<>();
+	    multiValueMap.add(fileName + "." + type, multipartFile);
+	    return multiValueMap;
 	}
 
 	private MultiValueMap<String, MultipartFile> byteArrayToMultiValueMap(MultipartFile file, String fileName, String type) {
-		MultipartFile mockMultipartFile;
 		try {
-			InputStream inputStream = file.getInputStream();
-			mockMultipartFile = new MockMultipartFile(fileName, fileName + "." + type, "application/octet-stream", inputStream);
-		    MultiValueMap<String, MultipartFile> multiValueMap = new LinkedMultiValueMap<>();
-		    multiValueMap.add(fileName + "." + type, mockMultipartFile);
-		    return multiValueMap;			
+			byte[] bytes = file.getBytes();
+			return byteArrayToMultiValueMap(bytes, fileName, type);
 		} catch (IOException e) {
 			throw new SystemException(e);
 		}
