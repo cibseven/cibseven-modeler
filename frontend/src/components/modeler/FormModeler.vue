@@ -181,7 +181,7 @@ const applySchema = (schema) => {
 }
 
 /**
- * Returns the current form schema as a JSON string for AI refinement context.
+ * Returns the current form schema as a JSON string.
  */
 const getCurrentSchemaJson = () => {
 	try {
