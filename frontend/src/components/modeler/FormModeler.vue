@@ -78,8 +78,6 @@
 			:apply-schema="applySchema"
 			:get-current-schema="getCurrentSchemaJson"
 		/>
-		<!-- Extension point for plugins: slot-based (backward compat) -->
-		<slot name="tools" :apply-schema="applySchema" :get-current-schema="getCurrentSchemaJson" />
 	</div>
 </template>
 <script setup>

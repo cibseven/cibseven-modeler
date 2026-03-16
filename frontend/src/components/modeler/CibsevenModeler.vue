@@ -136,9 +136,6 @@
 						@show-console-notification="showConsoleNotification" @toggleConsole="toggleConsole">
 					</ActionButtonsList>
 				</template>
-				<template #tools="toolProps">
-					<slot name="form-tools" v-bind="toolProps" />
-				</template>
 			</FormModeler>
 		</div>
 	</div>
