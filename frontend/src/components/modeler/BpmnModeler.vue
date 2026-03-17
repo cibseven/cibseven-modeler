@@ -151,7 +151,6 @@ import 'diagram-js-minimap/assets/diagram-js-minimap.css'
 import '@bpmn-io/element-template-chooser/dist/element-template-chooser.css'
 import 'bpmn-js-color-picker/colors/color-picker.css'
 import '@bpmn-io/properties-panel/assets/properties-panel.css'
-import 'bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css'
 import 'bpmn-js-bpmnlint/dist/assets/css/bpmn-js-bpmnlint.css'
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css'
 
@@ -164,7 +163,6 @@ import { ElementTemplatesPropertiesProviderModule } from 'bpmn-js-element-templa
 import ElementTemplateChooserModule from '@bpmn-io/element-template-chooser'
 import CamundaModdleDescriptors from 'camunda-bpmn-moddle/resources/camunda.json'
 import { customTranslate, translateValue } from "../../i18n.js"
-import TokenSimulationModule from 'bpmn-js-token-simulation'
 import lintModule from 'bpmn-js-bpmnlint'
 import linterConfig from '../../../linterConfig'
 
@@ -206,6 +204,8 @@ import useMonacoEditor from '../../composables/useMonacoEditor.js'
 import { checkJSON, decodeBase64ToUtf8 } from '../../utils.js'
 
 const monaco = inject('monaco')
+const extraBpmnModules = inject('extraBpmnModules', [])
+const bpmnModelerInitHook = inject('bpmnModelerInitHook', null)
 const divScriptTaskID = 'bio-properties-panel-scriptValue'
 const canvasWidth = ref(0)
 const canvasHeight = ref(44)
@@ -466,18 +466,7 @@ const initializeModeler = async () => {
 		_openCalledElementWhenCalActivity(e)
 	})
 
-	//for token simulation
-	bpmnModeler.on('tokenSimulation.toggleMode', (e) => {
-
-		if (e.active) {
-			togglePropertiesPanel(false)
-			containerModeler.value.querySelector('.bjsl-button').style.visibility = 'hidden' // hides warning button when token simulation is on
-		}
-		else {
-			togglePropertiesPanel(true)
-			containerModeler.value.querySelector('.bjsl-button').style.visibility = 'visible'
-		}
-	})
+	if (bpmnModelerInitHook) bpmnModelerInitHook(bpmnModeler, { togglePropertiesPanel, containerModeler })
 
 	propertiesPanelComponent.value = bpmnModeler.get('propertiesPanel')
 	_setupDiagramFunctions()
@@ -510,7 +499,7 @@ const initializeCamunda7Modeler = () => {
 			customTranslateModule,
 			camundaPlatformBehaviors,
 			{ clipboard: ['value', props.clipboard] },
-			TokenSimulationModule,
+			...extraBpmnModules,
 			lintModule
 		],
 		elementTemplates: props.elementTemplateJson, //templates for camunda 7
