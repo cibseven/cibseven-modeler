@@ -59,6 +59,15 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
     if (closeSessionHook) await closeSessionHook(props.tabElement.sessionId, props.tabElement.type)
   })
 
+  watch(() => props.isActiveTab, async (isActive, wasActive) => {
+    if (wasActive && !isActive && closeSessionHook) {
+      await closeSessionHook(props.tabElement.sessionId, props.tabElement.type)
+      props.tabElement.sessionId = null
+    } else if (!wasActive && isActive && checkSessionHook) {
+      await checkSessionHook(props.tabElement, props.tabElementIndex, false)
+    }
+  })
+
    const saveDecisionTable = async (modeler, typeOfDiagram) =>{
     if (checkSessionHook) {
       const { sessionResponse, forceSave } = await checkSessionHook(props.tabElement, props.tabElementIndex, true)

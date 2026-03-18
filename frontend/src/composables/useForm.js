@@ -14,7 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { nextTick, onBeforeUnmount, onMounted, ref, inject } from "vue"
+import { nextTick, onBeforeUnmount, onMounted, ref, inject, watch } from "vue"
 import { useStore } from 'vuex'
 import { FormEditor } from '@bpmn-io/form-js'
 import { saveForm, updateForm } from'../services/formService.js'
@@ -38,6 +38,15 @@ export default function useForm(props, emit, canvas, propertyPanel) {
 
     onBeforeUnmount(async()=> {
       if (closeSessionHook) await closeSessionHook(props.tabElement.sessionId, props.tabElement.type)
+    })
+
+    watch(() => props.isActiveTab, async (isActive, wasActive) => {
+      if (wasActive && !isActive && closeSessionHook) {
+        await closeSessionHook(props.tabElement.sessionId, props.tabElement.type)
+        props.tabElement.sessionId = null
+      } else if (!wasActive && isActive && checkSessionHook) {
+        await checkSessionHook(props.tabElement, props.tabElementIndex, false)
+      }
     })
 
     const initializeFormEditor = async () => {
