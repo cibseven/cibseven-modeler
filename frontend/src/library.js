@@ -27,14 +27,15 @@ import CibsevenModeler from './components/modeler/CibsevenModeler.vue'
 import BpmnModeler from './components/modeler/BpmnModeler.vue'
 import DmnModeler from './components/modeler/DmnModeler.vue'
 import FormModeler from './components/modeler/FormModeler.vue'
+import NotificationMessage from './components/modals/NotificationMessage.vue'
 
-export { CibsevenModeler, BpmnModeler, DmnModeler, FormModeler }
+export { CibsevenModeler, BpmnModeler, DmnModeler, FormModeler, NotificationMessage }
 
 export { default as store, createModelerStore } from './store.js'
 export { i18n, setLocale, messages, createI18n } from './i18n.js'
 export { parseXml, base64Decode, applyTheme, getTheme, loadFromPublic } from './utils.js'
 export { setAxiosInstance, getAxios } from './axiosConfig.js'
-export { setServicesBasePath, getServicesBasePath } from './services/servicesConfig.js'
+export { setServicesBasePath, getServicesBasePath, getModelerServicePath } from './services/servicesConfig.js'
 export { registerPlugin, getPlugin } from './plugins/pluginsConfig.js'
 
 // Export store modules for consumer apps to register in their own store

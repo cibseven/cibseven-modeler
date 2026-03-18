@@ -47,11 +47,11 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import { checkProcessSession, closeProcessSession } from '../../services/processService'
-import { checkFormSession, closeFormSession } from'../../services/formService.js'
+import { computed, inject, ref } from 'vue'
 
 const tabItem = ref(null)
+const closeSessionHook = inject('closeSessionHook', null)
+const closeFormSessionHook = inject('closeFormSessionHook', null)
 const props = defineProps({
     id: { type: String },
     tabNavList: Object,
@@ -95,12 +95,9 @@ const selectBySimulateClick = () => {
 const removeSelectedTab = async() => {
     try {
         if (props.tabNavList.type !== 'form') {
-        const response = await checkProcessSession(props.tabNavList.id)
-        await closeProcessSession(response.sessionId, props.tabNavList.type)
-        }
-        else{
-            const response = await checkFormSession(props.tabNavList.id)
-            await closeFormSession(response.sessionId, props.tabNavList.type)
+            if (closeSessionHook) await closeSessionHook(props.tabNavList.sessionId, props.tabNavList.type)
+        } else {
+            if (closeFormSessionHook) await closeFormSessionHook(props.tabNavList.sessionId, props.tabNavList.type)
         }
     } catch (error) {
         console.error(error)

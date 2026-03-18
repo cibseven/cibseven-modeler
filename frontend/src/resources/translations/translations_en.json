@@ -23,25 +23,6 @@
 		"title": "File doesn't exist",
 		"body": "The file you are trying to load no longer exists"
 	},
-	"modalNotificacionMessageBlockedProcess": {
-		"title": "Process blocked",
-		"body": "The process you are trying to open is blocked because another user is modifying it."
-	},
-	"modalNotificacionMessageBlockedForm": {
-		"title": "Formular blocked",
-		"body": "The formular you are trying to open is blocked because another user is modifying it."
-	},
-	"modalNotificacionMessageBlockedDiagram": {
-		"title": "Diagram blocked",
-		"body": "The diagram you are trying to open is blocked because another user is modifying it."
-	},
-	"blockedSession": {
-		"process": "Process",
-		"dmn": "Diagram",
-		"form": "Form",
-		"user": "User",
-		"openedAt": "Opened at"
-	},
 	"modalCloseNotSaved": {
 		"title": "Closing {item} not saved",
 		"body": "Are you sure you want to close the unsaved {item}?"
@@ -127,7 +108,6 @@
 		"close": "Close",
 		"delete": "Delete",
 		"copy": "Copy",
-		"forceSave": "Force save",
 		"linkToProject": "Link to project",
 		"moreTabs": "More tabs"
 	},

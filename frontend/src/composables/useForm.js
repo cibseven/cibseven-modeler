@@ -14,31 +14,30 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { nextTick, onBeforeUnmount, onMounted, ref } from "vue"
+import { nextTick, onBeforeUnmount, onMounted, ref, inject } from "vue"
 import { useStore } from 'vuex'
 import { FormEditor } from '@bpmn-io/form-js'
-import { saveForm, updateForm, createFormSession, checkFormSession, closeFormSession } from'../services/formService.js'
+import { saveForm, updateForm } from'../services/formService.js'
 import { checkBeforeAction } from '../utils.js'
 
-export default function useForm(props, emit, canvas, propertyPanel, notificationModalRef) {
+export default function useForm(props, emit, canvas, propertyPanel) {
     const store = useStore()
     const formEditor = ref(null)
     const schema = JSON.parse(props.json)
 	  const propertiesPanelComponent = ref(null)
-    const notificationModal = ref(notificationModalRef)
+    const checkSessionHook = inject('checkFormSessionHook', null)
+    const createSessionHook = inject('createFormSessionHook', null)
+    const closeSessionHook = inject('closeFormSessionHook', null)
 
-    const notificationMessageData = ref({})
     let json = null
     if (!props.json) return
 
     onMounted(async()=> {
-      //check if you have a session already opened for that form
-      const { sessionResponse } = await checkIfFormBlocked(notificationModal, false)
-      if(sessionResponse.sessionId) emit('assignSessionIdToProcess', props.tabElementIndex, sessionResponse.sessionId)
+      if (checkSessionHook) await checkSessionHook(props.tabElement, props.tabElementIndex, false)
     })
 
     onBeforeUnmount(async()=> {
-      await closeFormSession(props.tabElement.sessionId, props.tabElement.type)
+      if (closeSessionHook) await closeSessionHook(props.tabElement.sessionId, props.tabElement.type)
     })
 
     const initializeFormEditor = async () => {
@@ -85,8 +84,13 @@ export default function useForm(props, emit, canvas, propertyPanel, notification
        return formEditor.value    
     }
 
-    const save = async (notificationModal) => {
-      const { sessionResponse } = await checkIfFormBlocked(notificationModal, true)
+    const save = async () => {
+      let sessionResponse = null
+      if (checkSessionHook) {
+        const result = await checkSessionHook(props.tabElement, props.tabElementIndex, true)
+        if (!result.forceSave) return false
+        sessionResponse = result.sessionResponse
+      }
 
       emit('updateEditorXML', JSON.stringify(json, null, 2),  props.tabElementIndex)
       const newFormId = json.id
@@ -136,7 +140,7 @@ export default function useForm(props, emit, canvas, propertyPanel, notification
                 })
                 emit('toggleEnableSave', false, props.tabElementIndex)
                 emit('toggleVersionNotSaved', false, props.tabElementIndex) //enables save button when changing version
-                if (sessionResponse.message === 'NO_SESSION') createSession( response, json, props.tabElementIndex )
+                if (createSessionHook && sessionResponse?.message === 'NO_SESSION') createSessionHook(response, json, props.tabElementIndex, props.tabElement)
                 return true
               }
               
@@ -167,7 +171,7 @@ export default function useForm(props, emit, canvas, propertyPanel, notification
                 emit('toggleEnableSave', false, props.tabElementIndex)
                 emit('toggleIsSaved', true, props.tabElementIndex)
                 emit('toggleVersionNotSaved', false, props.tabElementIndex) //enables save button when changing version
-                if (sessionResponse.message === 'NO_SESSION') createSession( response, json, props.tabElementIndex )
+                if (createSessionHook && sessionResponse?.message === 'NO_SESSION') createSessionHook(response, json, props.tabElementIndex, props.tabElement)
 
                 return true
               }
@@ -223,35 +227,6 @@ export default function useForm(props, emit, canvas, propertyPanel, notification
       return json?.id
     }
 
-    const checkIfFormBlocked = async (notificationModal, showForceSave) => {
-      let canSave = true
-      const sessionResponse = await checkFormSession(props.tabElement.id)
-      if (sessionResponse.message === 'SESSION_FOUND' || ( sessionResponse.message !== 'NO_SESSION' && sessionResponse.message !== 'SAME_USER') && !props.tabElement.sessionId) {
-          notificationMessageData.value = {
-          processName: props.tabElement?.name ?? props.tabElement?.id,
-          header: ['blockedSession.user', 'blockedSession.openedAt'],
-          body: [sessionResponse.userId, new Date(sessionResponse.openedAt).toLocaleString()]
-        }
-        canSave = await notificationModal.value.show(showForceSave)
-       
-      }
-      return { sessionResponse, forceSave: canSave} 
-    }
-
-    const createSession = async(response, selectedProcess, tabElementIndex) => {
-  
-      if(!response.sessionId) {
-        const responseSession = await createFormSession(
-          response.formId,
-          response.id,
-          selectedProcess,
-          'form'        
-        )
-        emit('assignSessionIdToProcess', tabElementIndex, responseSession.sessionId)
-        return responseSession
-      }
-   
-    }
       return { 
         initializeFormEditor,
         importJson,
@@ -262,6 +237,5 @@ export default function useForm(props, emit, canvas, propertyPanel, notification
         getFormId,
         formEditor,
         propertiesPanelComponent,
-        notificationMessageData
     }
 }

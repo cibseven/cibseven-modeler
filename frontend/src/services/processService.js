@@ -73,32 +73,6 @@ const updateDiagramProcess = (id, name, processkey, blob, type) => {
   })
 }
 
-const createProcessSession = (name, id, blob, type) => {
-
-  const formData = new FormData()
-  formData.append('name', name)
-  formData.append('id', id)
-  formData.append('type', type)
-  formData.append('diagram', blob)
-
-  return getAxios().post(getModelerServicePath() + '/session/save', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  })
-}
-
-const closeProcessSession = (sessionIds, type) => {
-  const formData = new FormData()
-  formData.append('sessionId', sessionIds)
-  formData.append('type', type)
-  return getAxios().post(getModelerServicePath() + '/session/close', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  })
-}
-
-const checkProcessSession = id => {
-  return getAxios().get(getModelerServicePath() + '/process/session/check/' + id)
-}
-
 // get list of process's history
 const fetchProcessHistory = id => {
   return getAxios().get(getModelerServicePath() + '/process/history/' + id, {
@@ -117,7 +91,4 @@ export {
   saveDiagramProcess,
   updateDiagramProcess,
   deleteProcessById,
-  createProcessSession,
-  closeProcessSession,
-  checkProcessSession
 }

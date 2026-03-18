@@ -63,7 +63,7 @@
 				@updateStoredLocalStorageTabNavList="updateStoredLocalStorageTabNavList" @isValidated="isValidated"
 				@setTypeOfDiagramForModeler="setTypeOfDiagramForModeler" @toggleIsSaved="toggleIsSaved"
 				@toggleVersionNotSaved="toggleVersionNotSaved" @toggleOutdatedTemplateBtn="toggleOutdatedTemplateBtn"
-				@show-console-notification="showConsoleNotification" @assign-session-id-to-process="assignSessionIdToProcess">
+				@show-console-notification="showConsoleNotification">
 				<div v-if="tabElement.isModelerVisible" class="h-100">
 					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index]"
 						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index"></monaco-editor>
@@ -90,7 +90,7 @@
 				@updateStoredLocalStorageTabNavList="updateStoredLocalStorageTabNavList"
 				@showToastMessage="showToastMessage" @setTypeOfDiagramForModeler="setTypeOfDiagramForModeler"
 				@toggleIsSaved="toggleIsSaved" @resizeTabNav="resizeTabNav" @toggleConsole="toggleConsole"
-				@show-console-notification="showConsoleNotification" @assign-session-id-to-process="assignSessionIdToProcess"
+				@show-console-notification="showConsoleNotification"
 				:isModelerVisible="tabNavList[index].isModelerVisible"
 				:consoleErrors="consoleErrorsList[index]"
 				>
@@ -119,7 +119,7 @@
 				@updateStoredLocalStorageTabNavList="updateStoredLocalStorageTabNavList"
 				@showToastMessage="showToastMessage" @setTypeOfDiagramForModeler="setTypeOfDiagramForModeler"
 				@toggleIsSaved="toggleIsSaved" @resizeTabNav="resizeTabNav" @toggleConsole="toggleConsole"
-				@show-console-notification="showConsoleNotification" @assign-session-id-to-process="assignSessionIdToProcess"
+				@show-console-notification="showConsoleNotification"
 				:isModelerVisible="tabNavList[index].isModelerVisible">
 				<div v-if="tabElement.isModelerVisible" class="h-100">
 					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index]"
@@ -228,7 +228,6 @@ const isShowModal = ref(false)
 const isShowModalNewDiagram = ref(false)
 const toastComponent = ref(null)
 const activeTab = ref(-1) // to switch active tab pane
-const sessionIds = ref([])
 const config = inject('config', {})
 
 onMounted(async () => {
@@ -244,12 +243,6 @@ onMounted(async () => {
 	hasDirectDiagram.value = false
 	window.addEventListener('resize', resizeTabWindow)
 	waitToLoad.value = true
-})
-
-watch(tabNavList, newVal => {
-    sessionIds.value = newVal
-    .filter(el => el?.sessionId)
-    .map(el => el.sessionId)
 })
 
 watch(() => activeTab.value, async newValue => { // when the tab is selected it will resize the tabnav
@@ -520,10 +513,6 @@ const updateDiagramFromEditor = (xmlContent, tabElementIndex) => {
 
 const openDiagramFromNavTabFromChild = (valueFromChild, tabElementIndex) => {
 	tabNavListXml.value[tabElementIndex] = valueFromChild
-}
-
-const assignSessionIdToProcess = (tabElementIndex, processSessionId) => {
-	tabNavList.value[tabElementIndex].sessionId = processSessionId
 }
 
 const updateDiagramXml = async (valueFromChild, tabElementIndex, cansave, _typeDiagram) => {

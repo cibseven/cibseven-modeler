@@ -18,13 +18,16 @@ import { ref, computed, watch, onMounted, onBeforeUnmount, inject } from 'vue'
 import { useStore } from 'vuex'
 import { checkBeforeAction } from '../utils.js'
 //to update or save process
-import { saveDiagramProcess, updateDiagramProcess, checkProcessSession, closeProcessSession, createProcessSession } from '../services/processService.js'
+import { saveDiagramProcess, updateDiagramProcess } from '../services/processService.js'
 
-export default function useModeler(propsRef, emitRef, monacoEditorConsole, consolePanel, notificationModalRef) {
+export default function useModeler(propsRef, emitRef, monacoEditorConsole, consolePanel) {
   const store = useStore()
   const props = propsRef
   const emit = emitRef
   const afterXmlUpdateHook = inject('afterXmlUpdateHook', null)
+  const checkSessionHook = inject('checkSessionHook', null)
+  const createSessionHook = inject('createSessionHook', null)
+  const closeSessionHook = inject('closeSessionHook', null)
   const processHistoryListComp = ref(null)
   const processId = ref(null)
   const processInformation = ref(null)
@@ -32,8 +35,6 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
   const typeOfSelector = ref(null)
   const isShowModalListSelector = ref(false)
   const activeVersion = ref(-1) // the actual selected version of the diagram
-  const notificationMessageData = ref({})
-  const notificationModal = ref(notificationModalRef)
   const isConsoleOpen = ref(false)
 
   const listDataForSelector = computed(() => {
@@ -51,34 +52,19 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
   onMounted(async()=> {
     processId.value = props.tabElement.id
     processHistoryListComp.value = await getProcessHistoryList()
-    const { sessionResponse } = await checkIfProcessBlocked(notificationModal, false)
-    if(sessionResponse.sessionId) emit('assignSessionIdToProcess', props.tabElementIndex, sessionResponse.sessionId)
+    if (checkSessionHook) await checkSessionHook(props.tabElement, props.tabElementIndex, false)
   })
 
   onBeforeUnmount(async()=> {
-    await closeProcessSession(props.tabElement.sessionId, props.tabElement.type)
+    if (closeSessionHook) await closeSessionHook(props.tabElement.sessionId, props.tabElement.type)
   })
-  
-  const createSession = async(response, selectedProcess, tabElementIndex) => {
-    //const response = await checkProcessSession(props.tabElement.id)
 
-    if(!response.sessionId) {
-      const responseSession = await createProcessSession(
-        response.name,
-        response.id,
-        selectedProcess,
-        response.type          
-      )
-      emit('assignSessionIdToProcess', tabElementIndex, responseSession.sessionId)
-      return responseSession
+   const saveDecisionTable = async (modeler, typeOfDiagram) =>{
+    if (checkSessionHook) {
+      const { sessionResponse, forceSave } = await checkSessionHook(props.tabElement, props.tabElementIndex, true)
+      if (!forceSave) return
+      var savedSessionResponse = sessionResponse
     }
-   
-  }
-
-   const saveDecisionTable = async (modeler, typeOfDiagram, notificationModal) =>{
-    
-    const { sessionResponse, forceSave } = await checkIfProcessBlocked(notificationModal, true)
-    if (!forceSave) return 
     const dmn = modeler.getViews()[0]
     if (!dmn) return
     const { xml } = await modeler.saveXML({ format: true })
@@ -88,7 +74,7 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
     const storedProcessSelectedProcesskey = props.tabElement.key
     const newProcessName = dmn.name === '' || !props.tabElement.key === '' ? dmn.id : dmn.name
    
-    save(storedProcessSelectedId, newProcessName, storedProcessSelectedProcesskey, newProcessKey, xml, blob, typeOfDiagram, null, sessionResponse)
+    save(storedProcessSelectedId, newProcessName, storedProcessSelectedProcesskey, newProcessKey, xml, blob, typeOfDiagram, null, savedSessionResponse)
   }
 
   const save = async (storedProcessSelectedId, newProcessName, storedProcessSelectedProcesskey, newProcessKey, xml, blob, typeOfDiagram, functionToExecute, sessionResponse) => {
@@ -144,7 +130,7 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
           emit('toggleVersionNotSaved', false, props.tabElementIndex) //enables save button when changing version
           processId.value = response.id
           await getProcessHistoryList()
-          if (sessionResponse.message === 'NO_SESSION') createSession( response, blob, props.tabElementIndex )
+          if (createSessionHook && sessionResponse?.message === 'NO_SESSION') createSessionHook(response, blob, props.tabElementIndex, props.tabElement)
           return true
         }
         
@@ -180,7 +166,7 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
           emit('toggleVersionNotSaved', false, props.tabElementIndex) //enables save button when changing version
           processId.value = response.id
           await getProcessHistoryList()
-          if (sessionResponse.message === 'NO_SESSION') createSession( response, blob, props.tabElementIndex)
+          if (createSessionHook && sessionResponse?.message === 'NO_SESSION') createSessionHook(response, blob, props.tabElementIndex, props.tabElement)
           return true
         }
       
@@ -193,27 +179,13 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
     if (functionToExecute) functionToExecute(xml)
   }
 
-  const checkIfProcessBlocked = async (notificationModal, showForceSave) => {
-    let canSave = true
-    const sessionResponse = await checkProcessSession(props.tabElement.id)
-    
-    if (sessionResponse.message === 'SESSION_FOUND' || ( sessionResponse.message !== 'NO_SESSION' && sessionResponse.message !== 'SAME_USER') && !props.tabElement.sessionId) {
-        notificationMessageData.value = {
-        processName: props.tabElement?.name ?? props.tabElement?.id,
-        header: ['blockedSession.user', 'blockedSession.openedAt'],
-        body: [sessionResponse.userId, new Date(sessionResponse.openedAt).toLocaleString()]
-      }
-      canSave = await notificationModal.value.show(showForceSave)
+  const saveProcess = async (modeler, typeOfDiagram, _setupDiagramFunctions, functionToExecute) => {
+    let sessionResponse = null
+    if (checkSessionHook) {
+      const result = await checkSessionHook(props.tabElement, props.tabElementIndex, true)
+      if (!result.forceSave) return
+      sessionResponse = result.sessionResponse
     }
-    else{
-      if(sessionResponse.sessionId) emit('assignSessionIdToProcess', props.tabElementIndex, sessionResponse.sessionId)
-    }
-    return { sessionResponse, forceSave: canSave} 
-  }
-
-  const saveProcess = async (modeler, typeOfDiagram, _setupDiagramFunctions, functionToExecute, notificationModal) => {
-    const { sessionResponse, forceSave } = await checkIfProcessBlocked(notificationModal, true)
-    if (!forceSave) return
   
     if(_setupDiagramFunctions) _setupDiagramFunctions() // updates the xml
     processInformation.value = getProcessInformation(modeler)
@@ -350,7 +322,5 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
      isConsolePanelShowing,
      isConsoleOpen,
      saveDecisionTable,
-     //for block process modal
-     notificationMessageData
     }
 }
