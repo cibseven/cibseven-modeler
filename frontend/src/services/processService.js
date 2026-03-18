@@ -73,16 +73,7 @@ const updateDiagramProcess = (id, name, processkey, blob, type) => {
   })
 }
 
-// get list of process's history
-const fetchProcessHistory = id => {
-  return getAxios().get(getModelerServicePath() + '/process/history/' + id, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-    }
-  )
-}
-
 export {
-  fetchProcessHistory,
   fetchDiagram,
   fetchDecisionDiagram,
   fetchProcesses,

@@ -28,6 +28,7 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
   const checkSessionHook = inject('checkSessionHook', null)
   const createSessionHook = inject('createSessionHook', null)
   const closeSessionHook = inject('closeSessionHook', null)
+  const fetchSnapshotsHook = inject('fetchSnapshotsHook', null)
   const processHistoryListComp = ref(null)
   const processId = ref(null)
   const processInformation = ref(null)
@@ -207,10 +208,11 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
     save(storedProcessSelectedId, newProcessName, storedProcessSelectedProcesskey, newProcessKey, xml, blob, typeOfDiagram, functionToExecute, sessionResponse)
   }
 
-  const getProcessHistoryList = async () => {  
-    await store.dispatch('modeler/processes/fetchProcessHistoryList', processId.value) // search xml by id selected
-    processHistoryListComp.value = store.state.modeler.processes.processHistoryList
-    activeVersion.value = processHistoryListComp.value[0]?.version ?? -1 // update version
+  const getProcessHistoryList = async () => {
+    if (!fetchSnapshotsHook) return null
+    const historyList = await fetchSnapshotsHook(processId.value)
+    processHistoryListComp.value = historyList
+    activeVersion.value = processHistoryListComp.value?.[0]?.version ?? -1 // update version
     return processHistoryListComp.value
   }
 
@@ -267,6 +269,7 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
   }
 
   const selectDiagramVersion = () => {
+    if (!fetchSnapshotsHook) return
     typeOfSelector.value = 'changeVersion'
     isShowModalListSelector.value = true
   }

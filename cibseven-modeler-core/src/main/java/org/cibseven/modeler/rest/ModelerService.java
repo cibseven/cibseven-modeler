@@ -496,14 +496,6 @@ public class ModelerService extends BaseService {
 		dbProcessDiagramProvider.delete(id);
 	}
 	
-	@RequestMapping(value = "/process/history/{id}", method = RequestMethod.GET)
-	public List<ProcessDiagramEntity> loadDiagramHistory(@PathVariable String id, HttpServletRequest rq) {
-		if (authenticationEnabled) {
-			checkAuthorization(rq, true);
-		}
-		return dbProcessDiagramProvider.getListDiagramHistory(id);
-	}
-	
 	@RequestMapping(value = "/form/save", method = RequestMethod.POST)
 	public FormEntity saveForm(@RequestParam("formid") String formid, @RequestParam("form_schema") MultipartFile formSchema, HttpServletRequest rq) {
 	    if (authenticationEnabled) {
