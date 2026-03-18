@@ -24,6 +24,11 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+    properties:
+      hibernate:
+        integration:
+          envers:
+            enabled: false
 
 springdoc:
   swagger-ui:
