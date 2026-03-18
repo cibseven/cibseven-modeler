@@ -48,33 +48,6 @@
 				</MenuActionButtons>
 			</div>
 		</div>
-		<NotificationMessage ref="notificationModal">
-			<template #title>
-				<h5 class="modal-title fs-5" id="deployModalLabel">{{ $t('modalNotificacionMessageBlockedDiagram.title') }}</h5>
-			</template>
-			<template #body>
-				<div class="border-1">
-					<h6>{{ $t('blockedSession.dmn') }} : {{ notificationMessageData?.processName }}</h6>
-					<h5>{{ $t('modalNotificacionMessageBlockedDiagram.body') }}</h5>
-				</div>
-				<table class="table">
-					<thead>
-						<tr>
-							<th v-for="(column, idx) in notificationMessageData?.header" :key="idx">{{ $t(column) }}</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td v-for="(column, idx) in notificationMessageData?.body" :key="idx">{{ column }}</td>
-						</tr>
-					</tbody>
-				</table>
-			</template>
-			<template #optionalButton>
-				<button type="button" @click.prevent="() => notificationModal.closeModal(true)"
-					class="btn btn-secondary">{{ $t("buttons.forceSave") }}</button>
-			</template>
-		</NotificationMessage>
 	</div>
 </template>
 
@@ -100,14 +73,12 @@ import PropertiesPanel from '../layout/PropertiesPanel.vue'
 import ConsolePanel from '../layout/ConsolePanel.vue'
 import MonacoConsole from '../monaco/MonacoConsole.vue'
 import MonacoThemeScope from '../layout/MonacoThemeScoped.vue'
-import NotificationMessage from '../modals/NotificationMessage.vue'
 import useModeler from '../../composables/useModeler.js'
 import usePropertiesPanel from '../../composables/usePropertiesPanel.js'
 import { getTagValueFromXml } from '../../utils.js'
 
 const containerModeler = ref(null)
 const canvas = ref(null)
-const notificationModal = ref(null)
 const monacoEditorConsole = ref(null)
 const consolePanel = ref(null)
 const canvasHeight = ref(44)
@@ -140,7 +111,6 @@ const emit = defineEmits([
 	'toggleVersionNotSaved',
 	'updateIsButtonDisabled',
 	'updateStoredLocalStorageTabNavList',
-	'assignSessionIdToProcess',
 	'setTypeOfDiagramForModeler',
 	'toggleConsole',
 	'show-console-notification',
@@ -150,14 +120,13 @@ const {
 	saveDecisionTable,
 	validate,
 	saveXmlAfterUpdate,
-	notificationMessageData,
 	toggleConsole,
 	addLineWithErrorToConsole,
 	copyLine,
 	cleanConsole,
 	isConsolePanelShowing,
 	isConsoleOpen,
-} = useModeler(props, emit, monacoEditorConsole, consolePanel, notificationModal)
+} = useModeler(props, emit, monacoEditorConsole, consolePanel)
 
 const { updateParentHeight, updateParentWidth, parentWidth, parentHeight } = usePropertiesPanel(props, emit, containerModeler, resDiv, null, null)
 const canvasWidth = ref(0)
@@ -337,7 +306,7 @@ const createObserver = divToObserve => {
 	return observer
 }
 
-const _saveDiagram = () => saveDecisionTable(dmnModeler, props.tabElement.type, notificationModal)
+const _saveDiagram = () => saveDecisionTable(dmnModeler, props.tabElement.type)
 
 const _saveXmlAfterUpdate = (isBpmn, updatedXml, tabElementIndex) => {
 	saveXmlAfterUpdate(false, updatedXml, tabElementIndex, dmnModeler)

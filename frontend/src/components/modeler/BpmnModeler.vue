@@ -107,37 +107,6 @@
 			@hide-modal="_hideModal"
 			:function-after-accepting="() => changeProcessVersion(selectedItem)">
 		</ConfirmModal>
-		<NotificationMessage ref="notificationModal">
-
-			<template #title>
-				<h5 class="modal-title fs-5" id="deployModalLabel">{{ $t('modalNotificacionMessageBlockedProcess.title')
-					}}
-				</h5>
-			</template>
-			<template #body>
-				<div class="border-1">
-					<h6>{{ $t('blockedSession.process') }} : {{ notificationMessageData?.processName }}</h6>
-					<h5>{{ $t('modalNotificacionMessageBlockedProcess.body') }}</h5>
-				</div>
-				<table class="table">
-					<thead>
-						<tr>
-							<th v-for="(column, idx) in notificationMessageData?.header" :key="idx">{{ $t(column) }}</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td v-for="(column, idx) in notificationMessageData?.body" :key="idx">{{ column }}</td>
-						</tr>
-					</tbody>
-				</table>
-			</template>
-			<template #optionalButton>
-				<button type="button" @click.prevent="() => notificationModal.closeModal(true)"	class="btn btn-secondary">
-					{{ $t("buttons.forceSave") }}
-				</button>
-			</template>
-		</NotificationMessage>
 		<ElementTemplatesModal ref="elementTemplatesModal" :tabElement="tabElement"
 		@applyTemplateToTask="applyTemplateToTask"></ElementTemplatesModal>
 	</div>
@@ -185,7 +154,6 @@ import ConsolePanel from '../layout/ConsolePanel.vue'
 import VersionButton from '../VersionButton.vue'
 import MonacoThemeScope from '../layout/MonacoThemeScoped.vue'
 import MenuActionButtons from '../layout/MenuActionButtons.vue'
-import NotificationMessage from '../modals/NotificationMessage.vue'
 import BpmnFilterPopover from '../BpmnFilterPopover.vue'
 import ElementTemplatesModal from '../modals/ElementTemplatesModal.vue'
 import ConfirmModal from '../modals/ConfirmModal.vue'
@@ -221,8 +189,6 @@ const TYPEC7 = 'bpmn-c7'
 const propertiesPanelComponent = ref(null)
 const isVisiblePropertyPanel = ref(true)
 const resizableDiv = ref(null)
-//for session blocked modal
-const notificationModal = ref(null)
 //config.js
 const config = inject('config', {})
 
@@ -248,7 +214,6 @@ const emit = defineEmits([
 	'toggleVersionNotSaved',
 	'updateDownloadLink',
 	'showConsoleNotification',
-	'assignSessionIdToProcess'
 ])
 
 const props = defineProps({
@@ -300,9 +265,7 @@ const {
 	cleanConsole,
 	isConsolePanelShowing,
 	isConsoleOpen,
-	// for modal of sessions
-	notificationMessageData
-} = useModeler(props, emit, monacoEditorConsole, consolePanel, notificationModal)
+} = useModeler(props, emit, monacoEditorConsole, consolePanel)
 
 const { addCustomizeTemplateButton, customizedModalElementTemplatesData, applyTemplateToTask } = useCustomizedTemplateModal()
 const { updateParentHeight, updateParentWidth,  parentWidth, parentHeight } = usePropertiesPanel(props, emit, containerModeler, resizableDiv)
@@ -580,7 +543,7 @@ const _validate = async xml => {
 	validate(bpmnModeler, xml)
 }
 
-const _saveDiagram = async () => await saveProcess(bpmnModeler, typeOfDiagram, _setupDiagramFunctions, _updatetemplatesListButton, notificationModal)
+const _saveDiagram = async () => await saveProcess(bpmnModeler, typeOfDiagram, _setupDiagramFunctions, _updatetemplatesListButton)
 
 const _createMonacoEditor = (scriptDivId, textArea) => {
 	const divMonaco = document.createElement('div')
