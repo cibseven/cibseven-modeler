@@ -934,33 +934,33 @@ input[name="historyTimeToLive"].is-invalid {
 	margin-bottom: 50px;
 }
 
-.bts-toggle-mode:hover {
+.container.modeler .bts-toggle-mode:hover {
 	background-color: var(--bs-primary);
 }
 
-.bjs-container.simulation .bts-toggle-mode {
+.container.modeler .bjs-container.simulation .bts-toggle-mode {
 	background-color: var(--bs-primary);
 }
 
-.bjs-container.simulation .djs-container {
-	box-shadow: inset 0px 0px 0px 4px var(--bs-primary, --bs-primary);
+.container.modeler .bjs-container.simulation .djs-container {
+	box-shadow: inset 0px 0px 0px 4px var(--bs-primary);
 }
 
-.bts-context-pad:not(.disabled):hover {
-	background-color: var(--bs-primary, --bs-primary);
+.container.modeler .bts-context-pad:not(.disabled):hover {
+	background-color: var(--bs-primary);
 }
 
-.bts-set-animation-speed .bts-animation-speed-button.active,
-.bts-set-animation-speed .bts-animation-speed-button:hover {
-	background-color: var(--bs-primary, --bs-primary);
+.container.modeler .bts-set-animation-speed .bts-animation-speed-button.active,
+.container.modeler .bts-set-animation-speed .bts-animation-speed-button:hover {
+	background-color: var(--bs-primary);
 }
 
-.bts-palette .bts-entry.active,
-.bts-palette .bts-entry:not(.disabled):hover {
-	background-color: var(--bs-primary, --bs-primary);
+.container.modeler .bts-palette .bts-entry.active,
+.container.modeler .bts-palette .bts-entry:not(.disabled):hover {
+	background-color: var(--bs-primary);
 }
 
-.bts-log .bts-header {
-	background-color: var(--bs-primary, --bs-primary);
+.container.modeler .bts-log .bts-header {
+	background-color: var(--bs-primary);
 }
 </style>
