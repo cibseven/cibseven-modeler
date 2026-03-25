@@ -44,18 +44,18 @@
 			<MenuActionButtons :key="`menu-action-buttons-${props.tabElement.key}`" :width="canvasWidth">
 				<template #leftButtons>
 					<slot name="menu" />					
-					<BpmnFilterPopover ref="popover" position="top" :container="containerModeler" classesOn="mdi mdi-24px mdi-filter-outline" classesOff="mdi mdi-24px mdi-filter">
-						<template #title>
-							<h6>{{ $t('bpmnFilter.title') }}:</h6>
-						</template>
-						<template #body>
-							<div ref="filterPopover" class="form-check form-switch" v-for="filter,index in config.modeler?.filterBpmn" :key="index">
-								<input class="form-check-input" type="checkbox" :ref="el => filterPopover[index] = el" :id="`${filter.type}-${props.tabElement.id}-taskSwitch`" @change="popover.handleBpmnFilter($event, bpmnModeler, filter, filterPopover)">
-								<!-- :style="{ backgroundColor: filter.color }" -->
-								<label class="form-check-label text-secondary" :for="`${filter.type}-${props.tabElement.id}-taskSwitch`">{{ filter.name }}</label>
-							</div>
-						</template>
-					</BpmnFilterPopover>
+					<component
+						v-if="BpmnFilterButtonComponent"
+						:is="BpmnFilterButtonComponent"
+						ref="popover"
+						position="top"
+						:container="containerModeler"
+						classesOn="mdi mdi-24px mdi-filter-outline"
+						classesOff="mdi mdi-24px mdi-filter"
+						:filter-bpmn="config.modeler?.filterBpmn"
+						:tab-element-id="props.tabElement.id"
+						:get-bpmn-modeler="() => bpmnModeler"
+					/>
 				</template>
 				<template #rightButtons>
 					<VersionButton ref="versionButton" v-if="processHistoryListComp?.length > 0"
@@ -154,7 +154,6 @@ import ConsolePanel from '../layout/ConsolePanel.vue'
 import VersionButton from '../VersionButton.vue'
 import MonacoThemeScope from '../layout/MonacoThemeScoped.vue'
 import MenuActionButtons from '../layout/MenuActionButtons.vue'
-import BpmnFilterPopover from '../BpmnFilterPopover.vue'
 import ElementTemplatesModal from '../modals/ElementTemplatesModal.vue'
 import ConfirmModal from '../modals/ConfirmModal.vue'
 
@@ -193,7 +192,7 @@ const resizableDiv = ref(null)
 const config = inject('config', {})
 
 //popover for task filters
-const filterPopover = ref({})
+const BpmnFilterButtonComponent = inject('bpmnFilterButtonComponent', null)
 const popover = ref(null)
 //element templates modal
 const elementTemplatesModal = ref(null)
@@ -391,7 +390,7 @@ const initializeModeler = async () => {
 		emit('toggleEnableSave', true, props.tabElementIndex) //enables save button		
 		_setupDiagramFunctions()
 		getProcessInformation(bpmnModeler)
-		if (popover.value.isFilterOn) popover.value.bpmnFilter(bpmnModeler, filterPopover.value)
+		if (popover.value?.isFilterOn) popover.value.bpmnFilter(bpmnModeler)
 		_openCalledElementWhenCalActivity(e)
 	})
 
