@@ -471,7 +471,11 @@ public class ModelerService extends BaseService {
 		if (authenticationEnabled) {
 			checkAuthorization(rq, true);
 		}
-		byte[] file = dbProcessDiagramProvider.findById(id).get().getDiagram();
+		ProcessDiagramEntity entity = dbProcessDiagramProvider.findById(id).orElse(null);
+		if (entity == null) {
+			return ResponseEntity.notFound().build();
+		}
+		byte[] file = entity.getDiagram();
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM);
 		headers.setAccept(Arrays.asList(MediaType.APPLICATION_OCTET_STREAM));
@@ -480,12 +484,15 @@ public class ModelerService extends BaseService {
 	}
 
 	@RequestMapping(value = "/process/{id}", method = RequestMethod.GET)
-	public ProcessDiagramEntity findById(@PathVariable String id, HttpServletRequest rq) {
+	public ResponseEntity<ProcessDiagramEntity> findById(@PathVariable String id, HttpServletRequest rq) {
 		if (authenticationEnabled) {
 			checkAuthorization(rq, true);
 		}
-		ProcessDiagramEntity response = dbProcessDiagramProvider.findById(id).get();
-		return response;
+		ProcessDiagramEntity entity = dbProcessDiagramProvider.findById(id).orElse(null);
+		if (entity == null) {
+			return ResponseEntity.notFound().build();
+		}
+		return ResponseEntity.ok(entity);
 	}
 	
 	@RequestMapping(value = "/process/delete/{id}", method = RequestMethod.DELETE)
