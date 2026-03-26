@@ -70,10 +70,11 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
   })
 
    const saveDecisionTable = async (modeler, typeOfDiagram) =>{
+    let savedSessionResponse
     if (checkSessionHook) {
       const { sessionResponse, forceSave } = await checkSessionHook(props.tabElement, props.tabElementIndex, true)
       if (!forceSave) return
-      var savedSessionResponse = sessionResponse
+      savedSessionResponse = sessionResponse
     }
     const dmn = modeler.getViews()[0]
     if (!dmn) return

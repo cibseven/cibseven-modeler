@@ -25,7 +25,7 @@
                     <div class="input-group" role="group">
                             <button @click.stop="handleSearch" class="btn btn-secondary" :title="$t('buttons.search')" aria-hidden="true" type="button">                               <span class="mdi mdi-magnify" style="line-height: initial;"></span>
                             </button> 
-                        <input class="form-control" type="text" :title="$t('titles.search')" :placeholder="$t('titles.search')" :aria-label="$t('titles.search')" autofocus="autofocus" autocomplete="off" v-model="inputSearchValue" @input="handleSearch">                            
+                        <input class="form-control" type="text" :title="$t('titles.search')" :placeholder="$t('titles.search')" :aria-label="$t('titles.search')" autocomplete="off" v-model="inputSearchValue" @input="handleSearch">                            
                                 <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" :title="$t(`filterElements.${filterType}`)">
                                     {{ $t(`filterElements.${filterType}`) }}
                                 </button>

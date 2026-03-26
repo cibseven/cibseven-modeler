@@ -47,8 +47,7 @@
 		</div>
 		<div v-for="(tabElement, index) in tabNavList" :key="`process${tabElement.keyOfTabNav}-tp`"
 			class="tab-pane fade h-100" :class="{ 'active show': activeTab === index }" :navId="tabElement.keyOfTabNav"
-			role="tabpanel" :aria-labelledby="`process${tabElement.keyOfTabNav}-tab`" tabindex="0"
-			v-on:keydown.ctrl.s="e => saveWithKeyboard(e, tabElement.name, index)">
+			role="tabpanel" :aria-labelledby="`process${tabElement.keyOfTabNav}-tab`" tabindex="0">
 			<BpmnModeler
 				v-if="tabNavListXml[index] && waitToLoad && tabNavList[index].type === 'bpmn-c7'"
 				:tabElementIndex="index" :ref="el => modeler[index] = el" :tabElement="tabElement"

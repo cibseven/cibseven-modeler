@@ -199,11 +199,6 @@ const changeWidth = value => {
     containerWidth.value = value
 }
 
-const _updateDownloadFileSvg = (downloadLinkSvgValue, downloadNameSvgValue) => {
-    downloadLinkSvg.value = downloadLinkSvgValue
-    downloadNameSvg.value = downloadNameSvgValue
-}
-
 const _saveDiagram = async () => {
     if (isSaving.value) return // prevent re-entry (e.g. rapid Ctrl+S)
     if (!props.canSave && !props.tabElement.changedVersion) return // only saves if button is enabled
