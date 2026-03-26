@@ -167,7 +167,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { compareXML, getTimeStamp, getTagValueFromXml, checkCamundaVersion, generateUniqueId, setTagValueOfXml, getProcessKeyFromBpmn, filterTemplates } from '../../utils.js'
 import Clipboard from 'diagram-js/lib/features/clipboard/Clipboard'
-import { ref, onMounted, nextTick, watch, computed, inject, provide } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, watch, computed, inject, provide } from 'vue'
 import { useI18n } from 'vue-i18n'
 //import components
 import ModalDeploy from '../modals/ModalDeploy.vue'
@@ -242,7 +242,13 @@ onMounted(async () => {
 	await _checkExternalReturn()
 	hasDirectDiagram.value = false
 	window.addEventListener('resize', resizeTabWindow)
+	window.addEventListener('keydown', _handleGlobalKeydown)
 	waitToLoad.value = true
+})
+
+onUnmounted(() => {
+	window.removeEventListener('resize', resizeTabWindow)
+	window.removeEventListener('keydown', _handleGlobalKeydown)
 })
 
 watch(() => activeTab.value, async newValue => { // when the tab is selected it will resize the tabnav
@@ -355,6 +361,13 @@ const saveWithKeyboard = (e, tabElementName, tabElementIndex) => {
 	actionButton.value[tabElementIndex]._saveDiagram() // calls savediagram from component ActionButtonsList
 }
 
+const _handleGlobalKeydown = e => {
+	if (e.ctrlKey && e.key === 's' && activeTab.value > -1) {
+		e.preventDefault()
+		actionButton.value[activeTab.value]?._saveDiagram()
+	}
+}
+
 const closeRemovedProcessesOpenInTab = deletedId => {
 	const deletedTabElement = tabNavList.value.findIndex(tabElement => tabElement.id === deletedId)
 	if (deletedTabElement === -1) return
@@ -458,7 +471,7 @@ const switchTabFromTabNav = async selectedTabIndex => {
 		router.replace({ path: route.path.replace('/' + route.params.diagramId, '') }).catch(() => {})
 	}
 	// Fetch XML if not already loaded for saved tabs
-	if (selectedTabIndex > -1 && !editorXML.value[selectedTabIndex] && !tabNavListXml.value[selectedTabIndex]) {
+	if (selectedTabIndex > -1 && tab?.isSaved && tab?.id && !editorXML.value[selectedTabIndex] && !tabNavListXml.value[selectedTabIndex]) {
 		let selectedProcess = null
 		if (tabNavList.value[selectedTabIndex].type !== 'form') {
 			await store.dispatch('modeler/processes/fetchProcessById', tabNavList.value[selectedTabIndex].id)
@@ -708,6 +721,11 @@ const _openProcessFromImportedFile = async (resXmlExternalUrl, fileName, fileNam
 		if (!xmlFromModeler) {
 			await store.dispatch('modeler/processes/fetchProcessById', foundModelerProcess.id) // gets the xml from the database with the id
 			xmlFromModeler = store.state.modeler.processes.processSelected
+		}
+		if (!xmlFromModeler) {
+			// Process exists in list but could not be fetched (e.g. deleted or DB error) — open as new
+			_addNewBpmnFromLoadedXml(diagramType, resXmlExternalUrl, foundExternalProcessKey, true)
+			return
 		}
 		modalData.value = { id: foundModelerProcess.id, name: foundModelerProcess.name, processkey: foundExternalProcessKey, xmlFromModeler, xmlExternalUrl: resXmlExternalUrl, diagramType }
 

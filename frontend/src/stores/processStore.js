@@ -80,6 +80,7 @@ const actions = {
   async fetchProcessById({ commit }, processId) {
     commit('setLoading', true)
     commit('clearError')
+    commit('setResetProcessSelected')
     
     try {
       const processSelected = await fetchProcessById(processId)
