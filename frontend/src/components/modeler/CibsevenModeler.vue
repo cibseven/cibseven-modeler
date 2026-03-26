@@ -65,7 +65,7 @@
 				@toggleVersionNotSaved="toggleVersionNotSaved" @toggleOutdatedTemplateBtn="toggleOutdatedTemplateBtn"
 				@show-console-notification="showConsoleNotification">
 				<div v-if="tabElement.isModelerVisible" class="h-100">
-					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index]"
+					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index] != null"
 						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index"></monaco-editor>
 				</div>
 				<template #menu>
@@ -95,7 +95,7 @@
 				:consoleErrors="consoleErrorsList[index]"
 				>
 				<div v-if="tabElement.isModelerVisible" class="h-100">
-					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index]"
+					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index] != null"
 						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index"></monaco-editor>
 				</div>
 				<template #menu>
@@ -122,7 +122,7 @@
 				@show-console-notification="showConsoleNotification"
 				:isModelerVisible="tabNavList[index].isModelerVisible">
 				<div v-if="tabElement.isModelerVisible" class="h-100">
-					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index]"
+					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index] != null"
 						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index" language='json'></monaco-editor>
 				</div>
 				<template #menu>
@@ -501,6 +501,7 @@ const isValidated = (validated, tabElementIndex) => {
 const updateDiagramFromEditor = (xmlContent, tabElementIndex) => {
 	//updates xml content
 	if (!modeler.value[tabElementIndex]) return
+	if (!xmlContent) return // ignore empty content — user is mid-edit; keep the editor alive
 	modeler.value[tabElementIndex]._validate(xmlContent)
 	const typeOfDiagram = checkCamundaVersion(xmlContent) ?? TYPEDMN
 
