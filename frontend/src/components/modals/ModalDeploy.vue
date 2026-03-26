@@ -1,4 +1,4 @@
-<!--
+﻿<!--
   Copyright CIB software GmbH and/or licensed to CIB software GmbH
   under one or more contributor license agreements. See the NOTICE file
   distributed with this work for additional information regarding copyright
@@ -90,9 +90,9 @@
 						<div v-if="asAnotherUser" class="mb-5">
 							<hr />
 							<div class="mb-3">
-							<label class="form-label">
+							<p class="form-label">
 									{{ $t('deployForm.authentication') }}
-								</label>
+								</p>
 								<div>
 									<div class="form-check form-check-inline">
 										<input class="form-check-input" type="radio" :options="alternateAuthOptions" id="http-auth"

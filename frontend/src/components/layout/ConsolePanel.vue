@@ -30,7 +30,7 @@
             <div class="d-flex h-100 flex-grow" v-show="isVisible">
                 <slot />
             </div>
-            <div class="resizable-t" @mousedown="handleDown" />
+            <div class="resizable-t" role="presentation" @mousedown="handleDown" />
         </div>
     </div>
 </template>

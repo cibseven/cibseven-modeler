@@ -17,7 +17,7 @@
 <template>
     <div ref="parent" class="resizable-component property-panel position-absolute border-bottom border-light" style="height:100vh; top: -42px;right: 0;" :style="style">
         <slot />
-        <div class="resizable-l" @mousedown="handleDown" />
+        <div class="resizable-l" role="presentation" @mousedown="handleDown" />
     </div>
 </template>
 

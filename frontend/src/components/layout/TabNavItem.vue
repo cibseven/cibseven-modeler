@@ -16,7 +16,7 @@
 -->
 <template>
     <div class="m-0 p-0">
-        <div v-if="props.isDashboard" class="nav-item bg-light dashboard" @keyup.enter.stop="selectTab" @click.stop="selectTab">
+        <div v-if="props.isDashboard" class="nav-item bg-light dashboard" role="none" @keyup.enter.stop="selectTab" @click.stop="selectTab">
             <div ref="tabItem" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard-tab-pane"
                 style="height: 41px;" :class="{ 'active': props.activeTab === props.index }" role="tab"
                 class="nav-link dashboard nav-icon d-flex align-items-center" aria-labelledby="dashboard-tab" aria-controls="dashboard-tab-pane"
