@@ -58,11 +58,13 @@
 					/>
 				</template>
 				<template #rightButtons>
-					<component v-if="CompareButtonComponent && processHistoryListComp?.length > 1"
-						:is="CompareButtonComponent" :history-list="processHistoryListComp" />
-	<VersionButton ref="versionButton" v-if="processHistoryListComp?.length > 0"
-						:processHistoryListComp="processHistoryListComp" @selectDiagramVersion="selectDiagramVersion"
-						:activeVersion="activeVersion"></VersionButton>
+					<div class="d-flex">
+						<VersionButton ref="versionButton" v-if="processHistoryListComp?.length > 0"
+							:processHistoryListComp="processHistoryListComp" @selectDiagramVersion="selectDiagramVersion"
+							:activeVersion="activeVersion"></VersionButton>
+						<component v-if="CompareButtonComponent && processHistoryListComp?.length > 1"
+							:is="CompareButtonComponent" :history-list="processHistoryListComp" />
+					</div>
 				</template>
 			</MenuActionButtons>
 		</div>
