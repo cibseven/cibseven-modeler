@@ -58,7 +58,9 @@
 					/>
 				</template>
 				<template #rightButtons>
-					<VersionButton ref="versionButton" v-if="processHistoryListComp?.length > 0"
+					<component v-if="CompareButtonComponent && processHistoryListComp?.length > 1"
+						:is="CompareButtonComponent" :history-list="processHistoryListComp" />
+	<VersionButton ref="versionButton" v-if="processHistoryListComp?.length > 0"
 						:processHistoryListComp="processHistoryListComp" @selectDiagramVersion="selectDiagramVersion"
 						:activeVersion="activeVersion"></VersionButton>
 				</template>
@@ -193,6 +195,7 @@ const config = inject('config', {})
 
 //popover for task filters
 const BpmnFilterButtonComponent = inject('bpmnFilterButtonComponent', null)
+const CompareButtonComponent = inject('compareButtonComponent', null)
 const popover = ref(null)
 //element templates modal
 const elementTemplatesModal = ref(null)
