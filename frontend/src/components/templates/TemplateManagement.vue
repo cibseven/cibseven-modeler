@@ -55,6 +55,7 @@
                     type="text"
                     v-model.trim="searchInput"
                     :placeholder="$t('buttons.searchTemplates')"
+                    :aria-label="$t('buttons.searchTemplates')"
                     class="form-control-plaintext form-control-sm w-100 py-0 border-0"
                     style="height: 32px; line-height: 32px;"
                     @input="handleSearch"
@@ -139,6 +140,8 @@
               @click="focused = $event" 
               @mouseenter="focused = $event" 
               @mouseleave="focused = null"
+              @focusin="focused = $event"
+              @focusout="focused = null"
               style="min-height: 55px;">
               <template #cell(active)="{ item }">
                 <span

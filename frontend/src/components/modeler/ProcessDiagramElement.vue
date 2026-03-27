@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 <template>
-    <div role="button" :tabindex="props.index" @click="handleClickLoadSelectedFromList"
+    <div role="button" tabindex="0" @click="handleClickLoadSelectedFromList" @keyup.enter="handleClickLoadSelectedFromList"
         class="list-group-item border-0 d-flex align-items-center justify-content-between" :class="{ 'bg-light': process.isHovered }">
         <span class="w-10 justify-content-center mr-2 mdi mdi-18px" :class="iconClass[props.process.type]"></span>
         <span class="w-80 flex-grow-1 mx-2">{{ props.process.name !== 'undefined' ? props.process.name : '' }}.{{ props.process.type.startsWith('bpmn') ? 'bpmn' : props.process.type }} ( {{

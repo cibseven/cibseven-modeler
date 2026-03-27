@@ -35,10 +35,10 @@
                     :aria-controls="`process${props.keyOfTabNav}-tab-pane`" tabindex="0"
                     :aria-selected="props.activeTab === props.index">
                     {{ tabTitle }}
-
                 </div>
-                <div>
-                    <span class="mdi mdi-close ms-2 float-end px-2" aria-label="Close" style="cursor: pointer;" tabindex="0"
+                <span v-if="props.tabNavList.canSave" class="mdi mdi-18px mdi-circle-medium text-warning align-self-center" :title="$t('tabs.unsavedChanges')" :aria-label="$t('tabs.unsavedChanges')"></span>
+                <div class="d-flex align-items-center">
+                    <span class="mdi mdi-close ms-2 float-end px-2" role="button" :aria-label="$t('buttons.close')" style="cursor: pointer;" tabindex="0"
                     @keyup.enter="checkIfProcessIsSaved"  @click.stop="checkIfProcessIsSaved"></span>
                 </div>
             </div>

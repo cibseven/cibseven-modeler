@@ -358,8 +358,16 @@ watch(() => props.isModelerVisible, async newValue => { // when the editor gets 
 	if (!newValue && bpmnModeler) _setupDiagramFunctions()
 })
 
-watch(canvasWidth, newW => {
+watch(canvasWidth, async newW => {
 	styleCanvas.value.width = `${newW}px`
+	// Notify bpmn.io that the canvas container has been resized so it can
+	// recompute its internal viewport state and refresh all dependent modules
+	// (including the minimap). Without this, the minimap renders once with the
+	// initial 0-width canvas and stays blank until a manual browser resize.
+	if (newW > 0 && bpmnModeler) {
+		await nextTick() // let the DOM update to the new width first
+		bpmnModeler.get('canvas').resized()
+	}
 })
 
 watchEffect(async () => {

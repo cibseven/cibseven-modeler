@@ -129,7 +129,11 @@
     "delete": "Удалить",
     "copy": "Копировать",
     "forceSave": "Принудительно сохранить",
-    "linkToProject": "Ссылка на проект"
+    "linkToProject": "Ссылка на проект",
+    "moreTabs": "Больше вкладок"
+  },
+  "tabs": {
+    "unsavedChanges": "Несохранённые изменения"
   },
   "deployForm": {
     "deploymentName": {

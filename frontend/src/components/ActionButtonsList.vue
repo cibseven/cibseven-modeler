@@ -32,14 +32,14 @@
         </div>
         <div v-show="!props.isButtonDisabled" class="btn-menu mx-1">
             <a @click="canBeDownloaded" :href="downloadLink" :download="downloadName" :name="downloadName"
-                :title="$t('buttons.downloadDiagram')" class="btn btn-outline-light border-0 btn-sm"
+                :title="$t('buttons.downloadDiagram')" :aria-label="$t('buttons.downloadDiagram')" class="btn btn-outline-light border-0 btn-sm"
                 :class="{ 'disabled': props.isButtonDisabled }">
                 <span class="mdi mdi-24px mdi-download"></span>
             </a>
         </div>
         <div v-show="!props.isButtonDisabled && modelProperties[props.tabElement.type] && modelProperties[props.tabElement.type].canExportSvg" class="btn-menu mx-1">
             <a @click="canBeDownloaded" :href="downloadLinkSvg" :download="downloadNameSvg" :name="downloadNameSvg"
-                :title="$t('buttons.downloadSVG')" class="btn btn-outline-light border-0 btn-sm"
+                :title="$t('buttons.downloadSVG')" :aria-label="$t('buttons.downloadSVG')" class="btn btn-outline-light border-0 btn-sm"
                 :class="{ 'disabled': props.isButtonDisabled || props.tabElement.isModelerVisible }">
                 <span class="mdi mdi-24px mdi-file-image-outline"></span>
             </a>
@@ -52,8 +52,8 @@
         </div>
         <div class="btn-menu mx-1" v-show="!isButtonDisabled">
             <button class="btn btn-outline-light border-0 btn-sm" type="button" :title="$t('buttons.saveDiagram')"
-                :disabled="!props.canSave && !props.tabElement.changedVersion" @click="_saveDiagram">
-                <span class="mdi mdi-24px mdi-content-save-outline"></span>
+                :disabled="(!props.canSave && !props.tabElement.changedVersion) || isSaving" @click="_saveDiagram">
+                <span class="mdi mdi-24px" :class="isSaving ? 'mdi-loading mdi-spin' : 'mdi-content-save-outline'"></span>
             </button>
         </div>    
         <div class="btn-menu mx-1" v-show="modelProperties[props.tabElement.type].canOpenConsole">
@@ -73,7 +73,6 @@
 
 <script setup>
 
-import { debounce } from 'min-dash';
 import { ref, onMounted } from 'vue'
 
 const props = defineProps({ 
@@ -99,6 +98,7 @@ const emit = defineEmits([
     'linkDiagram'
 ])
 const isOutdatedTemplateWarning = ref(false)
+const isSaving = ref(false)
 
 const downloadName = ref()
 const downloadNameSvg = ref()
@@ -201,14 +201,23 @@ const _updateDownloadFileSvg = (downloadLinkSvgValue, downloadNameSvgValue) => {
     downloadNameSvg.value = downloadNameSvgValue
 }
 
-const _saveDiagram = debounce(async () => {
+const _saveDiagram = async () => {
+    if (isSaving.value) return // prevent re-entry (e.g. rapid Ctrl+S)
     if (!props.canSave && !props.tabElement.changedVersion) return // only saves if button is enabled
     if (!props.isXmlValidated.validation) {
         emit('showToastMessage', { isSuccess: false, toastText: 'toastCantSaveFailValidationXml', bodyTextAlt: props.isXmlValidated.text }) // to pass the text of the error to the toast
         return
     }
     //only is the xml is validated
-    props.modeler._saveDiagram() }, 2000)
+    isSaving.value = true
+    try {
+        await props.modeler._saveDiagram()
+    } finally {
+        // Keep the saving state briefly after completion to block rapid re-triggering
+        // (e.g. two quick Ctrl+S presses where the first save finishes before the second fires)
+        setTimeout(() => { isSaving.value = false }, 1000)
+    }
+}
 
 const _toggleOutDatedTemplateBtn = comp => 
     isOutdatedTemplateWarning.value = comp
