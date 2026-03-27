@@ -21,7 +21,7 @@
                 @click="() => emit('selectDiagramVersion')" :disabled="props.processHistoryListComp?.length === 0">
                 <span class="mdi mdi-24px mdi-history"></span>
                 <span class="mx-2" style="min-width: 60px;"> {{ $t('history') }} - {{ props.activeVersion }}</span>
-            </button>           
+            </button>
         </div>
 </template>
 
