@@ -46,48 +46,18 @@
 						<slot name="menu" />
 					</template>
 					<template #rightButtons>
-						<VersionButton ref="versionButton" v-if="processHistoryListComp?.length > 0"
-							:processHistoryListComp="processHistoryListComp" @selectDiagramVersion="selectDiagramVersion"
-							:activeVersion="activeVersion"></VersionButton>
+						<component v-if="VersionButtonComponent && processHistoryListComp?.length > 0"
+							:is="VersionButtonComponent" :history-list="processHistoryListComp" :active-version="activeVersion" />
 					</template>
 				</MenuActionButtons>
 			</div>
 
-		<ListSelector
-			v-if="listDataForSelector"
-			ref="listSelector"
-			:showModal="isShowModalListSelector"
-			:key="props.tabElement.key"
-			:rowTemplate="listDataForSelector"
-			:typeOfSelector="typeOfSelector"
-			@toggle-modal-list-selector="toggleModalListSelector"
-			:headers="getHeadersForSelector(typeOfSelector)"
-			:show-headers="true"
-			:sort-by="'updated'"
-			:sort-desc="true"
-			@item-selected="handleListSelection">
-			<template #cell(version)="{ item }">
-				<div class="border-top-0 p-1">{{ $t('version') }} {{ item.version }}</div>
-			</template>
-			<template #cell(updated)="{ item }">
-				<div class="border-top-0 p-1">{{ new Date(item.updated).toLocaleString() }}</div>
-			</template>
-		</ListSelector>
-
-		<ConfirmModal type="changeVersion"
-			:modal-data="modalData"
-			:title="$t('modalChangeProcessVersion.title')"
-			:body="$t('modalChangeProcessVersion.body')"
-			:show-modal="showConfirmDialog"
-			@hide-modal="_hideModal"
-			:function-after-accepting="() => changeProcessVersion(selectedItem)">
-		</ConfirmModal>
 		</div>
 	</div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUpdated, onBeforeUnmount, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUpdated, onBeforeUnmount, watch, nextTick, inject, provide } from 'vue'
 import DmnJS from 'dmn-js/lib/Modeler'
 import { debounce } from 'min-dash'
 import { migrateDiagram } from '@bpmn-io/dmn-migrate'
@@ -108,13 +78,9 @@ import PropertiesPanel from '../layout/PropertiesPanel.vue'
 import ConsolePanel from '../layout/ConsolePanel.vue'
 import MonacoConsole from '../monaco/MonacoConsole.vue'
 import MonacoThemeScope from '../layout/MonacoThemeScoped.vue'
-import VersionButton from '../VersionButton.vue'
-import ListSelector from '../modals/ListSelector.vue'
-import ConfirmModal from '../modals/ConfirmModal.vue'
 import useModeler from '../../composables/useModeler.js'
 import usePropertiesPanel from '../../composables/usePropertiesPanel.js'
-import { getHeadersForSelector } from './SelectorHeaders'
-import { getTagValueFromXml, decodeBase64ToUtf8 } from '../../utils.js'
+import { getTagValueFromXml } from '../../utils.js'
 
 const containerModeler = ref(null)
 const canvas = ref(null)
@@ -166,20 +132,21 @@ const {
 	isConsolePanelShowing,
 	isConsoleOpen,
 	processHistoryListComp,
-	selectDiagramVersion,
 	changeActiveVersion,
 	activeVersion,
-	isShowModalListSelector,
-	listDataForSelector,
-	typeOfSelector,
 	toggleVersionNotSaved,
 	toggleEnableSave,
 } = useModeler(props, emit, monacoEditorConsole, consolePanel)
 
-const listSelector = ref(null)
-const showConfirmDialog = ref(false)
-const modalData = ref({})
-let selectedItem = null
+const VersionButtonComponent = inject('versionButtonComponent', null)
+
+provide('loadVersionHook', async (xml, version) => {
+	const migratedXml = await migrateDiagram(xml)
+	await validate(dmnModeler, migratedXml)
+	toggleVersionNotSaved(true, props.tabElementIndex)
+	toggleEnableSave(false, props.tabElementIndex)
+	changeActiveVersion(version)
+})
 
 const { updateParentHeight, updateParentWidth, parentWidth, parentHeight } = usePropertiesPanel(props, emit, containerModeler, resDiv, null, null)
 const canvasWidth = ref(0)
@@ -359,38 +326,6 @@ const createObserver = divToObserve => {
 	return observer
 }
 
-const hideModalListSelector = () => {
-	listSelector.value._hideModal()
-	isShowModalListSelector.value = false
-}
-
-const toggleModalListSelector = comp => isShowModalListSelector.value = comp
-
-const _showModal = () => showConfirmDialog.value = true
-const _hideModal = () => showConfirmDialog.value = false
-
-const changeProcessVersion = async (item) => {
-	const xml = decodeBase64ToUtf8(item.diagram)
-	const migratedXml = await migrateDiagram(xml)
-	await validate(dmnModeler, migratedXml)
-	toggleVersionNotSaved(true, props.tabElementIndex)
-	toggleEnableSave(false, props.tabElementIndex)
-	hideModalListSelector()
-	changeActiveVersion(item.version)
-}
-
-const handleListSelection = (item) => {
-	if (item === null) return null
-	if (typeOfSelector.value === 'changeVersion') {
-		modalData.value = { encodedXml: item.diagram, version: item.version }
-		if (props.tabElement.canSave) {
-			selectedItem = item
-			_showModal()
-		} else {
-			changeProcessVersion(item)
-		}
-	}
-}
 
 const _saveDiagram = () => saveDecisionTable(dmnModeler, props.tabElement.type)
 

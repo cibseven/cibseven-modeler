@@ -138,7 +138,8 @@ onUnmounted(() => {
 watch(() => props.rowTemplate,
     newValue => {
         filteredData.value = newValue
-    }
+    },
+    { immediate: true }
 )
 
 watch(() => props.showModal, newValue => {

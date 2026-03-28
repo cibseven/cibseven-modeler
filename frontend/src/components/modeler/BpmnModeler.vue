@@ -59,9 +59,8 @@
 				</template>
 				<template #rightButtons>
 					<div class="d-flex">
-						<VersionButton ref="versionButton" v-if="processHistoryListComp?.length > 0"
-							:processHistoryListComp="processHistoryListComp" @selectDiagramVersion="selectDiagramVersion"
-							:activeVersion="activeVersion"></VersionButton>
+						<component v-if="VersionButtonComponent && processHistoryListComp?.length > 0"
+							:is="VersionButtonComponent" :history-list="processHistoryListComp" :active-version="activeVersion" />
 						<component v-if="CompareButtonComponent && processHistoryListComp?.length > 1"
 							:is="CompareButtonComponent" :history-list="processHistoryListComp" />
 					</div>
@@ -103,14 +102,6 @@
 			</template>
 		</ListSelector>
 
-		<ConfirmModal type="changeVersion"
-			:modal-data="modalData"
-			:title="$t('modalChangeProcessVersion.title')"
-			:body="$t('modalChangeProcessVersion.body')"
-			:show-modal="showConfirmDialog"
-			@hide-modal="_hideModal"
-			:function-after-accepting="() => changeProcessVersion(selectedItem)">
-		</ConfirmModal>
 		<ElementTemplatesModal ref="elementTemplatesModal" :tabElement="tabElement"
 		@applyTemplateToTask="applyTemplateToTask"></ElementTemplatesModal>
 	</div>
@@ -155,16 +146,14 @@ import PropertiesPanel from '../layout/PropertiesPanel.vue'
 import ListSelector from '../../components/modals/ListSelector.vue'
 import MonacoConsole from '../monaco/MonacoConsole.vue'
 import ConsolePanel from '../layout/ConsolePanel.vue'
-import VersionButton from '../VersionButton.vue'
 import MonacoThemeScope from '../layout/MonacoThemeScoped.vue'
 import MenuActionButtons from '../layout/MenuActionButtons.vue'
 import ElementTemplatesModal from '../modals/ElementTemplatesModal.vue'
-import ConfirmModal from '../modals/ConfirmModal.vue'
 
 // Specific imports
 import { getHeadersForSelector } from './SelectorHeaders'
 
-import { onMounted, inject, ref, onUpdated, watch, computed, nextTick, watchEffect } from 'vue'
+import { onMounted, inject, provide, ref, onUpdated, watch, computed, nextTick, watchEffect } from 'vue'
 //composables
 import useModeler from '../../composables/useModeler.js'
 import useCustomizedTemplateModal from '../../composables/customizedTemplateModal.js'
@@ -172,7 +161,7 @@ import usePropertiesPanel from '../../composables/usePropertiesPanel'
 import useMonacoEditor from '../../composables/useMonacoEditor.js'
 
 //utils
-import { checkJSON, decodeBase64ToUtf8 } from '../../utils.js'
+import { checkJSON } from '../../utils.js'
 
 const monaco = inject('monaco')
 const extraBpmnModules = inject('extraBpmnModules', [])
@@ -198,6 +187,7 @@ const config = inject('config', {})
 //popover for task filters
 const BpmnFilterButtonComponent = inject('bpmnFilterButtonComponent', null)
 const CompareButtonComponent = inject('compareButtonComponent', null)
+const VersionButtonComponent = inject('versionButtonComponent', null)
 const popover = ref(null)
 //element templates modal
 const elementTemplatesModal = ref(null)
@@ -253,7 +243,6 @@ const {
 	toggleVersionNotSaved,
 	toggleEnableSave,
 	saveXmlAfterUpdate,
-	selectDiagramVersion,
 	changeActiveVersion,
 	//refs for list selector slots
 	activeVersion,
@@ -277,6 +266,13 @@ const { updateParentHeight, updateParentWidth,  parentWidth, parentHeight } = us
 
 let bpmnModeler = null
 let isScriptTaskUpdate = false
+
+provide('loadVersionHook', async (xml, version) => {
+	await _openDiagram(xml)
+	toggleVersionNotSaved(true, props.tabElementIndex)
+	toggleEnableSave(false, props.tabElementIndex)
+	changeActiveVersion(version)
+})
 let typeOfDiagram = null //'bpmn-c7','dmn'
 
 onMounted(async () => {
@@ -614,55 +610,13 @@ const togglePropertiesPanel = value => {
 	resizableDiv.value._restorePropertiesPanelWidth()
 }
 
-//region History selection
-const showConfirmDialog = ref(false)
-const modalData = ref({})
-let selectedItem = null
-
-const _showModal = () => showConfirmDialog.value = true
-const _hideModal = () => showConfirmDialog.value = false
-
 const handleListSelection = (item) => {
-	if (item === null) {
-		return null
-	}
-
-	switch(typeOfSelector.value) {
-		case 'templates':
-			selectElementRegistryById(item.id)
-			hideModalListSelector()
-			return
-		case 'changeVersion': {
-			const diagram = item.diagram
-			const version = item.version
-			modalData.value = { encodedXml: diagram, version }
-
-			if (props.tabElement.canSave) {
-				selectedItem = item
-				_showModal()
-			}
-			else {
-				changeProcessVersion(item)
-			}
-			
-			return
-		}
-		default:
-			return null
+	if (item === null) return null
+	if (typeOfSelector.value === 'templates') {
+		selectElementRegistryById(item.id)
+		hideModalListSelector()
 	}
 }
-
-const changeProcessVersion = (item) => {
-    const xml = decodeBase64ToUtf8(item.diagram)
-	_openDiagram(xml)
-
-	toggleVersionNotSaved(true, props.tabElementIndex)//enables save button when changing version
-	toggleEnableSave(false, props.tabElementIndex) // disables save button when changing version
-
-	hideModalListSelector() // hides list selector modal
-	changeActiveVersion(item.version) // changes the active version
-}
-//endregion
 
 const _setMonacoEditorToDiv = (e, divId) => {
 	getProcessInformation(bpmnModeler)
