@@ -41,7 +41,6 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
   const listDataForSelector = computed(() => {
     switch (typeOfSelector.value) {
       case 'templates': return templatesList.value
-      case 'changeVersion': return processHistoryListComp.value
       default: return []
     }
   })  
@@ -269,12 +268,6 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
     }
   }
 
-  const selectDiagramVersion = () => {
-    if (!fetchSnapshotsHook) return
-    typeOfSelector.value = 'changeVersion'
-    isShowModalListSelector.value = true
-  }
-
   const toggleVersionNotSaved = (isEnabled, index) => {
     emit('toggleVersionNotSaved', isEnabled, index)
   }
@@ -319,7 +312,6 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
     getProcessHistoryList,
     getProcessInformation,
     processHistoryListComp,
-    selectDiagramVersion,
     changeActiveVersion,
     //refs for list selectors
     activeVersion,

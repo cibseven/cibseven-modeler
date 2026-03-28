@@ -30,6 +30,8 @@ import FormModeler from './components/modeler/FormModeler.vue'
 import NotificationMessage from './components/modals/NotificationMessage.vue'
 
 export { CibsevenModeler, BpmnModeler, DmnModeler, FormModeler, NotificationMessage }
+export { default as ListSelector } from './components/modals/ListSelector.vue'
+export { default as ConfirmModal } from './components/modals/ConfirmModal.vue'
 
 export { default as store, createModelerStore } from './store.js'
 export { i18n, setLocale, messages, createI18n } from './i18n.js'
