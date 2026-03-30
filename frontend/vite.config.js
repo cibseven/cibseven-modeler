@@ -146,7 +146,7 @@ export default defineConfig({
           fileName: (format) => `cibseven-modeler.${format}.js`,
         },
         rollupOptions: {
-          external: ['vue', /^\/assets\/images\//, 'bootstrap', 'vue-i18n', 'vue-router', 'axios', 'vuex', 'bpmn-js', 'dmn-js', '@bpmn-io/form-js'],
+          external: ['vue', /^\/assets\/images\//, '@cib/bootstrap-components', 'bootstrap', 'vue-i18n', 'vue-router', 'axios', 'vuex', 'bpmn-js', 'dmn-js', '@bpmn-io/form-js'],
           output: {
             globals: {
               vue: 'Vue',
