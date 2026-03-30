@@ -21,27 +21,17 @@ import path from 'node:path'
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import vueDevTools from 'vite-plugin-vue-devtools'
-
 const backendUrl = 'http://localhost:8091'
-
-// Detect build mode
-/* eslint-disable no-undef */
-const isLibrary = process.env.BUILD_MODE === 'library'
-/* eslint-enable no-undef */
 
 // https://flaviocopes.com/fix-dirname-not-defined-es-module-scope/
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-console.log('isLibrary', isLibrary)
-
 // https://vite.dev/config/
 export default defineConfig({
-  base: isLibrary ? '/' : '/cibseven-modeler/',
+  base: '/',
   plugins: [
     vue(),
-    vueDevTools()
   ],
   assetsInclude: ['**/*.bpmn', '**/*.dmn'],
   resolve: {
@@ -137,43 +127,36 @@ export default defineConfig({
       },
     },
   },
-  build: isLibrary
-    ? {
-        lib: {
-          entry: path.resolve(__dirname, 'src/library.js'),
-          name: 'cibseven-modeler',
-          formats: ['es', 'umd'],
-          fileName: (format) => `cibseven-modeler.${format}.js`,
+  build: {
+    lib: {
+      entry: path.resolve(__dirname, 'src/library.js'),
+      name: 'cibseven-modeler',
+      formats: ['es', 'umd'],
+      fileName: (format) => `cibseven-modeler.${format}.js`,
+    },
+    rollupOptions: {
+      external: ['vue', /^\/assets\/images\//, '@cib/common-frontend', '@cib/bootstrap-components', 'bootstrap', 'vue-i18n', 'vue-router', 'axios', 'vuex', 'bpmn-js', 'dmn-js', '@bpmn-io/form-js'],
+      output: {
+        globals: {
+          vue: 'Vue',
+          '@cib/common-frontend': 'CibCommonFrontend',
+          bootstrap: 'bootstrap',
+          'vue-i18n': 'VueI18n',
+          'vue-router': 'VueRouter',
+          axios: 'axios',
+          vuex: 'Vuex',
+          'bpmn-js': 'BpmnJS',
+          'dmn-js': 'DmnJS',
+          '@bpmn-io/form-js': 'FormJS',
         },
-        rollupOptions: {
-          external: ['vue', /^\/assets\/images\//, '@cib/bootstrap-components', 'bootstrap', 'vue-i18n', 'vue-router', 'axios', 'vuex', 'bpmn-js', 'dmn-js', '@bpmn-io/form-js'],
-          output: {
-            globals: {
-              vue: 'Vue',
-              bootstrap: 'bootstrap',
-              'vue-i18n': 'VueI18n',
-              'vue-router': 'VueRouter',
-              axios: 'axios',
-              vuex: 'Vuex',
-              'bpmn-js': 'BpmnJS',
-              'dmn-js': 'DmnJS',
-              '@bpmn-io/form-js': 'FormJS',
-            },
-            // Ensure CSS is extracted and placed in the dist folder
-            assetFileNames: 'cibseven-modeler.[ext]',
-            inlineDynamicImports: true,
-          },
-        },
-        cssCodeSplit: true, // Ensure CSS is extracted into a separate file
-        outDir: 'dist', // The output directory
-      }
-    : {
-        rollupOptions: {
-          input: {
-            main: path.resolve(__dirname, 'index.html'),
-          }
-        }
+        // Ensure CSS is extracted and placed in the dist folder
+        assetFileNames: 'cibseven-modeler.[ext]',
+        inlineDynamicImports: true,
       },
+    },
+    cssCodeSplit: true, // Ensure CSS is extracted into a separate file
+    outDir: 'dist', // The output directory
+  },
   // Add the module section with rules for bpmnlint
   module: {
     rules: [
