@@ -65,8 +65,12 @@
 						<slot name="menu" />
 					</template>
 					<template #rightButtons>
-						<component v-if="VersionButtonComponent && processHistoryListComp?.length > 0"
-							:is="VersionButtonComponent" :history-list="processHistoryListComp" :active-version="activeVersion" />
+						<div class="d-flex">
+							<component v-if="VersionButtonComponent && processHistoryListComp?.length > 0"
+								:is="VersionButtonComponent" :history-list="processHistoryListComp" :active-version="activeVersion" />
+							<component v-if="CompareButtonComponent && processHistoryListComp?.length > 1"
+								:is="CompareButtonComponent" :history-list="processHistoryListComp" type="dmn" />
+						</div>
 					</template>
 				</MenuActionButtons>
 			</div>
@@ -192,6 +196,7 @@ const {
 } = useModeler(props, emit, monacoEditorConsole, consolePanel)
 
 const VersionButtonComponent = inject('versionButtonComponent', null)
+const CompareButtonComponent = inject('compareButtonComponent', null)
 
 provide('loadVersionHook', async (xml, version) => {
 	const migratedXml = await migrateDiagram(xml)
