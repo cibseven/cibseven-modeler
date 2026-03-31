@@ -109,7 +109,12 @@
     "delete": "Löschen",
     "copy": "Kopieren",
     "linkToProject": "Link zum Projekt",
-    "moreTabs": "Weitere Tabs"
+    "moreTabs": "Weitere Tabs",
+    "zoomIn": "Vergrößern",
+    "zoomOut": "Verkleinern",
+    "resetViewport": "Ansicht zurücksetzen",
+    "minimap": "Minimalkarte umschalten",
+    "fullscreen": "Vollbild umschalten"
   },
   "tabs": {
     "unsavedChanges": "Ungespeicherte Änderungen"

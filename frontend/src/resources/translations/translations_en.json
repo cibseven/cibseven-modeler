@@ -109,7 +109,12 @@
 		"delete": "Delete",
 		"copy": "Copy",
 		"linkToProject": "Link to project",
-		"moreTabs": "More tabs"
+		"moreTabs": "More tabs",
+		"zoomIn": "Zoom in",
+		"zoomOut": "Zoom out",
+		"resetViewport": "Reset viewport",
+		"minimap": "Toggle minimap",
+		"fullscreen": "Toggle fullscreen"
 	},
 	"tabs": {
 		"unsavedChanges": "Unsaved changes"

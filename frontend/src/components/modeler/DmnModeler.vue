@@ -18,7 +18,26 @@
 	<div class="container modeler d-flex position-relative" ref="containerModeler">
 		<div class="d-flex flex-column align-items-between h-100">
 			<div class="d-flex flex-grow-1 overflow-auto" style="min-height: 0;">
-				<div v-show="!props.isModelerVisible" class="canvas" ref="canvas" :style="styleCanvas" tabindex="0">
+				<div v-show="!props.isModelerVisible" class="position-relative" :style="styleCanvas">
+					<div class="canvas h-100 w-100" ref="canvas" tabindex="0"></div>
+					<div class="position-absolute top-0 end-0 d-flex flex-column gap-1 m-2" style="z-index: 10;">
+						<button @click="zoomIn" class="btn btn-sm btn-light border" :title="$t('buttons.zoomIn')">
+							<span class="mdi mdi-18px mdi-magnify-plus-outline"></span>
+						</button>
+						<button @click="zoomOut" class="btn btn-sm btn-light border" :title="$t('buttons.zoomOut')">
+							<span class="mdi mdi-18px mdi-magnify-minus-outline"></span>
+						</button>
+						<button @click="resetViewport" class="btn btn-sm btn-light border" :title="$t('buttons.resetViewport')">
+							<span class="mdi mdi-18px mdi-fit-to-screen-outline"></span>
+						</button>
+						<button @click="toggleMinimap" :title="$t('buttons.minimap')"
+							:class="['btn btn-sm border', isMinimapOpen ? 'btn-secondary' : 'btn-light']">
+							<span class="mdi mdi-18px mdi-map-outline"></span>
+						</button>
+						<button @click="toggleFullscreen" class="btn btn-sm btn-light border" :title="$t('buttons.fullscreen')">
+							<span :class="['mdi', 'mdi-18px', isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen']"></span>
+						</button>
+					</div>
 				</div>
 				<div v-show="props.isModelerVisible" class="flex-grow-1 h-100">
 					<slot />
@@ -72,6 +91,8 @@ import 'dmn-js/dist/assets/dmn-js-literal-expression.css'
 import 'dmn-js-decision-table/assets/css/dmn-js-decision-table-controls.css'
 import 'dmn-js-decision-table/assets/css/dmn-js-decision-table.css'
 import 'dmn-js-properties-panel/dist/assets/properties-panel.css'
+import minimapModule from 'diagram-js-minimap'
+import 'diagram-js-minimap/assets/diagram-js-minimap.css'
 
 import MenuActionButtons from '../layout/MenuActionButtons.vue'
 import PropertiesPanel from '../layout/PropertiesPanel.vue'
@@ -95,6 +116,38 @@ const isDrdShowing = ref(true)
 let observerDecisionTables = null
 let dmnModeler = null
 let canvasFocusHandler = null
+
+const isMinimapOpen = ref(false)
+const isFullscreen = ref(false)
+
+const ZOOM_STEP = 0.2
+const zoomIn = () => {
+	const viewer = dmnModeler?.getActiveViewer()
+	if (!viewer) return
+	const c = viewer.get('canvas')
+	c.zoom(c.zoom() + ZOOM_STEP)
+}
+const zoomOut = () => {
+	const viewer = dmnModeler?.getActiveViewer()
+	if (!viewer) return
+	const c = viewer.get('canvas')
+	c.zoom(c.zoom() - ZOOM_STEP)
+}
+const resetViewport = () => {
+	const viewer = dmnModeler?.getActiveViewer()
+	if (viewer) viewer.get('canvas').zoom('fit-viewport')
+}
+const toggleMinimap = () => {
+	const viewer = dmnModeler?.getActiveViewer()
+	if (!viewer) return
+	viewer.get('minimap').toggle()
+	isMinimapOpen.value = !isMinimapOpen.value
+}
+const toggleFullscreen = async () => {
+	if (!document.fullscreenElement) await document.documentElement.requestFullscreen()
+	else await document.exitFullscreen()
+}
+const onFullscreenChange = () => { isFullscreen.value = !!document.fullscreenElement }
 
 const props = defineProps({
 	xml: String,
@@ -156,7 +209,7 @@ onMounted(async () => {
 	dmnModeler = new DmnJS({
 		drd: {
 			propertiesPanel: { parent: dmnProperties.value },
-			additionalModules: [DmnPropertiesPanelModule, DmnPropertiesProviderModule, CamundaPropertiesProviderModule]
+			additionalModules: [DmnPropertiesPanelModule, DmnPropertiesProviderModule, CamundaPropertiesProviderModule, minimapModule]
 		},
 		container: canvas.value,
 		moddleExtensions: {
@@ -224,6 +277,7 @@ onMounted(async () => {
 
 	window.addEventListener('resize', updateParentWidth, true)
 	window.addEventListener('resize', updateParentHeight, true)
+	document.addEventListener('fullscreenchange', onFullscreenChange)
 	await nextTick()
 	emit('resizeTabNav', canvasWidth.value)
 	preventCanvasFocusWhenPopupOpen()
@@ -232,6 +286,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
 	window.removeEventListener('resize', updateParentWidth, true)
 	window.removeEventListener('resize', updateParentHeight, true)
+	document.removeEventListener('fullscreenchange', onFullscreenChange)
 	if (canvas.value && canvasFocusHandler) {
 		canvas.value.removeEventListener('focus', canvasFocusHandler)
 	}
@@ -367,6 +422,9 @@ defineExpose({
 </script>
 
 <style scoped>
+:deep(.djs-minimap .toggle) {
+  display: none;
+}
 :deep(.dmn-definitions) {
   display: none !important;
 }

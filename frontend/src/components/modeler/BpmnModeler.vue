@@ -18,7 +18,26 @@
 	<div class="container modeler d-flex position-relative" ref="containerModeler">
 		<div class="d-flex flex-column align-items-between h-100">
 			<div class="d-flex flex-grow-1" style="min-height: 0;">
-				<div v-show="!props.isModelerVisible" class="canvas" ref="canvas" :style="styleCanvas" tabindex="0">
+				<div v-show="!props.isModelerVisible" class="position-relative" :style="styleCanvas">
+					<div class="canvas h-100 w-100" ref="canvas" tabindex="0"></div>
+					<div class="position-absolute top-0 end-0 d-flex flex-column gap-1 m-2" style="z-index: 10;">
+						<button @click="zoomIn" class="btn btn-sm btn-light border" :title="$t('buttons.zoomIn')">
+							<span class="mdi mdi-18px mdi-magnify-plus-outline"></span>
+						</button>
+						<button @click="zoomOut" class="btn btn-sm btn-light border" :title="$t('buttons.zoomOut')">
+							<span class="mdi mdi-18px mdi-magnify-minus-outline"></span>
+						</button>
+						<button @click="resetViewport" class="btn btn-sm btn-light border" :title="$t('buttons.resetViewport')">
+							<span class="mdi mdi-18px mdi-fit-to-screen-outline"></span>
+						</button>
+						<button @click="toggleMinimap" :title="$t('buttons.minimap')"
+							:class="['btn btn-sm border', isMinimapOpen ? 'btn-secondary' : 'btn-light']">
+							<span class="mdi mdi-18px mdi-map-outline"></span>
+						</button>
+						<button @click="toggleFullscreen" class="btn btn-sm btn-light border" :title="$t('buttons.fullscreen')">
+							<span :class="['mdi', 'mdi-18px', isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen']"></span>
+						</button>
+					</div>
 				</div>
 				<div v-show="props.isModelerVisible" class="flex-grow-1 h-100">
 					<slot />
@@ -153,7 +172,7 @@ import ElementTemplatesModal from '../modals/ElementTemplatesModal.vue'
 // Specific imports
 import { getHeadersForSelector } from './SelectorHeaders'
 
-import { onMounted, inject, provide, ref, onUpdated, watch, computed, nextTick, watchEffect } from 'vue'
+import { onMounted, onBeforeUnmount, inject, provide, ref, onUpdated, watch, computed, nextTick, watchEffect } from 'vue'
 //composables
 import useModeler from '../../composables/useModeler.js'
 import useCustomizedTemplateModal from '../../composables/customizedTemplateModal.js'
@@ -267,6 +286,20 @@ const { updateParentHeight, updateParentWidth,  parentWidth, parentHeight } = us
 let bpmnModeler = null
 let isScriptTaskUpdate = false
 
+const isMinimapOpen = ref(false)
+const isFullscreen = ref(false)
+
+const ZOOM_STEP = 0.2
+const zoomIn = () => { const c = bpmnModeler.get('canvas'); c.zoom(c.zoom() + ZOOM_STEP) }
+const zoomOut = () => { const c = bpmnModeler.get('canvas'); c.zoom(c.zoom() - ZOOM_STEP) }
+const resetViewport = () => { bpmnModeler.get('canvas').zoom('fit-viewport') }
+const toggleMinimap = () => { bpmnModeler.get('minimap').toggle(); isMinimapOpen.value = !isMinimapOpen.value }
+const toggleFullscreen = async () => {
+	if (!document.fullscreenElement) await document.documentElement.requestFullscreen()
+	else await document.exitFullscreen()
+}
+const onFullscreenChange = () => { isFullscreen.value = !!document.fullscreenElement }
+
 provide('loadVersionHook', async (xml, version) => {
 	await _openDiagram(xml)
 	toggleVersionNotSaved(true, props.tabElementIndex)
@@ -279,6 +312,7 @@ onMounted(async () => {
 	initializeModeler()
 	window.addEventListener('resize', updateParentWidth, true)
 	window.addEventListener('resize', updateParentHeight, true)
+	document.addEventListener('fullscreenchange', onFullscreenChange)
 
 	await _openDiagram(props.xml)
 	templatesList.value = checkJSON(props.xml, props.elementTemplateJson) ?? []
@@ -291,6 +325,10 @@ onMounted(async () => {
 
 	await nextTick()
 	emit('resizeTabNav', canvasWidth.value)
+})
+
+onBeforeUnmount(() => {
+	document.removeEventListener('fullscreenchange', onFullscreenChange)
 })
 
 onUpdated(() => {
@@ -371,10 +409,6 @@ const initializeModeler = async () => {
 			break
 	}
 	emit('setTypeOfDiagramForModeler', typeOfDiagram, props.tabElementIndex)
-	// adds the minimap icon
-	const minimapToggleDiv = containerModeler.value.querySelector('.djs-minimap .toggle')
-	minimapToggleDiv.classList.remove('toggle')
-	minimapToggleDiv.classList.add('mdi', 'mdi-24px', 'mdi-map-legend', 'col', 'd-flex', 'justify-content-end', 'align-items-center')
 
 	bpmnModeler.on('element.click', async e => {
 		_setMonacoEditorToDiv(e, divScriptTaskID)
@@ -852,6 +886,9 @@ defineExpose({
 <style>
 svg {
 	outline: none;
+}
+.djs-minimap .toggle {
+	display: none;
 }
 /*for the resize panel to work */
 #js-properties-panel {

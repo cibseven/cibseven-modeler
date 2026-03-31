@@ -109,7 +109,12 @@
     "delete": "Eliminar",
     "copy": "Copiar",
     "linkToProject": "Enlazar al proyecto",
-    "moreTabs": "Más pestañas"
+    "moreTabs": "Más pestañas",
+    "zoomIn": "Acercar",
+    "zoomOut": "Alejar",
+    "resetViewport": "Restablecer vista",
+    "minimap": "Alternar minimapa",
+    "fullscreen": "Alternar pantalla completa"
   },
   "tabs": {
     "unsavedChanges": "Cambios sin guardar"
