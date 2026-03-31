@@ -81,7 +81,7 @@
 						<component v-if="VersionButtonComponent && processHistoryListComp?.length > 0"
 							:is="VersionButtonComponent" :history-list="processHistoryListComp" :active-version="activeVersion" />
 						<component v-if="CompareButtonComponent && processHistoryListComp?.length > 1"
-							:is="CompareButtonComponent" :history-list="processHistoryListComp" />
+							:is="CompareButtonComponent" :history-list="processHistoryListComp" type="bpmn" />
 					</div>
 				</template>
 			</MenuActionButtons>
