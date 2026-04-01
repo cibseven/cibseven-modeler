@@ -18,6 +18,7 @@ package org.cibseven.modeler.repository;
 
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -25,20 +26,50 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.cibseven.modeler.model.UnifiedDiagram;
 import org.cibseven.modeler.model.ProcessDiagramEntity;
 import org.cibseven.modeler.model.ProcessDiagramReduce;
 
 @Repository
 public interface ProcessDiagramRepository extends JpaRepository<ProcessDiagramEntity, String> {
 
-	@Query(value = "select * from processes_diagrams where name = :name", nativeQuery = true)
-	ProcessDiagramEntity findByName(@Param("name") String name);
+	ProcessDiagramEntity findByName(String name);
 
-	@Query(value = "select * from processes_diagrams where processkey = :processkey", nativeQuery = true)
-	ProcessDiagramEntity findByProcessKey(@Param("processkey") String key);
+	ProcessDiagramEntity findByProcesskey(String processkey);
 
-	@Query("select p.id as id, p.active as active, p.created as created, p.updated as updated, p.description as description, p.name as name, p.processkey as processkey, p.type as type, p.version as version from ProcessDiagramEntity p")
-	List<ProcessDiagramReduce> findAllReduced();
+	List<ProcessDiagramReduce> findAllBy(Pageable pageable);
+
+	@Query("select p from ProcessDiagramEntity p " +
+		"where (lower(p.name) like lower(concat('%', :keyword, '%')) " +
+		"or lower(p.processkey) like lower(concat('%', :keyword, '%'))) " +
+		"and (:diagramType = '' or p.type like concat('%', :diagramType, '%'))")
+	List<ProcessDiagramReduce> findAllFiltered(
+		@Param("keyword") String keyword,
+		@Param("diagramType") String diagramType,
+		Pageable pageable);
+
+	@Query(value =
+		"SELECT * FROM ( " +
+		"   SELECT p.id, p.name, p.type, p.processkey, " +
+		"          CAST(NULL AS VARCHAR(255)) AS formid, " +
+		"          p.description, p.created, p.updated, p.version " +
+		"   FROM processes_diagrams p " +
+		"   WHERE (:keyword IS NULL OR LOWER(p.name) LIKE LOWER(:keyword) " +
+		"          OR LOWER(p.processkey) LIKE LOWER(:keyword)) " +
+		"   AND (:type IS NULL OR p.type LIKE :type) " +
+		"   UNION ALL " +
+		"   SELECT f.id, f.formid, 'form', f.formid, f.formid, " +
+		"          f.description, f.created, f.updated, f.version " +
+		"   FROM forms f " +
+		"   WHERE (:keyword IS NULL OR LOWER(f.formid) LIKE LOWER(:keyword)) " +
+		"   AND (:type IS NULL OR :type = 'form') " +
+		") t " +
+		"ORDER BY t.updated DESC",
+		nativeQuery = true)
+	List<UnifiedDiagram> findAllUnified(
+		@Param("keyword") String keyword,
+		@Param("type") String type,
+		Pageable pageable);
 
 	@Transactional
 	@Modifying

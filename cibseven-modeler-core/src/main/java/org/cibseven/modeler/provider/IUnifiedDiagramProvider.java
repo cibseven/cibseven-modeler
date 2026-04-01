@@ -14,26 +14,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.cibseven.modeler.repository;
+package org.cibseven.modeler.provider;
 
 import java.util.List;
 
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
+import org.cibseven.modeler.exception.SystemException;
+import org.cibseven.modeler.model.UnifiedDiagram;
 
-import org.cibseven.modeler.model.FormEntity;
+public interface IUnifiedDiagramProvider {
 
-@Repository
-public interface FormRepository extends JpaRepository<FormEntity, String> {
-
-	List<FormEntity> findAllBy(Pageable pageable);
-
-	@Query("select f from FormEntity f " +
-		"where lower(f.formId) like lower(concat('%', :keyword, '%')) " +
-		"or lower(f.description) like lower(concat('%', :keyword, '%'))")
-	List<FormEntity> findAllFiltered(@Param("keyword") String keyword, Pageable pageable);
+	/**
+	 * Returns a paginated, sorted list of all diagrams (processes and forms)
+	 * matching the optional keyword and type filter.
+	 *
+	 * @param keyword    substring to match against name/processkey/formId ('' = no filter)
+	 * @param type       exact type to match, e.g. 'bpmn-c7', 'dmn', 'form' ('' = all)
+	 * @param firstResult zero-based offset
+	 * @param maxResults  page size
+	 */
+	List<UnifiedDiagram> getDiagrams(String keyword, String type, int firstResult, int maxResults) throws SystemException;
 
 }
