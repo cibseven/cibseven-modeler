@@ -19,7 +19,7 @@
 import './assets/css/main.css'
 import './assets/css/custom-bootstrap.css'
 
-// Import Bootstrap JavaScript for interactive components (dropdowns, modals, etc.)
+// Kept as an external peer dependency — not bundled, resolved by the consumer.
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 
 // Export modeler components
