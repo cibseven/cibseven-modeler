@@ -114,7 +114,11 @@
     "zoomOut": "Отдалить",
     "resetViewport": "Сбросить вид",
     "minimap": "Переключить миникарту",
-    "fullscreen": "Переключить полный экран"
+    "fullscreen": "Переключить полный экран",
+    "expandScript": "Открыть в полном редакторе"
+  },
+  "scriptEditorModal": {
+    "title": "Редактировать скрипт"
   },
   "tabs": {
     "unsavedChanges": "Несохранённые изменения"

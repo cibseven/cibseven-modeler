@@ -114,7 +114,11 @@
 		"zoomOut": "Zoom out",
 		"resetViewport": "Reset viewport",
 		"minimap": "Toggle minimap",
-		"fullscreen": "Toggle fullscreen"
+		"fullscreen": "Toggle fullscreen",
+		"expandScript": "Open in full editor"
+	},
+	"scriptEditorModal": {
+		"title": "Edit script"
 	},
 	"tabs": {
 		"unsavedChanges": "Unsaved changes"

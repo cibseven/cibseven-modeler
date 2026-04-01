@@ -114,7 +114,11 @@
     "zoomOut": "Alejar",
     "resetViewport": "Restablecer vista",
     "minimap": "Alternar minimapa",
-    "fullscreen": "Alternar pantalla completa"
+    "fullscreen": "Alternar pantalla completa",
+    "expandScript": "Abrir en editor completo"
+  },
+  "scriptEditorModal": {
+    "title": "Editar script"
   },
   "tabs": {
     "unsavedChanges": "Cambios sin guardar"
