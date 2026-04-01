@@ -123,6 +123,7 @@
 
 		<ElementTemplatesModal ref="elementTemplatesModal" :tabElement="tabElement"
 		@applyTemplateToTask="applyTemplateToTask"></ElementTemplatesModal>
+		<ScriptEditorModal ref="scriptEditorModal" />
 	</div>
 </template>
 
@@ -168,6 +169,7 @@ import ConsolePanel from '../layout/ConsolePanel.vue'
 import MonacoThemeScope from '../layout/MonacoThemeScoped.vue'
 import MenuActionButtons from '../layout/MenuActionButtons.vue'
 import ElementTemplatesModal from '../modals/ElementTemplatesModal.vue'
+import ScriptEditorModal from '../modals/ScriptEditorModal.vue'
 
 // Specific imports
 import { getHeadersForSelector } from './SelectorHeaders'
@@ -210,6 +212,7 @@ const VersionButtonComponent = inject('versionButtonComponent', null)
 const popover = ref(null)
 //element templates modal
 const elementTemplatesModal = ref(null)
+const scriptEditorModal = ref(null)
 
 const emit = defineEmits([
 	'toggleOutdatedTemplateBtn',
@@ -579,7 +582,20 @@ const _validate = async xml => {
 
 const _saveDiagram = async () => await saveProcess(bpmnModeler, typeOfDiagram, _setupDiagramFunctions, _updatetemplatesListButton)
 
-const _createMonacoEditor = (scriptDivId, textArea) => {
+const _mapScriptLanguage = scriptFormat => {
+	const map = { javascript: 'javascript', python: 'python', ruby: 'ruby', xml: 'xml', sql: 'sql' }
+	return map[scriptFormat?.toLowerCase()] ?? 'java'
+}
+
+const _createMonacoEditor = (scriptDivId, textArea, scriptFormat = null) => {
+	const wrapperId = `${scriptDivId}-wrapper`
+	const language = _mapScriptLanguage(scriptFormat)
+
+	const wrapper = document.createElement('div')
+	wrapper.id = wrapperId
+	wrapper.style.position = 'relative'
+	wrapper.style.width = '100%'
+
 	const divMonaco = document.createElement('div')
 	divMonaco.id = `${scriptDivId}`
 	divMonaco.style.width = '100%'
@@ -588,20 +604,37 @@ const _createMonacoEditor = (scriptDivId, textArea) => {
 	//resize and overflow to make the div resizable
 	divMonaco.style.resize = 'vertical'
 	divMonaco.style.overflow = 'hidden'
-	const monacoEditor = propertyPanel.value.querySelector(`#${scriptDivId}`)
 
-	if (!monacoEditor) { //it it doesnt exist it will create it
-		textArea.insertAdjacentElement('afterend', divMonaco)
+	const expandBtn = document.createElement('button')
+	expandBtn.className = 'btn btn-sm btn-light border position-absolute'
+	expandBtn.style.bottom = '4px'
+	expandBtn.style.right = '4px'
+	expandBtn.style.zIndex = '10'
+	expandBtn.title = translateValue('buttons.expandScript')
+	expandBtn.innerHTML = '<span class="mdi mdi-18px mdi-arrow-expand-all"></span>'
+
+	wrapper.appendChild(divMonaco)
+	wrapper.appendChild(expandBtn)
+
+	const existingWrapper = propertyPanel.value.querySelector(`#${wrapperId}`)
+	if (!existingWrapper) { //it it doesnt exist it will create it
+		textArea.insertAdjacentElement('afterend', wrapper)
 	}
 	else { // if already exists it will replace it
-
-		monacoEditor.replaceWith(divMonaco)
+		existingWrapper.replaceWith(wrapper)
 	}
 
 	textArea.style.display = 'none'
 	const { createMonacoEditorForScripts } = useMonacoEditor(monaco, props)
+	const editor = createMonacoEditorForScripts(divMonaco, textArea.value, language)
 
-	return createMonacoEditorForScripts(divMonaco, textArea.value)
+	expandBtn.addEventListener('click', () => {
+		scriptEditorModal.value.open(editor.getValue(), scriptFormat).then(newValue => {
+			if (newValue !== null) editor.setValue(newValue)
+		})
+	})
+
+	return editor
 }
 
 const hideModalListSelector = () => {
@@ -677,7 +710,8 @@ const _setMonacoEditorToDiv = (e, divId) => {
 		}
 
 		const monacoEditorId = element.di.bpmnElement.id ?? element.moddleElement.id
-		const monacoEditor = _createMonacoEditor(`monaco-editor-${monacoEditorId}`, textAreaScriptTask)
+		const scriptFormat = element.moddleElement?.scriptFormat ?? element.di.bpmnElement?.scriptFormat
+		const monacoEditor = _createMonacoEditor(`monaco-editor-${monacoEditorId}`, textAreaScriptTask, scriptFormat)
 		//captures changes in monaco editor
 		monacoEditor.getModel().onDidChangeContent(() => {
 			textAreaScriptTask.value = monacoEditor.getValue()
@@ -847,7 +881,8 @@ const _replaceDivWithMonacoEditor = async (scriptDivId, element) => {
 			return
 		}
 
-		const monacoEditor = _createMonacoEditor(`monaco-editor-${scriptDivId}`, textAreaScriptTask)
+		const scriptFormat = element.script?.scriptFormat
+		const monacoEditor = _createMonacoEditor(`monaco-editor-${scriptDivId}`, textAreaScriptTask, scriptFormat)
 		//captures changes in monaco editor
 		monacoEditor.getModel().onDidChangeContent(() => {
 			textAreaScriptTask.value = monacoEditor.getValue()

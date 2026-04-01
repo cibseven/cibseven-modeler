@@ -114,7 +114,11 @@
     "zoomOut": "Verkleinern",
     "resetViewport": "Ansicht zurücksetzen",
     "minimap": "Minimalkarte umschalten",
-    "fullscreen": "Vollbild umschalten"
+    "fullscreen": "Vollbild umschalten",
+    "expandScript": "Im vollständigen Editor öffnen"
+  },
+  "scriptEditorModal": {
+    "title": "Skript bearbeiten"
   },
   "tabs": {
     "unsavedChanges": "Ungespeicherte Änderungen"

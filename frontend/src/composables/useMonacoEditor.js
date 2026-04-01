@@ -56,7 +56,7 @@ export default function useMonacoEditor(monacoRef, props, emit) {
       return
     }
   }
-  const createMonacoEditorForScripts = (container, text) => {
+  const createMonacoEditorForScripts = (container, text, language = 'java') => {
    return monacoEditor = monaco.editor.create(container, {
       value: text,
       // hides left margin with numbers
@@ -67,7 +67,7 @@ export default function useMonacoEditor(monacoRef, props, emit) {
       lineNumbersMinChars: 0,
       //--
       overviewRulerBorder: false,
-      language: 'java',
+      language: language,
       //lineNumbers: 'on', // to show the left numbers
       roundedSelection: false,
       scrollBeyondLastLine: false,

@@ -114,7 +114,11 @@
     "zoomOut": "Зменшити",
     "resetViewport": "Скинути вигляд",
     "minimap": "Перемкнути мінімапу",
-    "fullscreen": "Перемкнути повний екран"
+    "fullscreen": "Перемкнути повний екран",
+    "expandScript": "Відкрити у повному редакторі"
+  },
+  "scriptEditorModal": {
+    "title": "Редагувати скрипт"
   },
   "tabs": {
     "unsavedChanges": "Незбережені зміни"
