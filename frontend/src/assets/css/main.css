@@ -15,9 +15,6 @@
  *  limitations under the License.
  */
 
-/* Import Bootstrap */
-@import 'bootstrap/dist/css/bootstrap.min.css';
-
 /* Custom variables that extend Bootstrap */
 :root {
 	--header-height: 56px;

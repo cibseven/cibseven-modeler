@@ -240,7 +240,7 @@ export const filterTemplates = (templates, config) => {
 	}
 
 	try {
-		let exclusionCriteria = config.modeler?.excludeTemplates
+		let exclusionCriteria = config.modeler?.excludeTemplates ?? config.excludeTemplates
 
 		if (!exclusionCriteria || exclusionCriteria.length === 0) {
 			return templates

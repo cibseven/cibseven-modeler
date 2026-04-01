@@ -14,8 +14,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { describe, it, expect } from 'vitest'
-import { wildcardCleanupRegex, cleanupTemplateCriteria, filterTemplates, mergeTemplates } from '../../utils.js'
+import { describe, it, expect, vi } from 'vitest'
+import {
+    wildcardCleanupRegex,
+    cleanupTemplateCriteria,
+    filterTemplates,
+    mergeTemplates,
+    getTimeStamp,
+    checkBeforeAction,
+    getTagValueFromXml,
+    getProcessKeyFromBpmn,
+    generateUniqueId,
+    checkJSON,
+} from '../../utils.js'
 
 describe('Utils', () => {
 
@@ -263,6 +274,158 @@ describe('Utils', () => {
 
         it('Empty lists', () => {
             expect(mergeTemplates([], [])).toEqual([])
+        })
+    })
+
+    describe('getTimeStamp', () => {
+        it('Returns a string in HH:MM:SS format', () => {
+            const ts = getTimeStamp()
+            expect(ts).toMatch(/^\d{2}:\d{2}:\d{2}$/)
+        })
+
+        it('Each part is within valid range', () => {
+            const [h, m, s] = getTimeStamp().split(':').map(Number)
+            expect(h).toBeGreaterThanOrEqual(0)
+            expect(h).toBeLessThanOrEqual(23)
+            expect(m).toBeGreaterThanOrEqual(0)
+            expect(m).toBeLessThanOrEqual(59)
+            expect(s).toBeGreaterThanOrEqual(0)
+            expect(s).toBeLessThanOrEqual(59)
+        })
+    })
+
+    describe('checkBeforeAction', () => {
+        const storeList = {
+            processes: [
+                { key: 'process-a' },
+                { key: 'process-b' },
+            ]
+        }
+
+        it('Returns empty string when key is unique', () => {
+            expect(checkBeforeAction('process-new', 'process-new', storeList, 'key')).toBe('')
+        })
+
+        it('Returns empty string when new key matches the stored selected key', () => {
+            expect(checkBeforeAction('process-a', 'process-a', storeList, 'key')).toBe('')
+        })
+
+        it('Returns error key when a duplicate exists and key changed', () => {
+            expect(checkBeforeAction('process-a', 'process-old', storeList, 'key')).toBe('toastSaveErrorDuplicateKey')
+        })
+
+        it('Returns empty string when storeList is empty', () => {
+            expect(checkBeforeAction('process-a', 'process-old', { processes: [] }, 'key')).toBe('')
+        })
+    })
+
+    describe('getTagValueFromXml', () => {
+        // jsdom does not support the *|tag namespace-wildcard selector used
+        // internally by getTagValueFromXml. We test via a DOMParser mock so
+        // the surrounding logic is exercised without hitting that limitation.
+        it('Returns attribute value when tag and attribute exist', () => {
+            const mockEl = { getAttribute: vi.fn((attr) => attr === 'id' ? 'my-process' : null) }
+            const mockDoc = { querySelector: vi.fn(() => mockEl) }
+            const OriginalDOMParser = globalThis.DOMParser
+            globalThis.DOMParser = vi.fn(() => ({ parseFromString: () => mockDoc }))
+
+            expect(getTagValueFromXml('<xml/>', 'process', 'id')).toBe('my-process')
+
+            globalThis.DOMParser = OriginalDOMParser
+        })
+
+        it('Returns null when tag does not exist', () => {
+            const mockDoc = { querySelector: vi.fn(() => null) }
+            const OriginalDOMParser = globalThis.DOMParser
+            globalThis.DOMParser = vi.fn(() => ({ parseFromString: () => mockDoc }))
+
+            expect(getTagValueFromXml('<xml/>', 'collaboration', 'id')).toBeNull()
+
+            globalThis.DOMParser = OriginalDOMParser
+        })
+    })
+
+    describe('getProcessKeyFromBpmn', () => {
+        it('Returns collaboration id when present', () => {
+            const mockEl = { getAttribute: vi.fn(() => 'collab-id') }
+            const mockDoc = { querySelector: vi.fn(() => mockEl) }
+            const OriginalDOMParser = globalThis.DOMParser
+            globalThis.DOMParser = vi.fn(() => ({ parseFromString: () => mockDoc }))
+
+            expect(getProcessKeyFromBpmn('<xml/>')).toBe('collab-id')
+
+            globalThis.DOMParser = OriginalDOMParser
+        })
+
+        it('Falls back to process id when collaboration is absent', () => {
+            const mockProcess = { getAttribute: vi.fn(() => 'process-id') }
+            const mockDoc = { querySelector: vi.fn((sel) => sel.includes('collaboration') ? null : mockProcess) }
+            const OriginalDOMParser = globalThis.DOMParser
+            globalThis.DOMParser = vi.fn(() => ({ parseFromString: () => mockDoc }))
+
+            expect(getProcessKeyFromBpmn('<xml/>')).toBe('process-id')
+
+            globalThis.DOMParser = OriginalDOMParser
+        })
+
+        it('Returns null when neither tag is present', () => {
+            const mockDoc = { querySelector: vi.fn(() => null) }
+            const OriginalDOMParser = globalThis.DOMParser
+            globalThis.DOMParser = vi.fn(() => ({ parseFromString: () => mockDoc }))
+
+            expect(getProcessKeyFromBpmn('<xml/>')).toBeNull()
+
+            globalThis.DOMParser = OriginalDOMParser
+        })
+    })
+
+    describe('generateUniqueId', () => {
+        it('Returns a non-empty string', () => {
+            expect(typeof generateUniqueId()).toBe('string')
+            expect(generateUniqueId().length).toBeGreaterThan(0)
+        })
+
+        it('Returns different values on successive calls', () => {
+            const ids = new Set(Array.from({ length: 20 }, generateUniqueId))
+            expect(ids.size).toBe(20)
+        })
+    })
+
+    describe('checkJSON', () => {
+        const templates = [
+            { id: 'my-template-1', appliesTo: ['bpmn:ServiceTask'] },
+        ]
+
+        it('Returns empty array when XML has no modelerTemplate attributes', () => {
+            const xml = `<?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">
+                    <process id="proc"><serviceTask id="t1" /></process>
+                </definitions>`
+            expect(checkJSON(xml, templates)).toEqual([])
+        })
+
+        it('Returns empty array when modelerTemplate id matches a known template', () => {
+            const xml = `<?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                    xmlns:camunda="http://camunda.org/schema/1.0/bpmn">
+                    <process id="proc">
+                        <serviceTask id="t1" camunda:modelerTemplate="my-template-1" />
+                    </process>
+                </definitions>`
+            expect(checkJSON(xml, templates)).toEqual([])
+        })
+
+        it('Returns entry when modelerTemplate id does not match any template', () => {
+            const xml = `<?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                    xmlns:camunda="http://camunda.org/schema/1.0/bpmn">
+                    <process id="proc">
+                        <serviceTask id="t1" camunda:modelerTemplate="unknown-template" />
+                    </process>
+                </definitions>`
+            const result = checkJSON(xml, templates)
+            expect(result.length).toBe(1)
+            expect(result[0].nameOfTemplate).toBe('unknown-template')
         })
     })
 })

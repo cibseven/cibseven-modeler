@@ -14,6 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import * as monaco from 'monaco-editor'
 
@@ -25,7 +26,6 @@ import store from './store'
 import { axios } from './axiosConfig'
 import { loadFromPublic } from './utils.js'
 import { setServicesBasePath, getInfoPath } from './services/servicesConfig.js'
-import { loadTheme, applyTheme } from './utils/init.js'
 
 const app = createApp(App)
 monaco.editor.setTheme('vs')
