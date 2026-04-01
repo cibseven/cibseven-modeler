@@ -36,40 +36,13 @@
 				</template>
 			</MenuActionButtons>
 		</div>
-		<NotificationMessage ref="notificationModal">
-
-			<template #title>
-				<h5 class="modal-title fs-5" id="deployModalLabel">{{ $t('modalNotificacionMessageBlockedForm.title')
-					}}
-				</h5>
-			</template>
-			<template #body>
-				<div class="border-1">
-					<h6>{{ $t('blockedSession.form') }} : {{ notificationMessageData?.processName }}</h6>
-					<h5>{{ $t('modalNotificacionMessageBlockedForm.body') }}</h5>
-				</div>
-				<table class="table">
-					<thead>
-						<tr>
-							<th v-for="(column, idx) in notificationMessageData?.header" :key="idx">{{ $t(column) }}</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td v-for="(column, idx) in notificationMessageData?.body" :key="idx">{{ column }}</td>
-						</tr>
-
-					</tbody>
-				</table>
-			</template>
-			
-			<template #optionalButton>
-				<button type="button" @click.prevent="() => notificationModal.closeModal(true)"
-					class="btn btn-secondary">{{
-						$t("buttons.forceSave") }}</button>
-			</template>
-			
-		</NotificationMessage>
+		<!-- Extension point for plugins -->
+		<component
+			v-if="formTool"
+			:is="formTool"
+			:apply-schema="applySchema"
+			:get-current-schema="getCurrentSchemaJson"
+		/>
 	</div>
 </template>
 <script setup>
@@ -85,14 +58,14 @@ import usePropertiesPanel from '../../composables/usePropertiesPanel'
 import useForm from '../../composables/useForm'
 
 import { ref, onMounted, computed, onUpdated, watch, nextTick } from 'vue'
-import NotificationMessage from '../modals/NotificationMessage.vue'
+import { getPlugin } from '../../plugins/pluginsConfig'
+
+const formTool = getPlugin('form-tools')
 
 const resizableDiv = ref(null)
 const formContainer = ref(null)
 const canvas = ref(null)
 const propertyPanel = ref(null)
-//for session blocked modal
-const notificationModal = ref(null)
 
 const props = defineProps({
     json: String,
@@ -113,7 +86,6 @@ const emit = defineEmits([
 	'resizeTabNav',
     'updateEditorXML',
 	'updateDownloadLink',
-	'updateDownloadLinkSvg',
     'isValidated',
 	'showToastMessage',
 	'toggleEnableSave',
@@ -121,9 +93,8 @@ const emit = defineEmits([
 	'toggleVersionNotSaved',
 	'updateIsButtonDisabled',
 	'updateStoredLocalStorageTabNavList',
-	'assignSessionIdToProcess',
 ])
-const { initializeFormEditor, save, importJson, propertiesPanelComponent, saveXmlAfterUpdate, restartFormJs, destroyFormJs, getFormId, notificationMessageData } = useForm(props, emit, canvas, propertyPanel, notificationModal)
+const { initializeFormEditor, save, importJson, propertiesPanelComponent, saveXmlAfterUpdate, restartFormJs, destroyFormJs, getFormId, formEditor } = useForm(props, emit, canvas, propertyPanel)
 const { updateParentHeight, updateParentWidth,  parentWidth, changeWidth, canvasWidth, isVisiblePropertyPanel, togglePropertiesPanel } = usePropertiesPanel(props, emit, formContainer, resizableDiv, propertiesPanelComponent, propertyPanel)
 
 onMounted(async() => {
@@ -148,7 +119,7 @@ const styleCanvas = computed(() => {
 })
 
 const _saveDiagram = async () => {
-    save(notificationModal)
+    save()
 }
 
 const _saveXmlAfterUpdate = (isBpmn, updatedJson, _tabElementIndex) => {
@@ -157,6 +128,28 @@ const _saveXmlAfterUpdate = (isBpmn, updatedJson, _tabElementIndex) => {
 
 const _validate = async json => {
 	importJson(json)
+}
+
+/**
+ * Applies a schema object to the form editor.
+ * Can be used by plugins via the tools slot.
+ */
+const applySchema = (schema) => {
+	importJson(JSON.stringify(schema, null, 2))
+	emit('toggleEnableSave', true, props.tabElementIndex)
+}
+
+/**
+ * Returns the current form schema as a JSON string.
+ */
+const getCurrentSchemaJson = () => {
+	try {
+		if (!formEditor.value) return null
+		const schema = formEditor.value.getSchema()
+		return schema ? JSON.stringify(schema, null, 2) : null
+	} catch {
+		return null
+	}
 }
 
 defineExpose({

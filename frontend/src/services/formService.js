@@ -57,40 +57,10 @@ const deleteFormById = id => {
   return axios.delete(getModelerServicePath() + '/form/delete/' + id)
 }
 
-
-const createFormSession = (name, id, blob, type) => {
-
-  const formData = new FormData()
-  formData.append('name', name)
-  formData.append('id', id)
-  formData.append('type', type)
-  formData.append('form', blob)
-
-  return axios.post(getModelerServicePath() + '/session/save', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  })
-}
-
-const closeFormSession = (sessionIds, type) => {
-  const formData = new FormData()
-  formData.append('sessionId', sessionIds)
-  formData.append('type', type)
-  return axios.post(getModelerServicePath() + '/session/close', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  })
-}
-
-const checkFormSession = id => {
-  return axios.get(getModelerServicePath() + '/form/session/check/' + id)
-}
-
 export {
   fetchForms,
   fetchFormById,
   saveForm,
   updateForm,
   deleteFormById,
-  createFormSession,
-  closeFormSession,
-  checkFormSession
 }

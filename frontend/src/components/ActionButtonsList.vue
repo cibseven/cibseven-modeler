@@ -37,13 +37,20 @@
                 <span class="mdi mdi-24px mdi-download"></span>
             </a>
         </div>
-        <div v-show="!props.isButtonDisabled && modelProperties[props.tabElement.type] && modelProperties[props.tabElement.type].canExportSvg" class="btn-menu mx-1">
-            <a @click="canBeDownloaded" :href="downloadLinkSvg" :download="downloadNameSvg" :name="downloadNameSvg"
-                :title="$t('buttons.downloadSVG')" :aria-label="$t('buttons.downloadSVG')" class="btn btn-outline-light border-0 btn-sm"
-                :class="{ 'disabled': props.isButtonDisabled || props.tabElement.isModelerVisible }">
-                <span class="mdi mdi-24px mdi-file-image-outline"></span>
-            </a>
-        </div>
+        <template v-if="extraDownloadLinks?.[props.tabElementIndex]">
+            <div v-for="(link, i) in extraDownloadLinks[props.tabElementIndex]" :key="i"
+                v-show="!props.isButtonDisabled" class="btn-menu mx-1">
+                <a @click="canBeDownloaded"
+                    :href="link.href"
+                    :download="link.download"
+                    :title="$t(link.titleKey)"
+                    :aria-label="$t(link.titleKey)"
+                    class="btn btn-outline-light border-0 btn-sm"
+                    :class="{ 'disabled': props.isButtonDisabled || link.disabled }">
+                    <span :class="`mdi mdi-24px ${link.icon}`"></span>
+                </a>
+            </div>
+        </template>
         <div v-show="!props.isButtonDisabled &&  modelProperties[props.tabElement.type].canDeploy" class="btn-menu mx-1">
             <button @click="canDeploy" class="btn btn-outline-light border-0 btn-sm" type="button" aria-haspopup="true"
                 aria-expanded="false" :title="$t('buttons.deploy')">
@@ -73,7 +80,7 @@
 
 <script setup>
 
-import { ref, onMounted } from 'vue'
+import { ref, inject, onMounted } from 'vue'
 
 const props = defineProps({ 
     tabElementIndex: Number, 
@@ -87,6 +94,7 @@ const props = defineProps({
     width: Number
     }   
 )
+const extraDownloadLinks = inject('extraDownloadLinks', null)
 const emit = defineEmits([
     'toggleOutdatedTemplateModal', 
     'openDiagram', 
@@ -101,26 +109,21 @@ const isOutdatedTemplateWarning = ref(false)
 const isSaving = ref(false)
 
 const downloadName = ref()
-const downloadNameSvg = ref()
 const downloadLink = ref('#')
-const downloadLinkSvg = ref('#')
 const containerWidth = ref(0)
 const hasConsoleNotification = ref(false)
 const haslinkToProject = ref(false)
 const consoleVisible = ref(false)
 const modelProperties = { 'dmn' : {
         fileExtension: '.dmn',
-        canExportSvg: true,
         canDeploy: true,
         canOpenConsole: true,
     }, 'bpmn-c7': {
         fileExtension: '.bpmn',
-        canExportSvg: true,
         canDeploy: true,
         canOpenConsole: true,
     }, 'form': {
         fileExtension: '.form',
-        canExportSvg: false,
         canDeploy: true,
         canOpenConsole: false
     }
@@ -196,11 +199,6 @@ const changeWidth = value => {
     containerWidth.value = value
 }
 
-const _updateDownloadFileSvg = (downloadLinkSvgValue, downloadNameSvgValue) => {
-    downloadLinkSvg.value = downloadLinkSvgValue
-    downloadNameSvg.value = downloadNameSvgValue
-}
-
 const _saveDiagram = async () => {
     if (isSaving.value) return // prevent re-entry (e.g. rapid Ctrl+S)
     if (!props.canSave && !props.tabElement.changedVersion) return // only saves if button is enabled
@@ -245,5 +243,5 @@ const _updateDownloadFile = (downloadLinkValue, downloadNameValue) => {
 
 const showConsoleNotification = value => hasConsoleNotification.value = value
 
-defineExpose({ _toggleOutDatedTemplateBtn, _saveDiagram, _updateDownloadFile, _updateDownloadFileSvg, changeWidth, showConsoleNotification })
+defineExpose({ _toggleOutDatedTemplateBtn, _saveDiagram, _updateDownloadFile, changeWidth, showConsoleNotification })
 </script>

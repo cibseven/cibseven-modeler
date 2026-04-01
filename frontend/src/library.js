@@ -27,14 +27,16 @@ import CibsevenModeler from './components/modeler/CibsevenModeler.vue'
 import BpmnModeler from './components/modeler/BpmnModeler.vue'
 import DmnModeler from './components/modeler/DmnModeler.vue'
 import FormModeler from './components/modeler/FormModeler.vue'
+import NotificationMessage from './components/modals/NotificationMessage.vue'
 
-export { CibsevenModeler, BpmnModeler, DmnModeler, FormModeler }
+export { CibsevenModeler, BpmnModeler, DmnModeler, FormModeler, NotificationMessage }
 
 export { default as store, createModelerStore } from './store.js'
 export { i18n, setLocale, messages, createI18n } from './i18n.js'
 export { parseXml, base64Decode, applyTheme, getTheme, loadFromPublic } from './utils.js'
 export { setAxiosInstance, getAxios } from './axiosConfig.js'
-export { setServicesBasePath, getServicesBasePath } from './services/servicesConfig.js'
+export { setServicesBasePath, getServicesBasePath, getModelerServicePath } from './services/servicesConfig.js'
+export { registerPlugin, getPlugin } from './plugins/pluginsConfig.js'
 
 // Export store modules for consumer apps to register in their own store
 export { default as processStore } from './stores/processStore.js'
@@ -42,32 +44,8 @@ export { default as formStore } from './stores/formStore.js'
 export { default as elementTemplateStore } from './stores/elementTemplateStore.js'
 export { default as xmlStore } from './stores/xmlStore.js'
 
-// Export translations for consumer apps to merge
-import translations_en from './resources/translations/translations_en.json'
-import translations_de from './resources/translations/translations_de.json'
-import translations_es from './resources/translations/translations_es.json'
-import translations_ua from './resources/translations/translations_ua.json'
-import translations_ru from './resources/translations/translations_ru.json'
-
-export const modelerTranslations = {
-	en: translations_en,
-	de: translations_de,
-	es: translations_es,
-	ua: translations_ua,
-	ru: translations_ru
-}
-
-/**
- * Merge modeler translations into the consumer app's i18n instance
- * @param {Object} i18n - The vue-i18n instance from the consumer app
- * @param {string} lang - The language code (en, de, es, ua, ru)
- */
-export function mergeModelerTranslations(i18n, lang) {
-	const translation = modelerTranslations[lang] || modelerTranslations.en
-	if (i18n.global && i18n.global.mergeLocaleMessage) {
-		i18n.global.mergeLocaleMessage(lang, translation)
-	}
-}
+// Export translations utilities
+export { modelerTranslations, mergeModelerTranslations } from './utils/translations.js'
 
 // Vue plugin install function
 const install = (app, _options = {}) => {

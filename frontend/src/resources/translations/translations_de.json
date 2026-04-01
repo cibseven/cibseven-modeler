@@ -23,25 +23,6 @@
     "title": "Datei existiert nicht",
     "body": "Die Datei, die Sie laden möchten, existiert nicht mehr."
   },
-  "modalNotificacionMessageBlockedProcess": {
-    "title": "Blockierter Prozess",
-    "body": "Der Prozess, den Sie zu öffnen versuchen, ist blockiert, weil ein anderer Benutzer ihn gerade ändert."
-  },
-  "modalNotificacionMessageBlockedForm": {
-    "title": "Blockiertes Formular",
-    "body": "Das Formular, das Sie zu öffnen versuchen, ist blockiert, weil ein anderer Benutzer es gerade ändert."
-  },
-  "modalNotificacionMessageBlockedDiagram": {
-    "title": "Blockiertes Diagramm",
-    "body": "Das Diagramm, das Sie zu öffnen versuchen, ist blockiert, weil ein anderer Benutzer es gerade ändert."
-  },
-  "blockedSession": {
-    "process": "Prozess",
-    "dmn": "Diagramm",
-    "form": "Formular",
-    "user": "Benutzer",
-    "openedAt": "Eröffnet am"
-  },
   "modalCloseNotSaved": {
     "title": "{item} wurde nicht gespeichert",
     "body": "Der {item} wurde nicht gespeichert. Sind Sie sicher, dass Sie ihn schließen wollen?"
@@ -123,12 +104,10 @@
     "downloadDiagram": "BPMN-Diagramm herunterladen",
     "cancel": "Abbrechen",
     "searchTemplates": "Vorlagen templates",
-    "downloadSVG": "BPMN-Diagramm im SVG-Format herunterladen",
     "console": "Konsole",
     "close": "Schließen",
     "delete": "Löschen",
     "copy": "Kopieren",
-    "forceSave": "Speichern erzwingen",
     "linkToProject": "Link zum Projekt",
     "moreTabs": "Weitere Tabs"
   },

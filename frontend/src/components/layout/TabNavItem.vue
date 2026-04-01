@@ -16,7 +16,7 @@
 -->
 <template>
     <div class="m-0 p-0">
-        <div v-if="props.isDashboard" class="nav-item bg-light dashboard" @keyup.enter.stop="selectTab" @click.stop="selectTab">
+        <div v-if="props.isDashboard" class="nav-item bg-light dashboard" role="none" @keyup.enter.stop="selectTab" @click.stop="selectTab">
             <div ref="tabItem" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard-tab-pane"
                 style="height: 41px;" :class="{ 'active': props.activeTab === props.index }" role="tab"
                 class="nav-link dashboard nav-icon d-flex align-items-center" aria-labelledby="dashboard-tab" aria-controls="dashboard-tab-pane"
@@ -47,13 +47,11 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import { useStore } from 'vuex'
-import { checkProcessSession, closeProcessSession } from '../../services/processService'
-import { checkFormSession, closeFormSession } from'../../services/formService.js'
+import { computed, inject, ref } from 'vue'
 
 const tabItem = ref(null)
-const store = useStore()
+const closeSessionHook = inject('closeSessionHook', null)
+const closeFormSessionHook = inject('closeFormSessionHook', null)
 const props = defineProps({
     id: { type: String },
     tabNavList: Object,
@@ -97,12 +95,9 @@ const selectBySimulateClick = () => {
 const removeSelectedTab = async() => {
     try {
         if (props.tabNavList.type !== 'form') {
-        const response = await checkProcessSession(props.tabNavList.id)
-        await closeProcessSession(response.sessionId, props.tabNavList.type)
-        }
-        else{
-            const response = await checkFormSession(props.tabNavList.id)
-            await closeFormSession(response.sessionId, props.tabNavList.type)
+            if (closeSessionHook) await closeSessionHook(props.tabNavList.sessionId, props.tabNavList.type)
+        } else {
+            if (closeFormSessionHook) await closeFormSessionHook(props.tabNavList.sessionId, props.tabNavList.type)
         }
     } catch (error) {
         console.error(error)
@@ -112,32 +107,9 @@ const removeSelectedTab = async() => {
  
 }
 
-const selectTab = async (e) => {
+const selectTab = (e) => {
     e.preventDefault()
-    if (props.isSaved && !props.editorXML) { // only search in database if process is saved       
-        let selectedItem = null
-        if(props.tabNavList.type !== 'form') {
-            await store.dispatch('modeler/processes/fetchProcessById', props.navId) // search xml by id selected    
-            selectedItem = store.state.modeler.processes.processSelected
-  
-        } else {
-            await store.dispatch('modeler/forms/fetchFormById', props.navId) // search form by id selected
-            selectedItem = store.state.modeler.forms.formSelected
-        }
-
-        emit('selectedTab', props.index)
-
-        if (selectedItem) {
-            emit('openDiagram', selectedItem, props.index)
-        } else {
-            emit('showToastMessage', { isSuccess: false, toastText: 'toastFileNoLongerExists', bodyTextAlt: '' }) // to pass the text of the error to the toast
-            emit('removeSelectedTab', props.index)
-        }
-        emit('switchTabFromTabNavItem', props.index)
-
-    } else {
-        emit('switchTabFromTabNavItem', props.index)
-    }
+    emit('switchTabFromTabNavItem', props.index)
 }
 
 defineExpose({

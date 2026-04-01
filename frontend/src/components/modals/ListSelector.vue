@@ -32,7 +32,7 @@
                             <i class="mdi mdi-magnify mdi-18px text-muted"></i>
                             </span>
 
-                            <input v-if="props.typeOfSelector" class="form-control" type="text" autofocus="autofocus" autocomplete="off" :placeholder=" $t(`modalListSelector${props.typeOfSelector}.search`)"
+                            <input v-if="props.typeOfSelector" class="form-control" type="text" autocomplete="off" :placeholder=" $t(`modalListSelector${props.typeOfSelector}.search`)"
                                 v-model="inputValue" @input="handleSearchInFormList">
                         </div>
                         <div class="mb-3">

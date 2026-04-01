@@ -18,37 +18,26 @@ package org.cibseven.modeler.provider;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import org.cibseven.modeler.exception.SystemException;
 import org.cibseven.modeler.model.ProcessDiagramEntity;
 import org.cibseven.modeler.model.ProcessDiagramReduce;
-import org.cibseven.modeler.repository.AuditDiagram;
 import org.cibseven.modeler.repository.ProcessDiagramRepository;
 import jakarta.persistence.EntityNotFoundException;
 
 @Component
 public class DBProcessDiagramProvider implements IProcessDiagramProvider {
 	
-	@Value("${cibsevenmodeler.deleteProcesses.versionLimit:50}") private Integer versionLimit;
-	
 	@Autowired
 	private ProcessDiagramRepository processDiagramDao;
-		
-
-	@Autowired
-	private AuditDiagram auditDiagram;
 
 	@Override
 	public List<ProcessDiagramReduce> getDiagrams(String keyword, String diagramType, int firstResult, int maxResults) throws SystemException {
@@ -56,6 +45,11 @@ public class DBProcessDiagramProvider implements IProcessDiagramProvider {
 		String dt = diagramType == null ? "" : diagramType;
 		PageRequest page = PageRequest.of(firstResult / maxResults, maxResults, Sort.by("updated").descending());
 		return processDiagramDao.findAllFiltered(kw, dt, page);
+	}
+
+	@Override
+	public List<ProcessDiagramReduce> getDiagrams(int firstResult, int maxResults) throws SystemException {
+		return processDiagramDao.findAllBy(PageRequest.of(firstResult / maxResults, maxResults).withSort(Sort.by("updated").descending()));
 	}
 
 	@Override
@@ -87,11 +81,6 @@ public class DBProcessDiagramProvider implements IProcessDiagramProvider {
 		processDiagramEntity.setProcesskey(entity.getProcesskey());
 		processDiagramEntity.setDescription(entity.getDescription());
 		processDiagramEntity.setType(entity.getType());
-		
-    	if (!processDiagramEntity.getDiagram().equals(entity.getDiagram())) {
-    		processDiagramEntity.setVersion(processDiagramEntity.getVersion() + 1);
-    	}
-		
 		processDiagramEntity.setDiagram(entity.getDiagram());
 		processDiagramEntity.setUpdated(Timestamp.valueOf(LocalDateTime.now()));
 		
@@ -103,31 +92,5 @@ public class DBProcessDiagramProvider implements IProcessDiagramProvider {
 	public void delete(String id) throws SystemException {
 		processDiagramDao.deleteById(id);
 	}
-
-	@Scheduled(cron = "${cibsevenmodeler.deleteProcesses.cron: 0 0 0 * * ?}")
-	void removeOldVersions() {		
-		processDiagramDao.deleteOldRecords(versionLimit);
-	
-	}
-	
-	@Override
-	@Transactional
-	public List<ProcessDiagramEntity> getListDiagramHistory(String id) throws SystemException {
-		List<Object[]> results = auditDiagram.getHistory(ProcessDiagramEntity.class, "diagram", "id", id);
-		List<ProcessDiagramEntity> list = new ArrayList();
-		for (Object[] resourceH : results) {
-			ProcessDiagramEntity auxPde = (ProcessDiagramEntity) resourceH[0];
-			//DefaultRevisionEntity auxRt = (DefaultRevisionEntity) resourceH[1];
-			list.add(auxPde);
-		}
-		return list;
-
-	}
-
-	@Override
-	public List<ProcessDiagramReduce> getDiagrams(int firstResult, int maxResults) throws SystemException {
-		return processDiagramDao.findAllBy(PageRequest.of(firstResult / maxResults, maxResults).withSort(Sort.by("updated").descending()));
-	}
-
 
 }

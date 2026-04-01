@@ -73,6 +73,4 @@ public interface IProcessDiagramProvider {
     
 	void delete(String id) throws SystemException;
 	
-	List<ProcessDiagramEntity> getListDiagramHistory(String id) throws SystemException;
-	
 }

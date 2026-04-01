@@ -19,7 +19,6 @@ import {
   fetchUnifiedDiagrams,
   fetchProcessById,
   fetchProcessByName,
-  fetchProcessHistory
 } from '../services/processService'
 
 const state = () => ({
@@ -102,6 +101,7 @@ const actions = {
   async fetchProcessById({ commit }, processId) {
     commit('setLoading', true)
     commit('clearError')
+    commit('setResetProcessSelected')
     
     try {
       const processSelected = await fetchProcessById(processId)
@@ -127,21 +127,6 @@ const actions = {
         processSelected: processSelected
       }
       commit('setCurrentProcess', updatedPayload)
-    } catch (error) {
-      console.error(error)
-      commit('setError', error)
-    } finally {
-      commit('setLoading', false)
-    }
-  },
-
-  async fetchProcessHistoryList({ commit }, processId) {
-    commit('setLoading', true)
-    commit('clearError')
-    
-    try {
-      const processHistoryList = await fetchProcessHistory(processId)
-      commit('setProcessHistoryList', processHistoryList)
     } catch (error) {
       console.error(error)
       commit('setError', error)

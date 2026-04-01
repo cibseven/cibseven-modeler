@@ -25,7 +25,7 @@
                     <div class="input-group" role="group">
                             <button @click.stop="handleSearch" class="btn btn-secondary" :title="$t('buttons.search')" aria-hidden="true" type="button">                               <span class="mdi mdi-magnify" style="line-height: initial;"></span>
                             </button> 
-                        <input class="form-control" type="text" :title="$t('titles.search')" :placeholder="$t('titles.search')" :aria-label="$t('titles.search')" autofocus="autofocus" autocomplete="off" v-model="inputSearchValue" @input="handleSearch">                            
+                        <input class="form-control" type="text" :title="$t('titles.search')" :placeholder="$t('titles.search')" :aria-label="$t('titles.search')" autocomplete="off" v-model="inputSearchValue" @input="handleSearch">                            
                                 <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" :title="$t(`filterElements.${filterType}`)">
                                     {{ $t(`filterElements.${filterType}`) }}
                                 </button>
@@ -78,12 +78,12 @@
                             </div>
                             <input ref="fileInput" type="file" accept=".bpmn,.dmn,.form" :aria-label="$t('buttons.importFile')" style="display: none;"
                                 @change="handleFileChange" />                            
-                            <div class="dropdown float-right">
+                            <div class="dropup float-right">
                                 <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
                                     aria-expanded="false">
                                     {{ $t('buttons.createDiagram') }}
                                 </button>
-                                <ul class="dropdown-menu">
+                                <ul class="dropdown-menu dropdown-menu-end">
                                     <li> <button :title="$t('buttons.newBpmnc7')" type="button" class="dropdown-item" @click="handleClickCreateBpmnc7Diagram">
                                             {{ $t('buttons.newBpmnc7') }}
                                         </button>
@@ -176,6 +176,9 @@ const filteredDashboardElements = ref([])
 onMounted(async () => {
     resetDashboardElements()
     _addIsHoveredElement()
+    if (props.diagrams != null) {
+        isLoading.value = false
+    }
 })
 
 const handleListScroll = () => {
@@ -195,15 +198,15 @@ const modalTitle = computed(() => {
       } )  }
 })
 
-watch(() => props.diagrams, () => {
-    isLoadingMore.value = false
-    resetDashboardElements()
-})
-
 const resetDashboardElements = () => {
     dashboardElements.value = props.diagrams ? JSON.parse(JSON.stringify(props.diagrams)) : []
     filteredDashboardElements.value = dashboardElements.value
 }
+
+watch(() => props.diagrams, () => {
+    isLoadingMore.value = false
+    resetDashboardElements()
+}, { immediate: true })
 
 //changes state of hover to show actions
 const setHoverElement = (index, value) => {

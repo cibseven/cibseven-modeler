@@ -21,8 +21,8 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <slot name="title" />
-                        <button type="button" class="btn-close" @click.prevent="() => modalBootstrap.hide()"
-                            data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="btn-close" @click.prevent="() => closeModal(false)"
+                            aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <slot name="body" />
@@ -31,7 +31,7 @@
                         <div v-show="showForceSaveButton">
                             <slot name="optionalButton"/>
                         </div>
-                        <button type="button" @click.prevent="() => modalBootstrap.hide()" class="btn btn-primary">{{
+                        <button type="button" @click.prevent="() => closeModal(false)" class="btn btn-primary">{{
                             $t("buttons.accept") }}</button>                            
                     </div>                    
                 </div>

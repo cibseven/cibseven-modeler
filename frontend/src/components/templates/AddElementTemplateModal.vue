@@ -184,7 +184,7 @@
                 <div class="col-12">
                   <!-- Import Mode Selection -->
                   <div class="mb-3">
-                    <label class="form-label">{{ $t('templatesManagement.addTemplateDialog.importMode') }}</label>
+                    <p class="form-label">{{ $t('templatesManagement.addTemplateDialog.importMode') }}</p>
                     <div class="btn-group w-100" role="group">
                       <input type="radio" class="btn-check" id="singleMode" v-model="importMode" value="single" autocomplete="off">
                       <label class="btn btn-outline-secondary" for="singleMode">

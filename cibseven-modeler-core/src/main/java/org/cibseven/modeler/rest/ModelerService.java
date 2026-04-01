@@ -71,11 +71,10 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
-import org.springframework.mock.web.MockMultipartFile;
+import org.cibseven.modeler.util.ByteArrayMultipartFile;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 
 @ApiResponses({
 	@ApiResponse(responseCode = "500", description = "An unexpected system error occured"),
@@ -216,26 +215,16 @@ public class ModelerService extends BaseService {
 	}
 	
 	private MultiValueMap<String, MultipartFile> byteArrayToMultiValueMap(byte[] bytes, String fileName, String type) {
-	    InputStream inputStream = new ByteArrayInputStream(bytes);
-	    MultipartFile mockMultipartFile;
-		try {
-			mockMultipartFile = new MockMultipartFile(fileName, fileName + "." + type, "application/octet-stream", inputStream);
-		    MultiValueMap<String, MultipartFile> multiValueMap = new LinkedMultiValueMap<>();
-		    multiValueMap.add(fileName + "." + type, mockMultipartFile);
-		    return multiValueMap;			
-		} catch (IOException e) {
-			throw new SystemException(e);
-		}
+	    MultipartFile multipartFile = new ByteArrayMultipartFile(fileName, fileName + "." + type, "application/octet-stream", bytes);
+	    MultiValueMap<String, MultipartFile> multiValueMap = new LinkedMultiValueMap<>();
+	    multiValueMap.add(fileName + "." + type, multipartFile);
+	    return multiValueMap;
 	}
 
 	private MultiValueMap<String, MultipartFile> byteArrayToMultiValueMap(MultipartFile file, String fileName, String type) {
-		MultipartFile mockMultipartFile;
 		try {
-			InputStream inputStream = file.getInputStream();
-			mockMultipartFile = new MockMultipartFile(fileName, fileName + "." + type, "application/octet-stream", inputStream);
-		    MultiValueMap<String, MultipartFile> multiValueMap = new LinkedMultiValueMap<>();
-		    multiValueMap.add(fileName + "." + type, mockMultipartFile);
-		    return multiValueMap;			
+			byte[] bytes = file.getBytes();
+			return byteArrayToMultiValueMap(bytes, fileName, type);
 		} catch (IOException e) {
 			throw new SystemException(e);
 		}
@@ -503,7 +492,11 @@ public class ModelerService extends BaseService {
 		if (authenticationEnabled) {
 			checkAuthorization(rq, true);
 		}
-		byte[] file = dbProcessDiagramProvider.findById(id).get().getDiagram();
+		ProcessDiagramEntity entity = dbProcessDiagramProvider.findById(id).orElse(null);
+		if (entity == null) {
+			return ResponseEntity.notFound().build();
+		}
+		byte[] file = entity.getDiagram();
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM);
 		headers.setAccept(Arrays.asList(MediaType.APPLICATION_OCTET_STREAM));
@@ -512,12 +505,15 @@ public class ModelerService extends BaseService {
 	}
 
 	@RequestMapping(value = "/process/{id}", method = RequestMethod.GET)
-	public ProcessDiagramEntity findById(@PathVariable String id, HttpServletRequest rq) {
+	public ResponseEntity<ProcessDiagramEntity> findById(@PathVariable String id, HttpServletRequest rq) {
 		if (authenticationEnabled) {
 			checkAuthorization(rq, true);
 		}
-		ProcessDiagramEntity response = dbProcessDiagramProvider.findById(id).get();
-		return response;
+		ProcessDiagramEntity entity = dbProcessDiagramProvider.findById(id).orElse(null);
+		if (entity == null) {
+			return ResponseEntity.notFound().build();
+		}
+		return ResponseEntity.ok(entity);
 	}
 	
 	@RequestMapping(value = "/process/delete/{id}", method = RequestMethod.DELETE)
@@ -526,14 +522,6 @@ public class ModelerService extends BaseService {
 			checkAuthorization(rq, true);
 		}
 		dbProcessDiagramProvider.delete(id);
-	}
-	
-	@RequestMapping(value = "/process/history/{id}", method = RequestMethod.GET)
-	public List<ProcessDiagramEntity> loadDiagramHistory(@PathVariable String id, HttpServletRequest rq) {
-		if (authenticationEnabled) {
-			checkAuthorization(rq, true);
-		}
-		return dbProcessDiagramProvider.getListDiagramHistory(id);
 	}
 	
 	@RequestMapping(value = "/form/save", method = RequestMethod.POST)

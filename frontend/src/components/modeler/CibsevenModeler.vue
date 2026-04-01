@@ -36,8 +36,8 @@
 
 	<div ref="modelerTabPanes" class="tab-content flex-grow-1" style="min-height: 0;" :key="`modelerid1-i`">
 		<div class="tab-pane  bg-light fade" role="tabpanel" style="height: calc(100vh - 40px);"
-			:class="{ 'active show': activeTab === -1 }" :aria-labelledby="`dashboard-tab`" tabindex="0">
-	<StartPage ref="startPage" v-if="diagrams !== null" :diagrams="diagrams"
+			:class="{ 'active show': activeTab === -1 && !hasDirectDiagram }" :aria-labelledby="`dashboard-tab`" tabindex="0">
+	<StartPage ref="startPage" v-if="diagrams !== null && !hasDirectDiagram" :diagrams="diagrams"
 		:hasMore="hasMore"
 		@openDiagram="openDiagramFromChild" @openSelectedFile="handleFile" @showToastMessage="showToastMessage"
 		@createNewBpmnc7Diagram="createNewBpmnDiagram"
@@ -49,8 +49,7 @@
 		</div>
 		<div v-for="(tabElement, index) in tabNavList" :key="`process${tabElement.keyOfTabNav}-tp`"
 			class="tab-pane fade h-100" :class="{ 'active show': activeTab === index }" :navId="tabElement.keyOfTabNav"
-			role="tabpanel" :aria-labelledby="`process${tabElement.keyOfTabNav}-tab`" tabindex="0"
-			v-on:keydown.ctrl.s="e => saveWithKeyboard(e, tabElement.name, index)">
+			role="tabpanel" :aria-labelledby="`process${tabElement.keyOfTabNav}-tab`" tabindex="0">
 			<BpmnModeler
 				v-if="tabNavListXml[index] && waitToLoad && tabNavList[index].type === 'bpmn-c7'"
 				:tabElementIndex="index" :ref="el => modeler[index] = el" :tabElement="tabElement"
@@ -61,13 +60,13 @@
 				@updateStoredProcesses="getStoredDiagrams" @showPropertyPanel="showPropertyPanel"
 				@toggleEnableSave="toggleEnableSave" @showDiagram="showDiagram" @updateEditorXML="updateEditorXML"
 				@updateIsButtonDisabled="updateIsButtonDisabled" @updateDownloadLink="_updateDownloadLink"
-				@resizeTabNav="resizeTabNav" @updateDownloadLinkSvg="_updateDownloadLinkSvg"
+				@resizeTabNav="resizeTabNav"
 				@updateStoredLocalStorageTabNavList="updateStoredLocalStorageTabNavList" @isValidated="isValidated"
 				@setTypeOfDiagramForModeler="setTypeOfDiagramForModeler" @toggleIsSaved="toggleIsSaved"
 				@toggleVersionNotSaved="toggleVersionNotSaved" @toggleOutdatedTemplateBtn="toggleOutdatedTemplateBtn"
-				@show-console-notification="showConsoleNotification" @assign-session-id-to-process="assignSessionIdToProcess">
+				@show-console-notification="showConsoleNotification">
 				<div v-if="tabElement.isModelerVisible" class="h-100">
-					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index]"
+					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index] != null"
 						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index"></monaco-editor>
 				</div>
 				<template #menu>
@@ -87,17 +86,17 @@
 				:isActiveTab="index === activeTab" :tabElement="tabElement" :ref="el => modeler[index] = el"
 				:tabElementIndex="index" @isValidated="isValidated" @updateEditorXML="updateEditorXML"
 				:xml="tabNavListXml[index]" @updateIsButtonDisabled="updateIsButtonDisabled"
-				@updateDownloadLink="_updateDownloadLink" @updateDownloadLinkSvg="_updateDownloadLinkSvg"
+				@updateDownloadLink="_updateDownloadLink"
 				@toggleEnableSave="toggleEnableSave" @toggleVersionNotSaved="toggleVersionNotSaved"
 				@updateStoredLocalStorageTabNavList="updateStoredLocalStorageTabNavList"
 				@showToastMessage="showToastMessage" @setTypeOfDiagramForModeler="setTypeOfDiagramForModeler"
 				@toggleIsSaved="toggleIsSaved" @resizeTabNav="resizeTabNav" @toggleConsole="toggleConsole"
-				@show-console-notification="showConsoleNotification" @assign-session-id-to-process="assignSessionIdToProcess"
+				@show-console-notification="showConsoleNotification"
 				:isModelerVisible="tabNavList[index].isModelerVisible"
 				:consoleErrors="consoleErrorsList[index]"
 				>
 				<div v-if="tabElement.isModelerVisible" class="h-100">
-					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index]"
+					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index] != null"
 						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index"></monaco-editor>
 				</div>
 				<template #menu>
@@ -116,15 +115,15 @@
 			<FormModeler v-if="tabNavListXml[index] && tabNavList[index].type === 'form'" :json="tabNavListXml[index]" :isActiveTab="index === activeTab" :tabElement="tabElement" :ref="el => modeler[index] = el"
 				:tabElementIndex="index" @isValidated="isValidated" @updateEditorXML="updateEditorXML"
 				:xml="tabNavListXml[index]" @updateIsButtonDisabled="updateIsButtonDisabled"
-				@updateDownloadLink="_updateDownloadLinkForm" @updateDownloadLinkSvg="_updateDownloadLinkSvg"
+				@updateDownloadLink="_updateDownloadLinkForm"
 				@toggleEnableSave="toggleEnableSave" @toggleVersionNotSaved="toggleVersionNotSaved"
 				@updateStoredLocalStorageTabNavList="updateStoredLocalStorageTabNavList"
 				@showToastMessage="showToastMessage" @setTypeOfDiagramForModeler="setTypeOfDiagramForModeler"
 				@toggleIsSaved="toggleIsSaved" @resizeTabNav="resizeTabNav" @toggleConsole="toggleConsole"
-				@show-console-notification="showConsoleNotification" @assign-session-id-to-process="assignSessionIdToProcess"
+				@show-console-notification="showConsoleNotification"
 				:isModelerVisible="tabNavList[index].isModelerVisible">
 				<div v-if="tabElement.isModelerVisible" class="h-100">
-					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index]"
+					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index] != null"
 						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index" language='json'></monaco-editor>
 				</div>
 				<template #menu>
@@ -165,10 +164,11 @@
 
 import * as monaco from 'monaco-editor'
 import { useStore } from 'vuex'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+
 import { compareXML, getTimeStamp, getTagValueFromXml, checkCamundaVersion, generateUniqueId, setTagValueOfXml, getProcessKeyFromBpmn, filterTemplates } from '../../utils.js'
 import Clipboard from 'diagram-js/lib/features/clipboard/Clipboard'
-import { ref, onMounted, nextTick, watch, computed, inject, provide } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, watch, computed, inject, provide } from 'vue'
 import { useI18n } from 'vue-i18n'
 //import components
 import ModalDeploy from '../modals/ModalDeploy.vue'
@@ -192,9 +192,13 @@ provide('monaco', monaco)
 
 const store = useStore()
 const route = useRoute()
+const router = useRouter()
+
 const { t } = useI18n()
 const modeler = ref({}) // to get the diferent modelers  and call functions inside components
 const diagrams = ref(store.state.modeler?.processes?.unifiedDiagrams)
+const processes = computed(() => store.state.modeler.processes.processes)
+const forms = computed(() => store.state.modeler.forms.forms)
 const diagramOffset = ref(0)
 const hasMore = ref(true)
 const PAGE_SIZE = 20
@@ -217,6 +221,7 @@ const modalNewDiagram = ref(null)
 const elementTemplateJson = ref(null)
 //one clipboard instance that we can pass around to every bpmn-js instance that we create.
 const clipboard = new Clipboard()
+const hasDirectDiagram = ref(!!(route.params.diagramId || new URL(window.location.href).href.includes('processId=')))
 const withDiagram = ref(false)
 const isButtonDisabled = ref({})
 const editorXML = ref([])
@@ -230,7 +235,6 @@ const isShowModal = ref(false)
 const isShowModalNewDiagram = ref(false)
 const toastComponent = ref(null)
 const activeTab = ref(-1) // to switch active tab pane
-const sessionIds = ref([])
 const config = inject('config', {})
 
 onMounted(async () => {
@@ -241,15 +245,16 @@ onMounted(async () => {
 	await nextTick()
 	if (startPage.value) startPage.value._toggleIsLoading(false)
 	_loadTabNavList()
-	_checkExternalReturn()
+	await _checkExternalReturn()
+	hasDirectDiagram.value = false
 	window.addEventListener('resize', resizeTabWindow)
+	window.addEventListener('keydown', _handleGlobalKeydown)
 	waitToLoad.value = true
 })
 
-watch(tabNavList, newVal => {
-    sessionIds.value = newVal
-    .filter(el => el?.sessionId)
-    .map(el => el.sessionId)
+onUnmounted(() => {
+	window.removeEventListener('resize', resizeTabWindow)
+	window.removeEventListener('keydown', _handleGlobalKeydown)
 })
 
 watch(() => activeTab.value, async newValue => { // when the tab is selected it will resize the tabnav
@@ -362,6 +367,13 @@ const saveWithKeyboard = (e, tabElementName, tabElementIndex) => {
 	actionButton.value[tabElementIndex]._saveDiagram() // calls savediagram from component ActionButtonsList
 }
 
+const _handleGlobalKeydown = e => {
+	if (e.ctrlKey && e.key === 's' && activeTab.value > -1) {
+		e.preventDefault()
+		actionButton.value[activeTab.value]?._saveDiagram()
+	}
+}
+
 const closeRemovedProcessesOpenInTab = deletedId => {
 	const deletedTabElement = tabNavList.value.findIndex(tabElement => tabElement.id === deletedId)
 	if (deletedTabElement === -1) return
@@ -461,8 +473,34 @@ const updateIsButtonDisabled = (isDisabled, tabElementIndex) => {
 	isButtonDisabled.value[tabElementIndex] = isDisabled
 }
 
-const switchTabFromTabNav = selectedTabIndex => {
+const switchTabFromTabNav = async selectedTabIndex => {
 	activeTab.value = selectedTabIndex
+	const tab = tabNavList.value[selectedTabIndex]
+	if (tab?.isSaved && tab?.id) {
+		router.replace({ params: { diagramId: tab.id } }).catch(() => {})
+	} else if (route.params.diagramId) {
+		router.replace({ path: route.path.replace('/' + route.params.diagramId, '') }).catch(() => {})
+	}
+	// Fetch XML if not already loaded for saved tabs
+	if (selectedTabIndex > -1 && tab?.isSaved && tab?.id && !editorXML.value[selectedTabIndex] && !tabNavListXml.value[selectedTabIndex]) {
+		let selectedProcess = null
+		if (tabNavList.value[selectedTabIndex].type !== 'form') {
+			await store.dispatch('modeler/processes/fetchProcessById', tabNavList.value[selectedTabIndex].id)
+			selectedProcess = store.state.modeler.processes.processSelected
+		} else {
+			await store.dispatch('modeler/forms/fetchFormById', tabNavList.value[selectedTabIndex].id)
+			selectedProcess = store.state.modeler.forms.formSelected
+		}
+		if (selectedProcess) {
+			openDiagramFromNavTabFromChild(selectedProcess, selectedTabIndex)
+		} else {
+			showToastMessage({ isSuccess: false, toastText: 'toastFileNoLongerExists', bodyTextAlt: '' })
+			removeSelectedTab(selectedTabIndex)
+			return
+		}
+	}
+	await nextTick()
+	if (modelerTabNav.value) resizeTabNav(modelerTabNav.value.clientWidth)
 }
 
 // nav tab behaviour when closing tab
@@ -487,6 +525,7 @@ const isValidated = (validated, tabElementIndex) => {
 const updateDiagramFromEditor = (xmlContent, tabElementIndex) => {
 	//updates xml content
 	if (!modeler.value[tabElementIndex]) return
+	if (!xmlContent) return // ignore empty content — user is mid-edit; keep the editor alive
 	modeler.value[tabElementIndex]._validate(xmlContent)
 	const typeOfDiagram = checkCamundaVersion(xmlContent) ?? TYPEDMN
 
@@ -499,10 +538,6 @@ const updateDiagramFromEditor = (xmlContent, tabElementIndex) => {
 
 const openDiagramFromNavTabFromChild = (valueFromChild, tabElementIndex) => {
 	tabNavListXml.value[tabElementIndex] = valueFromChild
-}
-
-const assignSessionIdToProcess = (tabElementIndex, processSessionId) => {
-	tabNavList.value[tabElementIndex].sessionId = processSessionId
 }
 
 const updateDiagramXml = async (valueFromChild, tabElementIndex, cansave, _typeDiagram) => {
@@ -551,21 +586,7 @@ const openDiagram = (valueFromChild, processId, processName, processKey, typeOfD
 }
 
 const selectedTab = async tabElementIndex => {
-	switchTabFromTabNav(tabElementIndex)
-	if (!editorXML.value[tabElementIndex] && tabElementIndex > -1) { // if the xml has not being loaded yet by clicking the tab
-		let selectedProcess = null
-		if (tabNavList.value[tabElementIndex].type !== 'form') {
-			await store.dispatch('modeler/processes/fetchProcessById', tabNavList.value[tabElementIndex].id) // search xml by id selected
-		 	selectedProcess = store.state.modeler.processes.processSelected
-		}else {
-			await store.dispatch('modeler/forms/fetchFormById', tabNavList.value[tabElementIndex].id) // search xml by id selected
-			selectedProcess = store.state.modeler.forms.formSelected
-		}
-		
-		openDiagramFromNavTabFromChild(selectedProcess, tabElementIndex, null)
-	}
-	await nextTick()
-	resizeTabNav(modelerTabNav.value.clientWidth)
+	await switchTabFromTabNav(tabElementIndex)
 }
 
 const removeSelectedTab = tabElementIndex => {
@@ -619,10 +640,6 @@ const _updateDownloadLink = ({ href, download, tabElementIndex }) => {
 }
 const _updateDownloadLinkForm = ({ href, download, tabElementIndex }) => {
 	actionButton?.value[tabElementIndex]._updateDownloadFile(href, download)
-}
-
-const _updateDownloadLinkSvg = ({ href, download, tabElementIndex }) => {
-	actionButton?.value[tabElementIndex]._updateDownloadFileSvg(href, download)
 }
 
 //when removing a process if it is opened in a tab it will close
@@ -715,6 +732,11 @@ const _openProcessFromImportedFile = async (resXmlExternalUrl, fileName, fileNam
 		if (!xmlFromModeler) {
 			await store.dispatch('modeler/processes/fetchProcessById', foundModelerProcess.id) // gets the xml from the database with the id
 			xmlFromModeler = store.state.modeler.processes.processSelected
+		}
+		if (!xmlFromModeler) {
+			// Process exists in list but could not be fetched (e.g. deleted or DB error) — open as new
+			_addNewBpmnFromLoadedXml(diagramType, resXmlExternalUrl, foundExternalProcessKey, true)
+			return
 		}
 		modalData.value = { id: foundModelerProcess.id, name: foundModelerProcess.name, processkey: foundExternalProcessKey, xmlFromModeler, xmlExternalUrl: resXmlExternalUrl, diagramType }
 
@@ -851,7 +873,7 @@ const showConsoleNotification = id => {
 }
 
 // method to handle file selection when a file is dropped onto the component
-const _checkExternalReturn = () => {
+const _checkExternalReturn = async () => {
 	const url = new URL(window.location.href)
 	if (url.href.includes('processId=')) {
 		// Parse query parameters from hash fragment
@@ -863,15 +885,23 @@ const _checkExternalReturn = () => {
 			const decodedProcessId = decodeURIComponent(decodeURIComponent(processId))
 			const checkLength = decodedProcessId.split(':')
 			const processName = checkLength[0] ?? 'process'
-			_checkExistingProcessFromExternalReturn(decodedProcessId, processName, type)
+			await _checkExistingProcessFromExternalReturn(decodedProcessId, processName, type)
 		}
-	} else if (url.href.includes('diagramId=')) {
-		const diagramId = route.query.diagramId
-		const diagram = diagrams.value?.find(process => process.id === diagramId)
-		store.dispatch('modeler/processes/fetchProcessById', diagramId).then(() => {
-			const selectedDiagram = store.state.modeler.processes.processSelected
-			openDiagramFromChild(selectedDiagram, diagram.id, diagram.name, diagram.processkey, diagram.type, true, false, false)
-		})		
+	} else if (route.params.diagramId || url.href.includes('diagramId=')) {
+		const diagramId = route.params.diagramId || route.query.diagramId
+		const diagram = diagrams.value?.find(d => d.id === diagramId)
+		if (diagram) {
+			if (diagram.type === 'form') {
+				await store.dispatch('modeler/forms/fetchFormById', diagramId)
+				const selectedForm = store.state.modeler.forms.formSelected
+				const formKey = diagram.formId ?? diagram.processkey ?? diagram.name
+				openDiagramFromChild(selectedForm, diagram.id, formKey, formKey, 'form', true, false, false)
+			} else {
+				await store.dispatch('modeler/processes/fetchProcessById', diagramId)
+				const selectedDiagram = store.state.modeler.processes.processSelected
+				openDiagramFromChild(selectedDiagram, diagram.id, diagram.name, diagram.processkey, diagram.type, true, false, false)
+			}
+		}
 	}
 }
 
