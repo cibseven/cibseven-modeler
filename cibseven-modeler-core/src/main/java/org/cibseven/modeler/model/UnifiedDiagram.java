@@ -14,26 +14,32 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.cibseven.modeler.repository;
+package org.cibseven.modeler.model;
 
-import java.util.List;
+import java.sql.Timestamp;
 
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
+public interface UnifiedDiagram {
 
-import org.cibseven.modeler.model.FormEntity;
+	String getId();
 
-@Repository
-public interface FormRepository extends JpaRepository<FormEntity, String> {
+	/** Process name, or formId for forms. */
+	String getName();
 
-	List<FormEntity> findAllBy(Pageable pageable);
+	/** 'bpmn-c7', 'dmn', or 'form'. */
+	String getType();
 
-	@Query("select f from FormEntity f " +
-		"where lower(f.formId) like lower(concat('%', :keyword, '%')) " +
-		"or lower(f.description) like lower(concat('%', :keyword, '%'))")
-	List<FormEntity> findAllFiltered(@Param("keyword") String keyword, Pageable pageable);
+	/** processkey for processes, formId for forms. */
+	String getProcesskey();
+
+	/** null for processes, formId for forms. */
+	String getFormId();
+
+	String getDescription();
+
+	Timestamp getCreated();
+
+	Timestamp getUpdated();
+
+	Integer getVersion();
 
 }

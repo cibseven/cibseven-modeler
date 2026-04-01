@@ -16,12 +16,14 @@
  */
 import {
   fetchProcesses,
+  fetchUnifiedDiagrams,
   fetchProcessById,
   fetchProcessByName,
 } from '../services/processService'
 
 const state = () => ({
   processes: null,
+  unifiedDiagrams: null,
   processSelected: null,
   processSelectedId: null,
   processSelectedName: null,
@@ -34,6 +36,9 @@ const state = () => ({
 const mutations = {
   setProcesses(state, processes) {
     state.processes = processes
+  },
+  setUnifiedDiagrams(state, diagrams) {
+    state.unifiedDiagrams = diagrams
   },
   setCurrentProcess(state, updatedPayload) {
     state.processSelected = updatedPayload.processSelected
@@ -62,12 +67,28 @@ const mutations = {
 }
 
 const actions = {
-  async fetchProcesses({ commit }) {
+  async fetchUnifiedDiagrams({ commit }, { firstResult, maxResults, keyword, type }) {
+    commit('setLoading', true)
+    commit('clearError')
+    try {
+      const diagrams = await fetchUnifiedDiagrams(firstResult, maxResults, keyword, type)
+      commit('setUnifiedDiagrams', diagrams)
+      commit('setProcesses', diagrams.filter(d => d.type !== 'form'))
+      commit('modeler/forms/setForms', diagrams.filter(d => d.type === 'form'), { root: true })
+    } catch (error) {
+      console.error(error)
+      commit('setError', error)
+    } finally {
+      commit('setLoading', false)
+    }
+  },
+
+  async fetchProcesses({ commit }, { firstResult, maxResults, keyword = '', diagramType = '' }) {
     commit('setLoading', true)
     commit('clearError')
     
     try {
-      const processes = await fetchProcesses()
+      const processes = await fetchProcesses(firstResult, maxResults, keyword, diagramType)
       commit('setProcesses', processes)
     } catch (error) {
       console.error(error)

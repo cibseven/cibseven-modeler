@@ -17,52 +17,27 @@
 package org.cibseven.modeler.provider;
 
 import java.util.List;
-import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Component;
 
 import org.cibseven.modeler.exception.SystemException;
-import org.cibseven.modeler.model.FormEntity;
+import org.cibseven.modeler.model.UnifiedDiagram;
+import org.cibseven.modeler.repository.ProcessDiagramRepository;
 
-public interface IFormProvider {
+@Component
+public class UnifiedDiagramProvider implements IUnifiedDiagramProvider {
 
-	/**
-	 * Get all forms with optional keyword filter.
-	 */
-	List<FormEntity> getForms(String keyword, int firstResult, int maxResults) throws SystemException;
+	@Autowired
+	private ProcessDiagramRepository processDiagramDao;
 
-	/**
-	 * Get all forms without filters.
-	 */
-	List<FormEntity> getForms(int firstResult, int maxResults) throws SystemException;
-	
-	/**
-	 * Find form by id
-	 * 
-	 * @param id
-	 */
-	Optional<FormEntity> findById(String id) throws SystemException;
-    
-    /**
-	 * Create a new form.
-	 * 
-	 * @param entity
-	 */
-	FormEntity createForm(FormEntity entity) throws SystemException;    
+	@Override
+	public List<UnifiedDiagram> getDiagrams(String keyword, String type, int firstResult, int maxResults) throws SystemException {
+		String keywordPattern = (keyword == null || keyword.isEmpty()) ? null : "%" + keyword.toLowerCase() + "%";
+    	String typePattern = (type == null || type.isEmpty()) ? null : type + "%";
 
-	 /**
-	 * Deletes a form.
-	 * 
-	 * @param entity
-	 */    
-	void delete(String id) throws SystemException;
-	
-    /**
-	 * Update a form.
-	 * 
-	 * @param entity
-	 */
-	FormEntity updateForm(FormEntity entity) throws SystemException;
-	
+		return processDiagramDao.findAllUnified(keywordPattern, typePattern, PageRequest.of(firstResult / maxResults, maxResults));
+	}
 
-	
-	
 }

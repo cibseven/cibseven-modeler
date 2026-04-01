@@ -22,7 +22,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,8 +40,16 @@ public class DBProcessDiagramProvider implements IProcessDiagramProvider {
 	private ProcessDiagramRepository processDiagramDao;
 
 	@Override
-	public List<ProcessDiagramReduce> getDiagrams() throws SystemException {
-		return processDiagramDao.findAllReduced();
+	public List<ProcessDiagramReduce> getDiagrams(String keyword, String diagramType, int firstResult, int maxResults) throws SystemException {
+		String kw = keyword == null ? "" : keyword;
+		String dt = diagramType == null ? "" : diagramType;
+		PageRequest page = PageRequest.of(firstResult / maxResults, maxResults, Sort.by("updated").descending());
+		return processDiagramDao.findAllFiltered(kw, dt, page);
+	}
+
+	@Override
+	public List<ProcessDiagramReduce> getDiagrams(int firstResult, int maxResults) throws SystemException {
+		return processDiagramDao.findAllBy(PageRequest.of(firstResult / maxResults, maxResults).withSort(Sort.by("updated").descending()));
 	}
 
 	@Override
@@ -55,7 +64,7 @@ public class DBProcessDiagramProvider implements IProcessDiagramProvider {
 	
 	@Override
 	public ProcessDiagramEntity findByProcessKey(String key) throws SystemException {
-		return processDiagramDao.findByProcessKey(key);
+		return processDiagramDao.findByProcesskey(key);
 	}
 
 	@Override
@@ -83,6 +92,5 @@ public class DBProcessDiagramProvider implements IProcessDiagramProvider {
 	public void delete(String id) throws SystemException {
 		processDiagramDao.deleteById(id);
 	}
-
 
 }

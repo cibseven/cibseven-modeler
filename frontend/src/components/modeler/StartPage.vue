@@ -40,7 +40,7 @@
                 <div>
                     <h6 class="mt-4">{{ $t("titles.recent") }}</h6>
                     <div v-if="filteredDashboardElements !== null">
-                        <div class="list-group shadow-sm overflow-auto " style="max-height: calc(100vh - 400px)">
+                        <div ref="listContainer" @scroll="handleListScroll" class="list-group shadow-sm overflow-auto" style="max-height: 50vh">
                             <div class="d-flex align-items-center justify-content-center">
                                 <div class="spinner-border text-dark m-4 bg-light" v-if="isLoading" role="status">
                                     <span class="visually-hidden">{{ $t("loading") }}...</span>
@@ -62,7 +62,12 @@
                                         @openDiagram="openDiagramEmitFromChild" :form="element" @toggleModal="toggleModal"
                                         :isHovered="element.isHovered">
                                     </FormElement>
-                                </div>                              
+                                </div>
+                                <div v-if="isLoadingMore" class="d-flex align-items-center justify-content-center py-2">
+                                    <div class="spinner-border spinner-border-sm text-secondary" role="status">
+                                        <span class="visually-hidden">{{ $t("loading") }}...</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -136,26 +141,31 @@ const TYPEFORM = 'form'
 const functionAfterAccepting = ref(null)
 const { t } = useI18n()
 const props = defineProps({
-    processes: Array,
-    forms: Array
+    diagrams: Array,
+    hasMore: {
+        type: Boolean,
+        default: false
+    }
  })
 const emit = defineEmits([
     'closeRemovedProcessesOpenInTab',
-    'getStoredProcesses',
-    'getStoredForms',
+    'getStoredDiagrams',
     'createNewDmnDiagram',
     'createNewBpmnc7Diagram',
     'createNewFormDiagram',
     'openSelectedFile',
     'openDiagram',
-    'showToastMessage'
+    'showToastMessage',
+    'loadMore',
+    'search'
 ])
 const inputSearchValue = ref('')
 const fileInput = ref(null)
+const listContainer = ref(null)
+const isLoadingMore = ref(false)
 const showModalAcceptCancelMessage = ref(false)
 const searchElementsList = ref({})
 const isLoading = ref(true)
-
 const processIdForDelete = ref('') // saves the id to delete id from the modal
 const processNameForDelete = ref('')
 const searchListIndex = ref(null)
@@ -164,11 +174,21 @@ const filterType = ref('all')
 const dashboardElements = ref([])
 const filteredDashboardElements = ref([])
 onMounted(async () => {
+    resetDashboardElements()
     _addIsHoveredElement()
-    if (props.processes || props.forms) {
+    if (props.diagrams != null) {
         isLoading.value = false
     }
 })
+
+const handleListScroll = () => {
+    if (!listContainer.value || isLoadingMore.value || !props.hasMore) return
+    const { scrollTop, scrollHeight, clientHeight } = listContainer.value
+    if (scrollTop + clientHeight >= scrollHeight - 50) {
+        isLoadingMore.value = true
+        emit('loadMore')
+    }
+}
 
 const modalTitle = computed(() => {
       return { title: t('modalDelete.title', {
@@ -179,31 +199,12 @@ const modalTitle = computed(() => {
 })
 
 const resetDashboardElements = () => {
-    dashboardElements.value = props.processes ?? []
-    let copiedForms = []
-    if (props.forms && props.forms.length >0) {
-        copiedForms = JSON.parse(JSON.stringify(props.forms))
-        if (Array.isArray(copiedForms)) {
-            copiedForms.forEach( el => el.type = 'form')
-        }
-    }
-
-    dashboardElements.value = dashboardElements.value.concat(copiedForms)
-
-    if (dashboardElements.value.length >0 && Array.isArray(dashboardElements.value)) dashboardElements.value = dashboardElements.value.sort((a,b) => {
-        const dateA = new Date(a.updated)
-        const dateB = new Date(b.updated)
-        return dateB - dateA
-    })
-    filteredDashboardElements.value = JSON.parse(JSON.stringify(dashboardElements.value))
-    if (filterType.value !== 'all') filterElements(filterType.value) // so it will refresh and show only the option in the filter
+    dashboardElements.value = props.diagrams ? JSON.parse(JSON.stringify(props.diagrams)) : []
+    filteredDashboardElements.value = dashboardElements.value
 }
 
-watch(() => props.processes, () => {
-    resetDashboardElements()
-}, { immediate: true })
-
-watch(() => props.forms, () => {
+watch(() => props.diagrams, () => {
+    isLoadingMore.value = false
     resetDashboardElements()
 }, { immediate: true })
 
@@ -227,8 +228,10 @@ const toggleModal = (isShowing, processId, processName, indexList, type) => {
 }
 
 const filterElements = type => {
+    if (filterType.value === type) return
     filterType.value = type
-    filteredDashboardElements.value = dashboardElements.value.filter( el => (el.type.includes(type) || type === 'all') && searchDashBoardElement(el))
+    const keyword = inputSearchValue.value.length >= 3 ? inputSearchValue.value : ''
+    emit('search', { keyword, diagramType: type === 'all' ? '' : type })
 }
 
 const handleOpenFileInput = () => {
@@ -257,15 +260,12 @@ const handleClickCreateBpmnc7Diagram = debounce(async () => {
     emit('createNewBpmnc7Diagram', diagramXMLC7, TYPEC7)
 }, 500)
 
-const handleSearch = debounce(async () => {
-    filteredDashboardElements.value = dashboardElements.value.filter(element => searchDashBoardElement(element))
-}, 100)
-
-const searchDashBoardElement = element => {
-   if (!element.type.includes(filterType.value) && filterType.value !== 'all' ) return false
-    if (element.type !== 'form') return element.name.toLowerCase().includes(inputSearchValue.value.toLowerCase()) || element.processkey.toLowerCase().includes(inputSearchValue.value.toLowerCase())
-    else return element.formId.toLowerCase().includes(inputSearchValue.value.toLowerCase())    
-}
+const handleSearch = debounce(() => {
+    const len = inputSearchValue.value.length
+    if (len >= 3 || len === 0) {
+        emit('search', { keyword: inputSearchValue.value, diagramType: filterType.value === 'all' ? '' : filterType.value })
+    }
+}, 300)
 
 const handleClickCreateFormDiagram = debounce(async () => {
     emit('createNewFormDiagram', formJson, TYPEFORM)
@@ -286,7 +286,7 @@ const deleteProcessWithId = async processId => {
     try {
         searchElementsList.value[searchListIndex.value]._processingDeletingItem(true)
         await deleteProcessById(processId)
-        emit('getStoredProcesses', () => { // to execute it after the function of the emit has finished
+        emit('getStoredDiagrams', () => { // to execute it after the function of the emit has finished
             emit('closeRemovedProcessesOpenInTab', processId)
             emit('showToastMessage', { isSuccess: true, toastText: 'toastDeleteProcessSucess' })
         })
@@ -303,7 +303,7 @@ const deleteFormWithId = async formId => {
     try {
         searchElementsList.value[searchListIndex.value]._processingDeletingItem(true)
         await deleteFormById(formId)
-        emit('getStoredForms', () => { // to execute it after the function of the emit has finished
+        emit('getStoredDiagrams', () => { // to execute it after the function of the emit has finished
             emit('closeRemovedProcessesOpenInTab', formId)
             emit('showToastMessage', { isSuccess: true, toastText: 'toastDeleteFormSucess' })
         })

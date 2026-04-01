@@ -23,6 +23,8 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,8 +43,10 @@ public class FormProvider implements IFormProvider {
 	
 
 	@Override
-	public List<FormEntity> getForms() throws SystemException {
-		return formRepositoryDao.findAll();
+	public List<FormEntity> getForms(String keyword, int firstResult, int maxResults) throws SystemException {
+		String kw = keyword == null ? "" : keyword;
+		PageRequest page = PageRequest.of(firstResult / maxResults, maxResults, Sort.by("updated").descending());
+		return formRepositoryDao.findAllFiltered(kw, page);
 	}
 
 	@Override
@@ -68,5 +72,10 @@ public class FormProvider implements IFormProvider {
 	@Override
 	public void delete(String id) throws SystemException {
 		formRepositoryDao.deleteById(id);
+	}
+
+	@Override
+	public List<FormEntity> getForms(int firstResult, int maxResults) throws SystemException {
+		return formRepositoryDao.findAllBy(PageRequest.of(firstResult / maxResults, maxResults).withSort(Sort.by("updated").descending()));
 	}
 }
