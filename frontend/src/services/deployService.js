@@ -20,31 +20,35 @@ import { language } from '../i18n.js'
 import { isHttpOrHttpsUrl } from '../utils/regexUtils'
 import { getModelerServicePath, getServicesBasePath } from './servicesConfig'
 
-
 const getBaseDeploymentUrl = () => getModelerServicePath() + '/deployment'
 
-const deploy = async (myAuthorization, deploymentName, deployUrl, tenantID, diagram, type) => {
+const deploy = async (myAuthorization, deploymentName, deployUrl, tenantID, diagram, type, additionalResources = []) => {
   const baseDeploymentUrl = getBaseDeploymentUrl()
   if (deployUrl != baseDeploymentUrl && !isHttpOrHttpsUrl(deployUrl)) { // If not default path, check if it's a valid http(s) URL
     throw new Error(`Invalid http(s) deployment URL: ${deployUrl}`)
   }
 
-  // creates a reference for the form
-  const myFormData = ref(new FormData())
-  
-  // get the URL  BPMN of the file
-    const blob = new Blob([diagram], { type: 'text/plain' })
-    //sets the data needed for the form
-    myFormData.value.append('deployment-name', deploymentName)
-    myFormData.value.append('deployment-source', 'CIB seven Web Modeler')
-    myFormData.value.append('enable-duplicate-filtering', 'true')
-    myFormData.value.append(`${deploymentName}.${type}`, blob, `${deploymentName}.${type}`)
-    tenantID === '' ? null : myFormData.value.append('tenant-id', tenantID)
-    // ask auth to deploy
-    axios.defaults.headers.common.authorization = myAuthorization
-    axios.defaults.headers.common['Content-Type'] = 'multipart/form-data'
+  const mainResourceName = `${deploymentName}.${type}`
 
-    return await axios.post(`${deployUrl}/create`, myFormData.value)
+  const myFormData = ref(new FormData())
+
+  const blob = new Blob([diagram], { type: 'text/plain' })
+  myFormData.value.append('deployment-name', deploymentName)
+  myFormData.value.append('deployment-source', 'CIB seven Web Modeler')
+  myFormData.value.append('enable-duplicate-filtering', 'true')
+  myFormData.value.append(mainResourceName, blob, mainResourceName)
+  if (tenantID !== '') {
+    myFormData.value.append('tenant-id', tenantID)
+  }
+  additionalResources.forEach(({ resourceName, blob: partBlob }) => {
+    const name = resourceName.trim()
+    myFormData.value.append(name, partBlob, name)
+  })
+
+  axios.defaults.headers.common.authorization = myAuthorization
+  axios.defaults.headers.common['Content-Type'] = 'multipart/form-data'
+
+  return await axios.post(`${deployUrl}/create`, myFormData.value)
 }
 
 const deployProcess = async (
@@ -58,7 +62,8 @@ const deployProcess = async (
   rememberMe,
   diagram,
   ownEndPoint,
-  type
+  type,
+  additionalResources = []
 ) => {
   const baseDeploymentUrl = getBaseDeploymentUrl()
   const deployUrl = ownEndPoint
@@ -73,7 +78,8 @@ const deployProcess = async (
       deployUrl,
       tenantID,
       diagram,
-      type
+      type,
+      additionalResources
     )
   }
 }
