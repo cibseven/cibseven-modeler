@@ -49,16 +49,22 @@ public interface ProcessDiagramRepository extends JpaRepository<ProcessDiagramEn
 		Pageable pageable);
 
 	@Query(value =
-		"SELECT p.id, p.name, p.type, p.processkey, NULL AS formid, p.description, p.created, p.updated, p.version " +
-		"FROM processes_diagrams p " +
-		"WHERE (:keyword = '' OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.processkey) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
-		"AND (:type = '' OR p.type LIKE CONCAT(:type, '%')) " +
-		"UNION ALL " +
-		"SELECT f.id, f.formid, 'form', f.formid, f.formid, f.description, f.created, f.updated, f.version " +
-		"FROM forms f " +
-		"WHERE (:keyword = '' OR LOWER(f.formid) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
-		"AND (:type = '' OR :type = 'form') " +
-		"ORDER BY updated DESC",
+		"SELECT * FROM ( " +
+		"   SELECT p.id, p.name, p.type, p.processkey, " +
+		"          CAST(NULL AS VARCHAR(255)) AS formid, " +
+		"          p.description, p.created, p.updated, p.version " +
+		"   FROM processes_diagrams p " +
+		"   WHERE (:keyword IS NULL OR LOWER(p.name) LIKE LOWER(:keyword) " +
+		"          OR LOWER(p.processkey) LIKE LOWER(:keyword)) " +
+		"   AND (:type IS NULL OR p.type LIKE :type) " +
+		"   UNION ALL " +
+		"   SELECT f.id, f.formid, 'form', f.formid, f.formid, " +
+		"          f.description, f.created, f.updated, f.version " +
+		"   FROM forms f " +
+		"   WHERE (:keyword IS NULL OR LOWER(f.formid) LIKE LOWER(:keyword)) " +
+		"   AND (:type IS NULL OR :type = 'form') " +
+		") t " +
+		"ORDER BY t.updated DESC",
 		nativeQuery = true)
 	List<UnifiedDiagram> findAllUnified(
 		@Param("keyword") String keyword,

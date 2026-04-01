@@ -34,9 +34,10 @@ public class UnifiedDiagramProvider implements IUnifiedDiagramProvider {
 
 	@Override
 	public List<UnifiedDiagram> getDiagrams(String keyword, String type, int firstResult, int maxResults) throws SystemException {
-		String kw = keyword == null ? "" : keyword;
-		String t = type == null ? "" : type;
-		return processDiagramDao.findAllUnified(kw, t, PageRequest.of(firstResult / maxResults, maxResults));
+		String keywordPattern = (keyword == null || keyword.isEmpty()) ? null : "%" + keyword.toLowerCase() + "%";
+    	String typePattern = (type == null || type.isEmpty()) ? null : type + "%";
+
+		return processDiagramDao.findAllUnified(keywordPattern, typePattern, PageRequest.of(firstResult / maxResults, maxResults));
 	}
 
 }
