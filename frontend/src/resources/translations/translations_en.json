@@ -1,7 +1,8 @@
 {
 	"titles": {
 		"search": "Search for matching, upload one you have created, start with a blank version or import a local file.",
-		"recent": "Recent"
+		"recent": "Recent",
+		"lastSaved": "Last saved"
 	},
 	"toastDeleteFormSucess": {
 		"title": "Form deleted",

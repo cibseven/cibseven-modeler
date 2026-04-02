@@ -188,11 +188,13 @@ public class ModelerService extends BaseService {
 				if(artifactExists != null && overwrite) {
 					entity.setId(artifactExists.getId());
 					artifactExists.setDiagram(fileContent);
+					artifactExists.setUpdatedBy(userIdFrom(user));
 					return dbProcessDiagramProvider.updateDiagram(artifactExists);
 				}
 				
 	        } catch (IOException e) {}
 		}
+		entity.setUpdatedBy(userIdFrom(user));
 		return dbProcessDiagramProvider.createDiagram(entity);			
 	}
 
@@ -248,8 +250,9 @@ public class ModelerService extends BaseService {
 
 	@RequestMapping(value = "/process/save", method = RequestMethod.POST)
 	public ProcessDiagramEntity save(@RequestParam MultiValueMap<String, String> data, @RequestParam MultiValueMap<String, MultipartFile> diagram, HttpServletRequest rq) {
+		CIBUser user = null;
 		if (authenticationEnabled) {
-			checkAuthorization(rq, true);
+			user = checkAuthorization(rq, true);
 		}
 		ProcessDiagramEntity entity = new ProcessDiagramEntity();
 		if (data.containsKey("name")) entity.setName(data.get("name").get(0).toString());
@@ -262,7 +265,8 @@ public class ModelerService extends BaseService {
 			entity.setDiagram(diagram.getFirst("diagram").getInputStream().readAllBytes());
 		} catch (IOException e) {
 			entity.setDiagram(null);
-		} 
+		}
+		entity.setUpdatedBy(userIdFrom(user));
 		return dbProcessDiagramProvider.createDiagram(entity);
 	}
 
@@ -409,7 +413,12 @@ public class ModelerService extends BaseService {
 	}
 
 	@RequestMapping(value = "/process/save/object", method = RequestMethod.POST)
-	public ProcessDiagramEntity saveProject(@RequestBody ProcessDiagramEntity data) {
+	public ProcessDiagramEntity saveProject(@RequestBody ProcessDiagramEntity data, HttpServletRequest rq) {
+		CIBUser user = null;
+		if (authenticationEnabled) {
+			user = checkAuthorization(rq, true);
+		}
+		String updatedBy = userIdFrom(user);
 		Optional<ProcessDiagramEntity> entity = dbProcessDiagramProvider.findById(data.getId());
 		
 		if (entity.isEmpty()) {
@@ -420,6 +429,7 @@ public class ModelerService extends BaseService {
 			newEntity.setActive(data.getActive());
 			newEntity.setType(data.getType());
 			newEntity.setDiagram(data.getDiagram());
+			newEntity.setUpdatedBy(updatedBy);
 			return dbProcessDiagramProvider.createDiagram(newEntity);
 		} else {
 			entity.get().setName(data.getName());
@@ -428,6 +438,7 @@ public class ModelerService extends BaseService {
 			entity.get().setActive(data.getActive());
 			entity.get().setType(data.getType());
 			entity.get().setDiagram(data.getDiagram());
+			entity.get().setUpdatedBy(updatedBy);
 			return dbProcessDiagramProvider.updateDiagram(entity.get());
 		}
 	}
@@ -452,7 +463,8 @@ public class ModelerService extends BaseService {
 		} catch (IOException e) {
 			entity.setDiagram(null);
 		}
-		
+		entity.setUpdatedBy(userIdFrom(user));
+
 		ProcessDiagramEntity updatedDiagram = dbProcessDiagramProvider.updateDiagram(entity);
 		
 		if (data.containsKey("id") && updatedDiagram != null && user != null) { //renew session
@@ -526,8 +538,9 @@ public class ModelerService extends BaseService {
 	
 	@RequestMapping(value = "/form/save", method = RequestMethod.POST)
 	public FormEntity saveForm(@RequestParam("formid") String formid, @RequestParam("form_schema") MultipartFile formSchema, HttpServletRequest rq) {
+		CIBUser user = null;
 	    if (authenticationEnabled) {
-			checkAuthorization(rq, true);
+			user = checkAuthorization(rq, true);
 		}
 	    FormEntity entity = new FormEntity();
 	    entity.setFormId(formid); 
@@ -537,7 +550,7 @@ public class ModelerService extends BaseService {
 	    } catch (IOException e) {
 	        entity.setFormSchema(null);
 	    }
-	    
+	    entity.setUpdatedBy(userIdFrom(user));
 	    return formProvider.createForm(entity);
 	}
 	
@@ -566,7 +579,8 @@ public class ModelerService extends BaseService {
 	    } catch (IOException e) {
 	        entity.setFormSchema(null);
 	    }
-	    
+	    entity.setUpdatedBy(userIdFrom(user));
+
 	    FormEntity updatedForm = formProvider.updateForm(entity);
 	    
 	    if (updatedForm != null && user != null) { //renew session
@@ -599,6 +613,10 @@ public class ModelerService extends BaseService {
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		return new ResponseEntity<>(file, headers, HttpStatus.OK);
+	}
+
+	private static String userIdFrom(CIBUser user) {
+		return user != null ? user.getUserID() : null;
 	}
 
 	private static String getXmlAttribute(byte[] xmlBytes, String tagName, String propertyName) throws Exception {

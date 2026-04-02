@@ -18,8 +18,16 @@
     <div role="button" tabindex="0" @click="handleClickLoadSelectedFromList" @keyup.enter="handleClickLoadSelectedFromList"
     class="list-group-item border-0 d-flex align-items-center justify-content-between" :class="{ 'bg-light': form.isHovered }">
     <span class="w-10 mdi mdi-18px mdi-form-select justify-content-center mr-2"> </span>
-        <span class="w-80 flex-grow-1 mx-2">{{props.form.formId }}.{{ props.form.type.startsWith('bpmn') ? 'bpmn' : props.form.type }}
-        </span>
+        <div class="w-80 flex-grow-1 mx-2 min-w-0 d-flex flex-column">
+            <span>{{props.form.formId }}.{{ props.form.type.startsWith('bpmn') ? 'bpmn' : props.form.type }}
+            </span>
+            <span
+                v-if="formatUnifiedListLastSaved(props.form.updated, props.form.updatedBy)"
+                class="small text-muted text-truncate"
+                :title="formatUnifiedListLastSaved(props.form.updated, props.form.updatedBy)"
+                :aria-label="`${$t('titles.lastSaved')}: ${formatUnifiedListLastSaved(props.form.updated, props.form.updatedBy)}`"
+            >{{ formatUnifiedListLastSaved(props.form.updated, props.form.updatedBy) }}</span>
+        </div>
         <span v-if="!isDeleting" class="w-10 ml-2 d-flex justify-content-end">
             <!-- change invisible class to show -->
             <button :title="$t('buttons.edit')" type="button"
@@ -41,6 +49,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useStore } from 'vuex'
+import { formatUnifiedListLastSaved } from '../../utils'
 
 const props = defineProps({
     form: Object,

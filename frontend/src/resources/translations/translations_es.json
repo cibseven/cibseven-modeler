@@ -1,7 +1,8 @@
 {
   "titles": {
     "search": "Busque coincidentes, cargue uno creado, comience con una versión en blanco o importe un archivo local.",
-    "recent": "Recientes"
+    "recent": "Recientes",
+    "lastSaved": "Último guardado"
   },
   "toastDeleteFormSucess": {
     "title": "Formulario borrado",

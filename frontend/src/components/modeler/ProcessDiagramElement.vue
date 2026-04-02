@@ -18,9 +18,17 @@
     <div role="button" tabindex="0" @click="handleClickLoadSelectedFromList" @keyup.enter="handleClickLoadSelectedFromList"
         class="list-group-item border-0 d-flex align-items-center justify-content-between" :class="{ 'bg-light': process.isHovered }">
         <span class="w-10 justify-content-center mr-2 mdi mdi-18px" :class="iconClass[props.process.type]"></span>
-        <span class="w-80 flex-grow-1 mx-2">{{ props.process.name !== 'undefined' ? props.process.name : '' }}.{{ props.process.type.startsWith('bpmn') ? 'bpmn' : props.process.type }} ( {{
-            props.process.processkey }} ) 
-        </span>
+        <div class="w-80 flex-grow-1 mx-2 min-w-0 d-flex flex-column">
+            <span>{{ props.process.name !== 'undefined' ? props.process.name : '' }}.{{ props.process.type.startsWith('bpmn') ? 'bpmn' : props.process.type }} ( {{
+            props.process.processkey }} )
+            </span>
+            <span
+                v-if="formatUnifiedListLastSaved(props.process.updated, props.process.updatedBy)"
+                class="small text-muted text-truncate"
+                :title="formatUnifiedListLastSaved(props.process.updated, props.process.updatedBy)"
+                :aria-label="`${$t('titles.lastSaved')}: ${formatUnifiedListLastSaved(props.process.updated, props.process.updatedBy)}`"
+            >{{ formatUnifiedListLastSaved(props.process.updated, props.process.updatedBy) }}</span>
+        </div>
         <span v-if="!isDeleting" class="w-10 ml-2 d-flex justify-content-end">
             <!-- change invisible class to show -->
             <button :title="$t('buttons.edit')" type="button"
@@ -42,6 +50,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useStore } from 'vuex'
+import { formatUnifiedListLastSaved } from '../../utils'
 
 const props = defineProps({
     process: Object,
