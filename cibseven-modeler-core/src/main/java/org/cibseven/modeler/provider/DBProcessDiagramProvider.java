@@ -83,7 +83,8 @@ public class DBProcessDiagramProvider implements IProcessDiagramProvider {
 		processDiagramEntity.setType(entity.getType());
 		processDiagramEntity.setDiagram(entity.getDiagram());
 		processDiagramEntity.setUpdated(Timestamp.valueOf(LocalDateTime.now()));
-		
+		processDiagramEntity.setUpdatedBy(entity.getUpdatedBy());
+
 		return processDiagramDao.save(processDiagramEntity);
 	}
 	

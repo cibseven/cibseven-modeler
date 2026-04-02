@@ -56,6 +56,9 @@ public class FormEntity {
 	@Column(name = "updated")
 	private Timestamp updated;
 
+	@Column(name = "updated_by", length = 255)
+	private String updatedBy;
+
 	@JdbcTypeCode(SqlTypes.BOOLEAN)
 	@Column(name = "active", nullable = false, columnDefinition = "boolean default true")
 	private Boolean active = true;

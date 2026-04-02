@@ -40,6 +40,9 @@ public interface UnifiedDiagram {
 
 	Timestamp getUpdated();
 
+	/** User id of last save, or null. */
+	String getUpdatedBy();
+
 	Integer getVersion();
 
 }

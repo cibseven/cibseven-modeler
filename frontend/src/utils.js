@@ -298,4 +298,27 @@ export const addHtmlErrorsToConsole = error => {
 	return error
 }
 
+/**
+ * Formats last-saved timestamp and optional user id for unified diagram list rows.
+ * @param {string|number|Date} updated
+ * @param {string} [updatedBy]
+ * @returns {string}
+ */
+export const formatUnifiedListLastSaved = (updated, updatedBy) => {
+	const parts = []
+	if (updatedBy) parts.push(updatedBy)
+	if (updated != null && updated !== '') {
+		const d = new Date(updated)
+		if (!isNaN(d.getTime())) {
+			parts.push(
+				d.toLocaleString(undefined, {
+					dateStyle: 'short',
+					timeStyle: 'short'
+				})
+			)
+		}
+	}
+	return parts.join(' · ')
+}
+
 export { TYPEC7, TYPEDMN }
