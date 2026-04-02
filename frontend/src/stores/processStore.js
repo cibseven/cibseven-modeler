@@ -16,7 +16,7 @@
  */
 import {
   fetchProcesses,
-  fetchUnifiedDiagrams,
+  getUnifiedDiagrams,
   fetchProcessById,
   fetchProcessByName,
 } from '../services/processService'
@@ -71,7 +71,7 @@ const actions = {
     commit('setLoading', true)
     commit('clearError')
     try {
-      const diagrams = await fetchUnifiedDiagrams(firstResult, maxResults, keyword, type)
+      const diagrams = await getUnifiedDiagrams(firstResult, maxResults, keyword, type)
       commit('setUnifiedDiagrams', diagrams)
       commit('setProcesses', diagrams.filter(d => d.type !== 'form'))
       commit('modeler/forms/setForms', diagrams.filter(d => d.type === 'form'), { root: true })
