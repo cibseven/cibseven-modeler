@@ -62,7 +62,7 @@ public interface ProcessDiagramRepository extends JpaRepository<ProcessDiagramEn
 		"          f.description, f.created, f.updated, f.version " +
 		"   FROM forms f " +
 		"   WHERE (:keyword IS NULL OR LOWER(f.formid) LIKE LOWER(:keyword)) " +
-		"   AND (:type IS NULL OR :type = 'form') " +
+		"   AND (:type IS NULL OR 'form' LIKE :type) " +
 		") t " +
 		"ORDER BY t.updated DESC",
 		nativeQuery = true)
