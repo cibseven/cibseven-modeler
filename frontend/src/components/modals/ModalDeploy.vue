@@ -69,7 +69,7 @@
 									{{ $t('deployForm.additionalFiles.addButton') }}
 								</button>
 								<input
-									ref="additionalFilesInput"
+									ref="additionalFilesButton"
 									id="additional-files-input"
 									type="file"
 									multiple
@@ -78,11 +78,11 @@
 								/>
 							</div>
 							<div
-								v-for="(row, index) in additionalDeploymentResources"
-								:key="row.id"
+								v-for="(entry, index) in additionalDeploymentResources"
+								:key="index"
 								class="d-flex align-items-center gap-2 mb-2 ps-1">
-								<span class="text-truncate flex-grow-1 min-w-0" :title="row.file.name">{{ row.file.name }}</span>
-								<span class="text-muted small text-nowrap flex-shrink-0">{{ formatFileSize(row.file.size) }}</span>
+								<span class="text-truncate flex-grow-1 min-w-0" :title="entry.resourceName">{{ entry.resourceName }}</span>
+								<span class="text-muted small text-nowrap flex-shrink-0">{{ formatFileSize(entry.blob.size) }}</span>
 								<button
 									type="button"
 									class="btn-close btn-close-sm flex-shrink-0"
@@ -207,7 +207,7 @@ import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle.js'
 
 import { deployProcess, startProcess } from '../../services/deployService'
 import { ref, computed, onMounted, watch } from 'vue'
-import { getProcessKeyFromBpmn, getTagValueFromXml } from '../../utils.js'
+import { getProcessKeyFromBpmn, getTagValueFromXml, formatFileSize } from '../../utils.js'
 import { isHttpOrHttpsUrl } from '../../utils/regexUtils'
 
 const closeButton = ref(null)
@@ -228,8 +228,7 @@ const deploymentName = ref('')
 const tenantID = ref('')
 
 const additionalDeploymentResources = ref([])
-let additionalResourceId = 0
-const additionalFilesInput = ref(null)
+const additionalFilesButton = ref(null)
 
 // Auth info
 const useCustomEndpoint = ref(false)
@@ -328,19 +327,18 @@ function _validateCustomEndpoint() {
 }
 
 const triggerAdditionalFilesPick = () => {
-	additionalFilesInput.value?.click()
+	additionalFilesButton.value?.click()
 }
 
 const onAdditionalFilesSelected = event => {
 	const files = event.target.files
 	if (!files?.length) return
-	for (let i = 0; i < files.length; i++) {
-		const file = files[i]
+	Array.from(files).forEach(file => {
 		additionalDeploymentResources.value.push({
-			id: ++additionalResourceId,
-			file
+			resourceName: file.name.trim(),
+			blob: file
 		})
-	}
+	})
 	event.target.value = ''
 }
 
@@ -348,28 +346,26 @@ const removeAdditionalResource = index => {
 	additionalDeploymentResources.value.splice(index, 1)
 }
 
-const formatFileSize = bytes => {
-	if (bytes < 1024) return `${bytes} B`
-	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
-
 /** Validates additional file resource names: non-empty, unique, and distinct from the main diagram resource name. */
 const _validateAdditionalDeploymentResources = mainResourceName => {
 	const used = new Set([mainResourceName])
-	for (const row of additionalDeploymentResources.value) {
-		const name = (row.file?.name || '').trim()
+	let valid = true
+	additionalDeploymentResources.value.forEach(file => {
+		if (!valid) return
+		const name = (file?.name || '').trim()
 		if (!name) {
 			emit('showToastMessage', { isSuccess: false, toastText: 'deployForm.additionalFiles.emptyResourceNameError', bodyTextAlt: '' })
-			return false
+			valid = false
+			return
 		}
 		if (used.has(name)) {
 			emit('showToastMessage', { isSuccess: false, toastText: 'deployForm.additionalFiles.duplicateNameError', bodyTextAlt: '' })
-			return false
+			valid = false
+			return
 		}
 		used.add(name)
-	}
-	return true
+	})
+	return valid
 }
 
 const deploy = async () => {
@@ -390,11 +386,6 @@ const deploy = async () => {
 
 	let hasErrors = false
 
-	const additionalResources = additionalDeploymentResources.value.map(row => ({
-		resourceName: row.file.name.trim(),
-		blob: row.file
-	}))
-
 	const errors = await deployProcess(
 		_getAuthType(),
 		_getToken(),
@@ -403,7 +394,7 @@ const deploy = async () => {
 		deploymentName.value,
 		customEndpoint.value,
 		tenantID.value, rememberMe.value, props.diagram, useCustomEndpoint.value, type,
-		additionalResources
+		additionalDeploymentResources.value
 	).then(res => {
 		_saveDeployValuesLocalStorage(selected.value, customEndpoint.value, useCustomEndpoint.value)
 		if (res?.id) {
