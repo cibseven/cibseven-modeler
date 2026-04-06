@@ -1,0 +1,29 @@
+{
+  "$schema": "https://unpkg.com/@camunda/zeebe-element-templates-json-schema/resources/schema.json",
+  "name": "Test Template",
+  "id": "test-template:1",
+  "description": "A simple test template for testing file import functionality",
+  "appliesTo": [
+    "bpmn:ServiceTask"
+  ],
+  "properties": [
+    {
+      "label": "Implementation Type",
+      "type": "String",
+      "value": "external",
+      "binding": {
+        "type": "cibseven:taskDefinition:type"
+      }
+    },
+    {
+      "label": "Retries",
+      "description": "Number of retries",
+      "type": "String",
+      "value": "3",
+      "binding": {
+        "type": "cibseven:taskHeader",
+        "key": "retries"
+      }
+    }
+  ]
+}
