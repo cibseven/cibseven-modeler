@@ -352,7 +352,7 @@ const _validateAdditionalDeploymentResources = mainResourceName => {
 	let valid = true
 	additionalDeploymentResources.value.forEach(file => {
 		if (!valid) return
-		const name = (file?.name || '').trim()
+		const name = (file?.resourceName  || '').trim()
 		if (!name) {
 			emit('showToastMessage', { isSuccess: false, toastText: 'deployForm.additionalFiles.emptyResourceNameError', bodyTextAlt: '' })
 			valid = false
