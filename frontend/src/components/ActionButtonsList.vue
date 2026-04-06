@@ -81,6 +81,7 @@
 <script setup>
 
 import { ref, inject, onMounted } from 'vue'
+import { DIAGRAM_TYPE, DIAGRAM_FILE_EXT } from '../constants/diagramTypes.js'
 
 const props = defineProps({ 
     tabElementIndex: Number, 
@@ -114,19 +115,22 @@ const containerWidth = ref(0)
 const hasConsoleNotification = ref(false)
 const haslinkToProject = ref(false)
 const consoleVisible = ref(false)
-const modelProperties = { 'dmn' : {
-        fileExtension: '.dmn',
+const modelProperties = {
+    [DIAGRAM_TYPE.DMN]: {
+        fileExtension: DIAGRAM_FILE_EXT[DIAGRAM_TYPE.DMN],
         canDeploy: true,
         canOpenConsole: true,
-    }, 'bpmn-c7': {
-        fileExtension: '.bpmn',
+    },
+    [DIAGRAM_TYPE.BPMN_C7]: {
+        fileExtension: DIAGRAM_FILE_EXT[DIAGRAM_TYPE.BPMN_C7],
         canDeploy: true,
         canOpenConsole: true,
-    }, 'form': {
-        fileExtension: '.form',
+    },
+    [DIAGRAM_TYPE.FORM]: {
+        fileExtension: DIAGRAM_FILE_EXT[DIAGRAM_TYPE.FORM],
         canDeploy: true,
-        canOpenConsole: false
-    }
+        canOpenConsole: false,
+    },
 }
 
 onMounted(() => {
@@ -142,7 +146,7 @@ onMounted(() => {
 //prevents or allows the download of the bpmn file
 const canBeDownloaded = async e => {
     let fileNameFromProcessId = null
-    if (props.tabElement.type === 'dmn') {
+    if (props.tabElement.type === DIAGRAM_TYPE.DMN) {
         fileNameFromProcessId = await _getTagValueFromXml('definitions', 'id')
     }
     else if (props.tabElement.type.startsWith('bpmn')) {
@@ -150,7 +154,7 @@ const canBeDownloaded = async e => {
          if (!fileNameFromProcessId) fileNameFromProcessId = _downloadFileWithProcessId('bpmn2:collaboration')
          if (!fileNameFromProcessId) fileNameFromProcessId = _downloadFileWithProcessId('bpmn:process')
     }
-    else if (props.tabElement.type === 'form') { 
+    else if (props.tabElement.type === DIAGRAM_TYPE.FORM) { 
         fileNameFromProcessId = await props.modeler.getFormId()
     }
     else {

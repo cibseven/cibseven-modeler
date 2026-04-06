@@ -48,20 +48,13 @@
                             </div>
                             <div v-if="!isLoading">
                                 <div v-for="(element, index) in filteredDashboardElements" :key="element.id">
-                                   <ProcessDiagramElement v-if="element.type !== 'form'"
+                                    <DiagramListItem
                                         @mouseleave="setHoverElement(index, false)" :index="index"
                                         :ref="el => searchElementsList[index] = el" @mouseover="setHoverElement(index, true)"
                                         @focusin="setHoverElement(index, true)" @focusout="setHoverElement(index, false)"
-                                        @openDiagram="openDiagramEmitFromChild" :process="element" @toggleModal="toggleModal"
+                                        @openDiagram="openDiagramEmitFromChild" :item="element" @toggleModal="toggleModal"
                                         :isHovered="element.isHovered">
-                                    </ProcessDiagramElement>
-                                    <FormElement v-else
-                                        @mouseleave="setHoverElement(index, false)" :index="index"
-                                        :ref="el => searchElementsList[index] = el" @mouseover="setHoverElement(index, true)"
-                                        @focusin="setHoverElement(index, true)" @focusout="setHoverElement(index, false)"
-                                        @openDiagram="openDiagramEmitFromChild" :form="element" @toggleModal="toggleModal"
-                                        :isHovered="element.isHovered">
-                                    </FormElement>
+                                    </DiagramListItem>
                                 </div>
                                 <div v-if="isLoadingMore" class="d-flex align-items-center justify-content-center py-2">
                                     <div class="spinner-border spinner-border-sm text-secondary" role="status">
@@ -129,15 +122,10 @@ import { useI18n } from 'vue-i18n'
 import diagramXMLC7 from '../../resources/camunda7.bpmn'
 import dmnXML from '../../resources/dmn.dmn'
 //components
-import ProcessDiagramElement from './ProcessDiagramElement.vue'
+import DiagramListItem from './DiagramListItem.vue'
 import ConfirmModal from '../modals/ConfirmModal.vue'
 import formJson from '../../resources/formSchema.json'
-import FormElement from './FormElement.vue'
-
-//types of diagram
-const TYPEC7 = 'bpmn-c7'
-const TYPEDMN = 'dmn'
-const TYPEFORM = 'form'
+import { DIAGRAM_TYPE } from '../../constants/diagramTypes.js'
 const functionAfterAccepting = ref(null)
 const { t } = useI18n()
 const props = defineProps({
@@ -242,7 +230,7 @@ const handleOpenFileInput = () => {
 const handleFileChange = event => {
     const fileInput = event.target
     const selectedFile = fileInput.files[0]
-    if (!selectedFile && (!selectedFile.name.endsWith('.bpmn') || !selectedFile.name.endsWith('.dmn'))) { // shows toast error message if the file is not a .bpmn
+    if (!selectedFile || (!selectedFile.name.endsWith('.bpmn') && !selectedFile.name.endsWith('.dmn') && !selectedFile.name.endsWith('.form'))) { // shows toast error message if the file is not a .bpmn, .dmn, or .form
         emit('showToastMessage', { isSuccess: false, toastText: 'toastLoadErrorFileExtension' })
         return
     }
@@ -253,11 +241,11 @@ const handleFileChange = event => {
 
 //calls the function that initializes the diagram
 const handleClickCreateDmnDiagram = debounce(async () => {
-    emit('createNewDmnDiagram', dmnXML, TYPEDMN)
+    emit('createNewDmnDiagram', dmnXML, DIAGRAM_TYPE.DMN)
 }, 500)
 
 const handleClickCreateBpmnc7Diagram = debounce(async () => {
-    emit('createNewBpmnc7Diagram', diagramXMLC7, TYPEC7)
+    emit('createNewBpmnc7Diagram', diagramXMLC7, DIAGRAM_TYPE.BPMN_C7)
 }, 500)
 
 const handleSearch = debounce(() => {
@@ -268,7 +256,7 @@ const handleSearch = debounce(() => {
 }, 300)
 
 const handleClickCreateFormDiagram = debounce(async () => {
-    emit('createNewFormDiagram', formJson, TYPEFORM)
+    emit('createNewFormDiagram', formJson, DIAGRAM_TYPE.FORM)
 }, 500)
 
 //emits
