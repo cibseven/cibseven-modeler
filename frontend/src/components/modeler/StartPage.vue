@@ -97,7 +97,7 @@
                     </div>
                 </div>
             </div>
-            <img :alt="$t('cib-header.productName')" src="../../webmodeler.svg"
+            <img :alt="$t('cib-header.productName')" :src="modelerSvg"
                 class="d-none d-sm-inline position-fixed w-25"
                 style="bottom: 0; left: 30px; mix-blend-mode: multiply; opacity: 0.7;">
 
@@ -126,6 +126,7 @@ import DiagramListItem from './DiagramListItem.vue'
 import ConfirmModal from '../modals/ConfirmModal.vue'
 import formJson from '../../resources/formSchema.json'
 import { DIAGRAM_TYPE } from '../../constants/diagramTypes.js'
+import modelerSvg from '../../assets/images/start/modeler.svg'
 const functionAfterAccepting = ref(null)
 const { t } = useI18n()
 const props = defineProps({
