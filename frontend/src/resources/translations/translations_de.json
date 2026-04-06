@@ -141,6 +141,20 @@
         "invalid": "Bitte geben Sie eine gültige URL mit http:// oder https:// ein."
       }
     },
+    "additionalFiles": {
+      "label": "Zusätzliche Dateien",
+      "tooltip": "Optionale Ressourcen, die zusammen mit dem Diagramm in einem einzigen Deployment bereitgestellt werden. Die Ressourcennamen müssen mit Verweisen in Ihrem BPMN- oder DMN-Diagramm übereinstimmen (z. B. Formulare oder Skripte).",
+      "addButton": "Dateien hinzufügen",
+      "remove": "Entfernen",
+      "duplicateNameError": {
+        "title": "Doppelter Ressourcenname",
+        "body": "Zwei oder mehr Ressourcen haben denselben Namen, oder der Name entspricht der Hauptdiagrammdatei. Jeder Ressourcenname muss eindeutig sein."
+      },
+      "emptyResourceNameError": {
+        "title": "Ungültiger Ressourcenname",
+        "body": "Jede zusätzliche Datei muss einen nicht leeren Ressourcennamen haben."
+      }
+    },
     "authentication": "Authentifizierung",
     "asAnotherUser": "Als anderer Benutzer",
     "username": "Benutzername",

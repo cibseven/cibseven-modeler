@@ -141,6 +141,20 @@
         "invalid": "Por favor, introduce una URL válida que comience con http:// o https://."
       }
     },
+    "additionalFiles": {
+      "label": "Archivos adicionales",
+      "tooltip": "Recursos opcionales desplegados junto con el diagrama en un solo despliegue. Los nombres de recurso deben coincidir con las referencias en su BPMN o DMN (por ejemplo formularios o scripts).",
+      "addButton": "Añadir archivos",
+      "remove": "Eliminar",
+      "duplicateNameError": {
+        "title": "Nombre de recurso duplicado",
+        "body": "Dos o más recursos comparten el mismo nombre, o un nombre coincide con el archivo principal del diagrama. Cada nombre de recurso debe ser único."
+      },
+      "emptyResourceNameError": {
+        "title": "Nombre de recurso no válido",
+        "body": "Cada archivo adicional debe tener un nombre de recurso no vacío."
+      }
+    },
     "authentication": "Autenticación",
     "asAnotherUser": "Como otro usuario",
     "username": "Nombre de usuario",

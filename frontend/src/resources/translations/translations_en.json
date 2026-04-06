@@ -141,6 +141,20 @@
 				"invalid": "Please enter a valid http:// or https:// url."
 			}
 		},
+		"additionalFiles": {
+			"label": "Additional files",
+			"tooltip": "Optional resources deployed together with the diagram in a single deployment. Resource names must match references in your BPMN or DMN (for example forms or scripts).",
+			"addButton": "Add files",
+			"remove": "Remove",
+			"duplicateNameError": {
+				"title": "Duplicate resource name",
+				"body": "Two or more resources use the same name, or a name matches the main diagram file. Each resource name must be unique."
+			},
+			"emptyResourceNameError": {
+				"title": "Invalid resource name",
+				"body": "Every additional file must have a non-empty resource name."
+			}
+		},
 		"authentication": "Authentication",
 		"asAnotherUser": "As another user",
 		"username": "Username",
