@@ -1,4 +1,4 @@
-﻿<!--
+<!--
   Copyright CIB software GmbH and/or licensed to CIB software GmbH
   under one or more contributor license agreements. See the NOTICE file
   distributed with this work for additional information regarding copyright
@@ -53,6 +53,43 @@
 								data-bs-toggle="tooltip" data-bs-placement="right" :data-bs-title="$t('deployForm.tenantID.tooltip')"></span>
 							<input type="text" class="form-control form-control-sm" id="tenant-id"
 								v-model="tenantID" />
+						</div>
+
+						<div class="mb-3">
+							<label class="form-check-label" for="additional-files-input">
+								{{ $t('deployForm.additionalFiles.label') }}
+							</label>
+							<span
+								style="cursor: pointer"
+								class="mdi mdi-help-circle-outline ms-1"
+								data-bs-custom-class="deployment-modal-tooltip"
+								data-bs-toggle="tooltip" data-bs-placement="right" :data-bs-title="$t('deployForm.additionalFiles.tooltip')"></span>
+							<div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+								<button type="button" class="btn btn-sm btn-outline-secondary" @click="triggerAdditionalFilesPick">
+									{{ $t('deployForm.additionalFiles.addButton') }}
+								</button>
+								<input
+									ref="additionalFilesButton"
+									id="additional-files-input"
+									type="file"
+									multiple
+									class="d-none"
+									@change="onAdditionalFilesSelected"
+								/>
+							</div>
+							<div
+								v-for="(entry, index) in additionalDeploymentResources"
+								:key="index"
+								class="d-flex align-items-center gap-2 mb-2 ps-1">
+								<span class="text-truncate flex-grow-1 min-w-0" :title="entry.resourceName">{{ entry.resourceName }}</span>
+								<span class="text-muted small text-nowrap flex-shrink-0">{{ formatFileSize(entry.blob.size) }}</span>
+								<button
+									type="button"
+									class="btn-close btn-close-sm flex-shrink-0"
+									@click="removeAdditionalResource(index)"
+									:aria-label="$t('deployForm.additionalFiles.remove')">
+								</button>
+							</div>
 						</div>
 
 						<!-- Deploying on another endpoint -->
@@ -170,7 +207,7 @@ import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle.js'
 
 import { deployProcess, startProcess } from '../../services/deployService'
 import { ref, computed, onMounted, watch } from 'vue'
-import { getProcessKeyFromBpmn, getTagValueFromXml } from '../../utils.js'
+import { getProcessKeyFromBpmn, getTagValueFromXml, formatFileSize } from '../../utils.js'
 import { isHttpOrHttpsUrl } from '../../utils/regexUtils'
 
 const closeButton = ref(null)
@@ -189,6 +226,9 @@ const emit = defineEmits([
 // Deployment info
 const deploymentName = ref('')
 const tenantID = ref('')
+
+const additionalDeploymentResources = ref([])
+const additionalFilesButton = ref(null)
 
 // Auth info
 const useCustomEndpoint = ref(false)
@@ -286,6 +326,48 @@ function _validateCustomEndpoint() {
 	customEndpoint.value = customEndpoint.value?.trim() || '' // Remove leading/trailing whitespace
 }
 
+const triggerAdditionalFilesPick = () => {
+	additionalFilesButton.value?.click()
+}
+
+const onAdditionalFilesSelected = event => {
+	const files = event.target.files
+	if (!files?.length) return
+	Array.from(files).forEach(file => {
+		additionalDeploymentResources.value.push({
+			resourceName: file.name.trim(),
+			blob: file
+		})
+	})
+	event.target.value = ''
+}
+
+const removeAdditionalResource = index => {
+	additionalDeploymentResources.value.splice(index, 1)
+}
+
+/** Validates additional file resource names: non-empty, unique, and distinct from the main diagram resource name. */
+const _validateAdditionalDeploymentResources = mainResourceName => {
+	const used = new Set([mainResourceName])
+	let valid = true
+	additionalDeploymentResources.value.forEach(file => {
+		if (!valid) return
+		const name = (file?.resourceName  || '').trim()
+		if (!name) {
+			emit('showToastMessage', { isSuccess: false, toastText: 'deployForm.additionalFiles.emptyResourceNameError', bodyTextAlt: '' })
+			valid = false
+			return
+		}
+		if (used.has(name)) {
+			emit('showToastMessage', { isSuccess: false, toastText: 'deployForm.additionalFiles.duplicateNameError', bodyTextAlt: '' })
+			valid = false
+			return
+		}
+		used.add(name)
+	})
+	return valid
+}
+
 const deploy = async () => {
 	disableDeployButton.value = true
 
@@ -294,6 +376,12 @@ const deploy = async () => {
 		type = 'bpmn'
 	} else if (props.tabNavList.type === 'form') {
 		type = 'form'
+	}
+
+	const mainResourceName = `${deploymentName.value}.${type}`
+	if (!_validateAdditionalDeploymentResources(mainResourceName)) {
+		disableDeployButton.value = false
+		return
 	}
 
 	let hasErrors = false
@@ -305,7 +393,8 @@ const deploy = async () => {
 		_getPassword(),
 		deploymentName.value,
 		customEndpoint.value,
-		tenantID.value, rememberMe.value, props.diagram, useCustomEndpoint.value, type
+		tenantID.value, rememberMe.value, props.diagram, useCustomEndpoint.value, type,
+		additionalDeploymentResources.value
 	).then(res => {
 		_saveDeployValuesLocalStorage(selected.value, customEndpoint.value, useCustomEndpoint.value)
 		if (res?.id) {
@@ -401,6 +490,7 @@ const _getProcessKeyForDeployName = () => {
 
 const _showModalComp = () => {
 	deploymentName.value = _getProcessKeyForDeployName() // set the name of the deploy
+	additionalDeploymentResources.value = []
 	checkIfProcessStartable()
 	disableDeployButton.value = false
 	modalBootstrap.show()
