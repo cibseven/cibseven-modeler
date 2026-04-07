@@ -38,35 +38,8 @@ app.use(router)
 
 let config = null
 
-export function getTheme(currentConfig) {
-	// Try standard query string first
-	try {
-		const hrefParams = new URL(window.location.href).searchParams
-		const fromSearch = hrefParams.get('theme')
-		if (fromSearch) return fromSearch
-	} catch { /* ignore */ }
-
-	// Then try hash-based query
-	const cleanedHash = window.location.hash.replace(/^#\/?/, '')
-	const queryPart = cleanedHash.startsWith('?') ? cleanedHash.slice(1) : cleanedHash
-	const hashParams = new URLSearchParams(queryPart)
-	const fromHash = hashParams.get('theme')
-	if (fromHash) return fromHash
-
-	// Fallback to config default if provided, else 'cib'
-	return currentConfig?.theme ?? 'cib'
-}
-
 async function initApp() {
 	config = await loadFromPublic('assets', 'config.json')
-
-	// Get theme from URL params or config, default to 'cib'
-	const theme = getTheme(config)
-	console.info('[Theme] Using theme:', theme)
-
-	// Load theme CSS from frontend
-	await loadTheme(theme)
-	applyTheme(theme)
 
 	// Fetch backend properties for services configuration
 	console.info('[Config] Requesting properties from', getInfoPath() + '/properties')

@@ -157,6 +157,7 @@ public class ModelerService extends BaseService {
 			user = checkAuthorization(rq, true);
 		}
 		ProcessDiagramEntity diagramEntity = dbProcessDiagramProvider.findByProcessKey(deploymentName);
+		if (diagramEntity == null) throw new SystemException(new IllegalArgumentException("Diagram not found for key: " + deploymentName));
 		String type = diagramEntity.getType();
 		if (type.contains("bpmn")) type = "bpmn";
 	    MultiValueMap<String, MultipartFile> multiValueMapFile = byteArrayToMultiValueMap(file.getFirst("file"), deploymentName, type);
@@ -171,8 +172,10 @@ public class ModelerService extends BaseService {
 		}
 		ProcessDiagramEntity entity = new ProcessDiagramEntity();
 		MultipartFile multipartFile = file.getFirst("file");
-		String tagName = multipartFile.getOriginalFilename().endsWith(".dmn") ? "decision" : "process";
-		String type = multipartFile.getOriginalFilename().endsWith(".dmn") ? "dmn" : "bpmn-c7";
+		if (multipartFile == null) throw new SystemException(new IllegalArgumentException("Uploaded file is missing"));
+		String originalFilename = multipartFile.getOriginalFilename() != null ? multipartFile.getOriginalFilename() : "";
+		String tagName = originalFilename.endsWith(".dmn") ? "decision" : "process";
+		String type = originalFilename.endsWith(".dmn") ? "dmn" : "bpmn-c7";
 		ProcessDiagramEntity artifactExists = null;
 		if (multipartFile != null) {
 			try {
@@ -321,24 +324,19 @@ public class ModelerService extends BaseService {
 		}
 
 		String sessionIdsString = data.getFirst("sessionId");
-		if (sessionIdsString != null) {
+		if (sessionIdsString != null && data.containsKey("type")) {
 			String[] sessionIds = sessionIdsString.split(",");
-			String type = data.get("type").get(0).toString();
-			if (data.containsKey("type")) {
-				if (sessionIds != null) {
-					for (String id : sessionIds) {
-						if (type.equals("form"))
-						{
-							FormUsageEntity existingFormUsageEntity = formUsageProvider.findBySessionId(id);
-							if (existingFormUsageEntity != null) {
-								formUsageProvider.closeSession(existingFormUsageEntity);
-							}	
-						}else {
-							DiagramUsageEntity existingDiagramUsageEntity = diagramUsageProvider.findBySessionId(id);
-							if (existingDiagramUsageEntity != null) {
-								diagramUsageProvider.closeSession(existingDiagramUsageEntity);
-							}
-						}									
+			String type = data.get("type").get(0);
+			for (String id : sessionIds) {
+				if (type.equals("form")) {
+					FormUsageEntity existingFormUsageEntity = formUsageProvider.findBySessionId(id);
+					if (existingFormUsageEntity != null) {
+						formUsageProvider.closeSession(existingFormUsageEntity);
+					}
+				} else {
+					DiagramUsageEntity existingDiagramUsageEntity = diagramUsageProvider.findBySessionId(id);
+					if (existingDiagramUsageEntity != null) {
+						diagramUsageProvider.closeSession(existingDiagramUsageEntity);
 					}
 				}
 			}
@@ -469,22 +467,24 @@ public class ModelerService extends BaseService {
 		if (authenticationEnabled) {
 			checkAuthorization(rq, true);
 		}
-		byte[] file = dbProcessDiagramProvider.findByName(name).getDiagram();
+		ProcessDiagramEntity diagram = dbProcessDiagramProvider.findByName(name);
+		if (diagram == null) return ResponseEntity.notFound().build();
+		byte[] file = diagram.getDiagram();
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM);
 		headers.setAccept(Arrays.asList(MediaType.APPLICATION_OCTET_STREAM));
-		ResponseEntity<byte[]> response = new ResponseEntity<>(file, headers, HttpStatus.OK);
-		return response;
+		return new ResponseEntity<>(file, headers, HttpStatus.OK);
 	}
 	
 	@RequestMapping(value = "/process/find-by-key/data", method = RequestMethod.POST)
 	public ResponseEntity<byte[]> findByKey(@RequestParam String key) {
-		byte[] file = dbProcessDiagramProvider.findByProcessKey(key).getDiagram();
+		ProcessDiagramEntity diagram = dbProcessDiagramProvider.findByProcessKey(key);
+		if (diagram == null) return ResponseEntity.notFound().build();
+		byte[] file = diagram.getDiagram();
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(org.springframework.http.MediaType.APPLICATION_OCTET_STREAM);
 		headers.setAccept(Arrays.asList(MediaType.APPLICATION_OCTET_STREAM));
-		ResponseEntity<byte[]> response = new ResponseEntity<>(file, headers, HttpStatus.OK);
-		return response;
+		return new ResponseEntity<>(file, headers, HttpStatus.OK);
 	}
 	
 	@RequestMapping(value = "/process/{id}/data", method = RequestMethod.GET)
@@ -595,7 +595,9 @@ public class ModelerService extends BaseService {
 		if (authenticationEnabled) {
 			checkAuthorization(rq, true);
 		}
-		byte[] file = formProvider.findById(id).get().getFormSchema();
+		FormEntity form = formProvider.findById(id).orElse(null);
+		if (form == null) return ResponseEntity.notFound().build();
+		byte[] file = form.getFormSchema();
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		return new ResponseEntity<>(file, headers, HttpStatus.OK);
