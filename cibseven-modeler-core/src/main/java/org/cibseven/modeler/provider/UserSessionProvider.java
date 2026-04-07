@@ -44,14 +44,4 @@ public class UserSessionProvider implements IUserSessionProvider {
 	}
 	
 
-	@Override
-	public UserSessionEntity updateSession(UserSessionEntity entity) throws SystemException {
-		return userSessionRepository.save(entity);
-	}
-
-	@Override
-	public UserSessionEntity getSessionById(String id) throws SystemException {
-		return userSessionRepository.findById(id).orElse(null);
-	}
-
 }
