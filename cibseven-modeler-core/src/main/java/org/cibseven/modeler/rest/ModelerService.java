@@ -124,7 +124,6 @@ public class ModelerService extends BaseService {
 	public Deployment deployBpmn(
 			@Parameter(description = "Metadata of the diagram to be deployed (deployment-name, deployment-source, deploy-changed-only)") @RequestParam MultiValueMap<String, Object> data,
 			@Parameter(description = "Diagram to be deployed") @RequestParam MultiValueMap<String, MultipartFile> file,
-			@Parameter(description = "Flow instance URL") @RequestParam Optional<String> flowInstanceUrl,
 			HttpServletRequest rq) {
 		CIBUser user = null;
 		if (authenticationEnabled) {
@@ -150,7 +149,6 @@ public class ModelerService extends BaseService {
 	public Deployment deployBpmnReduce(
 			@Parameter(description = "Metadata of the diagram to be deployed (deployment-name, deployment-source, deploy-changed-only)") @RequestParam String deploymentName,
 			@Parameter(description = "Diagram to be deployed") @RequestParam MultiValueMap<String, MultipartFile> file,
-			@Parameter(description = "Flow instance URL") @RequestParam Optional<String> flowInstanceUrl,
 			HttpServletRequest rq) {
 		CIBUser user = null;
 		if (authenticationEnabled) {
@@ -203,7 +201,6 @@ public class ModelerService extends BaseService {
 	public Deployment deployBpmnById(
 			/*@Parameter(description = "Metadata of the diagram to be deployed (deployment-name, deployment-source, deploy-changed-only)") @RequestParam Optional<MultiValueMap<String, Object>> data,*/
 			@Parameter(description = "id of the diagram") @PathVariable String id,
-			@Parameter(description = "Flow instance URL") @RequestParam Optional<String> flowInstanceUrl,
 			HttpServletRequest rq) {
 		CIBUser user = null;
 		if (authenticationEnabled) {
@@ -214,7 +211,7 @@ public class ModelerService extends BaseService {
 		String type = entity.getType();
 		if (type.contains("bpmn")) type = "bpmn";
 		MultiValueMap<String, MultipartFile> file = byteArrayToMultiValueMap(bytes, entity.getProcesskey(), type);
-		return bpmProvider.deployBpmn(/*data.orElse(*/createDefaultmultiValueMap(entity.getProcesskey())/*)*/, file, user);
+		return bpmProvider.deployBpmn(createDefaultmultiValueMap(entity.getProcesskey()), file, user);
 	}
 	
 	private MultiValueMap<String, MultipartFile> byteArrayToMultiValueMap(byte[] bytes, String fileName, String type) {
@@ -407,7 +404,10 @@ public class ModelerService extends BaseService {
 	}
 
 	@RequestMapping(value = "/process/save/object", method = RequestMethod.POST)
-	public ProcessDiagramEntity saveProject(@RequestBody ProcessDiagramEntity data) {
+	public ProcessDiagramEntity saveProject(@RequestBody ProcessDiagramEntity data, HttpServletRequest rq) {
+		if (authenticationEnabled) {
+			checkAuthorization(rq, true);
+		}
 		Optional<ProcessDiagramEntity> entity = dbProcessDiagramProvider.findById(data.getId());
 		
 		if (entity.isEmpty()) {
@@ -477,7 +477,10 @@ public class ModelerService extends BaseService {
 	}
 	
 	@RequestMapping(value = "/process/find-by-key/data", method = RequestMethod.POST)
-	public ResponseEntity<byte[]> findByKey(@RequestParam String key) {
+	public ResponseEntity<byte[]> findByKey(@RequestParam String key, HttpServletRequest rq) {
+		if (authenticationEnabled) {
+			checkAuthorization(rq, true);
+		}
 		ProcessDiagramEntity diagram = dbProcessDiagramProvider.findByProcessKey(key);
 		if (diagram == null) return ResponseEntity.notFound().build();
 		byte[] file = diagram.getDiagram();

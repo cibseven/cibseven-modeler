@@ -22,24 +22,12 @@ import org.cibseven.modeler.model.UserSessionEntity;
 public interface IUserSessionProvider {
 
 	/**
-	 * Get the session of the diagram by id
-	 */
-	UserSessionEntity getSessionById(String id) throws SystemException;
-	
-	/**
 	 * Create a new diagram session.
 	 * 
 	 * @param entity
 	 */
 	UserSessionEntity createSession(UserSessionEntity entity) throws SystemException;
-    
-    /**
-	 * Close a session.
-	 * 
-	 * @param entity
-	 */
-	UserSessionEntity updateSession(UserSessionEntity entity) throws SystemException;
-    
+
 	void delete(String id) throws SystemException;
-	
+
 }
