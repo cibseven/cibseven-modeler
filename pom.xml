@@ -131,13 +131,13 @@ You may obtain a copy of the License at
 								</configuration>
 							</execution>
 							<execution>
-								<id>npm run build</id>
+								<id>npm run build:library</id>
 								<goals>
 									<goal>npm</goal>
 								</goals>
 								<phase>generate-resources</phase>
 								<configuration>
-									<arguments>run build</arguments>
+									<arguments>run build:library</arguments>
 								</configuration>
 							</execution>
 						</executions>
