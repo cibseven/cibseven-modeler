@@ -46,14 +46,12 @@ public class UserSessionProvider implements IUserSessionProvider {
 
 	@Override
 	public UserSessionEntity updateSession(UserSessionEntity entity) throws SystemException {
-		// TODO Auto-generated method stub
-		return null;
+		return userSessionRepository.save(entity);
 	}
 
 	@Override
 	public UserSessionEntity getSessionById(String id) throws SystemException {
-		// TODO Auto-generated method stub
-		return null;
+		return userSessionRepository.findById(id).orElse(null);
 	}
 
 }

@@ -407,7 +407,10 @@ public class ModelerService extends BaseService {
 	}
 
 	@RequestMapping(value = "/process/save/object", method = RequestMethod.POST)
-	public ProcessDiagramEntity saveProject(@RequestBody ProcessDiagramEntity data) {
+	public ProcessDiagramEntity saveProject(@RequestBody ProcessDiagramEntity data, HttpServletRequest rq) {
+		if (authenticationEnabled) {
+			checkAuthorization(rq, true);
+		}
 		Optional<ProcessDiagramEntity> entity = dbProcessDiagramProvider.findById(data.getId());
 		
 		if (entity.isEmpty()) {
@@ -477,7 +480,10 @@ public class ModelerService extends BaseService {
 	}
 	
 	@RequestMapping(value = "/process/find-by-key/data", method = RequestMethod.POST)
-	public ResponseEntity<byte[]> findByKey(@RequestParam String key) {
+	public ResponseEntity<byte[]> findByKey(@RequestParam String key, HttpServletRequest rq) {
+		if (authenticationEnabled) {
+			checkAuthorization(rq, true);
+		}
 		ProcessDiagramEntity diagram = dbProcessDiagramProvider.findByProcessKey(key);
 		if (diagram == null) return ResponseEntity.notFound().build();
 		byte[] file = diagram.getDiagram();
