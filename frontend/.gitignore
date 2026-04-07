@@ -35,5 +35,3 @@ target
 # Environment variables
 .env
 .env.local
-
-package-lock.json

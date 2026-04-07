@@ -26,6 +26,16 @@ export default mergeConfig(
       exclude: [
         ...configDefaults.exclude,
       ],
+      alias: [{
+          // Matches 'monaco-editor' exactly but allows sub-paths through
+          find: /^monaco-editor$/,
+          replacement: 'monaco-editor/esm/vs/editor/editor.api'
+      }],
+      server: {
+        deps: {
+          inline: ['monaco-editor']
+        }
+      },
       root: fileURLToPath(new URL('./', import.meta.url)),
       coverage: {
         provider: 'istanbul',
@@ -35,11 +45,16 @@ export default mergeConfig(
           'dist/**',
           'target/**',
           'node_modules/**',
+
           'src/__tests__/**',
+
+          // Test and config files
           'vite.config.js',
           'vitest.config.js',
           '**/*.config.js',
-          '**/\0**',
+
+          // Exclude Vite internals
+          '**/\0**', // Exclude Vite virtual modules
         ],
         excludeNodeModules: true,
       },

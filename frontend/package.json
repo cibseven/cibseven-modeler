@@ -1,6 +1,6 @@
 {
   "name": "cibseven-modeler",
-  "version": "1.0.0-SNAPSHOT",
+  "version": "1.0.0-dev.0",
   "type": "module",
   "license": "Apache-2.0",
   "main": "./dist/cibseven-modeler.umd.js",
@@ -22,12 +22,12 @@
     "dev": "vite",
     "build:library": "cross-env BUILD_MODE=library vite build",
     "build:library:watch": "cross-env BUILD_MODE=library vite build --watch",
-    "test:unit": "vitest",
+    "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:report": "cross-env NODE_OPTIONS=--max-old-space-size=4096 vitest run --coverage --reporter=default --reporter=junit --outputFile=target/vitest-reports/TEST-front-end.xml",
+    "test:unit": "vitest run --coverage --reporter=default --reporter=junit --outputFile=target/vitest-reports/TEST-front-end.xml",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write src/",
+    "format": "eslint . --fix",
     "install-clean": "npm ci",
     "install-exact": "npm install --save-exact",
     "check-exact": "node -e \"const pkg=require('./package.json'); const deps=[...Object.entries(pkg.dependencies||{}), ...Object.entries(pkg.devDependencies||{})]; const ranges=deps.filter(([n,v])=>v.match(/[~^*>=<]/)); if(ranges.length){console.error('Version ranges found:',ranges.map(([n])=>n)); process.exit(1);} console.log('All versions are exact');\""
@@ -73,7 +73,6 @@
     "eslint-plugin-vuejs-accessibility": "2.4.1",
     "jsdom": "26.1.0",
     "less": "4.2.1",
-    "prettier": "3.4.2",
     "vite": "6.4.1",
     "vitest": "3.2.4",
     "vue-eslint-parser": "10.2.0"
