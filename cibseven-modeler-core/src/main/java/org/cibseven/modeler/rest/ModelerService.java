@@ -631,35 +631,4 @@ public class ModelerService extends BaseService {
 		}
 		return "";
 	}
-
-	/*
-	private CIBUser checkAuthorization(HttpServletRequest rq, boolean basicAuthAllowed, boolean anonUserAllowed) {
-		CIBUser user = null;
-		String authorization = rq.getHeader("Authorization");
-		if (basicAuthAllowed && authorization != null && authorization.toLowerCase().startsWith("basic")) {
-		    // Authorization: Basic base64credentials
-		    String base64Credentials = authorization.substring("Basic".length()).trim();
-		    byte[] credDecoded = Base64.getDecoder().decode(base64Credentials);
-		    String credentials = new String(credDecoded, StandardCharsets.UTF_8);
-		    // credentials = username:password
-		    final String[] values = credentials.split(":", 2);
-		    de.cib.auth.rest.StandardLogin login = baseUserProvider.createLoginParams();
-		    login.setUsername(values[0]);
-		    login.setPassword(values[1]);
-		    user = (CIBUser) baseUserProvider.login(login, rq);
-		} 
-		else {
-			try {
-				user = (CIBUser) baseUserProvider.authenticateUser(rq);
-			} catch (AnonUserBlockedException e) {
-				if (anonUserAllowed) {
-					user = (CIBUser) e.getUser();
-				} else {
-					throw e;
-				}
-			}
-		}
-		return user;
-	}
-	*/
 }
