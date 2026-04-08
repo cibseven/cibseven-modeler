@@ -68,6 +68,9 @@ public class ProcessDiagramEntity {
 	@Column(name = "updated")
 	private Timestamp updated;
 
+	@Column(name = "updated_by", length = 100)
+	private String updatedBy;
+
 	@NotNull
 	@JdbcTypeCode(SqlTypes.BOOLEAN)
 	@Column(name = "active", columnDefinition = "boolean default true")

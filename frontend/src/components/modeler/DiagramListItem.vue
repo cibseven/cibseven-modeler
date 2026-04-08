@@ -20,9 +20,17 @@
         class="list-group-item border-0 d-flex align-items-center justify-content-between"
         :class="{ 'bg-light': item.isHovered }">
         <span class="w-10 justify-content-center mr-2 mdi mdi-18px" :class="itemIcon"></span>
-        <span class="w-80 flex-grow-1 mx-2">
-            {{ displayName }}.{{ fileExtension }}<template v-if="displayKey"> ( {{ displayKey }} )</template>
-        </span>
+        <div class="w-80 flex-grow-1 mx-2 min-w-0 d-flex flex-column">
+            <span>
+                {{ displayName }}.{{ fileExtension }}<template v-if="displayKey"> ( {{ displayKey }} )</template>
+            </span>
+            <span
+                v-if="formatUnifiedListLastSaved(props.item.updated, props.item.updatedBy)"
+                class="small text-muted text-truncate"
+                :title="formatUnifiedListLastSaved(props.item.updated, props.item.updatedBy)"
+                :aria-label="`${$t('titles.lastSaved')}: ${formatUnifiedListLastSaved(props.item.updated, props.item.updatedBy)}`"
+            >{{ formatUnifiedListLastSaved(props.item.updated, props.item.updatedBy) }}</span>
+        </div>
         <span v-if="!isDeleting" class="w-10 ml-2 d-flex justify-content-end">
             <button :title="$t('buttons.edit')" type="button"
                 class="btn mdi mdi-18px mdi-pencil-outline border-0 btn-outline-secondary btn-sm"
@@ -44,6 +52,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useStore } from 'vuex'
+import { formatDate } from '../../utils'
 import { DIAGRAM_ICON, DIAGRAM_TYPE } from '../../constants/diagramTypes.js'
 
 const props = defineProps({
@@ -66,6 +75,13 @@ const itemIcon = computed(() => DIAGRAM_ICON[props.item.type] ?? 'mdi-file-outli
 const displayName = computed(() =>
     isForm.value ? props.item.formId : (props.item.name !== 'undefined' ? props.item.name : '')
 )
+
+const formatUnifiedListLastSaved = (updated, updatedBy) => {
+	const parts = []
+	if (updatedBy) parts.push(updatedBy)
+	if (updated != null && updated !== '') parts.push(formatDate(updated))
+	return parts.join(' · ')
+}
 
 const displayKey = computed(() =>
     isForm.value ? null : props.item.processkey

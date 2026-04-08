@@ -15,6 +15,8 @@
  *  limitations under the License.
  */
 
+import moment from 'moment'
+
 const TYPEC7 = 'bpmn-c7'
 const TYPEDMN = 'dmn'
 const BPMNC7TAG = 'xmlns:camunda'
@@ -296,6 +298,13 @@ export const mergeTemplates = (defaultList, customList) => {
 // Add errors in html to the console log panel
 export const addHtmlErrorsToConsole = error => {
 	return error
+}
+
+export const formatDate = (date, format = null) => {
+	if (!date) return ''
+	format = format || localStorage.getItem('cibseven:preferences:formatDefault') || 'LL HH:mm'
+	const d = moment(date)
+	return d.isValid() ? d.format(format) : ''
 }
 
 export const formatFileSize = (bytes) => {

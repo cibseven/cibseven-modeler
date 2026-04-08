@@ -29,6 +29,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.EntityNotFoundException;
+
 import org.cibseven.modeler.exception.SystemException;
 import org.cibseven.modeler.model.FormEntity;
 import org.cibseven.modeler.repository.FormRepository;
@@ -62,10 +64,13 @@ public class FormProvider implements IFormProvider {
 	}
 
 	@Override
-	public FormEntity updateForm(FormEntity entity) throws SystemException {		
-		entity.setFormSchema(entity.getFormSchema());
-		entity.setUpdated(Timestamp.valueOf(LocalDateTime.now()));		
-		return formRepositoryDao.save(entity);
+	public FormEntity updateForm(FormEntity entity) throws SystemException {
+		FormEntity existing = formRepositoryDao.findById(entity.getId())
+			.orElseThrow(() -> new EntityNotFoundException("FormEntity not found"));
+		existing.setFormSchema(entity.getFormSchema());
+		existing.setUpdated(Timestamp.valueOf(LocalDateTime.now()));
+		existing.setUpdatedBy(entity.getUpdatedBy());
+		return formRepositoryDao.save(existing);
 	}
 	
 	@Transactional

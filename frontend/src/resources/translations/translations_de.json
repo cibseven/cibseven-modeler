@@ -1,7 +1,8 @@
 {
   "titles": {
     "search": "Suchen Sie nach passenden Optionen, laden Sie eine von Ihnen erstellte hoch, beginnen Sie mit einer leeren Version oder importieren Sie eine lokale Datei.",
-    "recent": "Zuletzt benutzt"
+    "recent": "Zuletzt benutzt",
+    "lastSaved": "Zuletzt gespeichert"
   },
   "toastDeleteFormSucess": {
     "title": "Formular gelöscht",
