@@ -26,6 +26,18 @@ export default mergeConfig(
       exclude: [
         ...configDefaults.exclude,
       ],
+      alias: [{
+          // Redirects bare 'monaco-editor' import to a known resolvable entry point.
+          // Monaco-editor has no 'main'/'module' field resolvable by Vite in jsdom mode;
+          // this applies in both plain test and --coverage (istanbul instrumentation) runs.
+          find: /^monaco-editor$/,
+          replacement: 'monaco-editor/esm/vs/editor/editor.api'
+      }],
+      server: {
+        deps: {
+          inline: ['monaco-editor']
+        }
+      },
       root: fileURLToPath(new URL('./', import.meta.url)),
       coverage: {
         provider: 'istanbul',
@@ -37,6 +49,10 @@ export default mergeConfig(
           'node_modules/**',
 
           'src/__tests__/**',
+
+          // Barrel/re-export file — no logic to cover, and importing it loads monaco-editor
+          // which cannot be resolved in the Node.js test environment
+          'src/library.js',
 
           // Test and config files
           'vite.config.js',
