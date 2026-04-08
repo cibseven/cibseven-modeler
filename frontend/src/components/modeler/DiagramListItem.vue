@@ -52,7 +52,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useStore } from 'vuex'
-import { formatUnifiedListLastSaved } from '../../utils'
+import { formatDate } from '../../utils'
 import { DIAGRAM_ICON, DIAGRAM_TYPE } from '../../constants/diagramTypes.js'
 
 const props = defineProps({
@@ -75,6 +75,13 @@ const itemIcon = computed(() => DIAGRAM_ICON[props.item.type] ?? 'mdi-file-outli
 const displayName = computed(() =>
     isForm.value ? props.item.formId : (props.item.name !== 'undefined' ? props.item.name : '')
 )
+
+const formatUnifiedListLastSaved = (updated, updatedBy) => {
+	const parts = []
+	if (updatedBy) parts.push(updatedBy)
+	if (updated != null && updated !== '') parts.push(formatDate(updated))
+	return parts.join(' · ')
+}
 
 const displayKey = computed(() =>
     isForm.value ? null : props.item.processkey

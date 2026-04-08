@@ -15,6 +15,8 @@
  *  limitations under the License.
  */
 
+import moment from 'moment'
+
 const TYPEC7 = 'bpmn-c7'
 const TYPEDMN = 'dmn'
 const BPMNC7TAG = 'xmlns:camunda'
@@ -298,27 +300,11 @@ export const addHtmlErrorsToConsole = error => {
 	return error
 }
 
-/**
- * Formats last-saved timestamp and optional user id for unified diagram list rows.
- * @param {string|number|Date} updated
- * @param {string} [updatedBy]
- * @returns {string}
- */
-export const formatUnifiedListLastSaved = (updated, updatedBy) => {
-	const parts = []
-	if (updatedBy) parts.push(updatedBy)
-	if (updated != null && updated !== '') {
-		const d = new Date(updated)
-		if (!isNaN(d.getTime())) {
-			parts.push(
-				d.toLocaleString(undefined, {
-					dateStyle: 'short',
-					timeStyle: 'short'
-				})
-			)
-		}
-	}
-	return parts.join(' · ')
+export const formatDate = (date, format = null) => {
+	if (!date) return ''
+	format = format || localStorage.getItem('cibseven:preferences:formatDefault') || 'LL HH:mm'
+	const d = moment(date)
+	return d.isValid() ? d.format(format) : ''
 }
 
 export const formatFileSize = (bytes) => {

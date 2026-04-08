@@ -69,7 +69,6 @@ public class ProcessDiagramEntity {
 	private Timestamp updated;
 
 	@Column(name = "updated_by", length = 100)
-	@NotAudited
 	private String updatedBy;
 
 	@NotNull
