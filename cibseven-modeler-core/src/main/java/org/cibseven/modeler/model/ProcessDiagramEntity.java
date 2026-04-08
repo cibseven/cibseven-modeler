@@ -20,8 +20,8 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.NotAudited;
 import org.hibernate.type.SqlTypes;
@@ -40,7 +40,6 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
-@SuppressWarnings("deprecation")
 @Setter @Getter @RequiredArgsConstructor
 @Entity
 @Table(name = "processes_diagrams")
@@ -48,7 +47,8 @@ import lombok.Setter;
 public class ProcessDiagramEntity {
 
 	@Id
-	@GeneratedValue(generator = "uuid") @GenericGenerator(name = "uuid", strategy = "uuid2")
+	@GeneratedValue
+	@UuidGenerator
 	@Column(length = 36)
 	private String id;
 
