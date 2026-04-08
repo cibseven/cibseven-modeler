@@ -15,18 +15,42 @@
  *  limitations under the License.
  */
 import { describe, it, expect } from 'vitest'
-import * as library from '@/library.js'
+import { readFileSync } from 'node:fs'
 import { findComponents } from '../utils.js'
 import fs from 'node:fs'
 import path from 'node:path'
 
+/**
+ * Extract all exported names from an ES module source string.
+ * Handles: export { a, b }, export { x as y }, export * as name from '...'
+ */
+function getExportedNames(src) {
+  const names = new Set()
+  for (const match of src.matchAll(/export\s*\{([^}]+)\}/g)) {
+    for (const item of match[1].split(',')) {
+      const trimmed = item.trim()
+      if (!trimmed) continue
+      const asMatch = trimmed.match(/\bas\s+(\w+)$/)
+      names.add(asMatch ? asMatch[1] : trimmed)
+    }
+  }
+  for (const match of src.matchAll(/export\s+\*\s+as\s+(\w+)\s+from/g)) {
+    names.add(match[1])
+  }
+  return names
+}
+
 describe('library.js', () => {
   // eslint-disable-next-line no-undef
   const srcDir = path.resolve(__dirname, '../../')
+  // Read library.js as source text — avoids loading heavy dependencies (bpmn-js, monaco-editor)
+  // into the test environment. Follows the pattern of libraryExports.test.js.
+  // eslint-disable-next-line no-undef
+  const exportedKeys = getExportedNames(readFileSync(path.resolve(__dirname, '../../library.js'), 'utf-8'))
 
   describe('*.vue', () => {
-    // Find all .vue files in /src/
-    const vueFiles = findComponents(srcDir, '.vue')
+    // Find all .vue files in /src/components/ (App.vue at src root is app-shell, not a library component)
+    const vueFiles = findComponents(path.join(srcDir, 'components'), '.vue')
 
     it('exports all .vue components from /src/', () => {
 
@@ -35,12 +59,9 @@ describe('library.js', () => {
         path.basename(f, '.vue')
       )
 
-      // Get all exported keys from library.js
-      const exportedKeys = Object.keys(library)
-
       // Check that each component is exported
       const missing = vueComponentNames.filter(
-        name => !exportedKeys.includes(name)
+        name => !exportedKeys.has(name)
       )
 
       expect(missing.map((name) => {
@@ -82,12 +103,9 @@ describe('library.js', () => {
         path.basename(f, '.js')
       )
 
-      // Get all exported keys from library.js
-      const exportedKeys = Object.keys(library)
-
       // Check that each mixin is exported
       const missing = mixinComponentNames.filter(
-        name => !exportedKeys.includes(name)
+        name => !exportedKeys.has(name)
       )
 
       expect(missing.map((name) => {

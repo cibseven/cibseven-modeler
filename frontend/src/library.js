@@ -30,8 +30,30 @@ import FormModeler from './components/modeler/FormModeler.vue'
 import NotificationMessage from './components/modals/NotificationMessage.vue'
 
 export { CibsevenModeler, BpmnModeler, DmnModeler, FormModeler, NotificationMessage }
+export { default as ActionButtonsList } from './components/ActionButtonsList.vue'
+export { default as AppContainer } from './components/AppContainer.vue'
+export { default as CibsevenTable } from './components/CibsevenTable.vue'
+export { default as DropZone } from './components/DropZone.vue'
+export { default as ConsolePanel } from './components/layout/ConsolePanel.vue'
+export { default as MenuActionButtons } from './components/layout/MenuActionButtons.vue'
+export { default as MonacoThemeScoped } from './components/layout/MonacoThemeScoped.vue'
+export { default as PropertiesPanel } from './components/layout/PropertiesPanel.vue'
+export { default as TabNav } from './components/layout/TabNav.vue'
+export { default as TabNavItem } from './components/layout/TabNavItem.vue'
+export { default as ToastMessage } from './components/messages/ToastMessage.vue'
+export { default as ElementTemplatesModal } from './components/modals/ElementTemplatesModal.vue'
 export { default as ListSelector } from './components/modals/ListSelector.vue'
 export { default as ConfirmModal } from './components/modals/ConfirmModal.vue'
+export { default as ModalDeploy } from './components/modals/ModalDeploy.vue'
+export { default as ModalNewDiagram } from './components/modals/ModalNewDiagram.vue'
+export { default as ScriptEditorModal } from './components/modals/ScriptEditorModal.vue'
+export { default as DiagramListItem } from './components/modeler/DiagramListItem.vue'
+export { default as StartPage } from './components/modeler/StartPage.vue'
+export { default as MonacoConsole } from './components/monaco/MonacoConsole.vue'
+export { default as MonacoEditor } from './components/monaco/MonacoEditor.vue'
+export { default as AddElementTemplateModal } from './components/templates/AddElementTemplateModal.vue'
+export { default as CategorizedTemplateView } from './components/templates/CategorizedTemplateView.vue'
+export { default as TemplateManagement } from './components/templates/TemplateManagement.vue'
 
 export { default as store, createModelerStore } from './store.js'
 export { i18n, setLocale, messages, createI18n } from './i18n.js'
@@ -50,7 +72,7 @@ export { default as xmlStore } from './stores/xmlStore.js'
 export { modelerTranslations, mergeModelerTranslations } from './utils/translations.js'
 
 // Re-export monaco so consumer packages can use the same bundled instance
-export { default as monaco } from 'monaco-editor'
+export * as monaco from 'monaco-editor'
 
 // Vue plugin install function
 const install = (app, _options = {}) => {
