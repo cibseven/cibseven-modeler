@@ -51,7 +51,7 @@ public interface ProcessDiagramRepository extends JpaRepository<ProcessDiagramEn
 	@Query(value =
 		"SELECT * FROM ( " +
 		"   SELECT p.id, p.name, p.type, p.processkey, " +
-		"          CAST(NULL AS VARCHAR(255)) AS formid, " +
+		"          NULL AS formid, " +
 		"          p.description, p.created, p.updated, p.updated_by, p.version " +
 		"   FROM processes_diagrams p " +
 		"   WHERE (:keyword IS NULL OR LOWER(p.name) LIKE LOWER(:keyword) " +

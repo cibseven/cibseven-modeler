@@ -18,7 +18,7 @@ import { nextTick, onBeforeUnmount, onMounted, ref, inject, watch } from "vue"
 import { useStore } from 'vuex'
 import { FormEditor } from '@bpmn-io/form-js'
 import { saveForm, updateForm } from'../services/formService.js'
-import { checkBeforeAction } from '../utils.js'
+import useDiagramSave from './useDiagramSave.js'
 
 export default function useForm(props, emit, canvas, propertyPanel) {
     const store = useStore()
@@ -93,6 +93,8 @@ export default function useForm(props, emit, canvas, propertyPanel) {
        return formEditor.value    
     }
 
+    const { save: _sharedSave } = useDiagramSave(props, emit, { checkSessionHook, createSessionHook })
+
     const save = async () => {
       let sessionResponse = null
       if (checkSessionHook) {
@@ -104,93 +106,20 @@ export default function useForm(props, emit, canvas, propertyPanel) {
       emit('updateEditorXML', JSON.stringify(json, null, 2),  props.tabElementIndex)
       const newFormId = json.id
       const stringifyJson = JSON.stringify(json, null, 2)
-      let keyTocompare = props.tabElement.key
-      if (!props.tabElement.isSaved) keyTocompare = ""
 
-      const toastErrorMessage = checkBeforeAction(
-        newFormId,
-        keyTocompare,
-        store.state.modeler?.forms,
-        'formId'
-      )
-      
-      if (toastErrorMessage) {
-        emit('showToastMessage', {
-          isSuccess: false,
-          toastText: toastErrorMessage,
-          bodyTextAlt: ''
-        })
-        return false
-      }
-          
-          if (props.tabElement.isSaved || props.tabElement.replaceXml) {
-            try {
-              const response = await updateForm(
-                props.tabElement.id,
-                newFormId,
-                json
-              )
-              if (response) {
-                emit(
-                  'updateStoredLocalStorageTabNavList',
-                  {
-                    processId: response.id,
-                    processName: response.formId,
-                    processKey: response.formId,
-                    type: 'form'
-                  },
-                  props.tabElementIndex,
-                  stringifyJson
-                )
-                emit('showToastMessage', {
-                  isSuccess: true,
-                  toastText: 'toastUpdateSuccessful',
-                  bodyTextAlt: ''
-                })
-                emit('toggleEnableSave', false, props.tabElementIndex)
-                emit('toggleVersionNotSaved', false, props.tabElementIndex) //enables save button when changing version
-                if (createSessionHook && sessionResponse?.message === 'NO_SESSION') createSessionHook(response, json, props.tabElementIndex, props.tabElement)
-                return true
-              }
-              
-            } catch (error) {
-              emit('showToastMessage', { isSuccess: false, toastText: 'toastSomethingWentWrong' })
-              console.error(error)
-              return false
-            }
-          } else {
-            try {
-              const response = await saveForm(
-                newFormId,
-                json
-              )
-              if (response) {
-                emit(
-                  'updateStoredLocalStorageTabNavList',
-                  {
-                    processId: response.id,
-                    processName: response.formId,
-                    processKey: response.formId,
-                    type: 'form'
-                  },
-                  props.tabElementIndex,
-                  stringifyJson
-                )
-                emit('showToastMessage', { isSuccess: true, toastText: 'toastSaveSuccessful' })
-                emit('toggleEnableSave', false, props.tabElementIndex)
-                emit('toggleIsSaved', true, props.tabElementIndex)
-                emit('toggleVersionNotSaved', false, props.tabElementIndex) //enables save button when changing version
-                if (createSessionHook && sessionResponse?.message === 'NO_SESSION') createSessionHook(response, json, props.tabElementIndex, props.tabElement)
-
-                return true
-              }
-            
-            } catch (error) {
-              emit('showToastMessage', { isSuccess: false, toastText: 'toastSomethingWentWrong' })
-              console.error(error)
-              return false
-            }
-          }
+      return _sharedSave({
+        newName: newFormId,
+        newKey: newFormId,
+        storedKey: props.tabElement.key,
+        xml: stringifyJson,
+        blob: json,
+        storeStateSlice: store.state.modeler?.forms,
+        itemKeyField: 'formId',
+        createFn: () => saveForm(newFormId, json),
+        updateFn: () => updateForm(props.tabElement.id, newFormId, json),
+        toTabPayload: response => ({ processId: response.id, processName: response.formId, processKey: response.formId, type: 'form' }),
+        sessionResponse,
+      })
     }
 
     const destroyFormJs = () => {

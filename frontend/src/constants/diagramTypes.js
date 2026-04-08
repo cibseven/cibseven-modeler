@@ -14,16 +14,27 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.cibseven.modeler.config;
 
-import java.util.List;
-import lombok.Getter;
-import lombok.Setter;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+/** Canonical diagram type identifiers used throughout the modeler. */
+export const DIAGRAM_TYPE = Object.freeze({
+  BPMN_C7: 'bpmn-c7',
+  DMN: 'dmn',
+  FORM: 'form',
+})
 
-@ConfigurationProperties(prefix = "cibsevenmodeler.templates")
-@Getter
-@Setter
-public class ElementTemplateProperties {
-    private List<String> paths;
-}
+/** Material Design Icon class for each diagram type. */
+export const DIAGRAM_ICON = Object.freeze({
+  'bpmn-c7': 'mdi-map-legend',
+  'dmn': 'mdi-wall-sconce-flat-outline',
+  'form': 'mdi-form-select',
+})
+
+/** File extension used when downloading each diagram type. */
+export const DIAGRAM_FILE_EXT = Object.freeze({
+  'bpmn-c7': '.bpmn',
+  'dmn': '.dmn',
+  'form': '.form',
+})
+
+/** localStorage key used to persist open tabs across page reloads. */
+export const TAB_STORAGE_KEY = 'flow.modeler.navList'

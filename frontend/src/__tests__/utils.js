@@ -14,16 +14,21 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.cibseven.modeler.config;
+import fs from 'node:fs'
+import path from 'node:path'
 
-import java.util.List;
-import lombok.Getter;
-import lombok.Setter;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-
-@ConfigurationProperties(prefix = "cibsevenmodeler.templates")
-@Getter
-@Setter
-public class ElementTemplateProperties {
-    private List<String> paths;
+// Helper to recursively find all files with a given extension in a directory
+export function findComponents(dir, extension = '.vue') {
+  let results = []
+  const list = fs.readdirSync(dir)
+  for (const file of list) {
+    const filePath = path.join(dir, file)
+    const stat = fs.statSync(filePath)
+    if (stat?.isDirectory()) {
+      results = results.concat(findComponents(filePath, extension))
+    } else if (file.endsWith(extension)) {
+      results.push(filePath)
+    }
+  }
+  return results
 }

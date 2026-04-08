@@ -166,7 +166,7 @@ import * as monaco from 'monaco-editor'
 import { useStore } from 'vuex'
 import { useRoute, useRouter } from 'vue-router'
 
-import { compareXML, getTimeStamp, getTagValueFromXml, checkCamundaVersion, generateUniqueId, setTagValueOfXml, getProcessKeyFromBpmn, filterTemplates } from '../../utils.js'
+import { compareXML, getTimeStamp, getTagValueFromXml, checkCamundaVersion, generateUniqueId, setTagValueOfXml, filterTemplates } from '../../utils.js'
 import Clipboard from 'diagram-js/lib/features/clipboard/Clipboard'
 import { ref, onMounted, onUnmounted, nextTick, watch, computed, inject, provide } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -184,6 +184,10 @@ import ActionButtonsList from '../ActionButtonsList.vue'
 import ConfirmModal from '../modals/ConfirmModal.vue'
 //for full screen drop files
 import DropZone from '../DropZone.vue'
+//composables
+import useTabManager from '../../composables/useTabManager.js'
+import useFileImport from '../../composables/useFileImport.js'
+import { DIAGRAM_TYPE } from '../../constants/diagramTypes.js'
 
 // Provide monaco for child components (MonacoEditor, MonacoConsole)
 // This is necessary when used as a library since the host app doesn't provide monaco
@@ -204,13 +208,13 @@ const hasMore = ref(true)
 const PAGE_SIZE = 20
 const currentKeyword = ref('')
 const currentDiagramType = ref('')
-const tabNavList = ref([])
-const tabNavListXml = ref([])
+// Tab state is owned by useTabManager — initialized after modeler ref
+const { tabNavList, tabNavListXml, editorXML, _copyArray, _saveTabNavSavedLocalStorage, _loadTabNavList, _closeSelectedTab, orderTabNavListHiddenTab: _orderTabNavListHiddenTab } = useTabManager(modeler)
+const orderTabNavListHiddenTab = idx => _orderTabNavListHiddenTab(idx, () => selectedTab(0))
 const consoleErrorsList = ref([])
 const modelerTabPanes = ref(null) // gets the reference of the navigation tab
 const modelerTabNav = ref(null) //to call the switch tab method
 const actionButton = ref({})
-const TYPEDMN = 'dmn'
 const waitToLoad = ref(false)
 const showModalAcceptCancelMessage = ref({ show: false, type: 'bpmn'})
 //variable for the modal for importing and external return
@@ -224,7 +228,6 @@ const clipboard = new Clipboard()
 const hasDirectDiagram = ref(!!(route.params.diagramId || new URL(window.location.href).href.includes('processId=')))
 const withDiagram = ref(false)
 const isButtonDisabled = ref({})
-const editorXML = ref([])
 //for the toast messages
 const isSuccess = ref(false)
 const toastText = ref('toastLoadErrorFile')
@@ -331,30 +334,6 @@ const createNewFormDiagram = async(formJson, type) => {
 		editorXML.value[tabNavList.value.length - 1] = JSON.stringify(formJson, null, 2)
 		switchTabFromTabNav(tabNavList.value.length - 1)
 	}, type)
-}
-
-const handleFile = e => {
-	// retrieve the files from the data transfer object
-	const files = e.dataTransfer?.files || e.target.files
-	const file = files[0]
-	if (!file || (!file.name.endsWith('.bpmn') && !file.name.endsWith('.dmn') && !file.name.endsWith('.form'))) { // shows toast error message if the file is not a .bpmn
-		showToastMessage({ isSuccess: false, toastText: 'toastLoadErrorFileExtension' })
-		return
-	}
-
-	const reader = new FileReader()
-	reader.onload = e => {
-		const fileContent = e.target.result
-		if (file.name.endsWith('.form')) {
-			_openFormFromImportedFile(fileContent)
-		}
-		else {
-			const fileNameWithoutExtension = file.name.substring(0, file.name.lastIndexOf('.'))
-			_openProcessFromImportedFile(fileContent, fileNameWithoutExtension, file.name)
-		}
-	}
-	// Read the contents of the file as text
-	reader.readAsText(file)
 }
 
 const saveWithKeyboardFromTab = (e, tabElementName, tabElementIndex) => {
@@ -527,7 +506,7 @@ const updateDiagramFromEditor = (xmlContent, tabElementIndex) => {
 	if (!modeler.value[tabElementIndex]) return
 	if (!xmlContent) return // ignore empty content — user is mid-edit; keep the editor alive
 	modeler.value[tabElementIndex]._validate(xmlContent)
-	const typeOfDiagram = checkCamundaVersion(xmlContent) ?? TYPEDMN
+	const typeOfDiagram = checkCamundaVersion(xmlContent) ?? DIAGRAM_TYPE.DMN
 
 	if (isXmlValidated.value[tabNavList.value[tabElementIndex].key].validation) {
 		editorXML.value[tabElementIndex] = xmlContent // update xml from modeler
@@ -599,22 +578,6 @@ const hideModalAcceptCancelMessage = () => {
 	showModalAcceptCancelMessage.value.show = false
 }
 
-const orderTabNavListHiddenTab = async index => {
-	const position = tabNavList.value.length - (index)
-	const copyTabNavList = _copyArray(tabNavList)
-	const copyEditorXml = _copyArray(editorXML)
-	const moveToFirstElement = copyTabNavList.splice(position, 1)
-	const moveToFirstEditorXml = copyEditorXml.splice(position, 1)
-	copyTabNavList.unshift(moveToFirstElement[0])
-	// use editor xml to get unsaved changes
-	copyEditorXml.unshift(moveToFirstEditorXml[0])
-	const copyForTabNavListXml = copyEditorXml.map(element => element)
-	editorXML.value = copyEditorXml
-	tabNavListXml.value = copyForTabNavListXml // to save the unsaved changes in the xml tabs
-	tabNavList.value = copyTabNavList
-	selectedTab(0)
-}
-
 const resizeTabNav = width => {
 	tabNavWidth.value = width
 	if (modelerTabNav.value) {
@@ -642,139 +605,8 @@ const _updateDownloadLinkForm = ({ href, download, tabElementIndex }) => {
 	actionButton?.value[tabElementIndex]._updateDownloadFile(href, download)
 }
 
-//when removing a process if it is opened in a tab it will close
-const _closeSelectedTab = tabElementIndex => {
-	
-		if (tabNavList.value[tabElementIndex].type === 'form') {
-			if (modeler.value[tabElementIndex]) modeler.value[tabElementIndex].destroyFormJs()
-		}
-		const copyEditorXml = _copyArray(editorXML)
-		const copyTabNavListXml = _copyArray(tabNavListXml)
-		const copyTabNavList = _copyArray(tabNavList)
-		copyEditorXml.splice(tabElementIndex, 1)
-		copyTabNavListXml.splice(tabElementIndex, 1)
-		copyTabNavList.splice(tabElementIndex, 1)
-
-		tabNavListXml.value = copyTabNavListXml
-		editorXML.value = copyEditorXml
-		tabNavList.value = copyTabNavList
-		_saveTabNavSavedLocalStorage()
-}
-
 const _initializeTabSize = () => {
 	tabNavWidth.value = modelerTabPanes.value.clientWidth
-}
-
-const _copyArray = arrayRef => {
-	return arrayRef.value.map(element => element)
-}
-
-const _openFormFromImportedFile = async jsonExternal => {
-	const jsonId = JSON.parse(jsonExternal)?.id
-	const foundForm = forms.value.find(form => form.formId === jsonId)	
-	
-	if (foundForm) {		
-
-		let jsonFromEditor = _checkIfFormOpenInTab(jsonId)
-		if (!jsonFromEditor) {
-			await store.dispatch('modeler/forms/fetchFormById', foundForm.id) // search xml by id selected
-			jsonFromEditor = store.state.modeler.forms.formSelected//JSON.stringify(
-		}
-		const foundTabIndex = tabNavList.value.findIndex( el => el.key === jsonId)
-
-		modalData.value = { id: foundForm.id, name: jsonId, processkey: foundForm.formId, xmlFromModeler : jsonFromEditor, xmlExternalUrl: jsonExternal, diagramType: 'form' }
-		let jsonFromEditorStringify = JSON.stringify(JSON.parse(jsonFromEditor)).replace(/\\/g, '')
-		const jsonExternalStringify = JSON.stringify(JSON.parse(jsonExternal))
-		if ( jsonFromEditorStringify.startsWith('"') && jsonFromEditorStringify.endsWith('"') ) jsonFromEditorStringify = jsonFromEditorStringify.slice(1, -1)
-		const isEqual = jsonFromEditorStringify === jsonExternalStringify	
-	
-		if (!isEqual) { // if the json are not equal, ask the user
-			showModalAcceptCancelMessage.value.show = true
-			showModalAcceptCancelMessage.value.type = 'form'
-		} else {
-			if (foundTabIndex >-1) {
-				modelerTabNav.value.selectTab(foundTabIndex)
-			} else {
-				openDiagramFromChild(jsonExternal, foundForm.id, jsonId, jsonId, 'form', true, false, false)
-			}
-		}
-		
-	}
-	else {
-		_addNewBpmnFromLoadedXml('form', jsonExternal, jsonId, true)
-	}
-}
-
-const _openProcessFromImportedFile = async (resXmlExternalUrl, fileName, fileNameWithExtension) => {
-	let foundExternalProcessKey = getProcessKeyFromBpmn(resXmlExternalUrl) ?? fileName
-	let diagramType = null
-
-	if (fileNameWithExtension.endsWith('.dmn')) {
-		foundExternalProcessKey = getTagValueFromXml(resXmlExternalUrl, 'definitions', 'id')
-		diagramType = TYPEDMN
-	} else if (foundExternalProcessKey) {
-		diagramType = checkCamundaVersion(resXmlExternalUrl)
-	}
-	
-	const foundModelerProcess = processes.value.find(process => process.processkey === foundExternalProcessKey)
-	/*if (foundForm) {
-		const foundTabIndex = tabNavList.value.findIndex(tab => {
-			return tab.key === foundForm.formId
-		})
-		if (foundTabIndex >-1) {
-			modelerTabNav.value.selectTab(foundTabIndex)
-		} else {
-			openDiagramFromChild(jsonExternal, jsonId, jsonId, jsonId, 'form', true, false, false)
-		}
-*/
-	if (foundModelerProcess) {
-		let xmlFromModeler = _checkIfProcessOpenInTab(foundExternalProcessKey)
-		if (!xmlFromModeler) {
-			await store.dispatch('modeler/processes/fetchProcessById', foundModelerProcess.id) // gets the xml from the database with the id
-			xmlFromModeler = store.state.modeler.processes.processSelected
-		}
-		if (!xmlFromModeler) {
-			// Process exists in list but could not be fetched (e.g. deleted or DB error) — open as new
-			_addNewBpmnFromLoadedXml(diagramType, resXmlExternalUrl, foundExternalProcessKey, true)
-			return
-		}
-		modalData.value = { id: foundModelerProcess.id, name: foundModelerProcess.name, processkey: foundExternalProcessKey, xmlFromModeler, xmlExternalUrl: resXmlExternalUrl, diagramType }
-
-		const isEqual = compareXML(xmlFromModeler, resXmlExternalUrl)
-		//open existing process form modeler
-		isEqual && openDiagramFromChild(resXmlExternalUrl, foundModelerProcess.id, foundModelerProcess.name, foundExternalProcessKey, diagramType, true, false, false)
-
-		if (!isEqual) { // if the xmls are not equal, ask the user
-			showModalAcceptCancelMessage.value.show = true
-			showModalAcceptCancelMessage.value.type = diagramType
-		}
-	}
-	else {
-		_addNewBpmnFromLoadedXml(diagramType, resXmlExternalUrl, foundExternalProcessKey, true) // if the process doesnt exist in the modeler it opens a new one
-		return
-	}
-}
-
-const _checkIfProcessOpenInTab = processKey => {
-	const foundTabIndex = tabNavList.value.findIndex(tab => {
-		return tab.key === processKey && tab.type !== 'form'
-	})
-
-	if (foundTabIndex > -1) {
-		return editorXML.value[foundTabIndex] ?? tabNavListXml[foundTabIndex]
-	}
-	return null
-}
-
-const _checkIfFormOpenInTab = formId => {
-	const foundTabIndex = tabNavList.value.findIndex(tab => {
-		return tab.key === formId && tab.type === 'form'
-	})
-
-	if (foundTabIndex > -1) {
-		return tabNavListXml.value[foundTabIndex]
-	}
-	return null
 }
 
 const _assignUniqueId = (name, id) => {
@@ -789,12 +621,21 @@ const _assignUniqueId = (name, id) => {
 	}
 }
 
-const _addNewBpmnFromLoadedXml = (diagramType, xmlToLoad, foundExternalProcessKey) => {
-	const keyOfTabNav = generateUniqueId()
-	tabNavList.value.push({ type: diagramType, name: foundExternalProcessKey, navId: foundExternalProcessKey, id: foundExternalProcessKey, key: foundExternalProcessKey, keyOfTabNav: keyOfTabNav, canSave: true, isSaved: false, isModelerVisible: false, isPropertyPanelVisible: false, isEditorVisible: false })
-	switchTabFromTabNav(tabNavList.value.length - 1)
-	tabNavListXml.value.push(xmlToLoad)
-}
+// File import is handled by useFileImport (initialized here, after all its dependencies are declared)
+const { handleFile, _addNewBpmnFromLoadedXml } = useFileImport({
+	store,
+	tabNavList,
+	tabNavListXml,
+	editorXML,
+	processes,
+	forms,
+	showToastMessage,
+	openDiagramFromChild,
+	showModalAcceptCancelMessage,
+	modalData,
+	modelerTabNav,
+	switchTabFromTabNav,
+})
 
 const _openProcessFromExternalXml = async (xml, resExistingProcess, externalProcessKey, _decodedProcessId) => {
 	const resXmlExternalUrl = xml
@@ -806,7 +647,7 @@ const _openProcessFromExternalXml = async (xml, resExistingProcess, externalProc
 	}
 	else { // if it is not a bpmn process
 		foundExternalProcessKey = getTagValueFromXml(resXmlExternalUrl, 'definitions', 'id')
-		diagramType = 'dmn'
+		diagramType = DIAGRAM_TYPE.DMN
 	}
 
 	if (resExistingProcess) { // if the process exists in the modelers database
@@ -902,40 +743,6 @@ const _checkExternalReturn = async () => {
 				openDiagramFromChild(selectedDiagram, diagram.id, diagram.name, diagram.processkey, diagram.type, true, false, false)
 			}
 		}
-	}
-}
-
-//only stores the tabs of the modeler that were saved
-const _saveTabNavSavedLocalStorage = () => {
-	const copyTabNavList = tabNavList.value.map(element => ({ ...element })) // to not copy the references use map
-	const filteredTabNavList = copyTabNavList.filter(element => {
-		element.canSave = false
-		element.isModelerVisible = false
-		element.isEditorVisible = false
-		element.sessionId = null
-		return element.isSaved === true
-	})
-
-	localStorage.setItem('flow.modeler.navList', JSON.stringify(filteredTabNavList)) //saves only the diagrams saved
-}
-
-const _loadTabNavList = () => {
-	try {
-		const parseNavListTest = JSON.parse(localStorage.getItem('flow.modeler.navList')) ?? tabNavList.value
-
-		if (parseNavListTest.length > 0) {
-			tabNavList.value = parseNavListTest
-			tabNavListXml.value = Array(tabNavList.value?.length)
-			tabNavList.value.map(element => {
-
-				if (!element.keyOfTabNav)
-					element.keyOfTabNav = generateUniqueId()
-				return element.keyOfTabNav
-			})
-		}
-	}
-	catch (error) {
-		console.error(error)
 	}
 }
 

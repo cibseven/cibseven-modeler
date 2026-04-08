@@ -16,9 +16,9 @@
  */
 import { ref, computed, watch, onMounted, onBeforeUnmount, inject } from 'vue'
 import { useStore } from 'vuex'
-import { checkBeforeAction } from '../utils.js'
 //to update or save process
 import { saveDiagramProcess, updateDiagramProcess } from '../services/processService.js'
+import useDiagramSave from './useDiagramSave.js'
 
 export default function useModeler(propsRef, emitRef, monacoEditorConsole, consolePanel) {
   const store = useStore()
@@ -68,7 +68,9 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
     }
   })
 
-   const saveDecisionTable = async (modeler, typeOfDiagram) =>{
+   const { save: _sharedSave } = useDiagramSave(props, emit, { checkSessionHook, createSessionHook })
+
+  const saveDecisionTable = async (modeler, typeOfDiagram) => {
     let savedSessionResponse
     if (checkSessionHook) {
       const { sessionResponse, forceSave } = await checkSessionHook(props.tabElement, props.tabElementIndex, true)
@@ -83,110 +85,28 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
     const storedProcessSelectedId = props.tabElement.id
     const storedProcessSelectedProcesskey = props.tabElement.key
     const newProcessName = dmn.name === '' || !props.tabElement.key === '' ? dmn.id : dmn.name
-   
-    save(storedProcessSelectedId, newProcessName, storedProcessSelectedProcesskey, newProcessKey, xml, blob, typeOfDiagram, null, savedSessionResponse)
+    _save(storedProcessSelectedId, newProcessName, storedProcessSelectedProcesskey, newProcessKey, xml, blob, typeOfDiagram, null, savedSessionResponse)
   }
 
-  const save = async (storedProcessSelectedId, newProcessName, storedProcessSelectedProcesskey, newProcessKey, xml, blob, typeOfDiagram, functionToExecute, sessionResponse) => {
-    let keyTocompare = storedProcessSelectedProcesskey
-
-    if (!props.tabElement.isSaved) keyTocompare = ""
-
-    const toastErrorMessage = checkBeforeAction(
-      newProcessKey,
-      keyTocompare,
-      store.state.modeler?.processes,
-    'processkey'
-    )
-
-    if (toastErrorMessage) {
-      emit('showToastMessage', {
-        isSuccess: false,
-        toastText: toastErrorMessage,
-        bodyTextAlt: ''
-      })
-      return false
-   }
-
-    
-    
-    if (props.tabElement.isSaved || props.tabElement.replaceXml) {
-      try {
-        const response = await updateDiagramProcess(
-          storedProcessSelectedId,
-          newProcessName,
-          newProcessKey,
-          blob,
-          typeOfDiagram
-        )
-        if (response) {
-          emit(
-            'updateStoredLocalStorageTabNavList',
-            {
-              processId: response.id,
-              processName: response.name,
-              processKey: response.processkey,
-              type: typeOfDiagram
-            },
-            props.tabElementIndex,
-            xml
-          )
-          emit('showToastMessage', {
-            isSuccess: true,
-            toastText: 'toastUpdateSuccessful',
-            bodyTextAlt: ''
-          })
-          emit('toggleEnableSave', false, props.tabElementIndex)
-          emit('toggleVersionNotSaved', false, props.tabElementIndex) //enables save button when changing version
-          processId.value = response.id
-          await getProcessHistoryList()
-          if (createSessionHook && sessionResponse?.message === 'NO_SESSION') createSessionHook(response, blob, props.tabElementIndex, props.tabElement)
-          return true
-        }
-        
-      } catch (error) {
-        emit('showToastMessage', { isSuccess: false, toastText: 'toastSomethingWentWrong' })
-        console.error(error)
-        return false
-      }
-    } else {
-      try {
-        const response = await saveDiagramProcess(
-          newProcessName,
-          newProcessKey,
-          blob,
-          typeOfDiagram
-        )
-
-        if (response) {
-          emit(
-            'updateStoredLocalStorageTabNavList',
-            {
-              processId: response.id,
-              processName: response.name,
-              processKey: response.processkey,
-              type: typeOfDiagram
-            },
-            props.tabElementIndex,
-            xml
-          )
-          emit('showToastMessage', { isSuccess: true, toastText: 'toastSaveSuccessful' })
-          emit('toggleEnableSave', false, props.tabElementIndex)
-          emit('toggleIsSaved', true, props.tabElementIndex)
-          emit('toggleVersionNotSaved', false, props.tabElementIndex) //enables save button when changing version
-          processId.value = response.id
-          await getProcessHistoryList()
-          if (createSessionHook && sessionResponse?.message === 'NO_SESSION') createSessionHook(response, blob, props.tabElementIndex, props.tabElement)
-          return true
-        }
-      
-      } catch (error) {
-        emit('showToastMessage', { isSuccess: false, toastText: 'toastSomethingWentWrong' })
-        console.error(error)
-        return false
-      }
-    }
-    if (functionToExecute) functionToExecute(xml)
+  const _save = (storedProcessSelectedId, newProcessName, storedProcessSelectedProcesskey, newProcessKey, xml, blob, typeOfDiagram, functionToExecute, sessionResponse) => {
+    return _sharedSave({
+      newName: newProcessName,
+      newKey: newProcessKey,
+      storedKey: storedProcessSelectedProcesskey,
+      xml,
+      blob,
+      storeStateSlice: store.state.modeler?.processes,
+      itemKeyField: 'processkey',
+      createFn: () => saveDiagramProcess(newProcessName, newProcessKey, blob, typeOfDiagram),
+      updateFn: () => updateDiagramProcess(storedProcessSelectedId, newProcessName, newProcessKey, blob, typeOfDiagram),
+      toTabPayload: response => ({ processId: response.id, processName: response.name, processKey: response.processkey, type: typeOfDiagram }),
+      sessionResponse,
+      afterSave: async response => {
+        processId.value = response.id
+        await getProcessHistoryList()
+      },
+      functionToExecute,
+    })
   }
 
   const saveProcess = async (modeler, typeOfDiagram, _setupDiagramFunctions, functionToExecute) => {
@@ -205,7 +125,7 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
     const storedProcessSelectedProcesskey = props.tabElement.key
     const newProcessName = processInformation.value.name === '' || !processInformation.value.name ? processInformation.value.id :processInformation.value.name // name of the process from the properties panel, if the diagram doesnt have a name it would be the same as the id
     const newProcessKey = processInformation.value.id // id of the process from the properties panel
-    save(storedProcessSelectedId, newProcessName, storedProcessSelectedProcesskey, newProcessKey, xml, blob, typeOfDiagram, functionToExecute, sessionResponse)
+    _save(storedProcessSelectedId, newProcessName, storedProcessSelectedProcesskey, newProcessKey, xml, blob, typeOfDiagram, functionToExecute, sessionResponse)
   }
 
   const getProcessHistoryList = async () => {

@@ -50,8 +50,7 @@ export { default as xmlStore } from './stores/xmlStore.js'
 export { modelerTranslations, mergeModelerTranslations } from './utils/translations.js'
 
 // Re-export monaco so consumer packages can use the same bundled instance
-import * as monaco from 'monaco-editor'
-export { monaco }
+export { default as monaco } from 'monaco-editor'
 
 // Vue plugin install function
 const install = (app, _options = {}) => {
