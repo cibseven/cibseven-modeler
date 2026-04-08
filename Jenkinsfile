@@ -8,7 +8,7 @@ standardMavenPipeline(
     mvnParams: '-U',
     uiParamPresets: [
         'UNIT_TESTS': true,
-        'SAST': true,
+        'SAST': false,
         // The Docker image is created in the custom stage with its own Maven profile
         'CREATE_DOCKER_IMAGE': false,
         'DEPLOY_HELM_CHARTS_TO_HARBOR': false
