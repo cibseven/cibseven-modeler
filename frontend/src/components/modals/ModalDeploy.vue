@@ -171,12 +171,6 @@
 									<input type="text" class="form-control form-control-sm" id="token" v-model="token">
 								</div>
 							</div>
-							<!--
-							<div class="mb-3 form-check form-switch">
-								<input type="checkbox" class="form-check-input" id="rememberMe" v-model="rememberMe">
-								<label class="form-check-label" for="rememberMe">{{ $t('deployForm.rememberMe') }}</label>
-							</div>
-							-->
 						</div>
 
 						<!-- Actions -->
@@ -256,13 +250,13 @@ const isExecutable = ref(false)
 
 const canStart = computed(() => { // its only startable if the checkbox executable of the process is true
 	if (!isExecutable.value) {
-		return true 
+		return true
 	}
 	return canDeploy.value
 })
 
 const canDeploy = computed(() => {
-	if (disableDeployButton.value) return true // to not send the deploy twice	
+	if (disableDeployButton.value) return true // to not send the deploy twice
 
 	if (useCustomEndpoint.value) {
 		_validateCustomEndpoint()
@@ -277,7 +271,7 @@ const canDeploy = computed(() => {
 	if (asAnotherUser.value && selected.value === 'basicauth') { // As a different user
 		return username.value && password.value
 	}
-	
+
 	return token.value
 
 })
@@ -300,7 +294,7 @@ onMounted(() => {
 	const localStorageToken = getBearerToken()
 
 	if (localStorageToken) return rememberMe.value = true
-	
+
 	const localStorageHTTPBasic = localStorage.getItem('cibseven.modeler.basicauth')
 
 	if (localStorageHTTPBasic) {
@@ -399,11 +393,11 @@ const deploy = async () => {
 		_saveDeployValuesLocalStorage(selected.value, customEndpoint.value, useCustomEndpoint.value)
 		if (res?.id) {
 			disableDeployButton.value = false
-			closeButton.value.click() // simulates on button close clicked to avoid bug that backdrops stays visible				
+			closeButton.value.click() // simulates on button close clicked to avoid bug that backdrops stays visible
 			emit('showToastMessage', { isSuccess: true, toastText: 'toastDeploySucessDeploy', bodyTextAlt: '' })
 		} else {
 			hasErrors = true
-			disableDeployButton.value = false				
+			disableDeployButton.value = false
 		}
 		return res
 	}).catch((error) => {
@@ -414,7 +408,7 @@ const deploy = async () => {
 	})
 	if (errors && hasErrors) {
 		let errorMessage = String(errors.response?.data?.params?.[0] || errors)
-		
+
 		// Parse nested JSON error if present
 		if (errorMessage.includes('{"type":')) {
 			try {
@@ -437,7 +431,7 @@ const _getPassword = () => asAnotherUser.value ? password.value : null // curren
 const deployAndStart = async() => {
 	disableDeployButton.value = true
 	const result = await deploy()
-	
+
 	if (result?.id) {
 		await startProcess(
 			_getAuthType(),
@@ -448,9 +442,9 @@ const deployAndStart = async() => {
 			customEndpoint.value, useCustomEndpoint.value
 		).then(res => {
 			disableDeployButton.value = false
-			
+
 			if (res?.id) {
-				closeButton.value.click() // simulates on button close clicked to avoid bug that backdrops stays visible				
+				closeButton.value.click() // simulates on button close clicked to avoid bug that backdrops stays visible
 				emit('showToastMessage', { isSuccess: true, toastText: 'toastStartProcessSucess', bodyTextAlt: '' })
 			} else {
 				emit('showToastMessage', { isSuccess: false, toastText: 'toastStartProcessError', bodyTextAlt: '' })
