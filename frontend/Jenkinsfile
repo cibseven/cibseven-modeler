@@ -1,11 +1,12 @@
 #!groovy
 
-@Library('cib-pipeline-library@master') _
+@Library('cib-pipeline-library@workspace') _
 
 import de.cib.pipeline.library.Constants
 import de.cib.pipeline.library.ConstantsInternal
 
 standardNPMPipeline(
+    workspace: 'frontend',
     primaryBranch: 'main',
 
     // Auto enable unit test and SAST

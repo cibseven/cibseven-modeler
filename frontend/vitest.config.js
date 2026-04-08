@@ -58,6 +58,7 @@ export default mergeConfig(
           'vite.config.js',
           'vitest.config.js',
           '**/*.config.js',
+          'linterConfig.js',
 
           // Exclude Vite internals
           '**/\0**', // Exclude Vite virtual modules
