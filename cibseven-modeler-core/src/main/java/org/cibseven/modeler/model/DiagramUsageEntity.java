@@ -51,7 +51,7 @@ public class DiagramUsageEntity {
 	@Column(length = 36)
 	private String id;
 
-	@Column(name = "user_id", nullable = false, length = 255)
+	@Column(name = "user_id", nullable = false, length = 100)
 	private String userId;
 
 	@ManyToOne(fetch = FetchType.LAZY)
