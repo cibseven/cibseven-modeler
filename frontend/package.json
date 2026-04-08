@@ -1,6 +1,6 @@
 {
   "name": "cibseven-modeler",
-  "version": "1.0.0-dev.0",
+  "version": "1.0.0-dev.1",
   "type": "module",
   "license": "Apache-2.0",
   "main": "./dist/cibseven-modeler.umd.js",
@@ -20,8 +20,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "build:library": "cross-env BUILD_MODE=library vite build",
-    "build:library:watch": "cross-env BUILD_MODE=library vite build --watch",
+    "build": "cross-env BUILD_MODE=library vite build",
+    "build:watch": "cross-env BUILD_MODE=library vite build --watch",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:unit": "vitest run --coverage --reporter=default --reporter=junit --outputFile=target/vitest-reports/TEST-front-end.xml",
