@@ -44,7 +44,7 @@ import org.springframework.context.annotation.Import;
     prefix = "cibseven.webclient.modeler",
     name = "enabled",
     havingValue = "true",
-    matchIfMissing = true
+    matchIfMissing = false
 )
 @Import(ModelerJpaConfiguration.class)
 public class ModelerAutoConfiguration {
