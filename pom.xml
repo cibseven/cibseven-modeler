@@ -20,7 +20,6 @@
 		<target.path>${project.basedir}/target</target.path>
 		<target.war.name>cibseven-modeler.war</target.war.name>
 		<project.git.url>https://github.com/cibseven/cibseven-modeler.git</project.git.url>
-		<nexus-repository.url>https://artifacts.cibseven.org</nexus-repository.url>
 
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
@@ -140,12 +139,6 @@ You may obtain a copy of the License at
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-deploy-plugin</artifactId>
-				<version>3.1.4</version>
-			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>${version.surefire}</version>
 				<configuration>
@@ -168,16 +161,5 @@ You may obtain a copy of the License at
 			</plugin>
 		</plugins>
 	</build>
-
-	<distributionManagement>
-		<snapshotRepository>
-			<id>cibseven-nexus</id>
-			<url>${nexus-repository.url}/repository/maven-snapshots/</url>
-		</snapshotRepository>
-		<repository>
-			<id>cibseven-nexus</id>
-			<url>${nexus-repository.url}/repository/maven-releases/</url>
-		</repository>
-	</distributionManagement>
 
 </project>
