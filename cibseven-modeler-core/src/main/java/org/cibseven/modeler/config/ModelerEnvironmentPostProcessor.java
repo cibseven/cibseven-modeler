@@ -42,6 +42,8 @@ import org.springframework.core.env.MapPropertySource;
 public class ModelerEnvironmentPostProcessor implements EnvironmentPostProcessor, Ordered {
 
     private static final String MODELER_ENABLED_PROPERTY = "cibseven.webclient.modeler.enabled";
+    private static final String MODELER_DB_CONFIGURED_PROPERTY = "cibseven.webclient.modeler.dbConfigured";
+    private static final String DATASOURCE_URL_PROPERTY = "spring.datasource.url";
 
     private static final String EXCLUDE_PROPERTY = "spring.autoconfigure.exclude";
 
@@ -55,15 +57,25 @@ public class ModelerEnvironmentPostProcessor implements EnvironmentPostProcessor
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
         boolean modelerEnabled = environment.getProperty(MODELER_ENABLED_PROPERTY, Boolean.class, true);
-        if (modelerEnabled) {
+
+        if (!modelerEnabled) {
+            Map<String, Object> properties = new HashMap<>();
+            properties.put(EXCLUDE_PROPERTY, EXCLUSIONS);
+            environment.getPropertySources().addLast(
+                new MapPropertySource("modelerDisabledAutoConfigExclusions", properties)
+            );
             return;
         }
 
-        Map<String, Object> properties = new HashMap<>();
-        properties.put(EXCLUDE_PROPERTY, EXCLUSIONS);
-        environment.getPropertySources().addLast(
-            new MapPropertySource("modelerDisabledAutoConfigExclusions", properties)
-        );
+        String datasourceUrl = environment.getProperty(DATASOURCE_URL_PROPERTY);
+        if (datasourceUrl == null || datasourceUrl.isBlank()) {
+            Map<String, Object> properties = new HashMap<>();
+            properties.put(EXCLUDE_PROPERTY, EXCLUSIONS);
+            properties.put(MODELER_DB_CONFIGURED_PROPERTY, false);
+            environment.getPropertySources().addLast(
+                new MapPropertySource("modelerDbNotConfiguredExclusions", properties)
+            );
+        }
     }
 
     @Override
