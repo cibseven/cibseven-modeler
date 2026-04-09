@@ -17,6 +17,7 @@
 package org.cibseven.modeler.config;
 
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -46,6 +47,7 @@ import org.springframework.context.annotation.Import;
     havingValue = "true",
     matchIfMissing = false
 )
+@ConditionalOnExpression("${cibseven.webclient.modeler.dbConfigured:true}")
 @Import(ModelerJpaConfiguration.class)
 public class ModelerAutoConfiguration {
 }
