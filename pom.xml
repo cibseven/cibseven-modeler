@@ -25,7 +25,6 @@
 		<maven.compiler.target>17</maven.compiler.target>
 
 		<version.cibseven-webclient>2.2.0-SNAPSHOT</version.cibseven-webclient>
-		<version.spring.boot>3.5.12</version.spring.boot>
 		<version.openapi-starter-webmvc-ui>2.8.13</version.openapi-starter-webmvc-ui>
 		<version.commons-lang3>3.18.0</version.commons-lang3>
 
@@ -40,6 +39,7 @@
 		<jib.to.image>harbor.cib.de/dev/cibseven-modeler:${project.version}</jib.to.image>
 
 		<version.surefire>3.5.4</version.surefire>
+		<version.lombok>1.18.38</version.lombok>
 
 		<!-- REWRITE COPYRIGHT PARAMETER FROM SUPER POM -->
 		<license.inlineHeader>Copyright CIB software GmbH and/or licensed to CIB software GmbH
@@ -61,6 +61,7 @@ You may obtain a copy of the License at
 
 	<modules>
 		<module>cibseven-modeler-core</module>
+		<module>cibseven-modeler-core-spring-boot-4</module>
 	</modules>
 
 	<scm>
@@ -72,13 +73,6 @@ You may obtain a copy of the License at
 
 	<dependencyManagement>
 		<dependencies>
-			<dependency>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-dependencies</artifactId>
-				<scope>import</scope>
-				<type>pom</type>
-				<version>${version.spring.boot}</version>
-			</dependency>
 			<dependency>
 				<groupId>io.smallrye</groupId>
 				<artifactId>jandex</artifactId>
@@ -131,6 +125,7 @@ You may obtain a copy of the License at
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
+			<version>${version.lombok}</version>
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>
