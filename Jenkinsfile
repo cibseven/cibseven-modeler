@@ -1,20 +1,27 @@
 #!groovy
 
-@Library('cib-pipeline-library') _
+@Library('cib-pipeline-library@workspace') _
 
 import de.cib.pipeline.library.Constants
+import de.cib.pipeline.library.ConstantsInternal
 
-standardMavenPipeline(
-    mvnParams: '-U',
+standardNPMPipeline(
+    primaryBranch: 'main',
+
+    // Auto enable unit test and SAST
     uiParamPresets: [
         'UNIT_TESTS': true,
-        'SAST': false,
-        // The Docker image is created in the custom stage with its own Maven profile
-        'CREATE_DOCKER_IMAGE': false,
-        'DEPLOY_HELM_CHARTS_TO_HARBOR': false
+        'SAST': true
     ],
-    // helmChartPaths: ['helm/cibseven-modeler'],
-    office365WebhookId: Constants.OFFICE_365_FLOW_WEBHOOK_ID,
-    mvnContainerName: Constants.MAVEN_JDK_17_CONTAINER,
-    generateChangelog: true
+
+    // Test configuration
+    testResultsPattern: ConstantsInternal.MAVEN_TEST_RESULTS,
+    coverageCoberturaPattern: 'target/coverage/cobertura-coverage.xml',
+    coverageLcovPattern: 'target/coverage/lcov.info',
+
+    // Publish configuration
+    npmAllowRepublish: false,
+    npmCredentialsId: Constants.CIBSEVEN_NPM_CREDENTIALS_ID,
+    npmDevRegistry: Constants.CIBSEVEN_NPM_REGISTRY_DEV_URL,
+    npmReleaseRegistry: Constants.CIBSEVEN_NPM_REGISTRY_RELEASE_URL
 )
