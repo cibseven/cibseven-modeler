@@ -14,7 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { axios } from '../axiosConfig'
+import { getAxios } from '../axiosConfig'
 import { ref } from 'vue'
 import { language } from '../i18n.js'
 import { isHttpOrHttpsUrl } from '../utils/regexUtils'
@@ -45,10 +45,12 @@ const deploy = async (myAuthorization, deploymentName, deployUrl, tenantID, diag
     myFormData.value.append(name, partBlob, name)
   })
 
-  axios.defaults.headers.common.authorization = myAuthorization
-  axios.defaults.headers.common['Content-Type'] = 'multipart/form-data'
-
-  return await axios.post(`${deployUrl}/create`, myFormData.value)
+  return await getAxios().post(`${deployUrl}/create`, myFormData.value, {
+    headers: {
+      authorization: myAuthorization,
+      'Content-Type': 'multipart/form-data'
+    }
+  })
 }
 
 const deployProcess = async (
@@ -101,10 +103,7 @@ const startProcess = async (
   const headers = _generateHeaders(method, token, username, password, startUrl)
 
   if (headers) {
-    axios.defaults.headers.common.authorization = headers['headers']['authorization']
-    axios.defaults.headers.common['Content-Type'] = 'application/json'
-
-    return await axios.post(
+    return await getAxios().post(
       `${startUrl}/start/${processName}`,
       {
         variables: {
@@ -113,7 +112,8 @@ const startProcess = async (
             type: "String"
           }
         }
-      }
+      },
+      { headers: { authorization: headers['headers']['authorization'] } }
     )
   }
 }

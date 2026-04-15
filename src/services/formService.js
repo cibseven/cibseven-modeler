@@ -14,18 +14,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { axios } from '../axiosConfig'
+import { getAxios } from '../axiosConfig'
 import { getModelerServicePath } from './servicesConfig'
 
 // get list of forms
 const fetchForms = (firstResult, maxResults, keyword = '') => {
-  return axios.get(getModelerServicePath() + '/forms', {
+  return getAxios().get(getModelerServicePath() + '/forms', {
     params: { firstResult, maxResults, keyword }
   })
 }
 
 const fetchFormById = id => {
-    return axios.get(getModelerServicePath() + '/form/' + id + '/data')
+    return getAxios().get(getModelerServicePath() + '/form/' + id + '/data')
 }
 
 const saveForm = (id, formJson) => {
@@ -35,7 +35,7 @@ const saveForm = (id, formJson) => {
   formData.append('formid', id)
   formData.append('form_schema', blob)
 
-  return axios.post(getModelerServicePath() + '/form/save', formData, {
+  return getAxios().post(getModelerServicePath() + '/form/save', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
   })
 }
@@ -48,13 +48,13 @@ const updateForm = (id, formid, formJson) => {
   formData.append('formid', formid)
   formData.append('form_schema', blob)
 
-  return axios.post(getModelerServicePath() + '/form/update', formData, {
+  return getAxios().post(getModelerServicePath() + '/form/update', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
   })
 }
 
 const deleteFormById = id => {
-  return axios.delete(getModelerServicePath() + '/form/delete/' + id)
+  return getAxios().delete(getModelerServicePath() + '/form/delete/' + id)
 }
 
 export {

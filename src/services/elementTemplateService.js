@@ -14,11 +14,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { axios } from '../axiosConfig'
+import { getAxios } from '../axiosConfig'
 import { getElementTemplatesPath } from './servicesConfig'
 
 export const getAllElementTemplates = async () => {
-  return await axios.get(getElementTemplatesPath())
+  return await getAxios().get(getElementTemplatesPath())
 }
 
 /**
@@ -27,7 +27,7 @@ export const getAllElementTemplates = async () => {
  * @returns {Promise} Array of template content objects ready for bpmn.js
  */
 export const getAllElementTemplateContents = async () => {
-  return await axios.get(`${getElementTemplatesPath()}/content`)
+  return await getAxios().get(`${getElementTemplatesPath()}/content`)
 }
 
 /**
@@ -37,7 +37,7 @@ export const getAllElementTemplateContents = async () => {
  * @returns {Promise} The updated element template
  */
 export const updateElementTemplate = async (elementTemplateId, updateParams) => {
-  return await axios.patch(`${getElementTemplatesPath()}/${elementTemplateId}`, updateParams)
+  return await getAxios().patch(`${getElementTemplatesPath()}/${elementTemplateId}`, updateParams)
 }
 
 /**
@@ -56,7 +56,7 @@ export const setTemplateIsActive = async (elementTemplateId, isActive) => {
  * @returns {Map<String, any>} The recently created element template
  */
 export const addElementTemplate = async (elementTemplate) => {
-  return await axios.post(getElementTemplatesPath(), elementTemplate)
+  return await getAxios().post(getElementTemplatesPath(), elementTemplate)
 }
 
 /**
@@ -65,7 +65,7 @@ export const addElementTemplate = async (elementTemplate) => {
  * @returns {Promise} The element template
  */
 export const getElementTemplateById = async (templateId) => {
-  return await axios.get(`${getElementTemplatesPath()}/${templateId}`)
+  return await getAxios().get(`${getElementTemplatesPath()}/${templateId}`)
 }
 
 /**
@@ -74,7 +74,7 @@ export const getElementTemplateById = async (templateId) => {
  * @returns {Promise} The deletion result
  */
 export const deleteElementTemplate = async (templateId) => {
-  return await axios.delete(`${getElementTemplatesPath()}/${templateId}`)
+  return await getAxios().delete(`${getElementTemplatesPath()}/${templateId}`)
 }
 
 /**
@@ -83,7 +83,7 @@ export const deleteElementTemplate = async (templateId) => {
  * @returns {Promise} The duplicated template
  */
 export const duplicateElementTemplate = async (templateId) => {
-  return await axios.post(`${getElementTemplatesPath()}/${templateId}/duplicate`, {})
+  return await getAxios().post(`${getElementTemplatesPath()}/${templateId}/duplicate`, {})
 }
 
 /**
@@ -92,7 +92,7 @@ export const duplicateElementTemplate = async (templateId) => {
  * @returns {Promise} The bulk deletion result
  */
 export const bulkDeleteTemplates = async (templateIds) => {
-  return await axios.post(`${getElementTemplatesPath()}/bulk-delete`, templateIds)
+  return await getAxios().post(`${getElementTemplatesPath()}/bulk-delete`, templateIds)
 }
 
 /**
@@ -102,7 +102,7 @@ export const bulkDeleteTemplates = async (templateIds) => {
  * @returns {Promise} The bulk update result
  */
 export const bulkUpdateTemplateVisibility = async (templateIds, active) => {
-  return await axios.patch(`${getElementTemplatesPath()}/bulk-update-visibility`, { templateIds, active })
+  return await getAxios().patch(`${getElementTemplatesPath()}/bulk-update-visibility`, { templateIds, active })
 }
 
 /**
@@ -124,7 +124,7 @@ export const searchTemplates = async (searchParams = {}) => {
     }
   })
   
-  return await axios.get(`${getElementTemplatesPath()}/search?${params.toString()}`)
+  return await getAxios().get(`${getElementTemplatesPath()}/search?${params.toString()}`)
 }
 
 /**
@@ -143,7 +143,7 @@ export const filterTemplates = async (filterParams = {}) => {
     }
   })
   
-  return await axios.get(`${getElementTemplatesPath()}/filter?${params.toString()}`)
+  return await getAxios().get(`${getElementTemplatesPath()}/filter?${params.toString()}`)
 }
 
 /**
@@ -152,7 +152,7 @@ export const filterTemplates = async (filterParams = {}) => {
  * @returns {Promise} The validation result
  */
 export const validateTemplate = async (templateData) => {
-  return await axios.post(`${getElementTemplatesPath()}/validate`, templateData)
+  return await getAxios().post(`${getElementTemplatesPath()}/validate`, templateData)
 }
 
 /**
@@ -161,7 +161,7 @@ export const validateTemplate = async (templateData) => {
  * @returns {Promise} The import result
  */
 export const importTemplates = async (templates) => {
-  return await axios.post(`${getElementTemplatesPath()}/import`, templates)
+  return await getAxios().post(`${getElementTemplatesPath()}/import`, templates)
 }
 
 /**
@@ -182,7 +182,7 @@ export const exportTemplates = async (exportParams = {}) => {
     params.append('activeOnly', exportParams.activeOnly)
   }
   
-  return await axios.get(`${getElementTemplatesPath()}/export?${params.toString()}`)
+  return await getAxios().get(`${getElementTemplatesPath()}/export?${params.toString()}`)
 }
 
 /**
@@ -190,7 +190,7 @@ export const exportTemplates = async (exportParams = {}) => {
  * @returns {Promise} The template statistics
  */
 export const getTemplateStatistics = async () => {
-  return await axios.get(`${getElementTemplatesPath()}/statistics`)
+  return await getAxios().get(`${getElementTemplatesPath()}/statistics`)
 }
 
 /**
@@ -200,5 +200,5 @@ export const getTemplateStatistics = async () => {
  * @returns {Promise} The updated template
  */
 export const updateElementTemplateFull = async (templateId, templateData) => {
-  return await axios.put(`${getElementTemplatesPath()}/${templateId}`, templateData)
+  return await getAxios().put(`${getElementTemplatesPath()}/${templateId}`, templateData)
 }
