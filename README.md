@@ -1,136 +1,92 @@
 # CIB seven Modeler
 
-A BPMN and DMN modeling application that can be used standalone or integrated as a library in other applications.
+This template should help get you started developing with Vue 3 in Vite.
 
-## Project Structure
+## Recommended IDE Setup
 
-```
-cibseven-modeler/
-├── frontend/           # Vue.js frontend (can be exported as NPM library)
-│   ├── src/
-│   │   ├── components/     # Vue components
-│   │   ├── services/       # API services
-│   │   ├── assets/         # CSS and static assets
-│   │   ├── main.js         # Application entry point
-│   │   └── library.js      # Library entry point
-│   ├── package.json
-│   └── vite.config.js
-├── cibseven-modeler-core/  # Java core module (models, repositories)
-└── cibseven-modeler-web/   # Java web module (REST services, Spring Boot)
-```
+- [VSCode](https://code.visualstudio.com/)
+- [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur)
+- [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin)
 
-## Development
+## Customize Configuration
 
-### Prerequisites
+See [Vite Configuration Reference](https://vitejs.dev/config/).
 
-- Java 17+
-- Node.js 18+
-- Maven 3.8+
+## Project Setup
 
-### Building
+To set up the project, follow these steps:
 
-```bash
-# Build everything (frontend + backend)
-mvn clean install
+1. **Install Dependencies**
 
-# Build only backend
-mvn clean install -pl cibseven-modeler-core,cibseven-modeler-web
+    ```sh
+    npm install
+    ```
 
-# Build only frontend
-cd frontend
-npm ci
-npm run build
-```
+2. **Create `.env` File**
 
-### Running in Development
+    To run the project locally, create a `.env` file in the root of the `frontend` folder with the following content:
 
-```bash
-# Start backend
-cd cibseven-modeler-web
-mvn spring-boot:run -Dspring-boot.run.profiles=local
+    ```
+    VITE_BASE_URL=http://localhost:8090/cibseven-modeler/
+    VITE_BASE_URL_CIBSEVEN=http://localhost:8090
+    VITE_CLIENT=client/
+    ```
 
-# Start frontend (in another terminal)
-cd frontend
-npm run dev
-```
+3. **Compile and Hot-Reload for Development**
 
-The frontend development server will proxy API requests to `http://localhost:8093`.
+    ```sh
+    npm run dev
+    ```
 
-## Using as a Library
+4. **Compile and Minify for Production**
 
-The frontend can be built and published as an NPM library for use in other applications.
+    ```sh
+    npm run build
+    ```
 
-### Publishing the Library
+5. **Lint with [ESLint](https://eslint.org/)**
 
-```bash
-# Build library
-cd frontend
-npm run build:library
+    ```sh
+    npm run lint
+    ```
 
-# Publish (requires proper NPM registry configuration)
-npm publish
-```
+6. **Update BPMN Lint Rules**
 
-### Using in Another Project
+    If there have been changes to the BPMN lint rules in the .bpmnlint file, update the configuration by running the following command inside the `frontend` folder:
 
+    ```sh
+    npx bpmnlint-pack-config -c .bpmnlintrc -o linterConfig.js -t es
+    ```
+
+## BPMNLint Bug Fix Implementation
+
+To address a bug in the BPMN library related to DataStoreReference, we have overridden the no-overlapping-elements rule with a custom version.
+
+The modified line is number 70, where an optional chaining operator has been added:
 ```javascript
-// Install
-npm install cibseven-modeler
-
-// Import components
-import { BpmnModeler, DmnModeler, FormModeler } from 'cibseven-modeler'
-
-// Or use as Vue plugin
-import CibsevenModeler from 'cibseven-modeler'
-app.use(CibsevenModeler)
+if (isOutsideParentBoundary(diObjects.get(element)?.bounds, parentDi.bounds))
 ```
 
-### Available Exports
-
-**Components:**
-- `CibsevenModeler` - Main wrapper component with toolbar
-- `BpmnModeler` - BPMN diagram modeler
-- `DmnModeler` - DMN decision table modeler
-- `FormModeler` - Form builder
-
-**Services:**
-- `ModelerService` - API service for backend operations
-
-**Utilities:**
-- `parseXml` - XML parsing utility
-- `base64Decode` - Base64 decoding utility
-- `applyTheme` - Theme switching utility
-
-**Store & i18n:**
-- `store` - Vuex store instance
-- `createModelerStore` - Factory to create custom store
-- `i18n` - Vue i18n instance
-- `setLocale` - Change language function
-
-## Configuration
-
-### Backend Configuration
-
-The backend uses Spring Boot configuration. Create `application-local.yaml` in `cibseven-modeler-web/src/main/resources/`:
-
-```yaml
-cibseven:
-  modeler:
-    cors:
-      allowed-origins: http://localhost:5173
-
-server:
-  port: 8093
+Currently, the .bpmnlint file is configured so it doesn't take the default configuration:
+```json
+"rules": {
+    "no-overlapping-elements": "off",
+    "local/custom-no-overlapping-elements": "warn"
+}
 ```
 
-### Frontend Configuration
+The value 'off' tells the library to not take the custom script, and local/custom-no-overlapping-elements to take the custom one.
 
-Environment variables can be set in `.env` files:
+For future updates of bpmn-js-bpmnlint please check first if this issue has been solved to remove the custom script and keep the library up to date.
 
-```env
-VITE_API_BASE_URL=/cibseven-modeler
-```
+## Local Development Setup
 
-## License
+Ensure you have the `.env` file set up as described above. This configuration is necessary for the application to interact correctly with the local development environment.
 
-Apache License 2.0 - See LICENSE file for details.
+## Additional Resources
+
+For more information on configuration and usage, check out:
+
+- [Vite Documentation](https://vitejs.dev/)
+- [Vue 3 Documentation](https://v3.vuejs.org/)
+- [ESLint Documentation](https://eslint.org/)

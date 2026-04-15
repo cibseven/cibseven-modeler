@@ -1,25 +1,44 @@
-target/
-.settings/
-.classpath
-.project
-bin/
-.factorypath
-.vscode
-cibseven-modeler-web/src/main/resources/public/
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependencies
+node_modules
+/node/
+
+# Build output
+dist
+dist-ssr
+target
+coverage
 
 # Environment variables
 .env
 .env.local
+*.local
 
-# Local configuration overrides (not committed to version control)
-**/cibseven-modeler-local.yaml
-**/cibseven-modeler-local.properties
-
-# IntelliJ
-.idea/
+# Editor directories and files
+.vscode
+.idea
+.settings
+.project
 *.iml
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# MacOS
+# Cypress
+/cypress/videos/
+/cypress/screenshots/
+
+# Misc
 .DS_Store
-
+*.tsbuildinfo
 *.db
