@@ -197,7 +197,7 @@
 
 <script setup>
 
-import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle.js'
+import * as bootstrap from 'bootstrap'
 
 import { deployProcess, startProcess } from '../../services/deployService'
 import { ref, computed, onMounted, watch } from 'vue'

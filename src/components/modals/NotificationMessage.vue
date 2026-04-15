@@ -41,7 +41,7 @@
 </template>
 
 <script setup>
-import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle.js'
+import * as bootstrap from 'bootstrap'
 import { onMounted, ref } from 'vue'
 
 let modalBootstrap = null

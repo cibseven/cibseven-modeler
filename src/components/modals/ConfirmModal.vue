@@ -39,7 +39,7 @@
 </template>
 
 <script setup>
-import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle.js'
+import * as bootstrap from 'bootstrap'
 import { ref, watch, onMounted } from 'vue'
 
 const modalAcceptCancelMessage = ref(null)

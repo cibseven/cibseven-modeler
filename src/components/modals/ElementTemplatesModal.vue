@@ -93,7 +93,7 @@
 </template>
 
 <script setup>
-import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle.js'
+import * as bootstrap from 'bootstrap'
 import { debounce } from 'min-dash'
 import { onMounted, ref, watch, computed } from 'vue'
 import { useStore } from 'vuex'

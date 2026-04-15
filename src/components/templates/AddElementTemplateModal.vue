@@ -382,7 +382,7 @@
 import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useStore } from 'vuex'
 import { useI18n } from 'vue-i18n'
-import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle.js'
+import * as bootstrap from 'bootstrap'
 
 // Composables
 const store = useStore()

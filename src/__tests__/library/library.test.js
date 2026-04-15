@@ -15,9 +15,8 @@
  *  limitations under the License.
  */
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
+import fs, { readFileSync } from 'node:fs'
 import { findComponents } from '../utils.js'
-import fs from 'node:fs'
 import path from 'node:path'
 
 /**

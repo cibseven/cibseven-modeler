@@ -41,7 +41,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle.js'
+import * as bootstrap from 'bootstrap'
 
 const TOAST_TIME = 5000
 const liveToast = ref(null)

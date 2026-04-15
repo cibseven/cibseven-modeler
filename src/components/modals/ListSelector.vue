@@ -69,7 +69,7 @@
 <script setup>
 
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import * as bootstrap from 'bootstrap/dist/js/bootstrap.bundle.js'
+import * as bootstrap from 'bootstrap'
 import { debounce } from 'min-dash'
 import CibsevenTable from '../CibsevenTable.vue'
 

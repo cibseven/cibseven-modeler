@@ -19,9 +19,6 @@
 import './assets/css/main.css'
 import './assets/css/custom-bootstrap.css'
 
-// Kept as an external peer dependency — not bundled, resolved by the consumer.
-import 'bootstrap/dist/js/bootstrap.bundle.min.js'
-
 // Export modeler components
 import CibsevenModeler from './components/modeler/CibsevenModeler.vue'
 import BpmnModeler from './components/modeler/BpmnModeler.vue'
@@ -73,14 +70,3 @@ export { modelerTranslations, mergeModelerTranslations } from './utils/translati
 
 // Re-export monaco so consumer packages can use the same bundled instance
 export * as monaco from 'monaco-editor'
-
-// Vue plugin install function
-const install = (app, _options = {}) => {
-	// Register components globally
-	app.component('CibsevenModeler', CibsevenModeler)
-	app.component('BpmnModeler', BpmnModeler)
-	app.component('DmnModeler', DmnModeler)
-	app.component('FormModeler', FormModeler)
-}
-
-export default { install, CibsevenModeler, BpmnModeler, DmnModeler, FormModeler }
