@@ -25,6 +25,8 @@ coverage
 # Editor directories and files
 .vscode
 .idea
+.settings
+.project
 *.iml
 *.suo
 *.ntvs*
