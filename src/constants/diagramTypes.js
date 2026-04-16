@@ -37,4 +37,4 @@ export const DIAGRAM_FILE_EXT = Object.freeze({
 })
 
 /** localStorage key used to persist open tabs across page reloads. */
-export const TAB_STORAGE_KEY = 'flow.modeler.navList'
+export const TAB_STORAGE_KEY = 'cibseven:modeler.navList'
