@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 <template>
-    <div :class="!props.isModelerVisible ? 'd-flex' : 'd-none'" class="flex-column border position-relative" style="z-index: 1;">
+    <div v-if="isVisible" :class="!props.isModelerVisible ? 'd-flex' : 'd-none'" class="flex-column border position-relative" style="z-index: 1;">
         <div ref="parent" :class="{ 'collapsible-content ': !isResizing }"
             class="d-flex flex-column resizable-component bg-light" :style="style">
             <div class="align-self-end">
