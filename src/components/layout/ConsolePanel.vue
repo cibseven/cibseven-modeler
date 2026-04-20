@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 <template>
-    <div v-if="isVisible" :class="!props.isModelerVisible ? 'd-flex' : 'd-none'" class="flex-column border position-relative" style="z-index: 1;">
+    <div :class="shouldRenderConsoleClass" class="flex-column border position-relative" style="z-index: 1;">
         <div ref="parent" :class="{ 'collapsible-content ': !isResizing }"
             class="d-flex flex-column resizable-component bg-light" :style="style">
             <div class="align-self-end">
@@ -58,6 +58,11 @@ const emit = defineEmits([
 const MARGIN_TOP = 350
 const height = ref(0)
 const bottomPos = ref(0)
+
+const shouldRenderConsoleClass = computed(() => {
+    if (!isVisible.value) return 'd-none'
+    return props.isModelerVisible ? 'd-none' : 'd-flex'
+})
 
 const style = computed(() => isVisible.value ? { height: `${height.value}px ` } : { height: 0 })
 
