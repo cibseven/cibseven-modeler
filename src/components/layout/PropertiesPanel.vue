@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 <template>
-    <div ref="parent" class="resizable-component property-panel position-absolute border-bottom border-light" style="height: 100%; top: 0; right: 0; max-height: 100%;" :style="style">
+    <div ref="parent" class="resizable-component property-panel position-absolute border-bottom border-light" style="height: 100%; top: 0; right: 0;" :style="style">
         <slot />
         <div class="resizable-l" role="presentation" @mousedown="handleDown" />
     </div>
