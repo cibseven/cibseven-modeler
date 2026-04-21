@@ -37,4 +37,11 @@ export const DIAGRAM_FILE_EXT = Object.freeze({
 })
 
 /** localStorage key used to persist open tabs across page reloads. */
-export const TAB_STORAGE_KEY = 'flow.modeler.navList'
+export const TAB_STORAGE_KEY = 'cibseven:modeler.navList'
+
+/** localStorage keys used to persist deployment form values across modal interactions. */
+export const DEPLOY_STORAGE_KEYS = Object.freeze({
+	AUTH: 'cibseven:modeler.deploy.auth',
+	CIBSEVEN_INSTANCE: 'cibseven:modeler.deploy.cibsevenInstanceUrl',
+	OWN_ENDPOINT: 'cibseven:modeler.deploy.ownEndPoint',
+})

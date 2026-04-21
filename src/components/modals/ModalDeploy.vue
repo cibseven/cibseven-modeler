@@ -203,6 +203,7 @@ import { deployProcess, startProcess } from '../../services/deployService'
 import { ref, computed, onMounted, watch } from 'vue'
 import { getProcessKeyFromBpmn, getTagValueFromXml, formatFileSize } from '../../utils.js'
 import { isHttpOrHttpsUrl } from '../../utils/regexUtils'
+import { DEPLOY_STORAGE_KEYS } from '../../constants/diagramTypes'
 
 const closeButton = ref(null)
 const props = defineProps({
@@ -458,15 +459,15 @@ const checkIfProcessStartable = () => {
 }
 
 const _loadDeployValuesFromLocalStorage = () => {
-	selected.value = localStorage.getItem('cibseven.modeler.deploy.auth') ?? 'basicauth'
-	customEndpoint.value = localStorage.getItem('cibseven.modeler.deploy.cibsevenInstanceUrl')
-	useCustomEndpoint.value = localStorage.getItem('cibseven.modeler.deploy.ownEndPoint') === 'true' ? true : false
+	selected.value = localStorage.getItem(DEPLOY_STORAGE_KEYS.AUTH) ?? 'basicauth'
+	customEndpoint.value = localStorage.getItem(DEPLOY_STORAGE_KEYS.CIBSEVEN_INSTANCE)
+	useCustomEndpoint.value = localStorage.getItem(DEPLOY_STORAGE_KEYS.OWN_ENDPOINT) === 'true'
 }
 
 const _saveDeployValuesLocalStorage = (auth, cibsevenInstanceUrl, ownEndPoint) => {
-	localStorage.setItem('cibseven.modeler.deploy.auth', auth)
-	localStorage.setItem('cibseven.modeler.deploy.ownEndPoint', ownEndPoint)
-	if (cibsevenInstanceUrl) localStorage.setItem('cibseven.modeler.deploy.cibsevenInstanceUrl', cibsevenInstanceUrl)
+	localStorage.setItem(DEPLOY_STORAGE_KEYS.AUTH, auth)
+	localStorage.setItem(DEPLOY_STORAGE_KEYS.OWN_ENDPOINT, ownEndPoint)
+	if (cibsevenInstanceUrl) localStorage.setItem(DEPLOY_STORAGE_KEYS.CIBSEVEN_INSTANCE, cibsevenInstanceUrl)
 }
 
 const _getProcessKeyForDeployName = () => {
