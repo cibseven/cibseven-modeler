@@ -1,6 +1,6 @@
 {
   "name": "cibseven-modeler",
-  "version": "1.0.0-dev.4",
+  "version": "1.0.0-dev.5",
   "type": "module",
   "license": "Apache-2.0",
   "main": "./dist/cibseven-modeler.umd.js",
