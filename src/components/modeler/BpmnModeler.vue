@@ -583,7 +583,9 @@ const _validate = async xml => {
 const _saveDiagram = async () => await saveProcess(bpmnModeler, typeOfDiagram, _setupDiagramFunctions, _updatetemplatesListButton)
 
 const _mapScriptLanguage = scriptFormat => {
-	const map = { javascript: 'javascript', python: 'python', ruby: 'ruby', xml: 'xml', sql: 'sql' }
+	// CIBseven script task languages: Groovy, JavaScript, JRuby (ruby), Jython (python).
+	// Groovy has no Monaco highlighter → falls back to 'java' (close enough syntactically).
+	const map = { javascript: 'javascript', python: 'python', ruby: 'ruby' }
 	return map[scriptFormat?.toLowerCase()] ?? 'java'
 }
 

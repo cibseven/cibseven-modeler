@@ -69,4 +69,4 @@ export { default as xmlStore } from './stores/xmlStore.js'
 export { modelerTranslations, mergeModelerTranslations } from './utils/translations.js'
 
 // Re-export monaco so consumer packages can use the same bundled instance
-export * as monaco from 'monaco-editor'
+export * as monaco from './monaco-setup.js'
