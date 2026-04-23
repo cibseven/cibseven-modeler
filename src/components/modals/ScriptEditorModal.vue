@@ -73,7 +73,10 @@ const onShown = () => {
     suggestOnTriggerCharacters: true,
     acceptSuggestionOnEnter: 'on',
     wordBasedSuggestions: true,
-    selectionHighlight: true
+    selectionHighlight: true,
+    // Render suggest / hover widgets at document root with position:fixed so
+    // they escape the modal's overflow stacking context.
+    fixedOverflowWidgets: true
   })
 }
 

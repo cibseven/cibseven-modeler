@@ -16,26 +16,10 @@
  */
 import { ref } from 'vue'
 import { getTimeStamp } from '../utils.js'
-// Use inline workers to avoid path issues when library is consumed.
-// Only the workers for languages actually edited by the modeler are bundled:
-// - editor.worker: required by Monaco for any editor
-// - json.worker: element templates tab (schema validation / formatting)
-// - ts.worker: JavaScript script tasks (IntelliSense / diagnostics)
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker&inline'
-import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker&inline'
-import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker&inline'
 
-self.MonacoEnvironment = {
-  getWorker(_, label) {
-    if (label === 'json') {
-      return new jsonWorker()
-    }
-    if (label === 'typescript' || label === 'javascript') {
-      return new tsWorker()
-    }
-    return new editorWorker()
-  }
-}
+// Monaco workers and language contributions are configured centrally in
+// src/monaco-setup.js, which runs at app startup via main.js / library.js.
+
 export default function useMonacoEditor(monacoRef, props, emit) {
   const monaco = monacoRef
   let monacoEditor = null
@@ -76,7 +60,11 @@ export default function useMonacoEditor(monacoRef, props, emit) {
       suggestOnTriggerCharacters: true,
       acceptSuggestionOnEnter: 'on',
       wordBasedSuggestions: true,
-      selectionHighlight: true
+      selectionHighlight: true,
+      // Render suggest / hover / parameter-hints widgets at document root with
+      // position:fixed so they escape the properties-panel's overflow:hidden
+      // wrapper — otherwise they're clipped and invisible.
+      fixedOverflowWidgets: true
     })
   }
 
