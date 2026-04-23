@@ -162,7 +162,7 @@
 <script setup>
 // Material Design Icons are provided by the host application (@mdi/font)
 
-import * as monaco from 'monaco-editor'
+import * as monaco from '../../monaco-setup.js'
 import { useStore } from 'vuex'
 import { useRoute, useRouter } from 'vue-router'
 

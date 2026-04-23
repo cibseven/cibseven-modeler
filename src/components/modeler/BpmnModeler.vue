@@ -583,7 +583,9 @@ const _validate = async xml => {
 const _saveDiagram = async () => await saveProcess(bpmnModeler, typeOfDiagram, _setupDiagramFunctions, _updatetemplatesListButton)
 
 const _mapScriptLanguage = scriptFormat => {
-	const map = { javascript: 'javascript', python: 'python', ruby: 'ruby', xml: 'xml', sql: 'sql' }
+	// CIBseven script task languages: Groovy, JavaScript, JRuby (ruby), Jython (python).
+	// Groovy has no Monaco highlighter → falls back to 'java' (close enough syntactically).
+	const map = { javascript: 'javascript', python: 'python', ruby: 'ruby' }
 	return map[scriptFormat?.toLowerCase()] ?? 'java'
 }
 
@@ -593,6 +595,7 @@ const _createMonacoEditor = (scriptDivId, textArea, scriptFormat = null) => {
 
 	const wrapper = document.createElement('div')
 	wrapper.id = wrapperId
+	wrapper.dataset.scriptFormat = scriptFormat ?? ''
 	wrapper.style.position = 'relative'
 	wrapper.style.width = '100%'
 
@@ -688,13 +691,7 @@ const handleListSelection = (item) => {
 const _setMonacoEditorToDiv = (e, divId) => {
 	getProcessInformation(bpmnModeler)
 
-	if (isScriptTaskUpdate) // to not run in a infinite bucle
-	{
-		isScriptTaskUpdate = false
-		return
-	}
-
-	setTimeout(() => { // needed to load the component in the propertypanel		
+	setTimeout(() => { // needed to load the component in the propertypanel
 		const element = e.context?.element ?? e.element // if it is called in different commandStacks it will take the right route
 		// alternative with another events e.element.type
 
@@ -711,6 +708,15 @@ const _setMonacoEditorToDiv = (e, divId) => {
 
 		const monacoEditorId = element.di.bpmnElement.id ?? element.moddleElement.id
 		const scriptFormat = element.moddleElement?.scriptFormat ?? element.di.bpmnElement?.scriptFormat
+		// Skip rebuild only when the event was our own typing AND scriptFormat hasn't changed.
+		// A scriptFormat change must always rebuild so Monaco picks up the new language.
+		const existingWrapper = propertyPanel.value.querySelector(`#monaco-editor-${monacoEditorId}-wrapper`)
+		const formatUnchanged = existingWrapper?.dataset.scriptFormat === (scriptFormat ?? '')
+		if (isScriptTaskUpdate && formatUnchanged) {
+			isScriptTaskUpdate = false
+			return
+		}
+		isScriptTaskUpdate = false
 		const monacoEditor = _createMonacoEditor(`monaco-editor-${monacoEditorId}`, textAreaScriptTask, scriptFormat)
 		//captures changes in monaco editor
 		monacoEditor.getModel().onDidChangeContent(() => {
