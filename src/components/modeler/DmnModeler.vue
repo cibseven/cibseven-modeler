@@ -44,8 +44,16 @@
 				</div>
 				<div v-show="isPropertyPanelVisible && !props.isModelerVisible">
 					<PropertiesPanel ref="resDiv" :parentWidth="parentWidth" @changeWidth="changeWidth" minWidth="300">
-						<div class="properties-panel-parent resizable-content h-100 border-start border-dark-subtle"
-							ref="dmnProperties"></div>
+						<div class="d-flex flex-column h-100">
+							<slot name="propertiesPanelTop" />
+							<div v-show="props.activePropertiesTab === 'properties'"
+								class="properties-panel-parent resizable-content flex-grow-1 border-start border-dark-subtle"
+								style="min-height: 0; overflow: auto;"
+								ref="dmnProperties"></div>
+							<div v-show="props.activePropertiesTab !== 'properties'" class="flex-grow-1 border-start border-dark-subtle" style="min-height: 0; overflow: auto;">
+								<slot name="propertiesPanelTabContent" :tabElement="props.tabElement" :activeTab="props.activePropertiesTab" />
+							</div>
+						</div>
 					</PropertiesPanel>
 				</div>
 			</div>
@@ -160,6 +168,7 @@ const props = defineProps({
 	isModelerVisible: { type: Boolean, default: false },
 	isActiveTab: Boolean,
 	consoleErrors: { type: String, default: '' },
+	activePropertiesTab: { type: String, default: 'properties' },
 })
 
 const emit = defineEmits([

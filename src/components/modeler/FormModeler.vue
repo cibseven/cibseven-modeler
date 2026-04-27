@@ -26,8 +26,16 @@
 			</div>
 			<PropertiesPanel :parent="formContainer" :parentWidth="parentWidth" v-show="isVisiblePropertyPanel"
 				@changeWidth="changeWidth" minWidth="300" ref="resizableDiv">
-				<div class="properties-panel-parent resizable-content h-100 border-start border-dark-subtle"
-					ref="propertyPanel">
+				<div class="d-flex flex-column h-100">
+					<slot name="propertiesPanelTop" />
+					<div v-show="props.activePropertiesTab === 'properties'"
+						class="properties-panel-parent resizable-content flex-grow-1 border-start border-dark-subtle"
+						style="min-height: 0; overflow: auto;"
+						ref="propertyPanel">
+					</div>
+					<div v-show="props.activePropertiesTab !== 'properties'" class="flex-grow-1 border-start border-dark-subtle" style="min-height: 0; overflow: auto;">
+						<slot name="propertiesPanelTabContent" :tabElement="props.tabElement" :activeTab="props.activePropertiesTab" />
+					</div>
 				</div>
 			</PropertiesPanel>
 			<MenuActionButtons :width="canvasWidth">
@@ -78,6 +86,9 @@ const props = defineProps({
 	tabElement: {
 		type: Object,
 		required: true
+	},
+	activePropertiesTab: {
+		type: String, default: 'properties'
 	}
 })
 

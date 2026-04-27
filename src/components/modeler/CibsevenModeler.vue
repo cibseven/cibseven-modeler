@@ -56,7 +56,8 @@
 				v-show="tabElement.isPropertyPanelVisible" :diagramType="tabNavList[index].type"
 				:isActiveTab="index === activeTab" :clipboard="clipboard" :xml="tabNavListXml[index]"
 				:isModelerVisible="tabNavList[index].isModelerVisible" :elementTemplateJson="elementTemplateJson"
-				:consoleErrors="consoleErrorsList[index]" @showToastMessage="showToastMessage"
+				:consoleErrors="consoleErrorsList[index]" :activePropertiesTab="props.activePropertiesTab"
+				@showToastMessage="showToastMessage"
 				@updateStoredProcesses="getStoredDiagrams" @showPropertyPanel="showPropertyPanel"
 				@toggleEnableSave="toggleEnableSave" @showDiagram="showDiagram" @updateEditorXML="updateEditorXML"
 				@updateIsButtonDisabled="updateIsButtonDisabled" @updateDownloadLink="_updateDownloadLink"
@@ -81,6 +82,12 @@
 						@toggleOutdatedTemplateModal="toggleOutdatedTemplateModal" @toggleConsole="toggleConsole">
 					</ActionButtonsList>
 				</template>
+				<template #propertiesPanelTop>
+					<slot name="propertiesPanelTop" :tabElement="tabElement" />
+				</template>
+				<template #propertiesPanelTabContent="{ tabElement: te, activeTab: at }">
+					<slot name="propertiesPanelTabContent" :tabElement="te" :activeTab="at" />
+				</template>
 			</BpmnModeler>
 			<DmnModeler v-if="tabNavListXml[index] && waitToLoad && tabNavList[index].type === 'dmn'"
 				:isActiveTab="index === activeTab" :tabElement="tabElement" :ref="el => modeler[index] = el"
@@ -94,6 +101,7 @@
 				@show-console-notification="showConsoleNotification"
 				:isModelerVisible="tabNavList[index].isModelerVisible"
 				:consoleErrors="consoleErrorsList[index]"
+				:activePropertiesTab="props.activePropertiesTab"
 				>
 				<div v-if="tabElement.isModelerVisible" class="h-100">
 					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index] != null"
@@ -111,6 +119,12 @@
 						@toggleOutdatedTemplateModal="toggleOutdatedTemplateModal" @toggleConsole="toggleConsole">
 					</ActionButtonsList>
 				</template>
+				<template #propertiesPanelTop>
+					<slot name="propertiesPanelTop" :tabElement="tabElement" />
+				</template>
+				<template #propertiesPanelTabContent="{ tabElement: te, activeTab: at }">
+					<slot name="propertiesPanelTabContent" :tabElement="te" :activeTab="at" />
+				</template>
 			</DmnModeler>
 			<FormModeler v-if="tabNavListXml[index] && tabNavList[index].type === 'form'" :json="tabNavListXml[index]" :isActiveTab="index === activeTab" :tabElement="tabElement" :ref="el => modeler[index] = el"
 				:tabElementIndex="index" @isValidated="isValidated" @updateEditorXML="updateEditorXML"
@@ -121,7 +135,8 @@
 				@showToastMessage="showToastMessage" @setTypeOfDiagramForModeler="setTypeOfDiagramForModeler"
 				@toggleIsSaved="toggleIsSaved" @resizeTabNav="resizeTabNav" @toggleConsole="toggleConsole"
 				@show-console-notification="showConsoleNotification"
-				:isModelerVisible="tabNavList[index].isModelerVisible">
+				:isModelerVisible="tabNavList[index].isModelerVisible"
+				:activePropertiesTab="props.activePropertiesTab">
 				<div v-if="tabElement.isModelerVisible" class="h-100">
 					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index] != null"
 						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index" language='json'></monaco-editor>
@@ -136,6 +151,12 @@
 						@toggleEditor="toggleEditor" @toggleModal="toggleModal"
 						@show-console-notification="showConsoleNotification" @toggleConsole="toggleConsole">
 					</ActionButtonsList>
+				</template>
+				<template #propertiesPanelTop>
+					<slot name="propertiesPanelTop" :tabElement="tabElement" />
+				</template>
+				<template #propertiesPanelTabContent="{ tabElement: te, activeTab: at }">
+					<slot name="propertiesPanelTabContent" :tabElement="te" :activeTab="at" />
 				</template>
 			</FormModeler>
 		</div>
@@ -199,6 +220,9 @@ const route = useRoute()
 const router = useRouter()
 
 const { t } = useI18n()
+const props = defineProps({
+	activePropertiesTab: { type: String, default: 'properties' }
+})
 const modeler = ref({}) // to get the diferent modelers  and call functions inside components
 const diagrams = ref(store.state.modeler?.processes?.unifiedDiagrams)
 const processes = computed(() => store.state.modeler.processes.processes)
