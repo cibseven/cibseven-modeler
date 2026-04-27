@@ -67,9 +67,10 @@ describe('ScriptEditorModal', () => {
             ['JavaScript', 'javascript'],
             ['python', 'python'],
             ['ruby', 'ruby'],
-            ['xml', 'xml'],
-            ['sql', 'sql'],
             ['groovy', 'java'],
+            // Non-script-language scriptFormats fall back to 'java' highlighting.
+            ['xml', 'java'],
+            ['sql', 'java'],
             [null, 'java'],
             [undefined, 'java'],
             ['', 'java'],

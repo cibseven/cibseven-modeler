@@ -16,7 +16,7 @@
  */
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
-import * as monaco from 'monaco-editor'
+import * as monaco from './monaco-setup.js'
 
 import { createApp } from 'vue'
 import App from './App.vue'
