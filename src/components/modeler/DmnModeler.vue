@@ -43,18 +43,8 @@
 					<slot />
 				</div>
 				<div v-show="isPropertyPanelVisible && !props.isModelerVisible">
-					<PropertiesPanel ref="resDiv" :parentWidth="parentWidth" @changeWidth="changeWidth" minWidth="300">
-						<div class="d-flex flex-column h-100">
-							<component :is="PropertiesTabBar" v-if="PropertiesTabBar && props.isActiveTab" :tabElement="props.tabElement" />
-							<div v-show="props.activePropertiesTab === 'properties'"
-								class="properties-panel-parent resizable-content flex-grow-1 border-start border-dark-subtle"
-								style="min-height: 0; overflow: auto;"
-								ref="dmnProperties"></div>
-							<div v-show="props.activePropertiesTab !== 'properties'" class="flex-grow-1 border-start border-dark-subtle" style="min-height: 0; overflow: auto;">
-								<component :is="PropertiesTabContent" v-if="PropertiesTabContent && props.isActiveTab" :tabElement="props.tabElement" :selectedElement="selectedElement" />
-							</div>
-						</div>
-					</PropertiesPanel>
+					<PropertiesPanel ref="resDiv" :parentWidth="parentWidth" @changeWidth="changeWidth" minWidth="300"
+						:tabElement="props.tabElement" :isActiveTab="props.isActiveTab" :activePropertiesTab="props.activePropertiesTab" :selectedElement="selectedElement" />
 				</div>
 			</div>
 			<div>
@@ -120,7 +110,7 @@ const canvas = ref(null)
 const monacoEditorConsole = ref(null)
 const consolePanel = ref(null)
 const canvasHeight = ref(44)
-const dmnProperties = ref(null)
+const dmnProperties = computed(() => resDiv.value?.propertiesPanelEl ?? null)
 const resDiv = ref(null)
 const isPropertyPanelVisible = ref(true)
 const propertiesPanelComponent = ref(null)
@@ -207,8 +197,6 @@ const {
 
 const VersionButtonComponent = inject('versionButtonComponent', null)
 const CompareButtonComponent = inject('compareButtonComponent', null)
-const PropertiesTabBar = inject('propertiesTabBarComponent', null)
-const PropertiesTabContent = inject('propertiesTabContentComponent', null)
 
 provide('loadVersionHook', async (xml, version) => {
 	const migratedXml = await migrateDiagram(xml)

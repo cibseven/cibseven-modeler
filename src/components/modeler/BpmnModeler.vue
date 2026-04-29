@@ -44,19 +44,8 @@
 				</div>
 			</div>
 			<PropertiesPanel :parent="containerModeler" :parentWidth="parentWidth" v-show="isVisiblePropertyPanel"
-				@changeWidth="changeWidth" minWidth="300" ref="resizableDiv">
-				<div class="d-flex flex-column h-100">
-					<component :is="PropertiesTabBar" v-if="PropertiesTabBar && props.isActiveTab" :tabElement="props.tabElement" />
-					<div v-show="props.activePropertiesTab === 'properties'"
-						class="properties-panel-parent resizable-content flex-grow-1 border-start border-dark-subtle"
-						style="min-height: 0; overflow: auto;"
-						ref="propertyPanel">
-					</div>
-					<div v-show="props.activePropertiesTab !== 'properties'" class="flex-grow-1 border-start border-dark-subtle" style="min-height: 0; overflow: auto;">
-						<component :is="PropertiesTabContent" v-if="PropertiesTabContent && props.isActiveTab" :tabElement="props.tabElement" :selectedElement="selectedElement" />
-					</div>
-				</div>
-			</PropertiesPanel>
+				@changeWidth="changeWidth" minWidth="300" ref="resizableDiv"
+				:tabElement="props.tabElement" :isActiveTab="props.isActiveTab" :activePropertiesTab="props.activePropertiesTab" :selectedElement="selectedElement" />
 			<div>
 			<ConsolePanel ref="consolePanel" :isModelerVisible="props.isModelerVisible" :parentHeight="parentHeight"
 				:rightPos="canvasWidth" :processID="props.tabElement.id" @changeHeight="changeHeight"
@@ -200,7 +189,7 @@ const canvasWidth = ref(0)
 const canvasHeight = ref(44)
 const containerModeler = ref(null)
 const canvas = ref(null)
-const propertyPanel = ref(null)
+const propertyPanel = computed(() => resizableDiv.value?.propertiesPanelEl ?? null)
 const monacoEditorConsole = ref(null)
 const consolePanel = ref(null)
 
@@ -217,8 +206,6 @@ const config = inject('config', {})
 const BpmnFilterButtonComponent = inject('bpmnFilterButtonComponent', null)
 const CompareButtonComponent = inject('compareButtonComponent', null)
 const VersionButtonComponent = inject('versionButtonComponent', null)
-const PropertiesTabBar = inject('propertiesTabBarComponent', null)
-const PropertiesTabContent = inject('propertiesTabContentComponent', null)
 const popover = ref(null)
 //element templates modal
 const elementTemplatesModal = ref(null)

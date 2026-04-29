@@ -16,20 +16,39 @@
 -->
 <template>
     <div ref="parent" class="resizable-component property-panel position-absolute border-bottom border-light" style="height: 100%; top: 0; right: 0;" :style="style">
-        <slot />
+        <div class="d-flex flex-column h-100">
+            <component :is="PropertiesTabBar" v-if="PropertiesTabBar && isActiveTab" :tabElement="tabElement" />
+            <div v-show="activePropertiesTab === 'properties'"
+                class="properties-panel-parent resizable-content flex-grow-1 border-start border-dark-subtle"
+                style="min-height: 0; overflow: auto;"
+                ref="propertiesPanelEl">
+            </div>
+            <div v-show="activePropertiesTab !== 'properties'" class="flex-grow-1 border-start border-dark-subtle" style="min-height: 0; overflow: auto;">
+                <component :is="PropertiesTabContent" v-if="PropertiesTabContent && isActiveTab" :tabElement="tabElement" :selectedElement="selectedElement" />
+            </div>
+        </div>
         <div class="resizable-l" role="presentation" @mousedown="handleDown" />
     </div>
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted, onUpdated } from 'vue'
+import { ref, watch, computed, onMounted, onUpdated, inject } from 'vue'
 
 const notResizingMaxWidth = 200 // the rest of the width that the panel will not surpass
 const parent = ref(null)
+const propertiesPanelEl = ref(null)
+
+const PropertiesTabBar = inject('propertiesTabBarComponent', null)
+const PropertiesTabContent = inject('propertiesTabContentComponent', null)
+
 const props = defineProps({
     parentWidth: Number,
     minWidth: String,
-    isPropertyPanelVisible: { type: Boolean, default: true }
+    isPropertyPanelVisible: { type: Boolean, default: true },
+    tabElement: { type: Object, default: null },
+    isActiveTab: { type: Boolean, default: false },
+    activePropertiesTab: { type: String, default: 'properties' },
+    selectedElement: { type: Object, default: null },
 })
 const emit = defineEmits([
     'changeWidth'
@@ -79,7 +98,7 @@ const _restorePropertiesPanelWidth = () => width.value = props.minWidth
 
 const _resetPropertiesPanelWidth = () => width.value = 0
 
-defineExpose({ _changeWidth, _restorePropertiesPanelWidth, _resetPropertiesPanelWidth })
+defineExpose({ _changeWidth, _restorePropertiesPanelWidth, _resetPropertiesPanelWidth, propertiesPanelEl })
 </script>
 
 <style scoped>

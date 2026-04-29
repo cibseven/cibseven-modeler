@@ -25,19 +25,8 @@
 				</div>
 			</div>
 			<PropertiesPanel :parent="formContainer" :parentWidth="parentWidth" v-show="isVisiblePropertyPanel"
-				@changeWidth="changeWidth" minWidth="300" ref="resizableDiv">
-				<div class="d-flex flex-column h-100">
-					<component :is="PropertiesTabBar" v-if="PropertiesTabBar && props.isActiveTab" :tabElement="props.tabElement" />
-					<div v-show="props.activePropertiesTab === 'properties'"
-						class="properties-panel-parent resizable-content flex-grow-1 border-start border-dark-subtle"
-						style="min-height: 0; overflow: auto;"
-						ref="propertyPanel">
-					</div>
-					<div v-show="props.activePropertiesTab !== 'properties'" class="flex-grow-1 border-start border-dark-subtle" style="min-height: 0; overflow: auto;">
-						<component :is="PropertiesTabContent" v-if="PropertiesTabContent && props.isActiveTab" :tabElement="props.tabElement" />
-					</div>
-				</div>
-			</PropertiesPanel>
+				@changeWidth="changeWidth" minWidth="300" ref="resizableDiv"
+				:tabElement="props.tabElement" :isActiveTab="props.isActiveTab" :activePropertiesTab="props.activePropertiesTab" />
 			<MenuActionButtons :width="canvasWidth">
 				<template #leftButtons>
 					<slot name="menu" />
@@ -65,17 +54,15 @@ import PropertiesPanel from '../layout/PropertiesPanel.vue'
 import usePropertiesPanel from '../../composables/usePropertiesPanel'
 import useForm from '../../composables/useForm'
 
-import { ref, onMounted, computed, onUpdated, watch, nextTick, inject } from 'vue'
+import { ref, onMounted, computed, onUpdated, watch, nextTick } from 'vue'
 import { getPlugin } from '../../plugins/pluginsConfig'
 
 const formTool = getPlugin('form-tools')
-const PropertiesTabBar = inject('propertiesTabBarComponent', null)
-const PropertiesTabContent = inject('propertiesTabContentComponent', null)
 
 const resizableDiv = ref(null)
 const formContainer = ref(null)
 const canvas = ref(null)
-const propertyPanel = ref(null)
+const propertyPanel = computed(() => resizableDiv.value?.propertiesPanelEl ?? null)
 
 const props = defineProps({
     json: String,
