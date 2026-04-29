@@ -56,7 +56,8 @@
 				v-show="tabElement.isPropertyPanelVisible" :diagramType="tabNavList[index].type"
 				:isActiveTab="index === activeTab" :clipboard="clipboard" :xml="tabNavListXml[index]"
 				:isModelerVisible="tabNavList[index].isModelerVisible" :elementTemplateJson="elementTemplateJson"
-				:consoleErrors="consoleErrorsList[index]" @showToastMessage="showToastMessage"
+				:consoleErrors="consoleErrorsList[index]" :activePropertiesTab="props.activePropertiesTab"
+				@showToastMessage="showToastMessage"
 				@updateStoredProcesses="getStoredDiagrams" @showPropertyPanel="showPropertyPanel"
 				@toggleEnableSave="toggleEnableSave" @showDiagram="showDiagram" @updateEditorXML="updateEditorXML"
 				@updateIsButtonDisabled="updateIsButtonDisabled" @updateDownloadLink="_updateDownloadLink"
@@ -94,6 +95,7 @@
 				@show-console-notification="showConsoleNotification"
 				:isModelerVisible="tabNavList[index].isModelerVisible"
 				:consoleErrors="consoleErrorsList[index]"
+				:activePropertiesTab="props.activePropertiesTab"
 				>
 				<div v-if="tabElement.isModelerVisible" class="h-100">
 					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index] != null"
@@ -121,7 +123,8 @@
 				@showToastMessage="showToastMessage" @setTypeOfDiagramForModeler="setTypeOfDiagramForModeler"
 				@toggleIsSaved="toggleIsSaved" @resizeTabNav="resizeTabNav" @toggleConsole="toggleConsole"
 				@show-console-notification="showConsoleNotification"
-				:isModelerVisible="tabNavList[index].isModelerVisible">
+				:isModelerVisible="tabNavList[index].isModelerVisible"
+				:activePropertiesTab="props.activePropertiesTab">
 				<div v-if="tabElement.isModelerVisible" class="h-100">
 					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index] != null"
 						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index" language='json'></monaco-editor>
@@ -199,6 +202,9 @@ const route = useRoute()
 const router = useRouter()
 
 const { t } = useI18n()
+const props = defineProps({
+	activePropertiesTab: { type: String, default: 'properties' }
+})
 const modeler = ref({}) // to get the diferent modelers  and call functions inside components
 const diagrams = ref(store.state.modeler?.processes?.unifiedDiagrams)
 const processes = computed(() => store.state.modeler.processes.processes)

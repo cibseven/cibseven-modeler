@@ -44,11 +44,8 @@
 				</div>
 			</div>
 			<PropertiesPanel :parent="containerModeler" :parentWidth="parentWidth" v-show="isVisiblePropertyPanel"
-				@changeWidth="changeWidth" minWidth="300" ref="resizableDiv">
-				<div class="properties-panel-parent resizable-content h-100 border-start border-dark-subtle"
-					ref="propertyPanel">
-				</div>
-			</PropertiesPanel>
+				@changeWidth="changeWidth" minWidth="300" ref="resizableDiv"
+				:tabElement="props.tabElement" :isActiveTab="props.isActiveTab" :activePropertiesTab="props.activePropertiesTab" :selectedElement="selectedElement" />
 			<div>
 			<ConsolePanel ref="consolePanel" :isModelerVisible="props.isModelerVisible" :parentHeight="parentHeight"
 				:rightPos="canvasWidth" :processID="props.tabElement.id" @changeHeight="changeHeight"
@@ -192,7 +189,7 @@ const canvasWidth = ref(0)
 const canvasHeight = ref(44)
 const containerModeler = ref(null)
 const canvas = ref(null)
-const propertyPanel = ref(null)
+const propertyPanel = computed(() => resizableDiv.value?.propertiesPanelEl ?? null)
 const monacoEditorConsole = ref(null)
 const consolePanel = ref(null)
 
@@ -254,6 +251,9 @@ const props = defineProps({
 	elementTemplateJson: Array,
 	consoleErrors: {
 		type: String, default: ''
+	},
+	activePropertiesTab: {
+		type: String, default: 'properties'
 	}
 })
 //composables
@@ -291,6 +291,8 @@ let isScriptTaskUpdate = false
 
 const isMinimapOpen = ref(false)
 const isFullscreen = ref(false)
+const selectedElement = ref(null)
+const BPMN_ROOT_TYPES = new Set(['bpmn:Process', 'bpmn:Collaboration', 'bpmn:Participant'])
 
 const ZOOM_STEP = 0.2
 const zoomIn = () => { const c = bpmnModeler.get('canvas'); c.zoom(c.zoom() + ZOOM_STEP) }
@@ -558,6 +560,13 @@ const _setupTTLMonitoring = () => {
 		})
 	}
 	bpmnModeler.get('eventBus').on(['selection.changed', 'propertiesPanel.updated'], checkTTL)
+
+	bpmnModeler.get('eventBus').on('selection.changed', ({ newSelection }) => {
+		const el = newSelection.length === 1 ? newSelection[0] : null
+		selectedElement.value = (el && !BPMN_ROOT_TYPES.has(el.type))
+			? { id: el.id, name: el.businessObject?.name || el.id, type: el.type }
+			: null
+	})
 }
 
 const _setupDiagramFunctions = debounce(async () => {

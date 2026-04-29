@@ -43,10 +43,8 @@
 					<slot />
 				</div>
 				<div v-show="isPropertyPanelVisible && !props.isModelerVisible">
-					<PropertiesPanel ref="resDiv" :parentWidth="parentWidth" @changeWidth="changeWidth" minWidth="300">
-						<div class="properties-panel-parent resizable-content h-100 border-start border-dark-subtle"
-							ref="dmnProperties"></div>
-					</PropertiesPanel>
+					<PropertiesPanel ref="resDiv" :parentWidth="parentWidth" @changeWidth="changeWidth" minWidth="300"
+						:tabElement="props.tabElement" :isActiveTab="props.isActiveTab" :activePropertiesTab="props.activePropertiesTab" :selectedElement="selectedElement" />
 				</div>
 			</div>
 			<div>
@@ -112,7 +110,7 @@ const canvas = ref(null)
 const monacoEditorConsole = ref(null)
 const consolePanel = ref(null)
 const canvasHeight = ref(44)
-const dmnProperties = ref(null)
+const dmnProperties = computed(() => resDiv.value?.propertiesPanelEl ?? null)
 const resDiv = ref(null)
 const isPropertyPanelVisible = ref(true)
 const propertiesPanelComponent = ref(null)
@@ -123,6 +121,7 @@ let canvasFocusHandler = null
 
 const isMinimapOpen = ref(false)
 const isFullscreen = ref(false)
+const selectedElement = ref(null)
 
 const ZOOM_STEP = 0.2
 const zoomIn = () => {
@@ -160,6 +159,7 @@ const props = defineProps({
 	isModelerVisible: { type: Boolean, default: false },
 	isActiveTab: Boolean,
 	consoleErrors: { type: String, default: '' },
+	activePropertiesTab: { type: String, default: 'properties' },
 })
 
 const emit = defineEmits([
@@ -267,7 +267,28 @@ onMounted(async () => {
 	propertiesPanelComponent.value = dmnModeler.getActiveViewer().get('propertiesPanel')
 
 	// Track view changes to update XML and download links
-	dmnModeler.on('views.changed', async () => {
+	let drdSelectionListenerRegistered = false
+	dmnModeler.on('views.changed', async ({ activeView }) => {
+		if (activeView && (activeView.type === 'decisionTable' || activeView.type === 'literalExpression')) {
+			const el = activeView.element
+			selectedElement.value = { id: el.id, name: el.name || el.id, type: el.$type }
+		} else {
+			selectedElement.value = null
+			// Register selection.changed on the DRD viewer once it is available.
+			// dmnModeler.get() is not available at the manager level; use getActiveViewer() here.
+			if (!drdSelectionListenerRegistered) {
+				const viewer = dmnModeler.getActiveViewer()
+				if (viewer) {
+					viewer.get('eventBus').on('selection.changed', ({ newSelection }) => {
+						const el = newSelection?.length === 1 ? newSelection[0] : null
+						selectedElement.value = (el && el.type !== 'dmn:Definitions')
+							? { id: el.id, name: el.businessObject?.name || el.id, type: el.type }
+							: null
+					})
+					drdSelectionListenerRegistered = true
+				}
+			}
+		}
 		// Subscribe commandStack.changed to each new active viewer (decision table, literal expression, etc.)
 		// so edits in those views are also tracked without false positives on view-switch
 		subscribeCommandStackToViewer(dmnModeler.getActiveViewer())
