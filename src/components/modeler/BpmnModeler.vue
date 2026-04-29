@@ -46,14 +46,14 @@
 			<PropertiesPanel :parent="containerModeler" :parentWidth="parentWidth" v-show="isVisiblePropertyPanel"
 				@changeWidth="changeWidth" minWidth="300" ref="resizableDiv">
 				<div class="d-flex flex-column h-100">
-					<slot name="propertiesPanelTop" />
+					<slot name="propertiesPanelTop" :selectedElement="selectedElement" />
 					<div v-show="props.activePropertiesTab === 'properties'"
 						class="properties-panel-parent resizable-content flex-grow-1 border-start border-dark-subtle"
 						style="min-height: 0; overflow: auto;"
 						ref="propertyPanel">
 					</div>
 					<div v-show="props.activePropertiesTab !== 'properties'" class="flex-grow-1 border-start border-dark-subtle" style="min-height: 0; overflow: auto;">
-						<slot name="propertiesPanelTabContent" :tabElement="props.tabElement" :activeTab="props.activePropertiesTab" />
+						<slot name="propertiesPanelTabContent" :tabElement="props.tabElement" :activeTab="props.activePropertiesTab" :selectedElement="selectedElement" />
 					</div>
 				</div>
 			</PropertiesPanel>
@@ -302,6 +302,8 @@ let isScriptTaskUpdate = false
 
 const isMinimapOpen = ref(false)
 const isFullscreen = ref(false)
+const selectedElement = ref(null)
+const BPMN_ROOT_TYPES = new Set(['bpmn:Process', 'bpmn:Collaboration', 'bpmn:Participant'])
 
 const ZOOM_STEP = 0.2
 const zoomIn = () => { const c = bpmnModeler.get('canvas'); c.zoom(c.zoom() + ZOOM_STEP) }
@@ -569,6 +571,13 @@ const _setupTTLMonitoring = () => {
 		})
 	}
 	bpmnModeler.get('eventBus').on(['selection.changed', 'propertiesPanel.updated'], checkTTL)
+
+	bpmnModeler.get('eventBus').on('selection.changed', ({ newSelection }) => {
+		const el = newSelection.length === 1 ? newSelection[0] : null
+		selectedElement.value = (el && !BPMN_ROOT_TYPES.has(el.type))
+			? { id: el.id, name: el.businessObject?.name || el.id, type: el.type }
+			: null
+	})
 }
 
 const _setupDiagramFunctions = debounce(async () => {
