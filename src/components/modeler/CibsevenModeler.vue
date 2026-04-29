@@ -82,12 +82,6 @@
 						@toggleOutdatedTemplateModal="toggleOutdatedTemplateModal" @toggleConsole="toggleConsole">
 					</ActionButtonsList>
 				</template>
-				<template #propertiesPanelTop="{ selectedElement }">
-					<slot name="propertiesPanelTop" :tabElement="tabElement" :selectedElement="selectedElement" :tabIsActive="index === activeTab" />
-				</template>
-				<template #propertiesPanelTabContent="{ tabElement: te, activeTab: at, selectedElement }">
-					<slot name="propertiesPanelTabContent" :tabElement="te" :activeTab="at" :selectedElement="selectedElement" :tabIsActive="index === activeTab" />
-				</template>
 			</BpmnModeler>
 			<DmnModeler v-if="tabNavListXml[index] && waitToLoad && tabNavList[index].type === 'dmn'"
 				:isActiveTab="index === activeTab" :tabElement="tabElement" :ref="el => modeler[index] = el"
@@ -119,12 +113,6 @@
 						@toggleOutdatedTemplateModal="toggleOutdatedTemplateModal" @toggleConsole="toggleConsole">
 					</ActionButtonsList>
 				</template>
-				<template #propertiesPanelTop="{ selectedElement }">
-					<slot name="propertiesPanelTop" :tabElement="tabElement" :selectedElement="selectedElement" :tabIsActive="index === activeTab" />
-				</template>
-				<template #propertiesPanelTabContent="{ tabElement: te, activeTab: at, selectedElement }">
-					<slot name="propertiesPanelTabContent" :tabElement="te" :activeTab="at" :selectedElement="selectedElement" :tabIsActive="index === activeTab" />
-				</template>
 			</DmnModeler>
 			<FormModeler v-if="tabNavListXml[index] && tabNavList[index].type === 'form'" :json="tabNavListXml[index]" :isActiveTab="index === activeTab" :tabElement="tabElement" :ref="el => modeler[index] = el"
 				:tabElementIndex="index" @isValidated="isValidated" @updateEditorXML="updateEditorXML"
@@ -151,12 +139,6 @@
 						@toggleEditor="toggleEditor" @toggleModal="toggleModal"
 						@show-console-notification="showConsoleNotification" @toggleConsole="toggleConsole">
 					</ActionButtonsList>
-				</template>
-				<template #propertiesPanelTop="{ selectedElement }">
-					<slot name="propertiesPanelTop" :tabElement="tabElement" :selectedElement="selectedElement" :tabIsActive="index === activeTab" />
-				</template>
-				<template #propertiesPanelTabContent="{ tabElement: te, activeTab: at, selectedElement }">
-					<slot name="propertiesPanelTabContent" :tabElement="te" :activeTab="at" :selectedElement="selectedElement" :tabIsActive="index === activeTab" />
 				</template>
 			</FormModeler>
 		</div>

@@ -46,14 +46,14 @@
 			<PropertiesPanel :parent="containerModeler" :parentWidth="parentWidth" v-show="isVisiblePropertyPanel"
 				@changeWidth="changeWidth" minWidth="300" ref="resizableDiv">
 				<div class="d-flex flex-column h-100">
-					<slot name="propertiesPanelTop" :selectedElement="selectedElement" />
+					<component :is="PropertiesTabBar" v-if="PropertiesTabBar && props.isActiveTab" :tabElement="props.tabElement" />
 					<div v-show="props.activePropertiesTab === 'properties'"
 						class="properties-panel-parent resizable-content flex-grow-1 border-start border-dark-subtle"
 						style="min-height: 0; overflow: auto;"
 						ref="propertyPanel">
 					</div>
 					<div v-show="props.activePropertiesTab !== 'properties'" class="flex-grow-1 border-start border-dark-subtle" style="min-height: 0; overflow: auto;">
-						<slot name="propertiesPanelTabContent" :tabElement="props.tabElement" :activeTab="props.activePropertiesTab" :selectedElement="selectedElement" />
+						<component :is="PropertiesTabContent" v-if="PropertiesTabContent && props.isActiveTab" :tabElement="props.tabElement" :selectedElement="selectedElement" />
 					</div>
 				</div>
 			</PropertiesPanel>
@@ -217,6 +217,8 @@ const config = inject('config', {})
 const BpmnFilterButtonComponent = inject('bpmnFilterButtonComponent', null)
 const CompareButtonComponent = inject('compareButtonComponent', null)
 const VersionButtonComponent = inject('versionButtonComponent', null)
+const PropertiesTabBar = inject('propertiesTabBarComponent', null)
+const PropertiesTabContent = inject('propertiesTabContentComponent', null)
 const popover = ref(null)
 //element templates modal
 const elementTemplatesModal = ref(null)
