@@ -54,7 +54,7 @@ export { default as TemplateManagement } from './components/templates/TemplateMa
 
 export { default as store, createModelerStore } from './store.js'
 export { i18n, setLocale, messages, createI18n } from './i18n.js'
-export { parseXml, base64Decode, applyTheme, getTheme, loadFromPublic } from './utils.js'
+export { parseXml, base64Decode, applyTheme, getTheme, loadFromPublic, formatDate } from './utils.js'
 export { setAxiosInstance, getAxios } from './axiosConfig.js'
 export { setServicesBasePath, getServicesBasePath, getModelerServicePath } from './services/servicesConfig.js'
 export { registerPlugin, getPlugin } from './plugins/pluginsConfig.js'

@@ -25,11 +25,8 @@
 				</div>
 			</div>
 			<PropertiesPanel :parent="formContainer" :parentWidth="parentWidth" v-show="isVisiblePropertyPanel"
-				@changeWidth="changeWidth" minWidth="300" ref="resizableDiv">
-				<div class="properties-panel-parent resizable-content h-100 border-start border-dark-subtle"
-					ref="propertyPanel">
-				</div>
-			</PropertiesPanel>
+				@changeWidth="changeWidth" minWidth="300" ref="resizableDiv"
+				:tabElement="props.tabElement" :isActiveTab="props.isActiveTab" :activePropertiesTab="props.activePropertiesTab" />
 			<MenuActionButtons :width="canvasWidth">
 				<template #leftButtons>
 					<slot name="menu" />
@@ -65,7 +62,7 @@ const formTool = getPlugin('form-tools')
 const resizableDiv = ref(null)
 const formContainer = ref(null)
 const canvas = ref(null)
-const propertyPanel = ref(null)
+const propertyPanel = computed(() => resizableDiv.value?.propertiesPanelEl ?? null)
 
 const props = defineProps({
     json: String,
@@ -78,6 +75,9 @@ const props = defineProps({
 	tabElement: {
 		type: Object,
 		required: true
+	},
+	activePropertiesTab: {
+		type: String, default: 'properties'
 	}
 })
 
