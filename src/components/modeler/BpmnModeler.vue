@@ -771,8 +771,8 @@ const _setMonacoEditorToDiv = (e, divId) => {
 
 const _openDiagram = async xml => {
 	try {
-		emit('updateEditorXML', xml, props.tabElementIndex)
 		await validate(bpmnModeler, xml)
+		emit('updateEditorXML', xml, props.tabElementIndex)
 		emit('showDiagram', true)
 		_setupDiagramFunctions()
 		emit('showPropertyPanel', true, props.tabElementIndex)
