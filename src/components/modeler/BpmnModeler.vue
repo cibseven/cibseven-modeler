@@ -121,6 +121,24 @@
 		<ElementTemplatesModal ref="elementTemplatesModal" :tabElement="tabElement"
 		@applyTemplateToTask="applyTemplateToTask"></ElementTemplatesModal>
 		<ScriptEditorModal ref="scriptEditorModal" />
+		<!-- Extension point for plugins
+		     Available props for plugin components:
+		       get-bpmn-modeler  — () => bpmnModeler        Raw bpmn-js Modeler instance. Access services via .get('eventBus'), .get('commandStack'), etc.
+		       tab-element       — Object                   Current tab descriptor: { id, key, name, type, version, isSaved, ... }
+		       set-xml           — (xml) => Promise<void>   Apply new XML through the full pipeline (importXML + editor sync + save hooks).
+		                                                    Returns a promise that resolves once the import has completed; await it before reading modeler state.
+		                                                    Prefer this over calling modeler.importXML() directly.
+		       get-element-templates — () => Array          Returns the live element templates array currently loaded in the modeler.
+		       get-modeler-config    — () => Object         Returns the config.modeler section from the app config (e.g. filterBpmn, excludeTemplates). -->
+		<component
+			v-if="bpmnTool && props.isActiveTab"
+			:is="bpmnTool"
+			:get-bpmn-modeler="() => bpmnModeler"
+			:tab-element="props.tabElement"
+			:set-xml="(xml) => _openDiagram(xml)"
+			:get-element-templates="() => props.elementTemplateJson ?? []"
+			:get-modeler-config="() => config.modeler ?? {}"
+		/>
 	</div>
 </template>
 
@@ -172,6 +190,7 @@ import ScriptEditorModal from '../modals/ScriptEditorModal.vue'
 import { getHeadersForSelector } from './SelectorHeaders'
 
 import { onMounted, onBeforeUnmount, inject, provide, ref, onUpdated, watch, computed, nextTick, watchEffect } from 'vue'
+import { getPlugin } from '../../plugins/pluginsConfig'
 //composables
 import useModeler from '../../composables/useModeler.js'
 import useCustomizedTemplateModal from '../../composables/customizedTemplateModal.js'
@@ -180,6 +199,8 @@ import useMonacoEditor from '../../composables/useMonacoEditor.js'
 
 //utils
 import { checkJSON } from '../../utils.js'
+
+const bpmnTool = getPlugin('bpmn-tools')
 
 const monaco = inject('monaco')
 const extraBpmnModules = inject('extraBpmnModules', [])
@@ -750,7 +771,7 @@ const _setMonacoEditorToDiv = (e, divId) => {
 
 const _openDiagram = async xml => {
 	try {
-		validate(bpmnModeler, xml)
+		await validate(bpmnModeler, xml)
 		emit('updateEditorXML', xml, props.tabElementIndex)
 		emit('showDiagram', true)
 		_setupDiagramFunctions()
