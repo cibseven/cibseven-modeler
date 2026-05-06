@@ -131,7 +131,7 @@
 		       get-element-templates — () => Array          Returns the live element templates array currently loaded in the modeler.
 		       get-modeler-config    — () => Object         Returns the config.modeler section from the app config (e.g. filterBpmn, excludeTemplates). -->
 		<component
-			v-if="bpmnTool"
+			v-if="bpmnTool && props.isActiveTab"
 			:is="bpmnTool"
 			:get-bpmn-modeler="() => bpmnModeler"
 			:tab-element="props.tabElement"
