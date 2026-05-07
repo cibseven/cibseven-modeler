@@ -1,0 +1,263 @@
+{
+  "$schema": "https://unpkg.com/@camunda/element-templates-json-schema/resources/schema.json",
+  "name": "CIB seven AI Agent",
+  "id": "cibseven-ai-agent",
+  "version": 1,
+  "description": "Element template for the cibseven-ai-agent connector.",
+  "appliesTo": [
+    "bpmn:ServiceTask"
+  ],
+  "properties": [
+    {
+      "label": "Connector Id",
+      "type": "Hidden",
+      "value": "cibseven-ai-agent",
+      "binding": {
+        "type": "property",
+        "name": "camunda:connectorId"
+      }
+    },
+    {
+      "label": "Agent name",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "agentName"
+      },
+      "constraints": {
+        "notEmpty": true
+      }
+    },
+    {
+      "label": "Agent description",
+      "type": "Text",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "agentDescription"
+      }
+    },
+    {
+      "label": "Instruction",
+      "type": "Text",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "instruction"
+      },
+      "constraints": {
+        "notEmpty": true
+      }
+    },
+    {
+      "label": "Model",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "model"
+      }
+    },
+    {
+      "label": "Message",
+      "type": "Text",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "message"
+      },
+      "constraints": {
+        "notEmpty": true
+      }
+    },
+    {
+      "label": "Base URL",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "baseUrl"
+      }
+    },
+    {
+      "label": "API key",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "apiKey"
+      }
+    },
+    {
+      "label": "OpenAI custom headers",
+      "type": "Text",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "openaiCustomHeaders"
+      }
+    },
+    {
+      "label": "Reasoning effort",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "reasoningEffort"
+      }
+    },
+    {
+      "label": "Reasoning summary",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "reasoningSummary"
+      }
+    },
+    {
+      "label": "Tool classes",
+      "type": "Text",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "toolClasses"
+      }
+    },
+    {
+      "label": "MCP server URL",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "mcpServerUrl"
+      }
+    },
+    {
+      "label": "MCP custom headers",
+      "type": "Text",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "mcpCustomHeaders"
+      }
+    },
+    {
+      "label": "MCP servers",
+      "type": "Text",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "mcpServers"
+      }
+    },
+    {
+      "label": "Use chat memory",
+      "type": "Boolean",
+      "value": false,
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "useChatMemory"
+      }
+    },
+    {
+      "label": "Memory ID",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "memoryId"
+      }
+    },
+    {
+      "label": "Chat memory max messages",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "chatMemoryMaxMessages"
+      }
+    },
+    {
+      "label": "PostgreSQL host",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "pgHost"
+      }
+    },
+    {
+      "label": "PostgreSQL port",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "pgPort"
+      }
+    },
+    {
+      "label": "PostgreSQL database",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "pgDatabase"
+      }
+    },
+    {
+      "label": "PostgreSQL user",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "pgUser"
+      }
+    },
+    {
+      "label": "PostgreSQL password",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "pgPassword"
+      }
+    },
+    {
+      "label": "PostgreSQL table",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "pgTable"
+      }
+    },
+    {
+      "label": "Max RAG results",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "maxRagResults"
+      }
+    },
+    {
+      "label": "Min RAG score",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "minRagScore"
+      }
+    },
+    {
+      "label": "Embedding dimension",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "embeddingDimension"
+      }
+    },
+    {
+      "label": "Embedding model name",
+      "type": "String",
+      "binding": {
+        "type": "camunda:inputParameter",
+        "name": "embeddingModelName"
+      }
+    },
+    {
+      "label": "Agent output",
+      "type": "String",
+      "binding": {
+        "type": "camunda:outputParameter",
+        "source": "${output}"
+      }
+    },
+    {
+      "label": "Memory ID output",
+      "type": "String",
+      "binding": {
+        "type": "camunda:outputParameter",
+        "source": "${memoryId}"
+      }
+    }
+  ]
+}

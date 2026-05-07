@@ -170,6 +170,7 @@ import { useStore } from 'vuex'
 import { useRoute, useRouter } from 'vue-router'
 
 import { compareXML, getTimeStamp, getTagValueFromXml, checkCamundaVersion, generateUniqueId, setTagValueOfXml, filterTemplates } from '../../utils.js'
+import { loadBundledElementTemplates } from '../../utils/loadElementTemplates.js'
 import Clipboard from 'diagram-js/lib/features/clipboard/Clipboard'
 import { ref, onMounted, onUnmounted, nextTick, watch, computed, inject, provide } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -284,8 +285,12 @@ const modalConfirm = computed(() => {
 const _loadElementTemplatesByConfig = async () => {
 	// Get only template contents from store (optimized for bpmn.js)
 	const templateContents = store.getters['modeler/elementTemplates/allElementTemplateContents'] || []
-	
-	elementTemplateJson.value = filterTemplates(templateContents, config)
+
+	// Merge store templates with templates bundled at build time
+	const bundled = loadBundledElementTemplates()
+	const merged = [...bundled, ...templateContents]
+
+	elementTemplateJson.value = filterTemplates(merged, config)
 
 	// Only show error when there was an actual fetch failure, not when templates are just empty
 	const storeError = store.state.modeler?.elementTemplates?.error
@@ -297,7 +302,9 @@ const _loadElementTemplatesByConfig = async () => {
 // Watch for changes in element templates store and update immediately
 watch(() => store.getters['modeler/elementTemplates/allElementTemplateContents'], (newTemplates) => {
 	const templateContents = newTemplates || []
-	elementTemplateJson.value = filterTemplates(templateContents, config)
+	const bundled = loadBundledElementTemplates()
+	const merged = [...bundled, ...templateContents]
+	elementTemplateJson.value = filterTemplates(merged, config)
 }, { deep: true })
 
 //emit calls an exposed function from StartPage

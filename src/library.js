@@ -68,5 +68,8 @@ export { default as xmlStore } from './stores/xmlStore.js'
 // Export translations utilities
 export { modelerTranslations, mergeModelerTranslations } from './utils/translations.js'
 
+// Export bundled element-template loader so consumers in library mode can reuse it
+export { loadBundledElementTemplates } from './utils/loadElementTemplates.js'
+
 // Re-export monaco so consumer packages can use the same bundled instance
 export * as monaco from './monaco-setup.js'
