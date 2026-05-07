@@ -114,7 +114,7 @@ const props = defineProps({
 })
 
 // Get categorized template data from store
-const elementTemplates = computed(() => store.getters['elementTemplates/categorizedTemplateData'])
+const elementTemplates = computed(() => store.getters['modeler/elementTemplates/categorizedTemplateData'])
 
 const isUserTask = computed(()=>{
   return modelerEvent.value?.element?.type ==='bpmn:UserTask'
