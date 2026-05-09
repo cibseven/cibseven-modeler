@@ -117,8 +117,8 @@
     "minimap": "Перемкнути мінімапу",
     "fullscreen": "Перемкнути повний екран",
     "expandScript": "Відкрити у повному редакторі",
-		"collapsePanel": "Згорнути панель",
-		"expandPanel": "Розгорнути панель"
+    "collapsePanel": "Згорнути панель",
+    "expandPanel": "Розгорнути панель"
   },
   "scriptEditorModal": {
     "title": "Редагувати скрипт"

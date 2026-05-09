@@ -117,8 +117,8 @@
     "minimap": "Minimalkarte umschalten",
     "fullscreen": "Vollbild umschalten",
     "expandScript": "Im vollständigen Editor öffnen",
-		"collapsePanel": "Bereich einklappen",
-		"expandPanel": "Bereich ausklappen"
+    "collapsePanel": "Bereich einklappen",
+    "expandPanel": "Bereich ausklappen"
   },
   "scriptEditorModal": {
     "title": "Skript bearbeiten"

@@ -117,8 +117,8 @@
     "minimap": "Переключить миникарту",
     "fullscreen": "Переключить полный экран",
     "expandScript": "Открыть в полном редакторе",
-		"collapsePanel": "Свернуть панель",
-		"expandPanel": "Развернуть панель"
+    "collapsePanel": "Свернуть панель",
+    "expandPanel": "Развернуть панель"
   },
   "scriptEditorModal": {
     "title": "Редактировать скрипт"

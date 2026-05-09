@@ -117,8 +117,8 @@
     "minimap": "Alternar minimapa",
     "fullscreen": "Alternar pantalla completa",
     "expandScript": "Abrir en editor completo",
-		"collapsePanel": "Contraer panel",
-		"expandPanel": "Expandir panel"
+    "collapsePanel": "Contraer panel",
+    "expandPanel": "Expandir panel"
   },
   "scriptEditorModal": {
     "title": "Editar script"
