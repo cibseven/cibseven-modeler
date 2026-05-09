@@ -80,5 +80,8 @@ describe('isHttpOrHttpsUrl', () => {
         it('rejects URL without protocol', () => {
             expect(isHttpOrHttpsUrl('example.com/path')).toBe(false)
         })
+        it('rejects invalid port > 65535', () => {
+            expect(isHttpOrHttpsUrl('http://localhost:99999/engine-rest/')).toBe(false)
+        })
     })
 })
