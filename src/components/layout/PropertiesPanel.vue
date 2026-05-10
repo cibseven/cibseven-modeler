@@ -177,7 +177,7 @@ defineExpose({ _changeWidth, _restorePropertiesPanelWidth, _resetPropertiesPanel
     -webkit-user-select: none;
     cursor: w-resize;
     width: 20px;
-    left: -10px;
+    left: 10px;
     height: 100%;
     top: 0;
 }
