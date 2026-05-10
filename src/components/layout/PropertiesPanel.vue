@@ -155,6 +155,8 @@ defineExpose({ _changeWidth, _restorePropertiesPanelWidth, _resetPropertiesPanel
     display: flex;
     align-items: center;
     justify-content: center;
+    align-self: flex-start;
+    height: calc(100% - 44px);
     background-color: var(--bs-light, #f8f9fa);
     border: none;
     border-right: 1px solid var(--bs-border-color-translucent, rgba(0, 0, 0, 0.175));
@@ -178,7 +180,7 @@ defineExpose({ _changeWidth, _restorePropertiesPanelWidth, _resetPropertiesPanel
     cursor: w-resize;
     width: 20px;
     left: 10px;
-    height: 100%;
     top: 0;
+    bottom: 44px;
 }
 </style>
