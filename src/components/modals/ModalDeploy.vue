@@ -241,7 +241,6 @@ const selected = ref('http')
 const username = ref('')
 const password = ref('')
 const token = ref('')
-const rememberMe = ref(false)
 
 // Other
 let modalBootstrap = null
@@ -291,22 +290,6 @@ onMounted(() => {
 	})
 
 	_loadDeployValuesFromLocalStorage()
-	/*
-	const localStorageToken = getBearerToken()
-
-	if (localStorageToken) return rememberMe.value = true
-
-	const localStorageHTTPBasic = localStorage.getItem('cibseven.modeler.basicauth')
-
-	if (localStorageHTTPBasic) {
-		const userEncodedBasicToken = localStorageHTTPBasic.trim().split(' ')
-		const decodedUsernameAndPassword = atob(userEncodedBasicToken[1]).trim().split(':')
-		username.value = decodedUsernameAndPassword[0]
-		password.value = decodedUsernameAndPassword[1]
-		return rememberMe.value = true
-	}
-	return rememberMe.value = false
-	*/
 })
 
 watch(() => props.showModal, (newValue) => {
@@ -388,7 +371,7 @@ const deploy = async () => {
 		_getPassword(),
 		deploymentName.value,
 		customEndpoint.value,
-		tenantID.value, rememberMe.value, props.diagram, useCustomEndpoint.value, type,
+		tenantID.value, props.diagram, useCustomEndpoint.value, type,
 		additionalDeploymentResources.value
 	).then(res => {
 		_saveDeployValuesLocalStorage(selected.value, customEndpoint.value, useCustomEndpoint.value)
