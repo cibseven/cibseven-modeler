@@ -155,7 +155,7 @@ defineExpose({ _changeWidth, _restorePropertiesPanelWidth, _resetPropertiesPanel
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: white;
+    background-color: var(--bs-light, #f8f9fa);
     border: none;
     border-right: 1px solid var(--bs-border-color-translucent, rgba(0, 0, 0, 0.175));
     cursor: pointer;
@@ -164,7 +164,7 @@ defineExpose({ _changeWidth, _restorePropertiesPanelWidth, _resetPropertiesPanel
 }
 
 .panel-toggle-strip:hover {
-    background-color: var(--bs-light, #f8f9fa);
+    background-color: white;
 }
 
 .resizable-component>.resizable-l {
