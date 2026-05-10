@@ -61,15 +61,14 @@ const deployProcess = async (
   deploymentName,
   cibsevenInstanceUrl,
   tenantID,
-  rememberMe,
   diagram,
-  ownEndPoint,
+  useCustomEndpoint,
   type,
   additionalResources = []
 ) => {
   const baseDeploymentUrl = getBaseDeploymentUrl()
-  const deployUrl = ownEndPoint
-    ? cibsevenInstanceUrl + '/' + getServicesBasePath() + '/modeler-service/deployment'
+  const deployUrl = useCustomEndpoint
+    ? cibsevenInstanceUrl + '/' + getServicesBasePath() + '/modeler/deployment'
     : baseDeploymentUrl
   const headers = _generateHeaders(method, token, username, password, deployUrl)
 
@@ -97,7 +96,7 @@ const startProcess = async (
 ) => {
   const baseDeploymentUrl = getBaseDeploymentUrl()
   const startUrl = ownEndPoint
-    ? cibsevenInstanceUrl + '/' + getServicesBasePath() + '/modeler-service/process'
+    ? cibsevenInstanceUrl + '/' + getServicesBasePath() + '/modeler/deployment'
     : baseDeploymentUrl
 
   const headers = _generateHeaders(method, token, username, password, startUrl)

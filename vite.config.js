@@ -56,7 +56,7 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/cibseven-modeler/modeler-service': {
+      '/cibseven-modeler/modeler': {
         target: backendUrl,
         changeOrigin: true,
         secure: false,

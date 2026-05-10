@@ -14,8 +14,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-const httpOrHttpsRegex = /^https?:\/\/(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s]*)?$/
-
 export function isHttpOrHttpsUrl(url) {
-    return httpOrHttpsRegex.test(url)
+    try {
+        const parsed = new URL(url)
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+    } catch {
+        return false
+    }
 }
