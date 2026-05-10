@@ -17,7 +17,7 @@
 <template>
 	<div class="container modeler d-flex position-relative" ref="containerModeler">
 		<div class="d-flex flex-column align-items-between h-100">
-			<div class="d-flex flex-grow-1" style="min-height: 0;">
+			<div class="d-flex flex-grow-1 position-relative" style="min-height: 0;">
 				<div v-show="!props.isModelerVisible" class="position-relative" :style="styleCanvas">
 					<div class="canvas h-100 w-100" ref="canvas" tabindex="0"></div>
 					<div class="position-absolute top-0 end-0 d-flex flex-column gap-1 m-2" style="z-index: 10;">
@@ -42,10 +42,10 @@
 				<div v-show="props.isModelerVisible" class="flex-grow-1 h-100">
 					<slot />
 				</div>
+				<PropertiesPanel :parent="containerModeler" :parentWidth="parentWidth" v-show="isVisiblePropertyPanel"
+					@changeWidth="changeWidth" minWidth="300" ref="resizableDiv"
+					:tabElement="props.tabElement" :isActiveTab="props.isActiveTab" :activePropertiesTab="props.activePropertiesTab" :selectedElement="selectedElement" />
 			</div>
-			<PropertiesPanel :parent="containerModeler" :parentWidth="parentWidth" v-show="isVisiblePropertyPanel"
-				@changeWidth="changeWidth" minWidth="300" ref="resizableDiv"
-				:tabElement="props.tabElement" :isActiveTab="props.isActiveTab" :activePropertiesTab="props.activePropertiesTab" :selectedElement="selectedElement" />
 			<div>
 			<ConsolePanel ref="consolePanel" :isModelerVisible="props.isModelerVisible" :parentHeight="parentHeight"
 				:rightPos="canvasWidth" :processID="props.tabElement.id" @changeHeight="changeHeight"
@@ -56,8 +56,8 @@
 						:consoleErrors="props.consoleErrors">
 					</MonacoConsole>
 				</MonacoThemeScope>
-			</ConsolePanel>			
-			<MenuActionButtons :key="`menu-action-buttons-${props.tabElement.key}`" :width="canvasWidth">
+			</ConsolePanel>
+			<MenuActionButtons :key="`menu-action-buttons-${props.tabElement.key}`" :width="parentWidth">
 				<template #leftButtons>
 					<slot name="menu" />					
 					<component

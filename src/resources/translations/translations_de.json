@@ -116,7 +116,9 @@
     "resetViewport": "Ansicht zurücksetzen",
     "minimap": "Minimalkarte umschalten",
     "fullscreen": "Vollbild umschalten",
-    "expandScript": "Im vollständigen Editor öffnen"
+    "expandScript": "Im vollständigen Editor öffnen",
+    "collapsePanel": "Bereich einklappen",
+    "expandPanel": "Bereich ausklappen"
   },
   "scriptEditorModal": {
     "title": "Skript bearbeiten"
