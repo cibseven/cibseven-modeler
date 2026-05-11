@@ -43,7 +43,7 @@ class ScopedTemplateGroupsProvider {
             this._logElementSelection(element, template, templateGroups)
             this._logGroups('upstream', groups)
 
-            const result = groups.flatMap((group) => {
+            const processedGroups = groups.flatMap((group) => {
                 if (isElementTemplatesInputGroup(group)) {
                     return splitElementTemplateInputGroup({
                         group,
@@ -66,9 +66,9 @@ class ScopedTemplateGroupsProvider {
                 return [group]
             })
 
-            this._logGroups('final', result)
+            this._logGroups('final', processedGroups)
 
-            return result
+            return processedGroups
         }
     }
 
@@ -106,15 +106,26 @@ class ScopedTemplateGroupsProvider {
             hasEntries: Array.isArray(group?.entries) && group.entries.length > 0,
             hasItems: Array.isArray(group?.items) && group.items.length > 0
         }))
+        const visibility = summary.reduce((acc, group) => {
+            const groupId = group.id
+            if (groupId === ELEMENT_TEMPLATES_INPUT_GROUP_ID) {
+                acc.elementTemplatesInput = true
+            } else if (groupId === CAMUNDA_PLATFORM_INPUT_GROUP_ID) {
+                acc.camundaPlatformInput = true
+            } else if (typeof groupId === 'string' && groupId.startsWith(SCOPE_GROUP_ID_PREFIX)) {
+                acc.customScopeGroups = true
+            }
+            return acc
+        }, {
+            elementTemplatesInput: false,
+            customScopeGroups: false,
+            camundaPlatformInput: false
+        })
 
         this._debugLog('properties-panel-groups', {
             stage,
             groups: summary,
-            visibility: {
-                elementTemplatesInput: summary.some((group) => group.id === ELEMENT_TEMPLATES_INPUT_GROUP_ID),
-                customScopeGroups: summary.some((group) => typeof group.id === 'string' && group.id.startsWith(SCOPE_GROUP_ID_PREFIX)),
-                camundaPlatformInput: summary.some((group) => group.id === CAMUNDA_PLATFORM_INPUT_GROUP_ID)
-            }
+            visibility
         })
     }
 
