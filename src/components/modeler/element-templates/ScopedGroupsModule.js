@@ -151,20 +151,21 @@ function createIdBucket(items) {
             return acc
         }
         if (!acc.has(id)) {
-            acc.set(id, [])
+            acc.set(id, { indices: [], cursor: 0 })
         }
-        acc.get(id).push(index)
+        acc.get(id).indices.push(index)
         return acc
     }, new Map())
 }
 
-function takeUnusedIndex(indices, usedIndices) {
-    if (!Array.isArray(indices)) {
+function takeUnusedIndex(indexState, usedIndices) {
+    if (!indexState || !Array.isArray(indexState.indices)) {
         return null
     }
 
-    while (indices.length) {
-        const index = indices.pop()
+    while (indexState.cursor < indexState.indices.length) {
+        const index = indexState.indices[indexState.cursor]
+        indexState.cursor += 1
         if (!usedIndices.has(index)) {
             return index
         }
@@ -188,12 +189,8 @@ function mapInputPropertiesToItems(properties, sourceItems) {
     const idBucket = createIdBucket(sourceItems)
 
     for (const property of properties) {
-        const groupedIndices = idBucket.get(property?.id)
-        let itemIndex = takeUnusedIndex(groupedIndices, usedIndices)
-
-        if (itemIndex === null) {
-            itemIndex = takeNextUnusedIndex(sourceItems, usedIndices)
-        }
+        const groupedIndexState = idBucket.get(property?.id)
+        const itemIndex = takeUnusedIndex(groupedIndexState, usedIndices) ?? takeNextUnusedIndex(sourceItems, usedIndices)
 
         if (itemIndex === null) {
             continue
