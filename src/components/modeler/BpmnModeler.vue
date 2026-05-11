@@ -159,6 +159,7 @@ import { debounce } from 'min-dash'
 import BpmnModeler from 'bpmn-js/lib/Modeler'
 import { BpmnPropertiesProviderModule, BpmnPropertiesPanelModule, CamundaPlatformPropertiesProviderModule } from 'bpmn-js-properties-panel'
 import { ElementTemplatesPropertiesProviderModule } from 'bpmn-js-element-templates'
+import ScopedTemplateGroupsModule from './element-templates/ScopedGroupsModule.js'
 import ElementTemplateChooserModule from '@bpmn-io/element-template-chooser'
 import CamundaModdleDescriptors from 'camunda-bpmn-moddle/resources/camunda.json'
 import { customTranslate, translateValue } from "../../i18n.js"
@@ -515,6 +516,7 @@ const initializeCamunda7Modeler = () => {
 			BpmnPropertiesProviderModule,
 			CamundaPlatformPropertiesProviderModule,// for camunda 7		
 			ElementTemplatesPropertiesProviderModule,
+			ScopedTemplateGroupsModule,
 			ElementTemplateChooserModule,
 			minimapModule,
 			SearchModule,
