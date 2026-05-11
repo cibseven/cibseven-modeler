@@ -26,7 +26,7 @@ class ScopedTemplateGroupsProvider {
     constructor(elementTemplates, propertiesPanel, translate) {
         this._elementTemplates = elementTemplates
         this._translate = translate
-        this._debugEnabled = !!(import.meta.env?.DEV || import.meta.env?.VITE_DEBUG_TEMPLATE_GROUPING === 'true')
+        this._debugEnabled = import.meta.env?.DEV || import.meta.env?.VITE_DEBUG_TEMPLATE_GROUPING === 'true'
         propertiesPanel.registerProvider(POST_TEMPLATES_PRIORITY, this)
     }
 
@@ -157,10 +157,13 @@ function getInputProperties(template) {
         return []
     }
 
-    return template.properties.filter((property) => {
-        const bindingType = property?.binding?.type
-        return !property?.type && bindingType === CAMUNDA_INPUT_PARAMETER_TYPE
-    })
+    return template.properties.filter(isTemplateConnectorInputProperty)
+}
+
+function isTemplateConnectorInputProperty(property) {
+    const bindingType = property?.binding?.type
+    const hasExplicitEditorType = !!property?.type
+    return !hasExplicitEditorType && bindingType === CAMUNDA_INPUT_PARAMETER_TYPE
 }
 
 function mapInputPropertiesToItems(properties, sourceItems) {
@@ -175,7 +178,9 @@ function mapInputPropertiesToItems(properties, sourceItems) {
         const matchingIndex = typeof property?.id === 'string'
             ? remainingItems.findIndex((item) => item?.id === property.id)
             : -1
-        const itemIndex = matchingIndex >= 0 ? matchingIndex : 0
+        const hasExactMatch = matchingIndex >= 0
+        const fallbackToNextUnmatchedIndex = 0
+        const itemIndex = hasExactMatch ? matchingIndex : fallbackToNextUnmatchedIndex
         const [item] = remainingItems.splice(itemIndex, 1)
 
         pairs.push({
