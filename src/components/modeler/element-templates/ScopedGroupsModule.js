@@ -86,7 +86,7 @@ class ScopedTemplateGroupsProvider {
             label: group.label || null
         }))
 
-        console.debug('[ScopedTemplateGroupsProvider] element-template-context', {
+        this._debugLog('element-template-context', {
             elementId,
             elementType,
             templateResolved: resolved,
@@ -107,7 +107,7 @@ class ScopedTemplateGroupsProvider {
             hasItems: Array.isArray(group?.items) && group.items.length > 0
         }))
 
-        console.debug('[ScopedTemplateGroupsProvider] properties-panel-groups', {
+        this._debugLog('properties-panel-groups', {
             stage,
             groups: summary,
             visibility: {
@@ -116,6 +116,14 @@ class ScopedTemplateGroupsProvider {
                 camundaPlatformInput: summary.some((group) => group.id === CAMUNDA_PLATFORM_INPUT_GROUP_ID)
             }
         })
+    }
+
+    _debugLog(message, payload) {
+        if (!this._debugEnabled || !globalThis.console?.debug) {
+            return
+        }
+
+        console.debug(`[ScopedTemplateGroupsProvider] ${message}`, payload)
     }
 }
 
@@ -144,66 +152,26 @@ function getInputProperties(template) {
     })
 }
 
-function createIdBucket(items) {
-    return items.reduce((acc, item, index) => {
-        const id = item?.id
-        if (!id || typeof id !== 'string') {
-            return acc
-        }
-        if (!acc.has(id)) {
-            acc.set(id, { indices: [], cursor: 0 })
-        }
-        acc.get(id).indices.push(index)
-        return acc
-    }, new Map())
-}
-
-function takeUnusedIndex(indexState, usedIndices) {
-    if (!indexState || !Array.isArray(indexState.indices)) {
-        return null
-    }
-
-    while (indexState.cursor < indexState.indices.length) {
-        const index = indexState.indices[indexState.cursor]
-        indexState.cursor += 1
-        if (!usedIndices.has(index)) {
-            return index
-        }
-    }
-
-    return null
-}
-
-function takeNextUnusedIndex(items, usedIndices) {
-    for (let index = 0; index < items.length; index += 1) {
-        if (!usedIndices.has(index)) {
-            return index
-        }
-    }
-    return null
-}
-
 function mapInputPropertiesToItems(properties, sourceItems) {
     const pairs = []
-    const usedIndices = new Set()
-    const idBucket = createIdBucket(sourceItems)
+    const remainingItems = [...sourceItems]
 
     for (const property of properties) {
-        const groupedIndexState = idBucket.get(property?.id)
-        const itemIndex = takeUnusedIndex(groupedIndexState, usedIndices) ?? takeNextUnusedIndex(sourceItems, usedIndices)
-
-        if (itemIndex === null) {
+        if (!remainingItems.length) {
             continue
         }
 
-        usedIndices.add(itemIndex)
+        const matchingIndex = typeof property?.id === 'string'
+            ? remainingItems.findIndex((item) => item?.id === property.id)
+            : -1
+        const itemIndex = matchingIndex >= 0 ? matchingIndex : 0
+        const [item] = remainingItems.splice(itemIndex, 1)
+
         pairs.push({
             property,
-            item: sourceItems[itemIndex]
+            item
         })
     }
-
-    const remainingItems = sourceItems.filter((_, index) => !usedIndices.has(index))
 
     return { pairs, remainingItems }
 }
