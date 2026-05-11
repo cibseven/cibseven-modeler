@@ -26,7 +26,7 @@ class ScopedTemplateGroupsProvider {
     constructor(elementTemplates, propertiesPanel, translate) {
         this._elementTemplates = elementTemplates
         this._translate = translate
-        this._debugEnabled = !!(import.meta.env && (import.meta.env.DEV || import.meta.env.VITE_DEBUG_TEMPLATE_GROUPING === 'true'))
+        this._debugEnabled = !!(import.meta.env?.DEV || import.meta.env?.VITE_DEBUG_TEMPLATE_GROUPING === 'true')
         propertiesPanel.registerProvider(POST_TEMPLATES_PRIORITY, this)
     }
 
@@ -164,7 +164,7 @@ function takeUnusedIndex(indices, usedIndices) {
     }
 
     while (indices.length) {
-        const index = indices.shift()
+        const index = indices.pop()
         if (!usedIndices.has(index)) {
             return index
         }
@@ -209,6 +209,14 @@ function mapInputPropertiesToItems(properties, sourceItems) {
     const remainingItems = sourceItems.filter((_, index) => !usedIndices.has(index))
 
     return { pairs, remainingItems }
+}
+
+function getTranslatedLabel(translate, templateGroup) {
+    const rawLabel = templateGroup?.label || templateGroup?.id
+    if (typeof translate !== 'function') {
+        return rawLabel
+    }
+    return translate(rawLabel)
 }
 
 export function splitElementTemplateInputGroup({
@@ -270,7 +278,7 @@ export function splitElementTemplateInputGroup({
         out.push({
             ...group,
             id: `${group.id}--${templateGroup.id}`,
-            label: translate?.(templateGroup.label || templateGroup.id) || templateGroup.label || templateGroup.id,
+            label: getTranslatedLabel(translate, templateGroup),
             items: partitions.get(templateGroup.id),
             shouldOpen: !!templateGroup.openByDefault
         })
@@ -333,7 +341,7 @@ export function splitScopeGroupEntries({
         out.push({
             ...group,
             id: `${group.id}--${templateGroup.id}`,
-            label: translate?.(templateGroup.label || templateGroup.id) || templateGroup.label || templateGroup.id,
+            label: getTranslatedLabel(translate, templateGroup),
             entries: partitions.get(templateGroup.id),
             shouldOpen: !!templateGroup.openByDefault
         })
