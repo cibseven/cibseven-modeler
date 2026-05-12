@@ -57,6 +57,8 @@
 				:isActiveTab="index === activeTab" :clipboard="clipboard" :xml="tabNavListXml[index]"
 				:isModelerVisible="tabNavList[index].isModelerVisible" :elementTemplateJson="elementTemplateJson"
 				:consoleErrors="consoleErrorsList[index]" :activePropertiesTab="props.activePropertiesTab"
+				:chat-token="props.chatToken" :chat-user="props.chatUser" :chat-context="props.chatContext"
+				:chat-unread="props.chatUnread" :chat-on-tab-change="props.chatOnTabChange" :chat-on-message="props.chatOnMessage"
 				@showToastMessage="showToastMessage"
 				@updateStoredProcesses="getStoredDiagrams" @showPropertyPanel="showPropertyPanel"
 				@toggleEnableSave="toggleEnableSave" @showDiagram="showDiagram" @updateEditorXML="updateEditorXML"
@@ -96,6 +98,8 @@
 				:isModelerVisible="tabNavList[index].isModelerVisible"
 				:consoleErrors="consoleErrorsList[index]"
 				:activePropertiesTab="props.activePropertiesTab"
+				:chat-token="props.chatToken" :chat-user="props.chatUser" :chat-context="props.chatContext"
+				:chat-unread="props.chatUnread" :chat-on-tab-change="props.chatOnTabChange" :chat-on-message="props.chatOnMessage"
 				>
 				<div v-if="tabElement.isModelerVisible" class="h-100">
 					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index] != null"
@@ -124,7 +128,9 @@
 				@toggleIsSaved="toggleIsSaved" @resizeTabNav="resizeTabNav" @toggleConsole="toggleConsole"
 				@show-console-notification="showConsoleNotification"
 				:isModelerVisible="tabNavList[index].isModelerVisible"
-				:activePropertiesTab="props.activePropertiesTab">
+				:activePropertiesTab="props.activePropertiesTab"
+				:chat-token="props.chatToken" :chat-user="props.chatUser" :chat-context="props.chatContext"
+				:chat-unread="props.chatUnread" :chat-on-tab-change="props.chatOnTabChange" :chat-on-message="props.chatOnMessage">
 				<div v-if="tabElement.isModelerVisible" class="h-100">
 					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index] != null"
 						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index" language='json'></monaco-editor>
@@ -203,7 +209,13 @@ const router = useRouter()
 
 const { t } = useI18n()
 const props = defineProps({
-	activePropertiesTab: { type: String, default: 'properties' }
+	activePropertiesTab: { type: String, default: 'properties' },
+	chatToken: { type: String, default: '' },
+	chatUser: { type: Object, default: null },
+	chatContext: { type: String, default: 'modeler' },
+	chatUnread: { type: Number, default: 0 },
+	chatOnTabChange: { type: Function, default: null },
+	chatOnMessage: { type: Function, default: null },
 })
 const modeler = ref({}) // to get the diferent modelers  and call functions inside components
 const diagrams = ref(store.state.modeler?.processes?.unifiedDiagrams)

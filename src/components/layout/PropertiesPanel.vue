@@ -28,14 +28,25 @@
             </button>
             <!-- Panel content: hidden when collapsed -->
             <div v-show="!collapsed" class="d-flex flex-column flex-grow-1" style="min-width: 0; overflow: hidden;">
-                <component :is="PropertiesTabBar" v-if="PropertiesTabBar && isActiveTab" :tabElement="tabElement" />
+                <component :is="PropertiesTabBar" v-if="PropertiesTabBar && isActiveTab"
+                    :tabElement="tabElement"
+                    :active-properties-tab="props.activePropertiesTab"
+                    :chat-unread="props.chatUnread"
+                    :chat-on-tab-change="props.chatOnTabChange" />
                 <div v-show="activePropertiesTab === 'properties'"
                     class="properties-panel-parent resizable-content flex-grow-1 border-start border-dark-subtle"
                     style="min-height: 0; overflow: auto;"
                     ref="propertiesPanelEl">
                 </div>
                 <div v-show="activePropertiesTab !== 'properties'" class="flex-grow-1 border-start border-dark-subtle" style="min-height: 0; overflow: auto;">
-                    <component :is="PropertiesTabContent" v-if="PropertiesTabContent && isActiveTab" :tabElement="tabElement" :selectedElement="selectedElement" />
+                    <component :is="PropertiesTabContent" v-if="PropertiesTabContent && isActiveTab"
+                        :tabElement="tabElement"
+                        :selectedElement="selectedElement"
+                        :chat-token="props.chatToken"
+                        :chat-user="props.chatUser"
+                        :chat-context="props.chatContext"
+                        :active-properties-tab="props.activePropertiesTab"
+                        :chat-on-message="props.chatOnMessage" />
                 </div>
             </div>
         </div>
@@ -63,6 +74,12 @@ const props = defineProps({
     isActiveTab: { type: Boolean, default: false },
     activePropertiesTab: { type: String, default: 'properties' },
     selectedElement: { type: Object, default: null },
+    chatToken: { type: String, default: '' },
+    chatUser: { type: Object, default: null },
+    chatContext: { type: String, default: 'modeler' },
+    chatUnread: { type: Number, default: 0 },
+    chatOnTabChange: { type: Function, default: null },
+    chatOnMessage: { type: Function, default: null },
 })
 const emit = defineEmits([
     'changeWidth'
