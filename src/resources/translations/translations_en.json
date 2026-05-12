@@ -1,6 +1,7 @@
 {
 	"titles": {
-		"search": "Search for matching, upload one you have created, start with a blank version or import a local file.",
+		"searchIntro": "Search for matching, upload one you have created, start with a blank version or import a local file.",
+		"search": "Search a Process, Definition or Form Model",
 		"recent": "Recent",
 		"lastSaved": "Last saved"
 	},

@@ -75,6 +75,7 @@
 						:tabElement="tabElement" :ref="el => actionButton[index] = el"
 						:isButtonDisabled="isButtonDisabled[index]" :isEditorVisible="tabElement.isEditorVisible"
 						:canSave="tabNavList[index].canSave" :modeler="modeler[index]"
+						:console-open="modeler[index]?.isConsoleOpen ?? false"
 						@showToastMessage="showToastMessage" :isXmlValidated="isXmlValidated[tabElement.key]"
 						@toggleEnableSave="toggleEnableSave" :tabNavList="tabNavList[index]" @openDiagram="openDiagram"
 						@toggleEditor="toggleEditor" @toggleModal="toggleModal"
@@ -106,6 +107,7 @@
 						:tabElement="tabElement" :ref="el => actionButton[index] = el"
 						:isButtonDisabled="isButtonDisabled[index]" :isEditorVisible="tabElement.isEditorVisible"
 						:canSave="tabNavList[index].canSave" :modeler="modeler[index]"
+						:console-open="modeler[index]?.isConsoleOpen ?? false"
 						@showToastMessage="showToastMessage" :isXmlValidated="isXmlValidated[tabElement.key]"
 						@toggleEnableSave="toggleEnableSave" :tabNavList="tabNavList[index]" @openDiagram="openDiagram"
 						@toggleEditor="toggleEditor" @toggleModal="toggleModal"
@@ -423,8 +425,11 @@ const updateEditorXML = (xmlContent, tabElementIndex) => {
 	editorXML.value[tabElementIndex] = xmlContent
 }
 
-// shows or hide warning button of outdated templates
-const toggleOutdatedTemplateBtn = comp => actionButton.value[activeTab.value]._toggleOutDatedTemplateBtn(comp)
+// Route to the tab that emitted (not necessarily activeTab) so background BPMN tabs do not update the wrong toolbar.
+const toggleOutdatedTemplateBtn = (comp, tabElementIndex) => {
+	const idx = typeof tabElementIndex === 'number' ? tabElementIndex : activeTab.value
+	actionButton.value[idx]?._toggleOutDatedTemplateBtn(comp)
+}
 
 // shows or hide warning button of outdated templates
 const toggleOutdatedTemplateModal = comp => modeler.value[activeTab.value]._toggleModalListSelectorFromActionButton(comp, 'templates')

@@ -51,7 +51,8 @@
 				<ConsolePanel ref="consolePanel" :isModelerVisible="props.isModelerVisible" :parentHeight="parentHeight"
 					:rightPos="canvasWidth" :processID="props.tabElement.id" @changeHeight="changeHeight"
 					@copy-line="copyLine" @clean-console="cleanConsole" @blur="focusLost"
-					@show-console-notification="emit('show-console-notification', $event)">
+					@show-console-notification="emit('show-console-notification', $event)"
+					@visibility-changed="onConsolePanelVisibility">
 					<MonacoThemeScope overrideTheme="consoleTheme" v-show="isConsoleOpen">
 						<MonacoConsole ref="monacoEditorConsole" theme="vs" :width="canvasWidth" :height="canvasHeight"
 							:consoleErrors="props.consoleErrors">
@@ -194,6 +195,8 @@ const {
 	toggleVersionNotSaved,
 	toggleEnableSave,
 } = useModeler(props, emit, monacoEditorConsole, consolePanel)
+
+const onConsolePanelVisibility = open => { isConsoleOpen.value = open }
 
 const VersionButtonComponent = inject('versionButtonComponent', null)
 const CompareButtonComponent = inject('compareButtonComponent', null)
@@ -443,6 +446,7 @@ defineExpose({
 	togglePropertiesPanel,
 	toggleConsole,
 	isConsolePanelShowing,
+	isConsoleOpen,
 	addLineWithErrorToConsole,
 })
 </script>

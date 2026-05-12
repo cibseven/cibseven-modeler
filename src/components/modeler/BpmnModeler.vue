@@ -50,7 +50,8 @@
 			<ConsolePanel ref="consolePanel" :isModelerVisible="props.isModelerVisible" :parentHeight="parentHeight"
 				:rightPos="canvasWidth" :processID="props.tabElement.id" @changeHeight="changeHeight"
 				@copy-line="copyLine" @clean-console="cleanConsole" @blur="focusLost"
-				@show-console-notification="emit('showConsoleNotification', $event)">
+				@show-console-notification="emit('showConsoleNotification', $event)"
+				@visibility-changed="onConsolePanelVisibility">
 				<MonacoThemeScope overrideTheme="consoleTheme" v-show="isConsoleOpen">
 					<MonacoConsole ref="monacoEditorConsole" theme="vs" :width="canvasWidth" :height="canvasHeight"
 						:consoleErrors="props.consoleErrors">
@@ -304,6 +305,8 @@ const {
 	isConsoleOpen,
 } = useModeler(props, emit, monacoEditorConsole, consolePanel)
 
+const onConsolePanelVisibility = open => { isConsoleOpen.value = open }
+
 const { addCustomizeTemplateButton, customizedModalElementTemplatesData, applyTemplateToTask } = useCustomizedTemplateModal()
 const { updateParentHeight, updateParentWidth,  parentWidth, parentHeight } = usePropertiesPanel(props, emit, containerModeler, resizableDiv)
 
@@ -343,11 +346,10 @@ onMounted(async () => {
 
 	await _openDiagram(props.xml)
 	templatesList.value = checkJSON(props.xml, props.elementTemplateJson) ?? []
-	
 	if (templatesList.value.length > 0 && props.isActiveTab && !props.isModelerVisible) {
 		typeOfSelector.value = 'templates'
 		isShowModalListSelector.value = true
-		emit('toggleOutdatedTemplateBtn', templatesList.value.length > 0)
+		emit('toggleOutdatedTemplateBtn', templatesList.value.length > 0, props.tabElementIndex)
 	}
 
 	await nextTick()
@@ -806,7 +808,7 @@ const _moveViewToElement = element => {
 
 const _updatetemplatesListButton = xml => {
 	templatesList.value = checkJSON(xml, props.elementTemplateJson)
-	emit('toggleOutdatedTemplateBtn', templatesList.value.length > 0)
+	emit('toggleOutdatedTemplateBtn', templatesList.value.length > 0, props.tabElementIndex)
 }
 
 const _addingFormFieldToStartEvent = (element) => {
@@ -948,6 +950,7 @@ defineExpose({
 	addLineWithErrorToConsole,
 	togglePropertiesPanel,
 	isConsolePanelShowing,
+	isConsoleOpen,
 	_saveXmlAfterUpdate,
 	_toggleModalListSelectorFromActionButton,
 	_getElementRegistryFromModeler,

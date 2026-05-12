@@ -1,6 +1,7 @@
 {
   "titles": {
-    "search": "Busque coincidentes, cargue uno creado, comience con una versión en blanco o importe un archivo local.",
+    "searchIntro": "Busque coincidencias, cargue una que haya creado, comience con una versión en blanco o importe un archivo local.",
+    "search": "Buscar un modelo de proceso, definición o formulario",
     "recent": "Recientes",
     "lastSaved": "Último guardado"
   },
