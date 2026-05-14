@@ -35,6 +35,7 @@
   "dependencies": {
     "@bpmn-io/dmn-migrate": "0.7.1",
     "@bpmn-io/element-template-chooser": "2.1.0",
+    "@bpmn-io/element-template-icon-renderer": "1.0.0",
     "bpmn-js-bpmnlint": "0.24.0",
     "bpmn-js-color-picker": "0.7.2",
     "bpmn-js-element-templates": "2.23.1",
