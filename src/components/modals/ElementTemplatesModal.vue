@@ -69,14 +69,23 @@
                   <span class="mx-3 text-secondary">{{ elementName === 'undefined' ? $t('searchElementTemplates.others') : elementName }}</span>
                   <div class="flex-grow-1 border-top border-secondary"></div>
                 </div>
-                <div class="d-flex flex-column py-1" style="cursor: pointer;"
+                <div class="d-flex align-items-center py-1" style="cursor: pointer;"
                      role="button" tabindex="0"
                      v-for="childElement in parentElement" :key="childElement.id" @click.stop="selectTemplate(childElement.id)"
                      @keyup.enter.stop="selectTemplate(childElement.id)"
                      :title="childElement.tooltip">
-                  <h5 class="m-0">{{ childElement.name }}</h5>
-                  <div class="text-muted"><span v-if="!isUserTask">{{ childElement.extern ? 'Extern' : 'Intern' }} •︎</span> {{ $t('version') }} {{
-                      childElement.version }}</div>
+                  <img
+                    v-if="childElement.icon"
+                    :src="childElement.icon"
+                    :alt="childElement.name"
+                    class="template-icon me-2"
+                  />
+                  <span v-else class="template-icon-placeholder mdi mdi-shape-outline text-muted me-2"></span>
+                  <div class="flex-grow-1">
+                    <h5 class="m-0">{{ childElement.name }}</h5>
+                    <div class="text-muted"><span v-if="!isUserTask">{{ childElement.extern ? 'Extern' : 'Intern' }} •︎</span> {{ $t('version') }} {{
+                        childElement.id }}:{{ childElement.templateVersion }}</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -190,5 +199,19 @@ defineExpose({
   font-size: .8rem;
   max-width: 350px;
   text-align: left;
+}
+.template-icon,
+.template-icon-placeholder {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.template-icon-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
 }
 </style>
