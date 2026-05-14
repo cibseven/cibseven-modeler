@@ -163,6 +163,7 @@ import { BpmnPropertiesProviderModule, BpmnPropertiesPanelModule, CamundaPlatfor
 import { ElementTemplatesPropertiesProviderModule } from 'bpmn-js-element-templates'
 import ScopedTemplateGroupsModule from './element-templates/ScopedGroupsModule.js'
 import ElementTemplateChooserModule from '@bpmn-io/element-template-chooser'
+import ElementTemplateIconRendererModule from './element-templates/IconRendererModule.js'
 import CamundaModdleDescriptors from 'camunda-bpmn-moddle/resources/camunda.json'
 import { customTranslate, translateValue } from "../../i18n.js"
 import lintModule from 'bpmn-js-bpmnlint'
@@ -526,6 +527,7 @@ const initializeCamunda7Modeler = () => {
 			ElementTemplatesPropertiesProviderModule,
 			ScopedTemplateGroupsModule,
 			ElementTemplateChooserModule,
+			ElementTemplateIconRendererModule,
 			minimapModule,
 			SearchModule,
 			BpmnColorPickerModule,
