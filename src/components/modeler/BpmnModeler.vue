@@ -319,6 +319,7 @@ const { updateParentHeight, updateParentWidth,  parentWidth, parentHeight } = us
 
 let bpmnModeler = null
 let isScriptTaskUpdate = false
+let currentScriptBpmnElement = null
 
 const isMinimapOpen = ref(false)
 const isFullscreen = ref(false)
@@ -738,6 +739,7 @@ const _setMonacoEditorToDiv = (e, divId) => {
 		// alternative with another events e.element.type
 
 		if (element.type !== 'bpmn:ScriptTask') {// continues only if a script task has being loaded
+			currentScriptBpmnElement = null
 			return
 		}
 		// to get the value of the selected script task
@@ -748,18 +750,21 @@ const _setMonacoEditorToDiv = (e, divId) => {
 			return
 		}
 
-		const monacoEditorId = element.di.bpmnElement.id ?? element.moddleElement.id
+		const bpmnElement = element.di.bpmnElement ?? element.moddleElement
 		const scriptFormat = element.moddleElement?.scriptFormat ?? element.di.bpmnElement?.scriptFormat
-		// Skip rebuild only when the event was our own typing AND scriptFormat hasn't changed.
-		// A scriptFormat change must always rebuild so Monaco picks up the new language.
-		const existingWrapper = propertyPanel.value.querySelector(`#monaco-editor-${monacoEditorId}-wrapper`)
+		// Use a fixed wrapper ID so the same DOM node is reused across all script tasks.
+		// Keying by element ID caused old wrappers to accumulate when the ID was renamed.
+		const MONACO_ID = 'monaco-editor-script-task'
+		const existingWrapper = propertyPanel.value.querySelector(`#${MONACO_ID}-wrapper`)
 		const formatUnchanged = existingWrapper?.dataset.scriptFormat === (scriptFormat ?? '')
-		if (isScriptTaskUpdate && formatUnchanged) {
+		// Skip rebuild: typing in Monaco, OR same element with no format change (e.g. ID rename)
+		if ((isScriptTaskUpdate || currentScriptBpmnElement === bpmnElement) && formatUnchanged) {
 			isScriptTaskUpdate = false
 			return
 		}
 		isScriptTaskUpdate = false
-		const monacoEditor = _createMonacoEditor(`monaco-editor-${monacoEditorId}`, textAreaScriptTask, scriptFormat)
+		currentScriptBpmnElement = bpmnElement
+		const monacoEditor = _createMonacoEditor(MONACO_ID, textAreaScriptTask, scriptFormat)
 		//captures changes in monaco editor
 		monacoEditor.getModel().onDidChangeContent(() => {
 			textAreaScriptTask.value = monacoEditor.getValue()
