@@ -395,6 +395,9 @@
 		"title": "Delete {item}",
 		"body": "Are you sure you want to delete the {item}"
 	},
+	"modalDeploy": {
+		"notExecutable": "This process is marked as not executable and cannot be started."
+	},
 	"searchElementTemplates": {
 		"searchInput": "Search for templates",
 		"others": "Others",

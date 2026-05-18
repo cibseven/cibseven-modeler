@@ -395,6 +395,9 @@
     "title": "{item} löschen",
     "body": "Sind Sie sicher, dass Sie den {item} löschen wollen??"
   },
+  "modalDeploy": {
+    "notExecutable": "Dieser Prozess ist als nicht ausführbar markiert und kann nicht gestartet werden."
+  },
   "searchElementTemplates": {
     "searchInput": "Nach Templates suchen",
     "others": "Sonstiges",

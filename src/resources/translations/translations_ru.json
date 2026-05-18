@@ -395,6 +395,9 @@
     "title": "Удалить {item}",
     "body": "Вы уверены, что хотите удалить {item}?"
   },
+  "modalDeploy": {
+    "notExecutable": "Этот процесс помечен как невыполняемый и не может быть запущен."
+  },
   "searchElementTemplates": {
     "searchInput": "Поиск шаблонов",
     "others": "Другое",
