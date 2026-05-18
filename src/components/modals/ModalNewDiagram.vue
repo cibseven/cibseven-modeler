@@ -26,11 +26,11 @@
                 <div class="modal-body">
                     <div class="mb-3" v-if="type !=='form'">
                         <label class="form-label" for="processNameInput">{{ modalNewDiagramText.processName }}</label>
-                        <input id="processNameInput" type="text" class="form-control form-control-sm" v-model="nameOfProcess">
+                        <input id="processNameInput" ref="processNameInputRef" type="text" class="form-control form-control-sm" v-model="nameOfProcess" @keyup.enter="handleClick">
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="processIdInput">{{ modalNewDiagramText.processId }}</label>
-                        <input id="processIdInput" type="text" class="form-control form-control-sm" v-model="idOfProcess">
+                        <input id="processIdInput" ref="processIdInputRef" type="text" class="form-control form-control-sm" v-model="idOfProcess" @keyup.enter="handleClick">
                         <div v-if="!isValidId && idOfProcess !== ''" tabindex="-1" role="alert" aria-live="assertive"
                             aria-atomic="true" class="d-block invalid-feedback">{{
                         $t("modalNewDiagram.qnameError") }}
@@ -66,6 +66,8 @@ import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
 
 const modalNewDiagram = ref(null)
+const processNameInputRef = ref(null)
+const processIdInputRef = ref(null)
 let functionOnCallback = null
 const nameOfProcess = ref('')
 const idOfProcess = ref('')
@@ -85,6 +87,10 @@ const type = ref('bpmn-c7')
 onMounted(() => {
     if (!modalNewDiagram.value) return
     modalBootstrap = new bootstrap.Modal(modalNewDiagram.value)
+    modalNewDiagram.value.addEventListener('shown.bs.modal', () => {
+        const target = type.value !== 'form' ? processNameInputRef.value : processIdInputRef.value
+        target?.focus()
+    })
 })
 
 const modalNewDiagramText = computed(() => {
