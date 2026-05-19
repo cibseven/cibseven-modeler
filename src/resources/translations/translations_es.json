@@ -25,8 +25,8 @@
     "body": "El archivo que está intentando cargar ya no existe"
   },
   "modalCloseNotSaved": {
-    "title": "El {item} tiene cambios sin guardar",
-    "body": "¿Está seguro de que desea cerrar el {item}?"
+    "title": "{item} sin guardar",
+    "body": "Este {item} tiene cambios sin guardar. Si lo cierra, se perderán todos los cambios no guardados."
   },
   "toastDeploySucessDeploy": {
     "title": "Éxito",
@@ -85,6 +85,7 @@
   "ttlFieldRequired": "Este campo es obligatorio para el despliegue",
   "buttons": {
     "accept": "Aceptar",
+    "discardChanges": "Descartar cambios",
     "filter": "Seleccionar filtro",
     "saveDiagram": "Guardar diagrama",
     "search": "Buscar",

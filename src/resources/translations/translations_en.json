@@ -25,8 +25,8 @@
 		"body": "The file you are trying to load no longer exists"
 	},
 	"modalCloseNotSaved": {
-		"title": "Closing {item} not saved",
-		"body": "Are you sure you want to close the unsaved {item}?"
+		"title": "Unsaved {item}",
+		"body": "This {item} has unsaved changes. If you close it, all unsaved changes will be lost."
 	},
 	"toastDeploySucessDeploy": {
 		"title": "Success",
@@ -85,6 +85,7 @@
 	"ttlFieldRequired": "This field is required for deployment",
 	"buttons": {
 		"accept": "Accept",
+		"discardChanges": "Discard changes",
 		"filter": "Select filter",
 		"saveDiagram": "Save diagram",
 		"search": "Search",

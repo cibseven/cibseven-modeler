@@ -65,6 +65,7 @@
 				@updateIsButtonDisabled="updateIsButtonDisabled" @updateDownloadLink="_updateDownloadLink"
 				@resizeTabNav="resizeTabNav"
 				@updateStoredLocalStorageTabNavList="updateStoredLocalStorageTabNavList" @isValidated="isValidated"
+				@updateTabName="updateTabName"
 				@setTypeOfDiagramForModeler="setTypeOfDiagramForModeler" @toggleIsSaved="toggleIsSaved"
 				@toggleVersionNotSaved="toggleVersionNotSaved" @toggleOutdatedTemplateBtn="toggleOutdatedTemplateBtn"
 				@show-console-notification="showConsoleNotification">
@@ -433,6 +434,10 @@ const showPropertyPanel = (isShowing, tabElementIndex) => {
 
 const updateEditorXML = (xmlContent, tabElementIndex) => {
 	editorXML.value[tabElementIndex] = xmlContent
+}
+
+const updateTabName = (name, tabElementIndex) => {
+	tabNavList.value[tabElementIndex].name = name
 }
 
 // shows or hide warning button of outdated templates

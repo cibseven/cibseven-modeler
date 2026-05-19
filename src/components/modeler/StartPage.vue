@@ -67,7 +67,7 @@
                         <div class="mt-4 d-flex justify-content-between">    
                             <div class="d-flex justify-content-start gap-2">
                                 <button @click="handleOpenFileInput" :title="$t('buttons.importFile')" type="button"
-                                class="btn border border-dark mdi mdi-import btn-light">{{ $t('buttons.importFile') }}</button>
+                                class="btn border border-dark btn-light"><i class="mdi mdi-import me-1"></i>{{ $t('buttons.importFile') }}</button>
                             </div>
                             <input ref="fileInput" type="file" accept=".bpmn,.dmn,.form" :aria-label="$t('buttons.importFile')" style="display: none;"
                                 @change="handleFileChange" />                            

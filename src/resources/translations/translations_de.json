@@ -25,8 +25,8 @@
     "body": "Die Datei, die Sie laden möchten, existiert nicht mehr."
   },
   "modalCloseNotSaved": {
-    "title": "{item} wurde nicht gespeichert",
-    "body": "Der {item} wurde nicht gespeichert. Sind Sie sicher, dass Sie ihn schließen wollen?"
+    "title": "Nicht gespeicherter {item}",
+    "body": "Dieser {item} hat nicht gespeicherte Änderungen. Wenn Sie ihn schließen, gehen alle nicht gespeicherten Änderungen verloren."
   },
   "toastDeploySucessDeploy": {
     "title": "Einspielen erfolgreich",
@@ -85,6 +85,7 @@
   "ttlFieldRequired": "Dieses Feld ist für die Bereitstellung erforderlich",
   "buttons": {
     "accept": "Ok",
+    "discardChanges": "Änderungen verwerfen",
     "filter": "Filter auswählen",
     "saveDiagram": "Diagramm speichern",
     "search": "Suchen",
