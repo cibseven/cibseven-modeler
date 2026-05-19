@@ -173,34 +173,32 @@
 							</div>
 						</div>
 
-						<!-- Actions -->
-						<div class="d-flex justify-content-between align-items-end mx-1">
-							<button href="#" class="btn btn-link" ref="closeButton" data-bs-dismiss="modal">
-								{{ $t('buttons.cancel') }}
-							</button>
-							<div>
-								<button @click="deploy()" class="btn btn-primary" :disabled="!canDeploy">
-									{{ $t('buttons.deploy') }}
+					</div>
+				</div>
+				<div class="modal-footer justify-content-between">
+					<button href="#" class="btn btn-link" ref="closeButton" data-bs-dismiss="modal">
+						{{ $t('buttons.cancel') }}
+					</button>
+					<div>
+						<button @click="deploy()" class="btn btn-primary" :disabled="!canDeploy">
+							{{ $t('buttons.deploy') }}
+						</button>
+						<template v-if="props.tabNavList.type !== 'dmn' && props.tabNavList.type !== 'form'">
+							<span v-if="isExecutable === 'false'"
+								v-b-popover.hover.top="$t('modalDeploy.notExecutable')"
+								tabindex="0">
+								<button type="button" class="btn btn-secondary mx-2" disabled style="pointer-events: none">
+									{{ $t('buttons.startProcess') }}
 								</button>
-								<template v-if="props.tabNavList.type !== 'dmn' && props.tabNavList.type !== 'form'">
-									<span v-if="isExecutable === 'false'"
-										v-b-popover.hover.top="$t('modalDeploy.notExecutable')"
-										tabindex="0">
-										<button type="button" class="btn btn-secondary mx-2" disabled style="pointer-events: none">
-											{{ $t('buttons.startProcess') }}
-										</button>
-									</span>
-									<button v-else @click="deployAndStart" type="button" class="btn btn-secondary mx-2" :disabled="!canStart">
-										{{ $t('buttons.startProcess') }}
-									</button>
-								</template>
-							</div>
-						</div>
+							</span>
+							<button v-else @click="deployAndStart" type="button" class="btn btn-secondary mx-2" :disabled="!canStart">
+								{{ $t('buttons.startProcess') }}
+							</button>
+						</template>
 					</div>
 				</div>
 			</div>
 		</div>
-
 	</div>
 </template>
 
