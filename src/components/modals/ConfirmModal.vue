@@ -27,8 +27,8 @@
                     {{ props.body }} {{ props.name }}
                 </div>
                 <div class="modal-footer">
-                    <button type="button" @click.prevent="handleAcceptMessage" class="btn btn-primary">{{
-                        $t("buttons.accept") }}</button>
+                    <button type="button" @click.prevent="handleAcceptMessage" class="btn btn-danger">{{
+                        props.acceptLabel || $t("buttons.accept") }}</button>
                     <button type="button" ref="closeButton" class="btn btn-secondary" data-bs-dismiss="modal"
                         @click="handleCloseMessage">{{ $t("buttons.cancel")
                         }}</button>
@@ -65,7 +65,8 @@ const props = defineProps({
     functionAfterAccepting: { type: Function, required: true },
     showModal: { type: Boolean, required: true },
     title: { type: String, required: true },
-    body: { type: String, required: true }
+    body: { type: String, required: true },
+    acceptLabel: { type: String, default: null }
 })
 
 const idSaved = ref(null)

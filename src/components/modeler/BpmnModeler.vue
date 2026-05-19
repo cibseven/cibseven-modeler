@@ -244,6 +244,7 @@ const emit = defineEmits([
 	'isValidated',
 	'showToastMessage',
 	'updateStoredLocalStorageTabNavList',
+	'updateTabName',
 	'toggleEnableSave',
 	'updateIsButtonDisabled',
 	'updateEditorXML',
@@ -459,9 +460,11 @@ const initializeModeler = async () => {
 	})
 
 	bpmnModeler.on('commandStack.changed', e => {
-		emit('toggleEnableSave', true, props.tabElementIndex) //enables save button		
+		emit('toggleEnableSave', true, props.tabElementIndex) //enables save button
 		_setupDiagramFunctions()
-		getProcessInformation(bpmnModeler)
+		const info = getProcessInformation(bpmnModeler)
+		const name = info?.name || info?.id || null
+		if (name) emit('updateTabName', name, props.tabElementIndex)
 		if (popover.value?.isFilterOn) popover.value.bpmnFilter(bpmnModeler)
 		_openCalledElementWhenCalActivity(e)
 	})

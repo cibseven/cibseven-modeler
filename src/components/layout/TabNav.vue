@@ -48,6 +48,7 @@
         </ul>
         <ConfirmModal :showModal="showModalAcceptCancelMessage" :title="modalCloseNotSavedText.title"
             type="closeTab" :body="modalCloseNotSavedText.body" @hideModal="hideModal"
+            :acceptLabel="modalCloseNotSavedText.acceptLabel"
             :functionAfterAccepting="removeSelectedTabFromModal">
         </ConfirmModal>
     </div>
@@ -99,9 +100,9 @@ const modalCloseNotSavedText = computed(() => {
             item: t(`items.${props.tabNavList[props.activeTab].type}`)
         } ), body: t('modalCloseNotSaved.body', {
             item: t(`items.${props.tabNavList[props.activeTab].type}`)
-        } ) }
+        } ), acceptLabel: t('buttons.discardChanges') }
     }
-    return { title: '', body: ''}
+    return { title: '', body: '', acceptLabel: '' }
 })
 
 watch(() => props.tabNavList.length,
