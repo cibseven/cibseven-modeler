@@ -395,6 +395,9 @@
     "title": "Borrar {item}",
     "body": "¿Está seguro de que desea borrar el {item}?"
   },
+  "modalDeploy": {
+    "notExecutable": "Este proceso está marcado como no ejecutable y no puede iniciarse."
+  },
   "searchElementTemplates": {
     "searchInput": "Buscar templates",
     "others": "Otros",

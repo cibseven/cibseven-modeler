@@ -395,6 +395,9 @@
     "title": "Видалити {item}",
     "body": "Ви впевнені, що хочете видалити {item}?"
   },
+  "modalDeploy": {
+    "notExecutable": "Цей процес позначено як невиконуваний і не може бути запущений."
+  },
   "searchElementTemplates": {
     "searchInput": "Пошук шаблонів",
     "others": "Інше",
