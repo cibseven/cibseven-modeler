@@ -36,10 +36,10 @@ export function getModelerServicePath() {
 
 /**
  * Returns the element templates service path
- * @returns {string} e.g., 'services/v1/element-templates'
+ * @returns {string} e.g., 'services/v1/modeler/element-templates'
  */
 export function getElementTemplatesPath() {
-  return `${servicesBasePath}/element-templates`
+  return `${servicesBasePath}/modeler/element-templates`
 }
 
 /**
