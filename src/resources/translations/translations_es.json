@@ -115,8 +115,8 @@
     "zoomIn": "Acercar",
     "zoomOut": "Alejar",
     "resetViewport": "Restablecer vista",
-    "minimap": "Alternar minimapa",
-    "fullscreen": "Alternar pantalla completa",
+    "minimap": "Minimapa",
+    "fullscreen": "Pantalla completa",
     "expandScript": "Abrir en editor completo",
     "collapsePanel": "Contraer panel",
     "expandPanel": "Expandir panel"

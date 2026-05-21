@@ -115,8 +115,8 @@
 		"zoomIn": "Zoom in",
 		"zoomOut": "Zoom out",
 		"resetViewport": "Reset viewport",
-		"minimap": "Toggle minimap",
-		"fullscreen": "Toggle fullscreen",
+		"minimap": "Minimap",
+		"fullscreen": "Fullscreen",
 		"expandScript": "Open in full editor",
 		"collapsePanel": "Collapse panel",
 		"expandPanel": "Expand panel"

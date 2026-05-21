@@ -115,8 +115,8 @@
     "zoomIn": "Vergrößern",
     "zoomOut": "Verkleinern",
     "resetViewport": "Ansicht zurücksetzen",
-    "minimap": "Minimalkarte umschalten",
-    "fullscreen": "Vollbild umschalten",
+    "minimap": "Minimalkarte",
+    "fullscreen": "Vollbild",
     "expandScript": "Im vollständigen Editor öffnen",
     "collapsePanel": "Bereich einklappen",
     "expandPanel": "Bereich ausklappen"

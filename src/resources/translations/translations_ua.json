@@ -115,8 +115,8 @@
     "zoomIn": "Збільшити",
     "zoomOut": "Зменшити",
     "resetViewport": "Скинути вигляд",
-    "minimap": "Перемкнути мінімапу",
-    "fullscreen": "Перемкнути повний екран",
+    "minimap": "Мінімапа",
+    "fullscreen": "Повний екран",
     "expandScript": "Відкрити у повному редакторі",
     "collapsePanel": "Згорнути панель",
     "expandPanel": "Розгорнути панель"

@@ -17,19 +17,7 @@
 <template>
     <div class="act-btns d-flex flex-wrap flex-row-reverse m-0 px-1 justify-content-end align-items-center"
         style="z-index: 11;" >
-        <div v-if="isOutdatedTemplateWarning" class="btn-menu d-flex align-items-center mx-1">
-            <button type="button" :class="actBtnClass(false)" @click="toggleVisibilityOutdatedTemplates"
-                :disabled="props.tabElement.isEditorVisible">
-                <span class="mdi mdi-24px mdi-exclamation"></span>
-            </button>
-        </div>
-        <div v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
-            <button type="button" :class="actBtnClass(props.tabElement.isEditorVisible)" :disabled="props.isButtonDisabled"
-                @click="toggleVisibilityEditor">
-                <span class="mdi mdi-24px"
-                    :class="{ 'mdi-xml': !tabElement.isEditorVisible, 'mdi-map': props.tabElement.isEditorVisible }"></span>
-            </button>
-        </div>
+        <!-- Right section: save, deploy, download as svg, normal download -->
         <div v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
             <a @click="canBeDownloaded" :href="downloadLink" :download="downloadName" :name="downloadName"
                 :title="$t('buttons.downloadDiagram')" :aria-label="$t('buttons.downloadDiagram')"
@@ -61,7 +49,40 @@
                 :disabled="(!props.canSave && !props.tabElement.changedVersion) || isSaving" @click="_saveDiagram">
                 <span class="mdi mdi-24px" :class="isSaving ? 'mdi-loading mdi-spin' : 'mdi-content-save-outline'"></span>
             </button>
-        </div>    
+        </div>
+
+        <!-- Separator -->
+        <div class="btn-menu d-flex align-items-center mx-1" style="height: 2rem; opacity: 0.3;">
+            <span>|</span>
+        </div>
+
+        <!-- Undo/Redo buttons -->
+        <div class="btn-menu d-flex align-items-center mx-1" v-show="!props.isButtonDisabled">
+            <button type="button" :class="actBtnClass(false)" :title="`${$t('buttons.redo')} (Ctrl+Y)`"
+                @click="performRedo">
+                <span class="mdi mdi-24px mdi-redo-variant"></span>
+            </button>
+        </div>
+        <div class="btn-menu d-flex align-items-center mx-1" v-show="!props.isButtonDisabled">
+            <button type="button" :class="actBtnClass(false)" :title="`${$t('buttons.undo')} (Ctrl+Z)`"
+                @click="performUndo">
+                <span class="mdi mdi-24px mdi-undo-variant"></span>
+            </button>
+        </div>
+
+        <!-- Separator -->
+        <div class="btn-menu d-flex align-items-center mx-1" style="height: 2rem; opacity: 0.3;">
+            <span>|</span>
+        </div>
+
+        <!-- Left section: filters, xml, console -->
+        <div v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
+            <button type="button" :class="actBtnClass(props.tabElement.isEditorVisible)" :disabled="props.isButtonDisabled"
+                @click="toggleVisibilityEditor">
+                <span class="mdi mdi-24px"
+                    :class="{ 'mdi-xml': !tabElement.isEditorVisible, 'mdi-map': props.tabElement.isEditorVisible }"></span>
+            </button>
+        </div>
         <div class="btn-menu d-flex align-items-center mx-1" v-show="modelProperties[props.tabElement.type].canOpenConsole">
             <button type="button" :class="consoleBtnClasses" :title="$t('buttons.console')"
                 :disabled="props.tabElement.isEditorVisible" :aria-expanded="consoleOpen" @click="openConsole">
@@ -72,6 +93,12 @@
         <div class="btn-menu d-flex align-items-center mx-1" v-if="props.tabElement.id && haslinkToProject">
             <button type="button" :class="[actBtnClass(false), 'position-relative']" :title="$t('buttons.linkToProject')" @click="linkToProject">
                 <span class="mdi mdi-24px mdi-vector-link"></span>
+            </button>
+        </div>
+        <div v-if="isOutdatedTemplateWarning" class="btn-menu d-flex align-items-center mx-1">
+            <button type="button" :class="actBtnClass(false)" @click="toggleVisibilityOutdatedTemplates"
+                :disabled="props.tabElement.isEditorVisible">
+                <span class="mdi mdi-24px mdi-exclamation"></span>
             </button>
         </div>
     </div>
@@ -264,6 +291,10 @@ const _updateDownloadFile = (downloadLinkValue, downloadNameValue) => {
 }
 
 const showConsoleNotification = value => hasConsoleNotification.value = value
+
+const performUndo = () => props.modeler?._undo?.()
+
+const performRedo = () => props.modeler?._redo?.()
 
 defineExpose({ _toggleOutDatedTemplateBtn, _saveDiagram, _updateDownloadFile, changeWidth, showConsoleNotification })
 </script>

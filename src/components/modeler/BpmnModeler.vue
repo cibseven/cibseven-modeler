@@ -21,20 +21,20 @@
 				<div v-show="!props.isModelerVisible" class="position-relative" :style="styleCanvas">
 					<div class="canvas h-100 w-100" ref="canvas" tabindex="0"></div>
 					<div class="position-absolute top-0 end-0 d-flex flex-column gap-1 m-2" style="z-index: 10;">
-						<button @click="zoomIn" class="btn btn-sm btn-light border" :title="$t('buttons.zoomIn')">
+						<button @mousedown.prevent="zoomIn" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomIn')">
 							<span class="mdi mdi-18px mdi-magnify-plus-outline"></span>
 						</button>
-						<button @click="zoomOut" class="btn btn-sm btn-light border" :title="$t('buttons.zoomOut')">
+						<button @mousedown.prevent="zoomOut" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomOut')">
 							<span class="mdi mdi-18px mdi-magnify-minus-outline"></span>
 						</button>
-						<button @click="resetViewport" class="btn btn-sm btn-light border" :title="$t('buttons.resetViewport')">
+						<button @mousedown.prevent="resetViewport" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.resetViewport')">
 							<span class="mdi mdi-18px mdi-fit-to-screen-outline"></span>
 						</button>
-						<button @click="toggleMinimap" :title="$t('buttons.minimap')"
-							:class="['btn btn-sm border', isMinimapOpen ? 'btn-secondary' : 'btn-light']">
+						<button @mousedown.prevent="toggleMinimap" :title="$t('buttons.minimap')"
+							:class="['btn btn-sm border text-secondary', isMinimapOpen ? 'btn-secondary' : 'btn-light']">
 							<span class="mdi mdi-18px mdi-map-outline"></span>
 						</button>
-						<button @click="toggleFullscreen" class="btn btn-sm btn-light border" :title="$t('buttons.fullscreen')">
+						<button @mousedown.prevent="toggleFullscreen" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.fullscreen')">
 							<span :class="['mdi', 'mdi-18px', isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen']"></span>
 						</button>
 					</div>
@@ -945,6 +945,9 @@ const _saveXmlAfterUpdate = (isBpmn, updateXml, tabElementIndex) => {
 
 const _getElementRegistryFromModeler = type => getElementRegistryFromModeler(bpmnModeler, type)
 
+const _undo = () => bpmnModeler.get('commandStack').undo()
+const _redo = () => bpmnModeler.get('commandStack').redo()
+
 defineExpose({
 	toggleConsole,
 	addLineWithErrorToConsole,
@@ -956,6 +959,8 @@ defineExpose({
 	_getElementRegistryFromModeler,
 	_validate,
 	_saveDiagram,
+	_undo,
+	_redo,
 })
 </script>
 
@@ -966,6 +971,21 @@ svg {
 .djs-minimap .toggle {
 	display: none;
 }
+.djs-minimap {
+	position: absolute !important;
+	left: auto !important;
+	right: 60px !important;
+}
+
+/* Remove active state from zoom and viewport buttons - only show on hover */
+.position-absolute.top-0.end-0 .btn:active,
+.position-absolute.top-0.end-0 .btn:focus,
+.position-absolute.top-0.end-0 .btn:active:focus {
+	background-color: var(--bs-light) !important;
+	box-shadow: none !important;
+	color: currentColor !important;
+}
+
 /*for the resize panel to work */
 #js-properties-panel {
 	min-width: 200px;
@@ -1031,7 +1051,84 @@ input[name="historyTimeToLive"].is-invalid {
 	background-color: var(--bs-primary);
 }
 
+/* Force palette to always display 2 columns */
+.djs-palette {
+	width: 94px !important;
+	border-radius: 0.25rem !important;
+	border-color: var(--bs-gray-500) !important;
+}
+
 .container.modeler .bts-log .bts-header {
 	background-color: var(--bs-primary);
+}
+
+.bjs-container .bjsl-button-warning {
+	background-color: var(--bs-warning) !important;
+}
+
+.bjs-container .bjsl-button-error {
+	background-color: var(--bs-danger) !important;
+}
+
+/* Style the linted elements with warning/error overlays */
+.bjs-container .bjsl-icon.bjsl-icon-warning {
+	--icon-bg-color: var(--bs-warning);
+}
+
+.bjs-container .bjsl-icon.bjsl-icon-error {
+	--icon-bg-color: var(--bs-danger);
+}
+
+/* Style the hover/active error and warning states */
+.bjs-container .bjsl-icon.warning {
+	--icon-bg-color: var(--bs-warning);
+}
+
+.bjs-container .bjsl-icon.error {
+	--icon-bg-color: var(--bs-danger);
+}
+
+/* Style the linting issue icons with Bootstrap colors */
+.bjs-container .bjsl-icon.bjsl-icon-warning,
+.bjs-container .bjsl-icon.warning,
+.bjs-container .bjsl-current-element-issues .bjsl-icon {
+	--icon-bg-color: var(--bs-warning);
+}
+
+.bjs-container .bjsl-icon.bjsl-icon-error,
+.bjs-container .bjsl-icon.error,
+.bjs-container .bjsl-current-element-issues .bjsl-icon.error {
+	--icon-bg-color: var(--bs-danger);
+}
+
+.bjs-container .bjsl-issues .icon {
+	--icon-color: var(--bs-warning);
+}
+
+.bjs-container .bjsl-issues .error .icon,
+.bjs-container .bjsl-issues .icon.error {
+	--icon-color: var(--bs-danger);
+}
+
+.bjs-container .bjsl-issues .warning .icon,
+.bjs-container .bjsl-issues .icon.warning {
+	--icon-color: var(--bs-warning);
+}
+
+.btn.btn-secondary .mdi {
+	color: white !important;
+}
+
+.btn.btn-secondary:active .mdi {
+	color:  var(--bs-secondary) !important;
+}
+
+/* Style the linting button when inactive */
+.bjs-container .bjsl-button.bjsl-button-inactive {
+	color: var(--bs-gray-700) !important;
+}
+
+.bjs-container .bjsl-button.bjsl-button-inactive:hover {
+	color: var(--bs-dark) !important;
 }
 </style>
