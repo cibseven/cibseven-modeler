@@ -158,7 +158,10 @@ describe('IconRendererModule — canRender', () => {
 })
 
 describe('IconRendererModule — drawShape', () => {
-    it('delegates to the bpmn renderer handler for the matching base type with renderIcon=false', () => {
+    it('delegates to the bpmn renderer handler for activities without forcing renderIcon=false', () => {
+        // For activities we want the default task-type marker (user figure /
+        // gears / ...) to stay visible alongside the template icon, so we
+        // must NOT suppress it via renderIcon=false.
         const { instance, handlers } = makeRenderer({
             template: { icon: { contents: ICON_DATA_URI } },
         })
@@ -174,7 +177,47 @@ describe('IconRendererModule — drawShape', () => {
         const [gfxArg, elArg, attrsArg] = handlers['bpmn:Task'].mock.calls[0]
         expect(gfxArg).toBe(parentGfx)
         expect(elArg).toBe(el)
+        expect(attrsArg).toEqual({ foo: 'bar' })
+    })
+
+    it('passes renderIcon=false for events so the template icon replaces the default marker', () => {
+        const { instance, handlers } = makeRenderer({
+            template: { icon: { contents: ICON_DATA_URI } },
+        })
+        const el = makeElement({
+            type: 'bpmn:StartEvent',
+            instanceOfTypes: ['bpmn:StartEvent', 'bpmn:Event'],
+            width: 36,
+            height: 36,
+        })
+        const parentGfx = document.createElementNS('http://www.w3.org/2000/svg', 'g')
+
+        instance.drawShape(parentGfx, el, { foo: 'bar' })
+
+        const [, , attrsArg] = handlers['bpmn:StartEvent'].mock.calls[0]
         expect(attrsArg).toEqual({ foo: 'bar', renderIcon: false })
+    })
+
+    it('prefers a handler keyed by element.type over the base-type fallback', () => {
+        // Without this the .find() over base types returns 'bpmn:Task' first
+        // for any task subtype, and handlers['bpmn:Task'] draws a plain task
+        // with no user figure / gears / etc.
+        const { instance, bpmnRenderer, handlers } = makeRenderer({
+            template: { icon: { contents: ICON_DATA_URI } },
+        })
+        bpmnRenderer.handlers['bpmn:UserTask'] = vi.fn(
+            (parentGfx) => ({ tag: 'userTask-gfx', parentGfx })
+        )
+        const el = makeElement({
+            type: 'bpmn:UserTask',
+            instanceOfTypes: ['bpmn:UserTask', 'bpmn:Task', 'bpmn:Activity'],
+        })
+        const parentGfx = document.createElementNS('http://www.w3.org/2000/svg', 'g')
+
+        instance.drawShape(parentGfx, el)
+
+        expect(bpmnRenderer.handlers['bpmn:UserTask']).toHaveBeenCalledTimes(1)
+        expect(handlers['bpmn:Task']).not.toHaveBeenCalled()
     })
 
     it('returns the gfx produced by the delegated handler', () => {
@@ -213,7 +256,9 @@ describe('IconRendererModule — drawShape', () => {
         expect(img.getAttribute('height')).toBe('18')
     })
 
-    it('positions the icon at fixed top-left padding for Activities', () => {
+    it('positions the icon in the top-right corner for Activities', () => {
+        // The top-left is reserved for the default BPMN task-type marker, so
+        // the template icon goes in the opposite corner.
         const { instance } = makeRenderer({
             template: { icon: { contents: ICON_DATA_URI } },
         })
@@ -228,7 +273,8 @@ describe('IconRendererModule — drawShape', () => {
         instance.drawShape(parentGfx, el)
 
         const img = parentGfx.querySelector('image')
-        expect(img.getAttribute('x')).toBe('5')
+        // width(100) - size(18) - padding(5) = 77
+        expect(img.getAttribute('x')).toBe('77')
         expect(img.getAttribute('y')).toBe('5')
     })
 

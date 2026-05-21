@@ -69,13 +69,25 @@ ElementTemplateIconRenderer.prototype.drawShape = function(parentGfx, element, a
         'bpmn:SubProcess'
     ].find(t => is(element, t))
 
-    const renderer = this._bpmnRenderer.handlers[baseType]
-    const gfx = renderer(parentGfx, element, { ...attrs, renderIcon: false })
+    // Prefer the specific handler (e.g. 'bpmn:UserTask') so the task-type
+    // marker — the user figure on a user task, gears on a service task — is
+    // drawn. Falling back to the base-type handler (e.g. 'bpmn:Task') would
+    // draw a plain task with no marker. Keep the baseType fallback for custom
+    // subclasses that don't register their own handler.
+    const handlers = this._bpmnRenderer.handlers
+    const renderer = handlers[element.type] || handlers[baseType]
+    const isActivity = is(element, 'bpmn:Activity')
+    // For activities, keep the default task-type marker (user figure, gears, ...)
+    // visible and paint the template icon in the opposite (top-right) corner.
+    // For events there isn't room for both, so we still replace the default
+    // marker with the template icon in the center.
+    const rendererAttrs = isActivity ? attrs : { ...attrs, renderIcon: false }
+    const gfx = renderer(parentGfx, element, rendererAttrs)
 
     const icon = this._getIcon(element)
     const size = 18
-    const padding = is(element, 'bpmn:Activity')
-        ? { x: 5, y: 5 }
+    const padding = isActivity
+        ? { x: element.width - size - 5, y: 5 }
         : { x: (element.width - size) / 2, y: (element.height - size) / 2 }
 
     const img = svgCreate('image')
