@@ -38,8 +38,8 @@
           <div class="form-check form-switch py-2" v-if="!isUserTask">
             <input class="form-check-input" v-model="internSwitchValue"
                    :placeholder="$t('searchElementTemplates.searchInput')" type="checkbox" role="switch"
-                   :id="`externSwitch${props.tabElement.id}`" @change="handleSearch">
-            <label class="form-check-label" :for="`externSwitch${props.tabElement.id}`">{{
+                   :id="`internSwitch${props.tabElement.id}`" @change="handleSearch">
+            <label class="form-check-label" :for="`internSwitch${props.tabElement.id}`">{{
                 $t('searchElementTemplates.showInternal') }}</label>
             <span
               style="cursor: pointer"
