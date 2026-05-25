@@ -20,6 +20,8 @@
     "title": "Fehler beim Löschen des Prozesses",
     "body": "Es ist ein Fehler beim Löschen des Prozesses aufgetreten."
   },
+  "toastDownloadDiagramSuccess": { "title": "Herunterladen", "body": "Download gestartet" },
+  "toastDownloadDiagramFail": { "title": "Herunterladen", "body": "Fehler beim Herunterladen des Diagramms" },
   "toastFileNoLongerExists": {
     "title": "Datei existiert nicht",
     "body": "Die Datei, die Sie laden möchten, existiert nicht mehr."

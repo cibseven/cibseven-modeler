@@ -20,6 +20,8 @@
     "title": "Error borrando proceso",
     "body": "Ha ocurrido un error borrando el proceso"
   },
+  "toastDownloadDiagramSuccess": { "title": "Descargar", "body": "Descarga iniciada" },
+  "toastDownloadDiagramFail": { "title": "Descargar", "body": "Error al descargar el diagrama" },
   "toastFileNoLongerExists": {
     "title": "El Archivo no existe",
     "body": "El archivo que está intentando cargar ya no existe"
