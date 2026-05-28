@@ -32,6 +32,10 @@
                     <button type="button" ref="closeButton" class="btn btn-secondary" data-bs-dismiss="modal"
                         @click="handleCloseMessage">{{ $t("buttons.cancel")
                         }}</button>
+                    <template v-if="props.showApplyAll">
+                        <button type="button" class="btn btn-danger" @click.prevent="applyAll('replace')">{{ $t("buttons.replaceAll") }}</button>
+                        <button type="button" class="btn btn-secondary" @click.prevent="applyAll('skip')">{{ $t("buttons.skipAll") }}</button>
+                    </template>
                 </div>
             </div>
         </div>
@@ -45,7 +49,8 @@ import { ref, watch, onMounted } from 'vue'
 const modalAcceptCancelMessage = ref(null)
 const emit = defineEmits([
     'hideModal',
-    'resetVariablesForModalAcceptCancelMessage'
+    'resetVariablesForModalAcceptCancelMessage',
+    'modalClosed',
 ])
 const props = defineProps({
     type: {
@@ -66,16 +71,23 @@ const props = defineProps({
     showModal: { type: Boolean, required: true },
     title: { type: String, required: true },
     body: { type: String, required: true },
-    acceptLabel: { type: String, default: null }
+    acceptLabel: { type: String, default: null },
+    showApplyAll: { type: Boolean, default: false },
+    functionApplyAll: { type: Function, default: () => {} },
 })
 
 const idSaved = ref(null)
 const closeButton = ref(null)
 
 let modalBootstrap = null
+let _closedByButton = false
 
 onMounted(() => {
     modalBootstrap = new bootstrap.Modal(modalAcceptCancelMessage.value)
+    modalAcceptCancelMessage.value.addEventListener('hidden.bs.modal', () => {
+        if (!_closedByButton) emit('modalClosed')
+        _closedByButton = false
+    })
 })
 
 watch(() => props.showModal, newValue => {
@@ -86,6 +98,7 @@ watch(() => props.showModal, newValue => {
 })
 
 const handleCloseMessage = () => {
+    _closedByButton = true
     if (props.functionAfterCanceling && props.type === 'replaceXml') {
         const { id, name, processkey, xmlFromModeler, diagramType } = props.modalData
         props.functionAfterCanceling(xmlFromModeler, id, name, processkey, diagramType, true, false, false) // open xml from  modeler
@@ -100,6 +113,7 @@ const handleCloseMessage = () => {
 }
 
 const handleAcceptMessage = () => {
+    _closedByButton = true
     if (props.type === 'replaceXml') {
         const { id, name, processkey, xmlExternalUrl, diagramType } = props.modalData
         props.functionAfterAccepting(xmlExternalUrl, id, name, processkey, diagramType, true, true, true)// open xml from outside of modeler, the tab wont be saved until the user saves the process in the modeler
@@ -119,6 +133,12 @@ const handleAcceptMessage = () => {
 const _showModalComp = () => {
     idSaved.value = props.id
     modalBootstrap.show()
+}
+
+const applyAll = choice => {
+    _closedByButton = true
+    props.functionApplyAll(choice)
+    modalBootstrap.hide()
 }
 
 </script>

@@ -358,7 +358,7 @@ onMounted(async () => {
 	if (templatesList.value.length > 0 && props.isActiveTab && !props.isModelerVisible) {
 		typeOfSelector.value = 'templates'
 		isShowModalListSelector.value = true
-		emit('toggleOutdatedTemplateBtn', templatesList.value.length > 0)
+		emit('toggleOutdatedTemplateBtn', templatesList.value.length > 0, props.tabElementIndex)
 	}
 
 	await nextTick()
@@ -824,7 +824,7 @@ const _moveViewToElement = element => {
 
 const _updatetemplatesListButton = xml => {
 	templatesList.value = checkJSON(xml, props.elementTemplateJson)
-	emit('toggleOutdatedTemplateBtn', templatesList.value.length > 0)
+	emit('toggleOutdatedTemplateBtn', templatesList.value.length > 0, props.tabElementIndex)
 }
 
 const _addingFormFieldToStartEvent = (element) => {

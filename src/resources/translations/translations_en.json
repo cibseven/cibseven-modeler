@@ -52,6 +52,14 @@
 		"title": "Error loading file.",
 		"body": "The file could not be loaded correctly."
 	},
+	"toastImportBatchSuccess": {
+		"title": "Import complete",
+		"body": "{count} files imported successfully."
+	},
+	"toastImportBatchPartial": {
+		"title": "Import finished with errors",
+		"body": "{imported} of {total} files imported. Some files could not be read or had an unsupported format."
+	},
 	"toastCantSaveFailValidationXml": {
 		"title": "Validation error.",
 		"body": "Malformed XML. Please, solve it before saving"
@@ -121,7 +129,9 @@
 		"fullscreen": "Toggle fullscreen",
 		"expandScript": "Open in full editor",
 		"collapsePanel": "Collapse panel",
-		"expandPanel": "Expand panel"
+		"expandPanel": "Expand panel",
+		"replaceAll": "Replace All",
+		"skipAll": "Skip All"
 	},
 	"scriptEditorModal": {
 		"title": "Edit script"

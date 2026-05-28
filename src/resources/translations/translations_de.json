@@ -52,6 +52,14 @@
     "title": "Fehler beim Laden der Datei",
     "body": "Die Datei konnte nicht korrekt geladen werden."
   },
+  "toastImportBatchSuccess": {
+    "title": "Import abgeschlossen",
+    "body": "{count} Dateien erfolgreich importiert."
+  },
+  "toastImportBatchPartial": {
+    "title": "Import mit Fehlern abgeschlossen",
+    "body": "{imported} von {total} Dateien importiert. Einige Dateien konnten nicht gelesen werden oder haben ein nicht unterstütztes Format."
+  },
   "toastCantSaveFailValidationXml": {
     "title": "Validierungsfehler",
     "body": "Defektes XML. Bitte lösen Sie das Problem vor dem Speichern."
@@ -121,7 +129,9 @@
     "fullscreen": "Vollbild umschalten",
     "expandScript": "Im vollständigen Editor öffnen",
     "collapsePanel": "Bereich einklappen",
-    "expandPanel": "Bereich ausklappen"
+    "expandPanel": "Bereich ausklappen",
+    "replaceAll": "Alle ersetzen",
+    "skipAll": "Alle überspringen"
   },
   "scriptEditorModal": {
     "title": "Skript bearbeiten"

@@ -163,8 +163,10 @@
 	</toast-message>
 	<ConfirmModal :showModal="showModalAcceptCancelMessage.show" :title="modalConfirm.title"
 		type="replaceXml" :body="modalConfirm.body" @hideModal="hideModalAcceptCancelMessage"
-		:modalData="modalData" :functionAfterAccepting="openDiagramFromModal"
-		:functionAfterCanceling="openDiagramFromChild">
+		:modalData="modalData" :functionAfterAccepting="openDiagramFromModalAndResolve"
+		:functionAfterCanceling="openDiagramFromChildAndResolve"
+		:showApplyAll="showModalAcceptCancelMessage.isBatch" :functionApplyAll="handleApplyAll"
+		@modalClosed="() => resolveConflict('skip')">
 	</ConfirmModal>
 	</div>
 </template>
@@ -441,7 +443,7 @@ const updateTabName = (name, tabElementIndex) => {
 }
 
 // shows or hide warning button of outdated templates
-const toggleOutdatedTemplateBtn = comp => actionButton.value[activeTab.value]._toggleOutDatedTemplateBtn(comp)
+const toggleOutdatedTemplateBtn = (comp, tabElementIndex) => actionButton.value[tabElementIndex]?._toggleOutDatedTemplateBtn(comp)
 
 // shows or hide warning button of outdated templates
 const toggleOutdatedTemplateModal = comp => modeler.value[activeTab.value]._toggleModalListSelectorFromActionButton(comp, 'templates')
@@ -559,6 +561,18 @@ const openDiagramFromModal = (valueFromChild, processId, processName, processKey
 	}
 }
 
+// Wrappers that resolve the pending conflict promise after the modal callback fires,
+// allowing the multi-file import loop to continue to the next file.
+// In batch mode, tab-opening is suppressed — useFileImport handles DB writes directly.
+const openDiagramFromModalAndResolve = (...args) => {
+	if (!showModalAcceptCancelMessage.value.isBatch) openDiagramFromModal(...args)
+	resolveConflict('replace')
+}
+const openDiagramFromChildAndResolve = (...args) => {
+	if (!showModalAcceptCancelMessage.value.isBatch) openDiagramFromChild(...args)
+	resolveConflict('skip')
+}
+const handleApplyAll = choice => resolveConflict(choice, true)
 
 //emit passed from ProcessDiagramElement to FlowModeler
 const openDiagramFromChild = async (valueFromChild, processId, processName, processKey, typeOfDiagram, isSaved, canSave, canReplaceXml) => {
@@ -644,8 +658,13 @@ const _assignUniqueId = (name, id) => {
 	}
 }
 
+const onBatchComplete = async () => {
+	_saveTabNavSavedLocalStorage()
+	await getStoredDiagrams()
+}
+
 // File import is handled by useFileImport (initialized here, after all its dependencies are declared)
-const { handleFile, _addNewBpmnFromLoadedXml } = useFileImport({
+const { handleFile, _addNewBpmnFromLoadedXml, resolveConflict } = useFileImport({
 	store,
 	tabNavList,
 	tabNavListXml,
@@ -658,6 +677,7 @@ const { handleFile, _addNewBpmnFromLoadedXml } = useFileImport({
 	modalData,
 	modelerTabNav,
 	switchTabFromTabNav,
+	onBatchComplete,
 })
 
 const _openProcessFromExternalXml = async (xml, resExistingProcess, externalProcessKey, _decodedProcessId) => {

@@ -52,6 +52,14 @@
     "title": "Error cargando archivo.",
     "body": "El archivo no se ha podido cargar correctamente."
   },
+  "toastImportBatchSuccess": {
+    "title": "Importación completada",
+    "body": "{count} archivos importados correctamente."
+  },
+  "toastImportBatchPartial": {
+    "title": "Importación finalizada con errores",
+    "body": "{imported} de {total} archivos importados. Algunos archivos no se pudieron leer o tienen un formato no compatible."
+  },
   "toastCantSaveFailValidationXml": {
     "title": "Error de validación.",
     "body": "XML mal formado. Por favor, resuélvalo antes de guardar"
@@ -121,7 +129,9 @@
     "fullscreen": "Alternar pantalla completa",
     "expandScript": "Abrir en editor completo",
     "collapsePanel": "Contraer panel",
-    "expandPanel": "Expandir panel"
+    "expandPanel": "Expandir panel",
+    "replaceAll": "Reemplazar todo",
+    "skipAll": "Omitir todo"
   },
   "scriptEditorModal": {
     "title": "Editar script"
