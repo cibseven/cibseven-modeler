@@ -388,9 +388,7 @@ const deploy = async (silent = false) => {
 			disableDeployButton.value = false
 			if (!silent) {
 				closeButton.value.click() // simulates on button close clicked to avoid bug that backdrops stays visible
-				const payload = { isSuccess: true, toastText: 'toastDeploySucessDeploy', bodyTextAlt: '' }
-				payload.actionTo = { name: 'start-process' }
-				payload.actionLabel = t('buttons.startProcess')
+				const payload = { isSuccess: true, toastText: 'toastDeploySucessDeploy', bodyTextAlt: '', actionTo: { name: 'start-process' }, actionLabel: t('buttons.startProcess') }
 				emit('showToastMessage', payload)
 			}
 		} else {
