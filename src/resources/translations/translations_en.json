@@ -20,6 +20,8 @@
 		"title": "Error deleting process",
 		"body": "There has been an error deleting the process"
 	},
+	"toastDownloadDiagramSuccess": { "title": "Download", "body": "Download started" },
+	"toastDownloadDiagramFail": { "title": "Download", "body": "Error downloading diagram" },
 	"toastFileNoLongerExists": {
 		"title": "File doesn't exist",
 		"body": "The file you are trying to load no longer exists"

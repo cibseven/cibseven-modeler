@@ -20,6 +20,8 @@
     "title": "Ошибка удаления процесса",
     "body": "При удалении процесса произошла ошибка"
   },
+  "toastDownloadDiagramSuccess": { "title": "Скачать", "body": "Загрузка начата" },
+  "toastDownloadDiagramFail": { "title": "Скачать", "body": "Ошибка загрузки диаграммы" },
   "toastFileNoLongerExists": {
     "title": "Файл не существует",
     "body": "Файл, который вы пытаетесь загрузить, больше не существует"
