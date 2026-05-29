@@ -28,7 +28,11 @@
 						</span>
 					</div>
 					<div>
-						<span class="align-items-center">
+						<span v-if="props.actionTo" class="align-items-center">
+							{{ props.bodyText }}
+							<router-link :to="props.actionTo">{{ props.actionLabel }}</router-link>
+						</span>
+						<span v-else class="align-items-center">
 							{{ props.bodyText }}
 							{{ props.bodyTextAlt }}
 						</span>
@@ -41,9 +45,11 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { RouterLink } from 'vue-router'
 import * as bootstrap from 'bootstrap'
 
 const TOAST_TIME = 5000
+const TOAST_TIME_WITH_ACTION = 10000
 const liveToast = ref(null)
 const props = defineProps({
 	showToast: Boolean,
@@ -51,7 +57,9 @@ const props = defineProps({
 	headerText: String,
 	bodyText: String,
 	success: Boolean,
-	bodyTextAlt: String
+	bodyTextAlt: String,
+	actionTo: { type: Object, default: null },
+	actionLabel: { type: String, default: '' }
 })
 const isDisplayed = ref(false)
 const style = computed(() => {
@@ -75,7 +83,7 @@ const _showToastTimeOut = () => {
 	toastBootstrap.show()
 	timeout = setTimeout(() => {
 		hideToast()
-	}, TOAST_TIME)
+	}, props.actionTo ? TOAST_TIME_WITH_ACTION : TOAST_TIME)
 }
 
 const _resetTimeout = () => {

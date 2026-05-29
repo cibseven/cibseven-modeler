@@ -30,7 +30,9 @@
   },
   "toastDeploySucessDeploy": {
     "title": "Einspielen erfolgreich",
-    "body": "Das Einspielen war erfolgreich."
+    "body": "Das Einspielen war erfolgreich.",
+    "bodyCheck": "Einspielen erfolgreich - Öffnen ",
+    "deployments": "Einspielungen"
   },
   "toastStartProcessSucess": {
     "body": "Prozess gestartet - Überprüfen Sie die Aufgabenliste"

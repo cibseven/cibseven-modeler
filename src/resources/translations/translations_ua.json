@@ -30,7 +30,9 @@
   },
   "toastDeploySucessDeploy": {
     "title": "Успішно",
-    "body": "Розгортання виконано успішно"
+    "body": "Розгортання виконано успішно",
+    "bodyCheck": "Розгортання виконано успішно - Відкрити ",
+    "deployments": "Розгортання"
   },
   "toastStartProcessSucess": {
     "body": "Процес запущено"

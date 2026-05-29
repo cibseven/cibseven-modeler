@@ -30,7 +30,9 @@
 	},
 	"toastDeploySucessDeploy": {
 		"title": "Success",
-		"body": "Deployment successful"
+		"body": "Deployment successful",
+		"bodyCheck": "Deployment successful - Open ",
+		"deployments": "Deployments"
 	},
 	"toastStartProcessSucess": {
 		"body": "Process started"
