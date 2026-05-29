@@ -208,7 +208,6 @@ import * as bootstrap from 'bootstrap'
 
 import { deployProcess, startProcess } from '../../services/deployService'
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { getProcessKeyFromBpmn, getTagValueFromXml, formatFileSize } from '../../utils.js'
 import { isHttpOrHttpsUrl } from '../../utils/regexUtils'
