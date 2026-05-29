@@ -31,8 +31,7 @@
   "toastDeploySucessDeploy": {
     "title": "Éxito",
     "body": "Despliegue exitoso",
-    "bodyCheck": "Despliegue exitoso - Abrir ",
-    "deployments": "Despliegues"
+    "bodyCheck": "Despliegue exitoso - Abrir "
   },
   "toastStartProcessSucess": {
     "body": "Proceso iniciado"

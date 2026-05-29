@@ -390,9 +390,9 @@ const deploy = async (silent = false) => {
 			if (!silent) {
 				closeButton.value.click() // simulates on button close clicked to avoid bug that backdrops stays visible
 				const payload = { isSuccess: true, toastText: 'toastDeploySucessDeploy', bodyTextAlt: '' }
-				if (router.hasRoute('deployments')) {
-					payload.actionTo = { name: 'deployments', params: { deploymentId: res.id } }
-					payload.actionLabel = t('toastDeploySucessDeploy.deployments')
+				if (router.hasRoute('start-process')) {
+					payload.actionTo = { name: 'start-process' }
+					payload.actionLabel = t('buttons.startProcess')
 				}
 				emit('showToastMessage', payload)
 			}
