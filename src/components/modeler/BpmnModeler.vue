@@ -1134,5 +1134,6 @@ input[name="historyTimeToLive"].is-invalid {
 
 .bjs-container .bjs-powered-by {
 	bottom: 1.125rem !important;
+	right: 0rem !important;
 }
 </style>
