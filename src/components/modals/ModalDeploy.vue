@@ -227,7 +227,6 @@ const emit = defineEmits([
 	'showConsoleNotification'
 ])
 
-const router = useRouter()
 const { t } = useI18n()
 
 // Deployment info
@@ -390,10 +389,8 @@ const deploy = async (silent = false) => {
 			if (!silent) {
 				closeButton.value.click() // simulates on button close clicked to avoid bug that backdrops stays visible
 				const payload = { isSuccess: true, toastText: 'toastDeploySucessDeploy', bodyTextAlt: '' }
-				if (router.hasRoute('start-process')) {
-					payload.actionTo = { name: 'start-process' }
-					payload.actionLabel = t('buttons.startProcess')
-				}
+				payload.actionTo = { name: 'start-process' }
+				payload.actionLabel = t('buttons.startProcess')
 				emit('showToastMessage', payload)
 			}
 		} else {
