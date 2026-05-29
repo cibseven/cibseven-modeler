@@ -159,7 +159,9 @@
 		@add-error-message-to-console="addErrorMessageToConsole" @show-console-notification="showConsoleNotification">
 	</modal-deploy>
 	<toast-message ref="toastComponent" :timestamp="getTimeStamp()" :success="isSuccess" :bodyTextAlt="toastBodyTextAlt"
-		:headerText="$t(toastText + '.title')" :bodyText="$t(toastText + '.body')">
+		:headerText="$t(toastText + '.title')"
+		:bodyText="toastActionTo ? $t(toastText + '.bodyCheck') : $t(toastText + '.body')"
+		:actionTo="toastActionTo" :actionLabel="toastActionLabel">
 	</toast-message>
 	<ConfirmModal :showModal="showModalAcceptCancelMessage.show" :title="modalConfirm.title"
 		type="replaceXml" :body="modalConfirm.body" @hideModal="hideModalAcceptCancelMessage"
@@ -251,6 +253,8 @@ const isButtonDisabled = ref({})
 const isSuccess = ref(false)
 const toastText = ref('toastLoadErrorFile')
 const toastBodyTextAlt = ref(null)
+const toastActionTo = ref(null)
+const toastActionLabel = ref(null)
 //check if xml from modeler is validates
 const isXmlValidated = ref({ validation: false, text: '' })
 const isShowModal = ref(false)
@@ -467,6 +471,8 @@ const showToastMessage = toastInformation => {
 	isSuccess.value = toastInformation.isSuccess
 	toastText.value = toastInformation.toastText
 	toastBodyTextAlt.value = toastInformation.bodyTextAlt
+	toastActionTo.value = toastInformation.actionTo ?? null
+	toastActionLabel.value = toastInformation.actionLabel ?? null
 	toastComponent.value._showToastTimeOut()
 }
 
