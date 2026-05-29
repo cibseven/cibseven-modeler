@@ -1131,4 +1131,8 @@ input[name="historyTimeToLive"].is-invalid {
 .bjs-container .bjsl-button.bjsl-button-inactive:hover {
 	color: var(--bs-dark) !important;
 }
+
+.bjs-container .bjs-powered-by {
+	bottom: 1.125rem !important;
+}
 </style>
