@@ -43,9 +43,14 @@ function mountButtons(tabElement, {
         },
         global: {
             mocks: { $t: (k) => k },
-            provide: { extraDownloadLinks: null, config: {} },
+            provide: { extraDownloadLinks: null},
         },
     })
+}
+
+function consoleNotificationBadge(wrapper) {
+    const consoleBtn = wrapper.find('button[title="buttons.console"]')
+    return consoleBtn.find('span.bg-danger')
 }
 
 describe('ActionButtonsList', () => {
@@ -161,12 +166,7 @@ describe('ActionButtonsList', () => {
         })
     })
 
-    describe('showConsoleNotification / _toggleOutDatedTemplateBtn', () => {
-        function consoleNotificationBadge(wrapper) {
-            const consoleBtn = wrapper.find('button[title="buttons.console"]')
-            return consoleBtn.find('span.bg-danger')
-        }
-
+    describe('showConsoleNotification', () => {
         it('showConsoleNotification(true) shows notification badge on console button', async () => {
             const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7))
 

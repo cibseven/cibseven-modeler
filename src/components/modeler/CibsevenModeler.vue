@@ -425,6 +425,7 @@ const updateEditorXML = (xmlContent, tabElementIndex) => {
 	editorXML.value[tabElementIndex] = xmlContent
 }
 
+// shows or hide warning button of outdated templates
 const toggleOutdatedTemplateBtn = comp => actionButton.value[activeTab.value]._toggleOutDatedTemplateBtn(comp)
 
 // shows or hide warning button of outdated templates

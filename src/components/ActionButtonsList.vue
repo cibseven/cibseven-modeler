@@ -291,9 +291,8 @@ const _saveDiagram = async () => {
     }
 }
 
-const _toggleOutDatedTemplateBtn = comp => {
-    isOutdatedTemplateWarning.value = comp
-}
+const _toggleOutDatedTemplateBtn = comp => isOutdatedTemplateWarning.value = comp
+
 
 
 const _getTagValueFromXml = (mainTag, valueTag) => props.modeler._getTagValueFromXml(mainTag, valueTag)
