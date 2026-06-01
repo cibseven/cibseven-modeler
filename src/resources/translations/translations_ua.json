@@ -119,7 +119,9 @@
     "fullscreen": "Повний екран",
     "expandScript": "Відкрити у повному редакторі",
     "collapsePanel": "Згорнути панель",
-    "expandPanel": "Розгорнути панель"
+    "expandPanel": "Розгорнути панель",
+    "undo": "Скасувати",
+    "redo": "Повторити"
   },
   "scriptEditorModal": {
     "title": "Редагувати скрипт"

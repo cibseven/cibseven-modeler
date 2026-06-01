@@ -43,7 +43,7 @@ function mountButtons(tabElement, {
         },
         global: {
             mocks: { $t: (k) => k },
-            provide: { extraDownloadLinks: null },
+            provide: { extraDownloadLinks: null, config: {} },
         },
     })
 }
@@ -162,16 +162,21 @@ describe('ActionButtonsList', () => {
     })
 
     describe('showConsoleNotification / _toggleOutDatedTemplateBtn', () => {
-        it('showConsoleNotification(true) shows notification badge', async () => {
+        function consoleNotificationBadge(wrapper) {
+            const consoleBtn = wrapper.find('button[title="buttons.console"]')
+            return consoleBtn.find('span.bg-danger')
+        }
+
+        it('showConsoleNotification(true) shows notification badge on console button', async () => {
             const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7))
 
             wrapper.vm.showConsoleNotification(true)
             await wrapper.vm.$nextTick()
 
-            expect(wrapper.find('span.bg-danger').exists()).toBe(true)
+            expect(consoleNotificationBadge(wrapper).exists()).toBe(true)
         })
 
-        it('showConsoleNotification(false) hides notification badge', async () => {
+        it('showConsoleNotification(false) hides notification badge on console button', async () => {
             const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7))
 
             wrapper.vm.showConsoleNotification(true)
@@ -179,7 +184,7 @@ describe('ActionButtonsList', () => {
             wrapper.vm.showConsoleNotification(false)
             await wrapper.vm.$nextTick()
 
-            expect(wrapper.find('span.bg-danger').exists()).toBe(false)
+            expect(consoleNotificationBadge(wrapper).exists()).toBe(false)
         })
     })
 

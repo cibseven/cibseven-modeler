@@ -52,7 +52,7 @@
         </div>
 
         <!-- Separator -->
-        <div class="btn-menu d-flex align-items-center mx-1" style="height: 2rem; opacity: 0.3;">
+        <div class="btn-menu d-flex align-items-center mx-1 opacity-50">
             <span>|</span>
         </div>
 
@@ -71,11 +71,26 @@
         </div>
 
         <!-- Separator -->
-        <div class="btn-menu d-flex align-items-center mx-1" style="height: 2rem; opacity: 0.3;">
+        <div class="btn-menu d-flex align-items-center mx-1 opacity-50">
             <span>|</span>
         </div>
 
         <!-- Left section: filters, xml, console -->
+        <div
+            v-if="BpmnFilterButtonComponent && isBpmnTab"
+            v-show="!props.isButtonDisabled"
+            class="btn-menu d-flex align-items-center mx-1"
+        >
+            <component
+                :is="BpmnFilterButtonComponent"
+                :container="props.modeler?.getContainerElement?.()"
+                :filter-bpmn="config.modeler?.filterBpmn"
+                :tab-element-id="props.tabElement.id"
+                :get-bpmn-modeler="() => props.modeler?.getBpmnModeler?.()"
+                classesOn="mdi mdi-24px mdi-filter-outline"
+                classesOff="mdi mdi-24px mdi-filter"
+            />
+        </div>
         <div v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
             <button type="button" :class="actBtnClass(props.tabElement.isEditorVisible)" :disabled="props.isButtonDisabled"
                 @click="toggleVisibilityEditor">
@@ -87,7 +102,11 @@
             <button type="button" :class="consoleBtnClasses" :title="$t('buttons.console')"
                 :disabled="props.tabElement.isEditorVisible" :aria-expanded="consoleOpen" @click="openConsole">
                 <span class="mdi mdi-24px mdi-console"></span>
-                <span v-if="hasConsoleNotification" class="bg-danger position-absolute rounded" style="bottom: 5px; width: 7px; height: 7px; right: 5px;"></span>
+                <span
+                    v-if="hasConsoleNotification"
+                    class="position-absolute end-0 bottom-0 m-1 bg-danger rounded-circle"
+                    style="width: 7px; height: 7px"
+                ></span>
             </button>
         </div>
         <div class="btn-menu d-flex align-items-center mx-1" v-if="props.tabElement.id && haslinkToProject">
@@ -115,7 +134,7 @@ function actBtnClass(selected, ...extra) {
         'btn',
         'd-inline-flex align-items-center justify-content-center flex-shrink-0',
         'p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none',
-        selected ? 'act-btn--selected' : 'text-white bg-transparent',
+        selected ? 'bg-light text-dark' : 'text-white bg-transparent',
         ...extra,
     ]
 }
@@ -134,6 +153,9 @@ const props = defineProps({
     }   
 )
 const extraDownloadLinks = inject('extraDownloadLinks', null)
+const BpmnFilterButtonComponent = inject('bpmnFilterButtonComponent', null)
+const config = inject('config', {})
+const isBpmnTab = computed(() => props.tabElement.type.startsWith('bpmn'))
 const emit = defineEmits([
     'toggleOutdatedTemplateModal', 
     'openDiagram', 
@@ -305,37 +327,38 @@ defineExpose({ _toggleOutDatedTemplateBtn, _saveDiagram, _updateDownloadFile, ch
     height: 2rem;
     min-width: 2rem;
     min-height: 2rem;
-    color: inherit;
 }
 
-.act-btn:hover:not(:disabled):not(.disabled) {
+.act-btn.text-white.bg-transparent:hover:not(:disabled):not(.disabled),
+.act-btn.text-white.bg-transparent:focus-visible:not(:disabled):not(.disabled) {
     background-color: var(--bs-gray-500) !important;
     color: var(--bs-dark) !important;
 }
 
-.act-btn:focus-visible {
+.act-btn.bg-light:hover:not(:disabled):not(.disabled),
+.act-btn.bg-light:focus-visible:not(:disabled):not(.disabled) {
+    background-color: var(--bs-gray-200) !important;
+    color: var(--bs-dark) !important;
+}
+
+a.act-btn:focus-visible {
     box-shadow: none !important;
     outline: 2px solid var(--bs-dark);
     outline-offset: 0;
 }
 
-.act-btn.act-btn--selected {
-    background-color: var(--bs-gray-200) !important;
-    color: var(--bs-dark) !important;
+button.act-btn:focus:not(:focus-visible) {
+    box-shadow: none !important;
+    outline: none;
 }
 
-.act-btn.act-btn--selected:hover:not(:disabled):not(.disabled) {
-    background-color: var(--bs-gray-200) !important;
-    color: var(--bs-dark) !important;
+button.act-btn:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--bs-dark) !important;
 }
 
-.act-btn:disabled,
 .act-btn.disabled {
     opacity: 0.45;
     pointer-events: none;
-}
-
-.act-btn .mdi {
-    color: currentColor;
 }
 </style>

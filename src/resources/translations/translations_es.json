@@ -119,7 +119,9 @@
     "fullscreen": "Pantalla completa",
     "expandScript": "Abrir en editor completo",
     "collapsePanel": "Contraer panel",
-    "expandPanel": "Expandir panel"
+    "expandPanel": "Expandir panel",
+    "undo": "Deshacer",
+    "redo": "Rehacer"
   },
   "scriptEditorModal": {
     "title": "Editar script"

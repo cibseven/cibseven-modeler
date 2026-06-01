@@ -60,22 +60,10 @@
 			</ConsolePanel>
 			<MenuActionButtons :key="`menu-action-buttons-${props.tabElement.key}`" :width="canvasWidth + 24">
 				<template #leftButtons>
-					<slot name="menu" />					
-					<component
-						v-if="BpmnFilterButtonComponent"
-						:is="BpmnFilterButtonComponent"
-						ref="popover"
-						position="top"
-						:container="containerModeler"
-						classesOn="mdi mdi-24px mdi-filter-outline"
-						classesOff="mdi mdi-24px mdi-filter"
-						:filter-bpmn="config.modeler?.filterBpmn"
-						:tab-element-id="props.tabElement.id"
-						:get-bpmn-modeler="() => bpmnModeler"
-					/>
+					<slot name="menu" />
 				</template>
 				<template #rightButtons>
-					<div class="d-flex">
+					<div class="d-flex align-items-center">
 						<component v-if="VersionButtonComponent && processHistoryListComp?.length > 0"
 							:is="VersionButtonComponent" :history-list="processHistoryListComp" :active-version="activeVersion" />
 						<component v-if="CompareButtonComponent && processHistoryListComp?.length > 1"
@@ -225,11 +213,8 @@ const resizableDiv = ref(null)
 //config.js
 const config = inject('config', {})
 
-//popover for task filters
-const BpmnFilterButtonComponent = inject('bpmnFilterButtonComponent', null)
 const CompareButtonComponent = inject('compareButtonComponent', null)
 const VersionButtonComponent = inject('versionButtonComponent', null)
-const popover = ref(null)
 //element templates modal
 const elementTemplatesModal = ref(null)
 const scriptEditorModal = ref(null)
@@ -454,7 +439,6 @@ const initializeModeler = async () => {
 		emit('toggleEnableSave', true, props.tabElementIndex) //enables save button		
 		_setupDiagramFunctions()
 		getProcessInformation(bpmnModeler)
-		if (popover.value?.isFilterOn) popover.value.bpmnFilter(bpmnModeler)
 		_openCalledElementWhenCalActivity(e)
 	})
 
@@ -961,6 +945,8 @@ defineExpose({
 	_saveDiagram,
 	_undo,
 	_redo,
+	getBpmnModeler: () => bpmnModeler,
+	getContainerElement: () => containerModeler.value,
 })
 </script>
 
@@ -1101,8 +1087,17 @@ input[name="historyTimeToLive"].is-invalid {
 	--icon-bg-color: var(--bs-danger);
 }
 
+.bjs-container .bjsl-issues li {
+	align-items: center;
+}
+
 .bjs-container .bjsl-issues .icon {
 	--icon-color: var(--bs-warning);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	margin-top: 0;
 }
 
 .bjs-container .bjsl-issues .error .icon,
@@ -1121,6 +1116,18 @@ input[name="historyTimeToLive"].is-invalid {
 
 .btn.btn-secondary:active .mdi {
 	color:  var(--bs-secondary) !important;
+}
+
+/* Lint summary button (bpmn-js-bpmnlint) */
+.bjs-container .bjsl-button {
+	align-items: center;
+}
+
+.bjs-container .bjsl-button .icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-top: 0;
 }
 
 /* Style the linting button when inactive */

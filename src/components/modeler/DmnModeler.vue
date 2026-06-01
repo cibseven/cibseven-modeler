@@ -64,7 +64,7 @@
 						<slot name="menu" />
 					</template>
 					<template #rightButtons>
-						<div class="d-flex">
+						<div class="d-flex align-items-center">
 							<component v-if="VersionButtonComponent && processHistoryListComp?.length > 0"
 								:is="VersionButtonComponent" :history-list="processHistoryListComp" :active-version="activeVersion" />
 							<component v-if="CompareButtonComponent && processHistoryListComp?.length > 1"

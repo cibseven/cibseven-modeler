@@ -119,7 +119,9 @@
     "fullscreen": "Vollbild",
     "expandScript": "Im vollständigen Editor öffnen",
     "collapsePanel": "Bereich einklappen",
-    "expandPanel": "Bereich ausklappen"
+    "expandPanel": "Bereich ausklappen",
+    "undo": "Rückgängig",
+    "redo": "Wiederholen"
   },
   "scriptEditorModal": {
     "title": "Skript bearbeiten"

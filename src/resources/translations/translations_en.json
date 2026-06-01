@@ -119,7 +119,9 @@
 		"fullscreen": "Fullscreen",
 		"expandScript": "Open in full editor",
 		"collapsePanel": "Collapse panel",
-		"expandPanel": "Expand panel"
+		"expandPanel": "Expand panel",
+		"undo": "Undo",
+		"redo": "Redo"
 	},
 	"scriptEditorModal": {
 		"title": "Edit script"
