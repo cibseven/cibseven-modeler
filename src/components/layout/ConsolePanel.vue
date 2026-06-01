@@ -93,23 +93,11 @@ watch(height, newW => {
     if (props.isPropertyPanelVisible) emit('changeHeight', props.parentHeight - newW)
 })
 
-const applyVisibility = open => {
-    if (open) {
-        height.value = 300
-        emit('showConsoleNotification', props.processID)
-    } else {
-        height.value = 0
-    }
-}
-
 const toggleConsole = next => {
-	const open = typeof next === 'boolean' ? next : !isVisible.value
-	if (isVisible.value === open) {
-		return isVisible.value
-	}
-	isVisible.value = open
-	applyVisibility(open)
-	return isVisible.value
+    isVisible.value = next ?? !isVisible.value
+    height.value = isVisible.value ? 300 : 0
+    if (isVisible.value) emit('showConsoleNotification', props.processID)
+    return isVisible.value
 }
 
 const isOpen = () => isVisible.value
