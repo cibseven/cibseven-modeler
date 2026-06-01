@@ -303,7 +303,15 @@ export const addHtmlErrorsToConsole = error => {
 export const formatDate = (date, format = null) => {
 	if (!date) return ''
 	format = format || localStorage.getItem('cibseven:preferences:formatDefault') || 'LL HH:mm'
-	const d = moment(date)
+	let d
+	if (Array.isArray(date)) {
+		// Java LocalDateTime serializes as [year, month(1-indexed), day, hour, min, sec, nanoseconds]
+		// Moment expects                   [year, month(0-indexed), day, hour, min, sec, milliseconds]
+		const [year, month, day, hour, min, sec, nanos] = date
+		d = moment([year, month - 1, day, hour, min, sec, Math.floor(nanos / 1_000_000)])
+	} else {
+		d = moment(date)
+	}
 	return d.isValid() ? d.format(format) : ''
 }
 

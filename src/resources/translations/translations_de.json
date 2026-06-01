@@ -32,7 +32,8 @@
   },
   "toastDeploySucessDeploy": {
     "title": "Einspielen erfolgreich",
-    "body": "Das Einspielen war erfolgreich."
+    "body": "Das Einspielen war erfolgreich.",
+    "bodyCheck": "Einspielen erfolgreich - Öffnen "
   },
   "toastStartProcessSucess": {
     "body": "Prozess gestartet - Überprüfen Sie die Aufgabenliste"
@@ -406,7 +407,7 @@
   },
   "modalDelete": {
     "title": "{item} löschen",
-    "body": "Sind Sie sicher, dass Sie den {item} löschen wollen??"
+    "body": "Sind Sie sicher, dass Sie den {item} \"{name}\" aus dem Modeler löschen möchten? Bestehende Deployments sind davon nicht betroffen."
   },
   "modalDeploy": {
     "notExecutable": "Dieser Prozess ist als nicht ausführbar markiert und kann nicht gestartet werden."

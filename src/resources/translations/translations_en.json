@@ -32,7 +32,8 @@
 	},
 	"toastDeploySucessDeploy": {
 		"title": "Success",
-		"body": "Deployment successful"
+		"body": "Deployment successful",
+		"bodyCheck": "Deployment successful - Open "
 	},
 	"toastStartProcessSucess": {
 		"body": "Process started"
@@ -406,7 +407,7 @@
 	},
 	"modalDelete": {
 		"title": "Delete {item}",
-		"body": "Are you sure you want to delete the {item}"
+		"body": "Are you sure you want to delete the {item} \"{name}\" from the modeler? Existing deployments will not be affected."
 	},
 	"modalDeploy": {
 		"notExecutable": "This process is marked as not executable and cannot be started."

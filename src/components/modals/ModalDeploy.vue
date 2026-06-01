@@ -208,6 +208,7 @@ import * as bootstrap from 'bootstrap'
 
 import { deployProcess, startProcess } from '../../services/deployService'
 import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { getProcessKeyFromBpmn, getTagValueFromXml, formatFileSize } from '../../utils.js'
 import { isHttpOrHttpsUrl } from '../../utils/regexUtils'
 import { DEPLOY_STORAGE_KEYS } from '../../constants/diagramTypes'
@@ -224,6 +225,8 @@ const emit = defineEmits([
 	'addErrorMessageToConsole',
 	'showConsoleNotification'
 ])
+
+const { t } = useI18n()
 
 // Deployment info
 const deploymentName = ref('')
@@ -384,7 +387,8 @@ const deploy = async (silent = false) => {
 			disableDeployButton.value = false
 			if (!silent) {
 				closeButton.value.click() // simulates on button close clicked to avoid bug that backdrops stays visible
-				emit('showToastMessage', { isSuccess: true, toastText: 'toastDeploySucessDeploy', bodyTextAlt: '' })
+				const payload = { isSuccess: true, toastText: 'toastDeploySucessDeploy', bodyTextAlt: '', actionTo: { name: 'start-process' }, actionLabel: t('buttons.startProcess') }
+				emit('showToastMessage', payload)
 			}
 		} else {
 			hasErrors = true
