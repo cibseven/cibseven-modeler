@@ -213,7 +213,6 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
   }
   
   const toggleConsole = isVisible => {
-    if (!consolePanel.value) return isConsoleOpen.value
     const result = consolePanel.value.toggleConsole(isVisible)
     isConsoleOpen.value = result
     return result

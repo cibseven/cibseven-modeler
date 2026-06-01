@@ -21,7 +21,8 @@
         <div v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
             <a @click="canBeDownloaded" :href="downloadLink" :download="downloadName" :name="downloadName"
                 :title="$t('buttons.downloadDiagram')" :aria-label="$t('buttons.downloadDiagram')"
-                :class="[actBtnClass(false), { disabled: props.isButtonDisabled }]">
+                class="act-btn btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent"
+                :class="{ disabled: props.isButtonDisabled }">
                 <span class="mdi mdi-24px mdi-download"></span>
             </a>
         </div>
@@ -33,19 +34,24 @@
                     :download="link.download"
                     :title="$t(link.titleKey)"
                     :aria-label="$t(link.titleKey)"
-                    :class="[actBtnClass(false), { disabled: props.isButtonDisabled || link.disabled }]">
+                    class="act-btn btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent"
+                    :class="{ disabled: props.isButtonDisabled || link.disabled }">
                     <span :class="`mdi mdi-24px ${link.icon}`"></span>
                 </a>
             </div>
         </template>
         <div v-show="!props.isButtonDisabled &&  modelProperties[props.tabElement.type].canDeploy" class="btn-menu d-flex align-items-center mx-1">
-            <button type="button" :class="actBtnClass(false)" @click="canDeploy" aria-haspopup="true"
+            <button type="button"
+                class="act-btn btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent"
+                @click="canDeploy" aria-haspopup="true"
                 aria-expanded="false" :title="$t('buttons.deploy')">
                 <span class="mdi mdi-24px mdi-rocket"></span>
             </button>
         </div>
         <div class="btn-menu d-flex align-items-center mx-1" v-show="!isButtonDisabled">
-            <button type="button" :class="actBtnClass(false)" :title="$t('buttons.saveDiagram')"
+            <button type="button"
+                class="act-btn btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent"
+                :title="$t('buttons.saveDiagram')"
                 :disabled="(!props.canSave && !props.tabElement.changedVersion) || isSaving" @click="_saveDiagram">
                 <span class="mdi mdi-24px" :class="isSaving ? 'mdi-loading mdi-spin' : 'mdi-content-save-outline'"></span>
             </button>
@@ -58,13 +64,17 @@
 
         <!-- Undo/Redo buttons -->
         <div class="btn-menu d-flex align-items-center mx-1" v-show="!props.isButtonDisabled">
-            <button type="button" :class="actBtnClass(false)" :title="`${$t('buttons.redo')} (Ctrl+Y)`"
+            <button type="button"
+                class="act-btn btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent"
+                :title="`${$t('buttons.redo')} (Ctrl+Y)`"
                 @click="performRedo">
                 <span class="mdi mdi-24px mdi-redo-variant"></span>
             </button>
         </div>
         <div class="btn-menu d-flex align-items-center mx-1" v-show="!props.isButtonDisabled">
-            <button type="button" :class="actBtnClass(false)" :title="`${$t('buttons.undo')} (Ctrl+Z)`"
+            <button type="button"
+                class="act-btn btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent"
+                :title="`${$t('buttons.undo')} (Ctrl+Z)`"
                 @click="performUndo">
                 <span class="mdi mdi-24px mdi-undo-variant"></span>
             </button>
@@ -92,14 +102,20 @@
             />
         </div>
         <div v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
-            <button type="button" :class="actBtnClass(props.tabElement.isEditorVisible)" :disabled="props.isButtonDisabled"
+            <button type="button"
+                class="act-btn btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none"
+                :class="props.tabElement.isEditorVisible ? 'bg-light text-dark' : 'text-white bg-transparent'"
+                :disabled="props.isButtonDisabled"
                 @click="toggleVisibilityEditor">
                 <span class="mdi mdi-24px"
                     :class="{ 'mdi-xml': !tabElement.isEditorVisible, 'mdi-map': props.tabElement.isEditorVisible }"></span>
             </button>
         </div>
         <div class="btn-menu d-flex align-items-center mx-1" v-show="modelProperties[props.tabElement.type].canOpenConsole">
-            <button type="button" :class="consoleBtnClasses" :title="$t('buttons.console')"
+            <button type="button"
+                class="act-btn btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none position-relative"
+                :class="props.consoleOpen ? 'bg-light text-dark' : 'text-white bg-transparent'"
+                :title="$t('buttons.console')"
                 :disabled="props.tabElement.isEditorVisible" :aria-expanded="consoleOpen" @click="openConsole">
                 <span class="mdi mdi-24px mdi-console"></span>
                 <span
@@ -110,12 +126,16 @@
             </button>
         </div>
         <div class="btn-menu d-flex align-items-center mx-1" v-if="props.tabElement.id && haslinkToProject">
-            <button type="button" :class="[actBtnClass(false), 'position-relative']" :title="$t('buttons.linkToProject')" @click="linkToProject">
+            <button type="button"
+                class="act-btn btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent position-relative"
+                :title="$t('buttons.linkToProject')" @click="linkToProject">
                 <span class="mdi mdi-24px mdi-vector-link"></span>
             </button>
         </div>
         <div v-if="isOutdatedTemplateWarning" class="btn-menu d-flex align-items-center mx-1">
-            <button type="button" :class="actBtnClass(false)" @click="toggleVisibilityOutdatedTemplates"
+            <button type="button"
+                class="act-btn btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent"
+                @click="toggleVisibilityOutdatedTemplates"
                 :disabled="props.tabElement.isEditorVisible">
                 <span class="mdi mdi-24px mdi-exclamation"></span>
             </button>
@@ -127,17 +147,6 @@
 
 import { ref, inject, onMounted, computed } from 'vue'
 import { DIAGRAM_TYPE, DIAGRAM_FILE_EXT } from '../constants/diagramTypes.js'
-
-function actBtnClass(selected, ...extra) {
-    return [
-        'act-btn',
-        'btn',
-        'd-inline-flex align-items-center justify-content-center flex-shrink-0',
-        'p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none',
-        selected ? 'bg-light text-dark' : 'text-white bg-transparent',
-        ...extra,
-    ]
-}
 
 const props = defineProps({ 
     tabElementIndex: Number, 
@@ -175,11 +184,6 @@ const downloadLink = ref('#')
 const containerWidth = ref(0)
 const hasConsoleNotification = ref(false)
 const haslinkToProject = ref(false)
-
-const consoleBtnClasses = computed(() => [
-    ...actBtnClass(props.consoleOpen),
-    'position-relative',
-])
 
 const modelProperties = {
     [DIAGRAM_TYPE.DMN]: {
