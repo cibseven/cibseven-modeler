@@ -292,7 +292,7 @@ const _saveDiagram = async () => {
 }
 
 const _toggleOutDatedTemplateBtn = comp => {
-    isOutdatedTemplateWarning.value = Boolean(comp)
+    isOutdatedTemplateWarning.value = comp
 }
 
 

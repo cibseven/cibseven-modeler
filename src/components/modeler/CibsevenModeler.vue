@@ -425,11 +425,7 @@ const updateEditorXML = (xmlContent, tabElementIndex) => {
 	editorXML.value[tabElementIndex] = xmlContent
 }
 
-// Route to the tab that emitted (not necessarily activeTab) so background BPMN tabs do not update the wrong toolbar.
-const toggleOutdatedTemplateBtn = (comp, tabElementIndex) => {
-	const idx = typeof tabElementIndex === 'number' ? tabElementIndex : activeTab.value
-	actionButton.value[idx]?._toggleOutDatedTemplateBtn(comp)
-}
+const toggleOutdatedTemplateBtn = comp => actionButton.value[activeTab.value]._toggleOutDatedTemplateBtn(comp)
 
 // shows or hide warning button of outdated templates
 const toggleOutdatedTemplateModal = comp => modeler.value[activeTab.value]._toggleModalListSelectorFromActionButton(comp, 'templates')
