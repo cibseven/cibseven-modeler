@@ -45,7 +45,9 @@
 			</div>
 			<PropertiesPanel :parent="containerModeler" :parentWidth="parentWidth" v-show="isVisiblePropertyPanel"
 				@changeWidth="changeWidth" minWidth="300" ref="resizableDiv"
-				:tabElement="props.tabElement" :isActiveTab="props.isActiveTab" :activePropertiesTab="props.activePropertiesTab" :selectedElement="selectedElement" />
+				:tabElement="props.tabElement" :isActiveTab="props.isActiveTab" :activePropertiesTab="props.activePropertiesTab" :selectedElement="selectedElement"
+				:chat-token="props.chatToken" :chat-user="props.chatUser" :chat-context="props.chatContext"
+				:chat-unread="props.chatUnread" :chat-on-tab-change="props.chatOnTabChange" :chat-on-message="props.chatOnMessage" />
 			<div>
 			<ConsolePanel ref="consolePanel" :isModelerVisible="props.isModelerVisible" :parentHeight="parentHeight"
 				:rightPos="canvasWidth" :processID="props.tabElement.id" @changeHeight="changeHeight"
@@ -150,6 +152,7 @@ import { BpmnPropertiesProviderModule, BpmnPropertiesPanelModule, CamundaPlatfor
 import { ElementTemplatesPropertiesProviderModule } from 'bpmn-js-element-templates'
 import ScopedTemplateGroupsModule from './element-templates/ScopedGroupsModule.js'
 import ElementTemplateChooserModule from '@bpmn-io/element-template-chooser'
+import ElementTemplateIconRendererModule from './element-templates/IconRendererModule.js'
 import CamundaModdleDescriptors from 'camunda-bpmn-moddle/resources/camunda.json'
 import { customTranslate, translateValue } from "../../i18n.js"
 import lintModule from 'bpmn-js-bpmnlint'
@@ -227,6 +230,7 @@ const emit = defineEmits([
 	'isValidated',
 	'showToastMessage',
 	'updateStoredLocalStorageTabNavList',
+	'updateTabName',
 	'toggleEnableSave',
 	'updateIsButtonDisabled',
 	'updateEditorXML',
@@ -262,7 +266,13 @@ const props = defineProps({
 	},
 	activePropertiesTab: {
 		type: String, default: 'properties'
-	}
+	},
+	chatToken: { type: String, default: '' },
+	chatUser: { type: Object, default: null },
+	chatContext: { type: String, default: 'modeler' },
+	chatUnread: { type: Number, default: 0 },
+	chatOnTabChange: { type: Function, default: null },
+	chatOnMessage: { type: Function, default: null },
 })
 //composables
 const {
@@ -298,6 +308,7 @@ const { updateParentHeight, updateParentWidth,  parentWidth, parentHeight } = us
 
 let bpmnModeler = null
 let isScriptTaskUpdate = false
+let currentScriptBpmnElement = null
 
 const isMinimapOpen = ref(false)
 const isFullscreen = ref(false)
@@ -436,9 +447,12 @@ const initializeModeler = async () => {
 	})
 
 	bpmnModeler.on('commandStack.changed', e => {
-		emit('toggleEnableSave', true, props.tabElementIndex) //enables save button		
+		emit('toggleEnableSave', true, props.tabElementIndex) //enables save button
 		_setupDiagramFunctions()
-		getProcessInformation(bpmnModeler)
+		const info = getProcessInformation(bpmnModeler)
+		const name = info?.name || info?.id || null
+		if (name) emit('updateTabName', name, props.tabElementIndex)
+		if (popover.value?.isFilterOn) popover.value.bpmnFilter(bpmnModeler)
 		_openCalledElementWhenCalActivity(e)
 	})
 
@@ -504,6 +518,7 @@ const initializeCamunda7Modeler = () => {
 			ElementTemplatesPropertiesProviderModule,
 			ScopedTemplateGroupsModule,
 			ElementTemplateChooserModule,
+			ElementTemplateIconRendererModule,
 			minimapModule,
 			SearchModule,
 			BpmnColorPickerModule,
@@ -714,6 +729,7 @@ const _setMonacoEditorToDiv = (e, divId) => {
 		// alternative with another events e.element.type
 
 		if (element.type !== 'bpmn:ScriptTask') {// continues only if a script task has being loaded
+			currentScriptBpmnElement = null
 			return
 		}
 		// to get the value of the selected script task
@@ -724,18 +740,21 @@ const _setMonacoEditorToDiv = (e, divId) => {
 			return
 		}
 
-		const monacoEditorId = element.di.bpmnElement.id ?? element.moddleElement.id
+		const bpmnElement = element.di.bpmnElement ?? element.moddleElement
 		const scriptFormat = element.moddleElement?.scriptFormat ?? element.di.bpmnElement?.scriptFormat
-		// Skip rebuild only when the event was our own typing AND scriptFormat hasn't changed.
-		// A scriptFormat change must always rebuild so Monaco picks up the new language.
-		const existingWrapper = propertyPanel.value.querySelector(`#monaco-editor-${monacoEditorId}-wrapper`)
+		// Use a fixed wrapper ID so the same DOM node is reused across all script tasks.
+		// Keying by element ID caused old wrappers to accumulate when the ID was renamed.
+		const MONACO_ID = 'monaco-editor-script-task'
+		const existingWrapper = propertyPanel.value.querySelector(`#${MONACO_ID}-wrapper`)
 		const formatUnchanged = existingWrapper?.dataset.scriptFormat === (scriptFormat ?? '')
-		if (isScriptTaskUpdate && formatUnchanged) {
+		// Skip rebuild: typing in Monaco, OR same element with no format change (e.g. ID rename)
+		if ((isScriptTaskUpdate || currentScriptBpmnElement === bpmnElement) && formatUnchanged) {
 			isScriptTaskUpdate = false
 			return
 		}
 		isScriptTaskUpdate = false
-		const monacoEditor = _createMonacoEditor(`monaco-editor-${monacoEditorId}`, textAreaScriptTask, scriptFormat)
+		currentScriptBpmnElement = bpmnElement
+		const monacoEditor = _createMonacoEditor(MONACO_ID, textAreaScriptTask, scriptFormat)
 		//captures changes in monaco editor
 		monacoEditor.getModel().onDidChangeContent(() => {
 			textAreaScriptTask.value = monacoEditor.getValue()

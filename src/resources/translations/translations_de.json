@@ -21,17 +21,20 @@
     "title": "Fehler beim Löschen des Prozesses",
     "body": "Es ist ein Fehler beim Löschen des Prozesses aufgetreten."
   },
+  "toastDownloadDiagramSuccess": { "title": "Herunterladen", "body": "Download gestartet" },
+  "toastDownloadDiagramFail": { "title": "Herunterladen", "body": "Fehler beim Herunterladen des Diagramms" },
   "toastFileNoLongerExists": {
     "title": "Datei existiert nicht",
     "body": "Die Datei, die Sie laden möchten, existiert nicht mehr."
   },
   "modalCloseNotSaved": {
-    "title": "{item} wurde nicht gespeichert",
-    "body": "Der {item} wurde nicht gespeichert. Sind Sie sicher, dass Sie ihn schließen wollen?"
+    "title": "Nicht gespeicherter {item}",
+    "body": "Dieser {item} hat nicht gespeicherte Änderungen. Wenn Sie ihn schließen, gehen alle nicht gespeicherten Änderungen verloren."
   },
   "toastDeploySucessDeploy": {
     "title": "Einspielen erfolgreich",
-    "body": "Das Einspielen war erfolgreich."
+    "body": "Das Einspielen war erfolgreich.",
+    "bodyCheck": "Einspielen erfolgreich - Öffnen "
   },
   "toastStartProcessSucess": {
     "body": "Prozess gestartet - Überprüfen Sie die Aufgabenliste"
@@ -86,6 +89,7 @@
   "ttlFieldRequired": "Dieses Feld ist für die Bereitstellung erforderlich",
   "buttons": {
     "accept": "Ok",
+    "discardChanges": "Änderungen verwerfen",
     "filter": "Filter auswählen",
     "saveDiagram": "Diagramm speichern",
     "search": "Suchen",
@@ -397,6 +401,9 @@
   "modalDelete": {
     "title": "{item} löschen",
     "body": "Sind Sie sicher, dass Sie den {item} löschen wollen??"
+  },
+  "modalDeploy": {
+    "notExecutable": "Dieser Prozess ist als nicht ausführbar markiert und kann nicht gestartet werden."
   },
   "searchElementTemplates": {
     "searchInput": "Nach Templates suchen",

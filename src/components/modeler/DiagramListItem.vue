@@ -37,6 +37,11 @@
                 :class="{ 'invisible': !props.isHovered }"
                 @click.stop="handleClickLoadSelectedFromList">
             </button>
+            <button :title="$t('buttons.download')" type="button"
+                class="btn mdi mdi-18px mdi-download border-0 btn-outline-secondary btn-sm"
+                :class="{ 'invisible': !props.isHovered }"
+                @click.stop="handleDownloadItem">
+            </button>
             <button :title="$t('buttons.delete')" type="button"
                 class="btn mdi mdi-18px mdi-delete-outline border-0 btn-outline-secondary btn-sm"
                 :class="{ 'invisible': !props.isHovered }"
@@ -63,6 +68,7 @@ const props = defineProps({
 const emit = defineEmits([
     'openDiagram',
     'toggleModal',
+    'downloadDiagram',
 ])
 
 const store = useStore()
@@ -103,6 +109,9 @@ const handleClickLoadSelectedFromList = async () => {
         emit('openDiagram', selectedProcess, props.item.id, props.item.name, props.item.processkey, props.index, props.item.type)
     }
 }
+
+const handleDownloadItem = () =>
+    emit('downloadDiagram', props.item)
 
 const handleDeleteItem = () =>
     emit('toggleModal', true, props.item.id, displayName.value, props.index, props.item.type)

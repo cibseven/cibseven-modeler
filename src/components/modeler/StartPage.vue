@@ -75,7 +75,7 @@
                                         :ref="el => searchElementsList[index] = el" @mouseover="setHoverElement(index, true)"
                                         @focusin="setHoverElement(index, true)" @focusout="setHoverElement(index, false)"
                                         @openDiagram="openDiagramEmitFromChild" :item="element" @toggleModal="toggleModal"
-                                        :isHovered="element.isHovered">
+                                        @downloadDiagram="handleDownloadDiagram" :isHovered="element.isHovered">
                                     </DiagramListItem>
                                 </div>
                                 <div v-if="isLoadingMore" class="d-flex align-items-center justify-content-center py-2">
@@ -89,10 +89,7 @@
                         <div class="mt-4 d-flex justify-content-between">    
                             <div class="d-flex justify-content-start gap-2">
                                 <button @click="handleOpenFileInput" :title="$t('buttons.importFile')" type="button"
-                                    class="btn border border-dark btn-light d-inline-flex align-items-center gap-1">
-                                    <span class="mdi mdi-import" aria-hidden="true"></span>
-                                    <span>{{ $t('buttons.importFile') }}</span>
-                                </button>
+                                class="btn border border-dark btn-light"><i class="mdi mdi-import me-1"></i>{{ $t('buttons.importFile') }}</button>
                             </div>
                             <input ref="fileInput" type="file" accept=".bpmn,.dmn,.form" :aria-label="$t('buttons.importFile')" style="display: none;"
                                 @change="handleFileChange" />                            
@@ -131,6 +128,7 @@
           :searchListIndex="searchListIndex" :name="processNameForDelete"  :functionAfterAccepting="functionAfterAccepting ? functionAfterAccepting : () => {}"
           @resetVariablesForModalAcceptCancelMessage="resetVariablesForModalAcceptCancelMessage">
       </ConfirmModal>
+      <TaskPopper ref="downloadPopper" />
     </div>
 
 </template>
@@ -139,9 +137,10 @@
 
 import { computed, onMounted, ref, watch } from 'vue'
 import { debounce } from 'min-dash'
-import { deleteProcessById } from '../../services/processService'
-import { deleteFormById } from '../../services/formService'
+import { fetchProcessById, deleteProcessById } from '../../services/processService'
+import { fetchFormById, deleteFormById } from '../../services/formService'
 import { useI18n } from 'vue-i18n'
+import { TaskPopper } from '@cib/common-frontend'
 
 //starting files for new diagrams
 import diagramXMLC7 from '../../resources/camunda7.bpmn'
@@ -173,6 +172,7 @@ const emit = defineEmits([
     'loadMore',
     'search'
 ])
+const downloadPopper = ref(null)
 const inputSearchValue = ref('')
 const fileInput = ref(null)
 const listContainer = ref(null)
@@ -328,6 +328,30 @@ const deleteFormWithId = async formId => {
         emit('showToastMessage', { isSuccess: false, toastText: 'toastDeleteFormFail' })
     }
 }
+
+const handleDownloadDiagram = async (item) => {
+    const isForm = item.type === DIAGRAM_TYPE.FORM
+    try {
+        let content, filename, mimeType
+        if (isForm) {
+            const data = await fetchFormById(item.id)
+            content = JSON.stringify(data, null, 2)
+            filename = `${item.formId}.form`
+            mimeType = 'application/json'
+        } else {
+            content = await fetchProcessById(item.id)
+            const ext = item.type.startsWith('bpmn') ? 'bpmn' : item.type
+            filename = `${item.name}.${ext}`
+            mimeType = 'application/xml'
+        }
+        downloadPopper.value.triggerDownload(new Blob([content], { type: mimeType }), filename)
+        emit('showToastMessage', { isSuccess: true, toastText: 'toastDownloadDiagramSuccess' })
+    } catch (error) {
+        console.error(error)
+        emit('showToastMessage', { isSuccess: false, toastText: 'toastDownloadDiagramFail' })
+    }
+}
+
 //passed from child ProcessDiagramElement to CibsevenModeler
 const openDiagramEmitFromChild = (valueFromChild, processId, processName, processKey, tabElementIndex, typeofDiagram) => {
     emit('openDiagram', valueFromChild, processId, processName, processKey, typeofDiagram, true, false, false)

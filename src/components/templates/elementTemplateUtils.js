@@ -89,9 +89,11 @@ export const categorizeTemplates = (rawTemplates, options = {}) => {
         template: preserveOriginalTemplate ? template.originalTemplate : template,
         id: template.id,
         version,
+        templateVersion: template.version,
         extern: externValue,
         tooltip: template.description ?? '',
-        metaKeys: template.metaKeys
+        metaKeys: template.metaKeys,
+        icon: template.icon?.contents ?? null
       })
     })
     return groups

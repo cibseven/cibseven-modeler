@@ -173,25 +173,32 @@
 							</div>
 						</div>
 
-						<!-- Actions -->
-						<div class="d-flex justify-content-between align-items-end mx-1">
-							<button href="#" class="btn btn-link" ref="closeButton" data-bs-dismiss="modal">
-								{{ $t('buttons.cancel') }}
-							</button>
-							<div>
-								<button @click="deploy" class="btn btn-primary" :disabled="!canDeploy">
-									{{ $t('buttons.deploy') }}
-								</button>
-								<button @click="deployAndStart" type="button" class="btn btn-secondary mx-2" v-if="props.tabNavList.type !== 'dmn' && props.tabNavList.type !== 'form'" :disabled="!canStart">
+					</div>
+				</div>
+				<div class="modal-footer justify-content-between">
+					<button href="#" class="btn btn-link" ref="closeButton" data-bs-dismiss="modal">
+						{{ $t('buttons.cancel') }}
+					</button>
+					<div>
+						<button @click="deploy()" class="btn btn-primary" :disabled="!canDeploy">
+							{{ $t('buttons.deploy') }}
+						</button>
+						<template v-if="props.tabNavList.type !== 'dmn' && props.tabNavList.type !== 'form'">
+							<span v-if="isExecutable === 'false'"
+								v-b-popover.hover.top="$t('modalDeploy.notExecutable')"
+								tabindex="0">
+								<button type="button" class="btn btn-secondary mx-2" disabled style="pointer-events: none">
 									{{ $t('buttons.startProcess') }}
 								</button>
-							</div>
-						</div>
+							</span>
+							<button v-else @click="deployAndStart" type="button" class="btn btn-secondary mx-2" :disabled="!canStart">
+								{{ $t('buttons.startProcess') }}
+							</button>
+						</template>
 					</div>
 				</div>
 			</div>
 		</div>
-
 	</div>
 </template>
 
@@ -201,6 +208,7 @@ import * as bootstrap from 'bootstrap'
 
 import { deployProcess, startProcess } from '../../services/deployService'
 import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { getProcessKeyFromBpmn, getTagValueFromXml, formatFileSize } from '../../utils.js'
 import { isHttpOrHttpsUrl } from '../../utils/regexUtils'
 import { DEPLOY_STORAGE_KEYS } from '../../constants/diagramTypes'
@@ -217,6 +225,8 @@ const emit = defineEmits([
 	'addErrorMessageToConsole',
 	'showConsoleNotification'
 ])
+
+const { t } = useI18n()
 
 // Deployment info
 const deploymentName = ref('')
@@ -246,12 +256,10 @@ const token = ref('')
 let modalBootstrap = null
 const modalDeploy = ref(null)
 const disableDeployButton = ref(false)
-const isExecutable = ref(false)
+const isExecutable = ref(null)
 
-const canStart = computed(() => { // its only startable if the checkbox executable of the process is true
-	if (!isExecutable.value) {
-		return true
-	}
+const canStart = computed(() => {
+	if (isExecutable.value === 'false') return false
 	return canDeploy.value
 })
 
@@ -346,7 +354,7 @@ const _validateAdditionalDeploymentResources = mainResourceName => {
 	return valid
 }
 
-const deploy = async () => {
+const deploy = async (silent = false) => {
 	disableDeployButton.value = true
 
 	let type = 'dmn'
@@ -377,8 +385,11 @@ const deploy = async () => {
 		_saveDeployValuesLocalStorage(selected.value, customEndpoint.value, useCustomEndpoint.value)
 		if (res?.id) {
 			disableDeployButton.value = false
-			closeButton.value.click() // simulates on button close clicked to avoid bug that backdrops stays visible
-			emit('showToastMessage', { isSuccess: true, toastText: 'toastDeploySucessDeploy', bodyTextAlt: '' })
+			if (!silent) {
+				closeButton.value.click() // simulates on button close clicked to avoid bug that backdrops stays visible
+				const payload = { isSuccess: true, toastText: 'toastDeploySucessDeploy', bodyTextAlt: '', actionTo: { name: 'start-process' }, actionLabel: t('buttons.startProcess') }
+				emit('showToastMessage', payload)
+			}
 		} else {
 			hasErrors = true
 			disableDeployButton.value = false
@@ -414,7 +425,7 @@ const _getPassword = () => asAnotherUser.value ? password.value : null // curren
 
 const deployAndStart = async() => {
 	disableDeployButton.value = true
-	const result = await deploy()
+	const result = await deploy(true)
 
 	if (result?.id) {
 		await startProcess(

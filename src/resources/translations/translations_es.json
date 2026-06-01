@@ -21,17 +21,20 @@
     "title": "Error borrando proceso",
     "body": "Ha ocurrido un error borrando el proceso"
   },
+  "toastDownloadDiagramSuccess": { "title": "Descargar", "body": "Descarga iniciada" },
+  "toastDownloadDiagramFail": { "title": "Descargar", "body": "Error al descargar el diagrama" },
   "toastFileNoLongerExists": {
     "title": "El Archivo no existe",
     "body": "El archivo que está intentando cargar ya no existe"
   },
   "modalCloseNotSaved": {
-    "title": "El {item} tiene cambios sin guardar",
-    "body": "¿Está seguro de que desea cerrar el {item}?"
+    "title": "{item} sin guardar",
+    "body": "Este {item} tiene cambios sin guardar. Si lo cierra, se perderán todos los cambios no guardados."
   },
   "toastDeploySucessDeploy": {
     "title": "Éxito",
-    "body": "Despliegue exitoso"
+    "body": "Despliegue exitoso",
+    "bodyCheck": "Despliegue exitoso - Abrir "
   },
   "toastStartProcessSucess": {
     "body": "Proceso iniciado"
@@ -86,6 +89,7 @@
   "ttlFieldRequired": "Este campo es obligatorio para el despliegue",
   "buttons": {
     "accept": "Aceptar",
+    "discardChanges": "Descartar cambios",
     "filter": "Seleccionar filtro",
     "saveDiagram": "Guardar diagrama",
     "search": "Buscar",
@@ -397,6 +401,9 @@
   "modalDelete": {
     "title": "Borrar {item}",
     "body": "¿Está seguro de que desea borrar el {item}?"
+  },
+  "modalDeploy": {
+    "notExecutable": "Este proceso está marcado como no ejecutable y no puede iniciarse."
   },
   "searchElementTemplates": {
     "searchInput": "Buscar templates",

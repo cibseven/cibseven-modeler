@@ -185,11 +185,33 @@ describe('DiagramListItem', () => {
         })
     })
 
+    describe('download button', () => {
+        it('emits downloadDiagram with item when download clicked on a BPMN', async () => {
+            const wrapper = mountItem(PROCESS_ITEM, { isHovered: true })
+
+            const downloadBtn = wrapper.findAll('button')[1] // second button is download
+            await downloadBtn.trigger('click')
+
+            expect(wrapper.emitted('downloadDiagram')).toHaveLength(1)
+            expect(wrapper.emitted('downloadDiagram')[0][0]).toMatchObject({ id: PROCESS_ITEM.id, type: DIAGRAM_TYPE.BPMN_C7 })
+        })
+
+        it('emits downloadDiagram with item when download clicked on a Form', async () => {
+            const wrapper = mountItem(FORM_ITEM, { isHovered: true })
+
+            const downloadBtn = wrapper.findAll('button')[1]
+            await downloadBtn.trigger('click')
+
+            expect(wrapper.emitted('downloadDiagram')).toHaveLength(1)
+            expect(wrapper.emitted('downloadDiagram')[0][0]).toMatchObject({ id: FORM_ITEM.id, type: DIAGRAM_TYPE.FORM })
+        })
+    })
+
     describe('delete button', () => {
         it('emits toggleModal with item details when delete clicked', async () => {
             const wrapper = mountItem(PROCESS_ITEM, { isHovered: true, index: 3 })
 
-            const deleteBtn = wrapper.findAll('button')[1] // second button is delete
+            const deleteBtn = wrapper.findAll('button')[2] // third button is delete
             await deleteBtn.trigger('click')
 
             expect(wrapper.emitted('toggleModal')).toHaveLength(1)
