@@ -397,7 +397,7 @@
   },
   "modalDelete": {
     "title": "Borrar {item}",
-    "body": "¿Está seguro de que desea borrar el {item}?"
+    "body": "¿Está seguro de que desea eliminar el {item} \"{name}\" del modelador? Los despliegues existentes no se verán afectados."
   },
   "modalDeploy": {
     "notExecutable": "Este proceso está marcado como no ejecutable y no puede iniciarse."
