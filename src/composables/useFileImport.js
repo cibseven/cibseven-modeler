@@ -14,7 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   getTagValueFromXml,
@@ -22,9 +22,10 @@ import {
   checkCamundaVersion,
   compareXML,
   generateUniqueId,
+  setTagValueOfXml,
 } from '../utils.js'
 import { DIAGRAM_TYPE } from '../constants/diagramTypes.js'
-import { saveDiagramProcess, updateDiagramProcess } from '../services/processService.js'
+import { saveDiagramProcess, updateDiagramProcess, getUnifiedDiagrams } from '../services/processService.js'
 import { saveForm, updateForm } from '../services/formService.js'
 
 /**
@@ -60,6 +61,8 @@ export default function useFileImport({
   modelerTabNav,
   switchTabFromTabNav,
   onBatchComplete,
+  nextModalHiddenPromise,
+  updateDiagramXml,
 }) {
   const { t } = useI18n()
 
@@ -67,45 +70,77 @@ export default function useFileImport({
   // CibsevenModeler calls resolveConflict() after the modal accept/cancel callback fires.
   const _conflictResolve = ref(null)
 
+  // Promise that resolves when the previous conflict modal finishes its hide animation.
+  // Prevents Bootstrap from ignoring show() called while a hide is still in progress.
+  let _prevHidePromise = null
+
   // 'replace' | 'skip' | null — set by "Apply to All" to skip subsequent modals in a batch.
   const _batchPolicy = ref(null)
 
   /**
    * Called by CibsevenModeler after the conflict modal is dismissed.
-   * choice: 'replace' (accept) | 'skip' (cancel / backdrop)
+   * choice: 'replace' (accept) | 'skip' (cancel / backdrop) | 'rename'
    * applyAll: if true, stores choice as the policy for all remaining batch conflicts.
+   * payload: optional extra data, e.g. { newKey } for rename.
    */
-  const resolveConflict = (choice = 'skip', applyAll = false) => {
+  const resolveConflict = (choice = 'skip', applyAll = false, payload = null) => {
     if (applyAll) _batchPolicy.value = choice
-    _conflictResolve.value?.(choice)
+    _conflictResolve.value?.({ choice, payload })
     _conflictResolve.value = null
   }
 
-  /** Returns the current XML for the tab matching processKey, or null if not open. */
+  /** Returns the current XML for the tab matching processKey, or null if not open.
+   *  Only returns the tab XML if the tab has unsaved edits (canSave = true).
+   *  When the tab is open but clean, returning null causes the caller to fetch
+   *  the DB version instead — avoiding false conflicts from bpmn-js XML normalisation. */
   const _checkIfProcessOpenInTab = processKey => {
     const foundTabIndex = tabNavList.value.findIndex(
       tab => tab.key === processKey && tab.type !== DIAGRAM_TYPE.FORM
     )
-    if (foundTabIndex > -1) return editorXML.value[foundTabIndex] ?? tabNavListXml.value[foundTabIndex]
+    if (foundTabIndex > -1 && tabNavList.value[foundTabIndex].canSave)
+      return editorXML.value[foundTabIndex] ?? tabNavListXml.value[foundTabIndex]
     return null
   }
 
-  /** Returns the current JSON for the tab matching formId, or null if not open. */
+  /** Returns the current JSON for the tab matching formId, or null if not open.
+   *  Only returns tab JSON when canSave = true (unsaved edits present). */
   const _checkIfFormOpenInTab = formId => {
     const foundTabIndex = tabNavList.value.findIndex(
       tab => tab.key === formId && tab.type === DIAGRAM_TYPE.FORM
     )
-    if (foundTabIndex > -1) return tabNavListXml.value[foundTabIndex]
+    // Prefer the live editor content (editorXML) over the originally-loaded snapshot
+    // so a conflict reflects the user's current unsaved edits — mirrors the process check.
+    if (foundTabIndex > -1 && tabNavList.value[foundTabIndex].canSave)
+      return editorXML.value[foundTabIndex] ?? tabNavListXml.value[foundTabIndex]
     return null
   }
 
   /**
+   * Normalize any form representation to a canonical compact JSON string for
+   * comparison. Handles a plain object, a JSON string, or the double-encoded
+   * JSON string that the forms store produces (JSON.stringify of an already
+   * stringified value). Unwraps up to a few levels until it reaches the object.
+   */
+  const _canonicalFormJson = val => {
+    let v = val
+    for (let i = 0; i < 3 && typeof v === 'string'; i++) {
+      try { v = JSON.parse(v) } catch { break }
+    }
+    try { return JSON.stringify(v) } catch { return String(val) }
+  }
+
+  /**
    * Show the conflict modal and wait for the user to resolve it.
-   * Returns 'replace' (accept) or 'skip' (cancel/backdrop).
+   * Returns { choice, payload } where choice is 'replace' | 'skip' | 'rename'.
    * In batch mode, skips the modal and returns the stored batchPolicy if already set.
    */
   const _awaitConflictModal = async (diagramType, isBatch = false) => {
-    if (isBatch && _batchPolicy.value !== null) return _batchPolicy.value
+    if (isBatch && _batchPolicy.value !== null) return { choice: _batchPolicy.value, payload: null }
+    // Wait for the previous modal's hide animation before showing the next one.
+    // (Bootstrap ignores show() called while a hide is still in progress.)
+    if (_prevHidePromise) { await _prevHidePromise; _prevHidePromise = null }
+    // Register a promise for when THIS modal eventually hides — the next call will await it.
+    if (nextModalHiddenPromise) _prevHidePromise = nextModalHiddenPromise()
     const conflictPromise = new Promise(resolve => { _conflictResolve.value = resolve })
     showModalAcceptCancelMessage.value = { show: true, type: diagramType, isBatch }
     return await conflictPromise
@@ -205,17 +240,28 @@ export default function useFileImport({
         xmlExternalUrl: jsonExternal,
         diagramType: DIAGRAM_TYPE.FORM,
       }
-      let jsonFromEditorStringify = JSON.stringify(JSON.parse(jsonFromEditor)).replace(/\\/g, '')
-      const jsonExternalStringify = JSON.stringify(JSON.parse(jsonExternal))
-      if (jsonFromEditorStringify.startsWith('"') && jsonFromEditorStringify.endsWith('"')) {
-        jsonFromEditorStringify = jsonFromEditorStringify.slice(1, -1)
-      }
-      const isEqual = jsonFromEditorStringify === jsonExternalStringify
+      const isEqual = _canonicalFormJson(jsonFromEditor) === _canonicalFormJson(jsonExternal)
 
       if (!isEqual) {
-        const choice = await _awaitConflictModal(DIAGRAM_TYPE.FORM, isBatch)
-        if (isBatch && choice === 'replace') {
+        const { choice, payload } = await _awaitConflictModal(DIAGRAM_TYPE.FORM, isBatch)
+        if (choice === 'replace') {
           await _autoUpdateForm(jsonExternal, foundForm.id, jsonId)
+          const openIdx = tabNavList.value.findIndex(t => t.key === jsonId && t.type === DIAGRAM_TYPE.FORM)
+          if (openIdx > -1) {
+            // updateDiagramXml -> _validate -> importJson updates the form's `json` closure
+            // synchronously, so a tab switch re-inits the editor with the new content.
+            updateDiagramXml?.(jsonExternal, openIdx, false, DIAGRAM_TYPE.FORM)
+            await nextTick()
+            tabNavList.value[openIdx].isSaved = true
+            tabNavList.value[openIdx].canSave = false
+            if (!isBatch) await switchTabFromTabNav(openIdx)
+          }
+          return true
+        } else if (choice === 'rename' && payload?.newKey) {
+          const renamedJson = JSON.stringify({ ...JSON.parse(jsonExternal), id: payload.newKey })
+          if (!isBatch) _addNewBpmnFromLoadedXml(DIAGRAM_TYPE.FORM, renamedJson, payload.newKey, true)
+          await _autoSaveForm(renamedJson, payload.newKey)
+          return true
         }
       } else {
         if (!isBatch) {
@@ -225,6 +271,7 @@ export default function useFileImport({
             openDiagramFromChild(jsonExternal, foundForm.id, jsonId, jsonId, DIAGRAM_TYPE.FORM, true, false, false)
           }
         }
+        return 'unchanged'
       }
     } else {
       // Check for unsaved-tab conflict (re-import of a tab already open)
@@ -238,19 +285,15 @@ export default function useFileImport({
           xmlExternalUrl: jsonExternal,
           diagramType: DIAGRAM_TYPE.FORM,
         }
-        let unsavedStringify = JSON.stringify(JSON.parse(unsavedJson)).replace(/\\/g, '')
-        const importedStringify = JSON.stringify(JSON.parse(jsonExternal))
-        if (unsavedStringify.startsWith('"') && unsavedStringify.endsWith('"')) {
-          unsavedStringify = unsavedStringify.slice(1, -1)
-        }
-        const isEqual = unsavedStringify === importedStringify
+        const isEqual = _canonicalFormJson(unsavedJson) === _canonicalFormJson(jsonExternal)
         if (isEqual) {
           if (!isBatch) {
             const idx = tabNavList.value.findIndex(t => t.key === jsonId && t.type === DIAGRAM_TYPE.FORM)
             if (idx > -1) modelerTabNav.value.selectTab(idx)
           }
+          return 'unchanged'
         } else {
-          const choice = await _awaitConflictModal(DIAGRAM_TYPE.FORM, isBatch)
+          const { choice } = await _awaitConflictModal(DIAGRAM_TYPE.FORM, isBatch)
           if (isBatch && choice === 'replace') {
             const idx = tabNavList.value.findIndex(t => t.key === jsonId && t.type === DIAGRAM_TYPE.FORM)
             if (idx > -1) tabNavListXml.value[idx] = jsonExternal
@@ -258,8 +301,10 @@ export default function useFileImport({
         }
       } else {
         // Truly new form
-        _addNewBpmnFromLoadedXml(DIAGRAM_TYPE.FORM, jsonExternal, jsonId, !isBatch)
+        if (isBatch && _batchPolicy.value === 'stop') return false
+        if (!isBatch) _addNewBpmnFromLoadedXml(DIAGRAM_TYPE.FORM, jsonExternal, jsonId, true)
         await _autoSaveForm(jsonExternal, jsonId)
+        return true
       }
     }
   }
@@ -275,7 +320,13 @@ export default function useFileImport({
       diagramType = checkCamundaVersion(resXmlExternalUrl)
     }
 
-    const foundModelerProcess = processes.value.find(process => process.processkey === foundExternalProcessKey)
+    let foundModelerProcess = processes.value.find(process => process.processkey === foundExternalProcessKey)
+    if (!foundModelerProcess) {
+      try {
+        const results = await getUnifiedDiagrams(0, 1, foundExternalProcessKey, '')
+        foundModelerProcess = results?.find(p => p.processkey === foundExternalProcessKey) ?? null
+      } catch { /* fall through to new-process path */ }
+    }
 
     if (foundModelerProcess) {
       let xmlFromModeler = _checkIfProcessOpenInTab(foundExternalProcessKey)
@@ -298,10 +349,33 @@ export default function useFileImport({
       const isEqual = compareXML(xmlFromModeler, resXmlExternalUrl)
       if (isEqual) {
         if (!isBatch) openDiagramFromChild(resXmlExternalUrl, foundModelerProcess.id, foundModelerProcess.name, foundExternalProcessKey, diagramType, true, false, false)
+        return 'unchanged'
       } else {
-        const choice = await _awaitConflictModal(diagramType, isBatch)
-        if (isBatch && choice === 'replace') {
+        const { choice, payload } = await _awaitConflictModal(diagramType, isBatch)
+        if (choice === 'replace') {
           await _autoUpdateProcess(resXmlExternalUrl, foundModelerProcess.id, foundExternalProcessKey, diagramType)
+          const openIdx = tabNavList.value.findIndex(t => t.key === foundExternalProcessKey && t.type !== DIAGRAM_TYPE.FORM)
+          if (openIdx > -1) {
+            updateDiagramXml?.(resXmlExternalUrl, openIdx, false, diagramType)
+            // Wait for bpmn-js commandStack.changed to fire (it sets canSave=true), then override back to saved state
+            await nextTick()
+            tabNavList.value[openIdx].isSaved = true
+            tabNavList.value[openIdx].canSave = false
+            if (!isBatch) await switchTabFromTabNav(openIdx)
+          }
+          return true
+        } else if (choice === 'rename' && payload?.newKey) {
+          let renamedXml = resXmlExternalUrl
+          if (diagramType === DIAGRAM_TYPE.DMN) {
+            renamedXml = setTagValueOfXml(renamedXml, 'definitions', 'id', payload.newKey)
+          } else {
+            if (getTagValueFromXml(renamedXml, 'collaboration', 'id'))
+              renamedXml = setTagValueOfXml(renamedXml, 'collaboration', 'id', payload.newKey)
+            renamedXml = setTagValueOfXml(renamedXml, 'process', 'id', payload.newKey)
+          }
+          if (!isBatch) _addNewBpmnFromLoadedXml(diagramType, renamedXml, payload.newKey, true)
+          await _autoSaveProcess(renamedXml, payload.newKey, diagramType)
+          return true
         }
       }
     } else {
@@ -322,8 +396,9 @@ export default function useFileImport({
             const idx = tabNavList.value.findIndex(t => t.key === foundExternalProcessKey && t.type !== DIAGRAM_TYPE.FORM)
             if (idx > -1) modelerTabNav.value.selectTab(idx)
           }
+          return 'unchanged'
         } else {
-          const choice = await _awaitConflictModal(diagramType, isBatch)
+          const { choice } = await _awaitConflictModal(diagramType, isBatch)
           if (isBatch && choice === 'replace') {
             const idx = tabNavList.value.findIndex(t => t.key === foundExternalProcessKey && t.type !== DIAGRAM_TYPE.FORM)
             if (idx > -1) tabNavListXml.value[idx] = resXmlExternalUrl
@@ -331,8 +406,10 @@ export default function useFileImport({
         }
       } else {
         // Truly new process
-        _addNewBpmnFromLoadedXml(diagramType, resXmlExternalUrl, foundExternalProcessKey, !isBatch)
+        if (isBatch && _batchPolicy.value === 'stop') return false
+        if (!isBatch) _addNewBpmnFromLoadedXml(diagramType, resXmlExternalUrl, foundExternalProcessKey, true)
         await _autoSaveProcess(resXmlExternalUrl, foundExternalProcessKey, diagramType)
+        return true
       }
     }
   }
@@ -343,18 +420,22 @@ export default function useFileImport({
     if (!files.length) return
 
     const isBatch = files.length > 1
-    if (isBatch) _batchPolicy.value = null
+    _batchPolicy.value = null
 
     let imported = 0
+    let savedCount = 0
+    let unchangedCount = 0
     const invalidNames = []
 
     for (const file of files) {
+      if (isBatch && _batchPolicy.value === 'stop') break
       const validExt = file.name.endsWith('.bpmn') || file.name.endsWith('.dmn') || file.name.endsWith('.form')
       if (!validExt) {
         invalidNames.push(file.name)
         continue
       }
       try {
+        let didSave = false
         await new Promise((resolve, reject) => {
           const reader = new FileReader()
           reader.onerror = reject
@@ -362,10 +443,10 @@ export default function useFileImport({
             try {
               const content = evt.target.result
               if (file.name.endsWith('.form')) {
-                await _openFormFromImportedFile(content, isBatch)
+                didSave = await _openFormFromImportedFile(content, isBatch) ?? false
               } else {
                 const base = file.name.substring(0, file.name.lastIndexOf('.'))
-                await _openProcessFromImportedFile(content, base, file.name, isBatch)
+                didSave = await _openProcessFromImportedFile(content, base, file.name, isBatch) ?? false
               }
               resolve()
             } catch (err) { reject(err) }
@@ -373,12 +454,14 @@ export default function useFileImport({
           reader.readAsText(file)
         })
         imported++
+        if (didSave === true) savedCount++
+        else if (didSave === 'unchanged') unchangedCount++
       } catch {
         invalidNames.push(file.name)
       }
     }
 
-    if (isBatch && onBatchComplete) await onBatchComplete()
+    if (savedCount > 0 && onBatchComplete) await onBatchComplete()
 
     if (!isBatch) {
       // Single-file: success opens a tab silently; only toast on invalid extension.
@@ -386,21 +469,20 @@ export default function useFileImport({
         showToastMessage({ isSuccess: false, toastText: 'toastLoadErrorFileExtension' })
       }
     } else {
-      // Batch: one summary toast
-      const failed = files.length - imported
-      if (failed === 0) {
-        showToastMessage({
-          isSuccess: true,
-          toastText: 'toastImportBatchSuccess',
-          bodyTextAlt: t('toastImportBatchSuccess.body', { count: imported }),
-        })
-      } else {
-        showToastMessage({
-          isSuccess: imported > 0,
-          toastText: 'toastImportBatchPartial',
-          bodyTextAlt: t('toastImportBatchPartial.body', { imported, total: files.length }),
-        })
-      }
+      // Batch: compose a summary from all non-zero outcome counts
+      // skippedCount covers both user-skipped conflicts AND files not reached due to "Cancel remaining"
+      const validTotal = files.length - invalidNames.length
+      const skippedCount = validTotal - savedCount - unchangedCount
+      const parts = []
+      if (savedCount > 0) parts.push(t('importSummary.imported', { count: savedCount }))
+      if (unchangedCount > 0) parts.push(t('importSummary.upToDate', { count: unchangedCount }))
+      if (skippedCount > 0) parts.push(t('importSummary.skipped', { count: skippedCount }))
+      if (invalidNames.length > 0) parts.push(t('importSummary.failed', { count: invalidNames.length }))
+      showToastMessage({
+        isSuccess: savedCount > 0 || unchangedCount > 0,
+        toastText: 'toastImportBatch',
+        bodyTextAlt: parts.join(', ') + '.',
+      })
     }
   }
 

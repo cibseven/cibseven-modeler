@@ -163,13 +163,17 @@
 		:bodyText="toastActionTo ? $t(toastText + '.bodyCheck') : $t(toastText + '.body')"
 		:actionTo="toastActionTo" :actionLabel="toastActionLabel">
 	</toast-message>
-	<ConfirmModal :showModal="showModalAcceptCancelMessage.show" :title="modalConfirm.title"
-		type="replaceXml" :body="modalConfirm.body" @hideModal="hideModalAcceptCancelMessage"
-		:modalData="modalData" :functionAfterAccepting="openDiagramFromModalAndResolve"
+	<ImportConflictModal :showModal="showModalAcceptCancelMessage.show"
+		@hideModal="hideModalAcceptCancelMessage"
+		:modalData="modalData" :isBatch="showModalAcceptCancelMessage.isBatch"
+		:functionAfterAccepting="openDiagramFromModalAndResolve"
 		:functionAfterCanceling="openDiagramFromChildAndResolve"
-		:showApplyAll="showModalAcceptCancelMessage.isBatch" :functionApplyAll="handleApplyAll"
-		@modalClosed="() => resolveConflict('skip')">
-	</ConfirmModal>
+		:functionApplyAll="handleApplyAll"
+		:functionAfterRenaming="handleRename"
+		:validateRenameKey="validateRenameKey"
+		@modalClosed="() => resolveConflict('skip')"
+		@modalHidden="onConflictModalHidden">
+	</ImportConflictModal>
 	</div>
 </template>
 
@@ -195,7 +199,7 @@ import ToastMessage from '../messages/ToastMessage.vue'
 import TabNav from '../layout/TabNav.vue'
 import ModalNewDiagram from '../modals/ModalNewDiagram.vue'
 import ActionButtonsList from '../ActionButtonsList.vue'
-import ConfirmModal from '../modals/ConfirmModal.vue'
+import ImportConflictModal from '../modals/ImportConflictModal.vue'
 //for full screen drop files
 import DropZone from '../DropZone.vue'
 //composables
@@ -292,13 +296,16 @@ watch(() => activeTab.value, async newValue => { // when the tab is selected it 
 	}
 })
 
-const modalConfirm = computed(() => {
-      return { title: t('modalImportedFile.title', {
-        item: t(`items.${showModalAcceptCancelMessage.value.type}`)
-      } ), body: t('modalImportedFile.body', {
-        item: t(`items.${showModalAcceptCancelMessage.value.type}`)
-      } )  }
-})
+const handleRename = newKey => resolveConflict('rename', false, { newKey })
+
+const validateRenameKey = newKey => {
+	if (newKey === modalData.value.processkey) return t('modalImportedFile.renameSameKey')
+	const exists = modalData.value.diagramType === 'form'
+		? forms.value.find(f => f.formId === newKey)
+		: processes.value.find(p => p.processkey === newKey)
+	if (exists) return t('toastSaveErrorDuplicateKey.body')
+	return null
+}
 
 const _loadElementTemplatesByConfig = async () => {
 	// Get only template contents from store (optimized for bpmn.js)
@@ -574,10 +581,7 @@ const openDiagramFromModalAndResolve = (...args) => {
 	if (!showModalAcceptCancelMessage.value.isBatch) openDiagramFromModal(...args)
 	resolveConflict('replace')
 }
-const openDiagramFromChildAndResolve = (...args) => {
-	if (!showModalAcceptCancelMessage.value.isBatch) openDiagramFromChild(...args)
-	resolveConflict('skip')
-}
+const openDiagramFromChildAndResolve = () => resolveConflict('skip')
 const handleApplyAll = choice => resolveConflict(choice, true)
 
 //emit passed from ProcessDiagramElement to FlowModeler
@@ -620,6 +624,12 @@ const removeSelectedTab = tabElementIndex => {
 const hideModalAcceptCancelMessage = () => {
 	showModalAcceptCancelMessage.value.show = false
 }
+
+let _resolveModalHidden = null
+const onConflictModalHidden = () => { _resolveModalHidden?.(); _resolveModalHidden = null }
+// Returns a promise that resolves when the NEXT hidden.bs.modal event fires.
+// Called just before showing a modal — the returned promise is awaited before showing the SUBSEQUENT modal.
+const nextModalHiddenPromise = () => new Promise(resolve => { _resolveModalHidden = resolve })
 
 const resizeTabNav = width => {
 	tabNavWidth.value = width
@@ -684,6 +694,8 @@ const { handleFile, _addNewBpmnFromLoadedXml, resolveConflict } = useFileImport(
 	modelerTabNav,
 	switchTabFromTabNav,
 	onBatchComplete,
+	nextModalHiddenPromise,
+	updateDiagramXml,
 })
 
 const _openProcessFromExternalXml = async (xml, resExistingProcess, externalProcessKey, _decodedProcessId) => {
