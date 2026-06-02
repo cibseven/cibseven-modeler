@@ -369,15 +369,6 @@ defineExpose({
 })
 </script>
 
-<style>
-/* CIB theme: 2px outline on input:focus */
-#start-page-search:focus,
-#start-page-search:focus-visible {
-	outline: 0 !important;
-	outline-color: transparent !important;
-}
-</style>
-
 <style scoped>
 .start-page-search .start-page-search-segment:hover,
 .start-page-search .start-page-search-segment:focus-visible {

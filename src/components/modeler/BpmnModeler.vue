@@ -21,20 +21,20 @@
 				<div v-show="!props.isModelerVisible" class="position-relative" :style="styleCanvas">
 					<div class="canvas h-100 w-100" ref="canvas" tabindex="0"></div>
 					<div class="position-absolute top-0 end-0 d-flex flex-column gap-1 m-2" style="z-index: 10;">
-						<button @mousedown.prevent="zoomIn" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomIn')">
+						<button @click="zoomIn" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomIn')">
 							<span class="mdi mdi-18px mdi-magnify-plus-outline"></span>
 						</button>
-						<button @mousedown.prevent="zoomOut" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomOut')">
+						<button @click="zoomOut" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomOut')">
 							<span class="mdi mdi-18px mdi-magnify-minus-outline"></span>
 						</button>
-						<button @mousedown.prevent="resetViewport" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.resetViewport')">
+						<button @click="resetViewport" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.resetViewport')">
 							<span class="mdi mdi-18px mdi-fit-to-screen-outline"></span>
 						</button>
-						<button @mousedown.prevent="toggleMinimap" :title="$t('buttons.minimap')"
+						<button @click="toggleMinimap" :title="$t('buttons.minimap')"
 							:class="['btn btn-sm border text-secondary', isMinimapOpen ? 'btn-secondary' : 'btn-light']">
 							<span class="mdi mdi-18px mdi-map-outline"></span>
 						</button>
-						<button @mousedown.prevent="toggleFullscreen" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.fullscreen')">
+						<button @click="toggleFullscreen" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.fullscreen')">
 							<span :class="['mdi', 'mdi-18px', isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen']"></span>
 						</button>
 					</div>
@@ -982,14 +982,6 @@ svg {
 	right: 60px !important;
 }
 
-/* Remove active state from zoom and viewport buttons - only show on hover */
-.position-absolute.top-0.end-0 .btn:active,
-.position-absolute.top-0.end-0 .btn:focus,
-.position-absolute.top-0.end-0 .btn:active:focus {
-	background-color: var(--bs-light) !important;
-	box-shadow: none !important;
-	color: currentColor !important;
-}
 
 /*for the resize panel to work */
 #js-properties-panel {
@@ -1129,13 +1121,6 @@ input[name="historyTimeToLive"].is-invalid {
 	--icon-color: var(--bs-warning);
 }
 
-.btn.btn-secondary .mdi {
-	color: white !important;
-}
-
-.btn.btn-secondary:active .mdi {
-	color:  var(--bs-secondary) !important;
-}
 
 /* Lint summary button (bpmn-js-bpmnlint) */
 .bjs-container .bjsl-button {
