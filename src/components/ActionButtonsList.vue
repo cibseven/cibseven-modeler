@@ -15,42 +15,42 @@
    limitations under the License.
 -->
 <template>
-    <div class="act-btns d-flex flex-wrap flex-row-reverse m-0 px-1 justify-content-end align-items-center"
+    <div class="d-flex flex-wrap flex-row-reverse m-0 px-1 justify-content-end align-items-center"
         style="z-index: 11;" >
         <!-- Right section: save, deploy, download as svg, normal download -->
-        <div v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
+        <div v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-2">
             <a @click="canBeDownloaded" :href="downloadLink" :download="downloadName" :name="downloadName"
                 :title="$t('buttons.downloadDiagram')" :aria-label="$t('buttons.downloadDiagram')"
-                class="act-btn btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent"
+                class=" btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent"
                 :class="{ disabled: props.isButtonDisabled }">
                 <span class="mdi mdi-24px mdi-download"></span>
             </a>
         </div>
         <template v-if="extraDownloadLinks?.[props.tabElementIndex]">
             <div v-for="(link, i) in extraDownloadLinks[props.tabElementIndex]" :key="i"
-                v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
+                v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-2">
                 <a @click="canBeDownloaded"
                     :href="link.href"
                     :download="link.download"
                     :title="$t(link.titleKey)"
                     :aria-label="$t(link.titleKey)"
-                    class="act-btn btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent"
+                    class=" btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent"
                     :class="{ disabled: props.isButtonDisabled || link.disabled }">
                     <span :class="`mdi mdi-24px ${link.icon}`"></span>
                 </a>
             </div>
         </template>
-        <div v-show="!props.isButtonDisabled &&  modelProperties[props.tabElement.type].canDeploy" class="btn-menu d-flex align-items-center mx-1">
+        <div v-show="!props.isButtonDisabled &&  modelProperties[props.tabElement.type].canDeploy" class="btn-menu d-flex align-items-center mx-2">
             <button type="button"
-                class="act-btn btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent"
+                class="btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent"
                 @click="canDeploy" aria-haspopup="true"
                 aria-expanded="false" :title="$t('buttons.deploy')">
                 <span class="mdi mdi-24px mdi-rocket"></span>
             </button>
         </div>
-        <div class="btn-menu d-flex align-items-center mx-1" v-show="!isButtonDisabled">
+        <div class="btn-menu d-flex align-items-center mx-2" v-show="!isButtonDisabled">
             <button type="button"
-                class="act-btn btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent"
+                class="btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent"
                 :title="$t('buttons.saveDiagram')"
                 :disabled="(!props.canSave && !props.tabElement.changedVersion) || isSaving" @click="_saveDiagram">
                 <span class="mdi mdi-24px" :class="isSaving ? 'mdi-loading mdi-spin' : 'mdi-content-save-outline'"></span>
@@ -63,17 +63,17 @@
         </div>
 
         <!-- Undo/Redo buttons -->
-        <div class="btn-menu d-flex align-items-center mx-1" v-show="!props.isButtonDisabled">
+        <div class="btn-menu d-flex align-items-center mx-2" v-show="!props.isButtonDisabled">
             <button type="button"
-                class="act-btn btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent"
+                class=" btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent"
                 :title="`${$t('buttons.redo')} (Ctrl+Y)`"
                 @click="performRedo">
                 <span class="mdi mdi-24px mdi-redo-variant"></span>
             </button>
         </div>
-        <div class="btn-menu d-flex align-items-center mx-1" v-show="!props.isButtonDisabled">
+        <div class="btn-menu d-flex align-items-center mx-2" v-show="!props.isButtonDisabled">
             <button type="button"
-                class="act-btn btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent"
+                class=" btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent"
                 :title="`${$t('buttons.undo')} (Ctrl+Z)`"
                 @click="performUndo">
                 <span class="mdi mdi-24px mdi-undo-variant"></span>
@@ -89,7 +89,7 @@
         <div
             v-if="BpmnFilterButtonComponent && isBpmnTab"
             v-show="!props.isButtonDisabled"
-            class="btn-menu d-flex align-items-center mx-1"
+            class="btn-menu d-flex align-items-center mx-2"
         >
             <component
                 :is="BpmnFilterButtonComponent"
@@ -101,9 +101,9 @@
                 classesOff="mdi mdi-24px mdi-filter"
             />
         </div>
-        <div v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
+        <div v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-2">
             <button type="button"
-                class="act-btn btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none"
+                class=" btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none"
                 :class="props.tabElement.isEditorVisible ? 'bg-light text-dark' : 'text-white bg-transparent'"
                 :disabled="props.isButtonDisabled"
                 @click="toggleVisibilityEditor">
@@ -111,9 +111,9 @@
                     :class="{ 'mdi-xml': !tabElement.isEditorVisible, 'mdi-map': props.tabElement.isEditorVisible }"></span>
             </button>
         </div>
-        <div class="btn-menu d-flex align-items-center mx-1" v-show="modelProperties[props.tabElement.type].canOpenConsole">
+        <div class="btn-menu d-flex align-items-center mx-2" v-show="modelProperties[props.tabElement.type].canOpenConsole">
             <button type="button"
-                class="act-btn btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none position-relative"
+                class=" btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none position-relative"
                 :class="props.consoleOpen ? 'bg-light text-dark' : 'text-white bg-transparent'"
                 :title="$t('buttons.console')"
                 :disabled="props.tabElement.isEditorVisible" :aria-expanded="consoleOpen" @click="openConsole">
@@ -125,16 +125,16 @@
                 ></span>
             </button>
         </div>
-        <div class="btn-menu d-flex align-items-center mx-1" v-if="props.tabElement.id && haslinkToProject">
+        <div class="btn-menu d-flex align-items-center mx-2" v-if="props.tabElement.id && haslinkToProject">
             <button type="button"
-                class="act-btn btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent position-relative"
+                class=" btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent position-relative"
                 :title="$t('buttons.linkToProject')" @click="linkToProject">
                 <span class="mdi mdi-24px mdi-vector-link"></span>
             </button>
         </div>
-        <div v-if="isOutdatedTemplateWarning" class="btn-menu d-flex align-items-center mx-1">
+        <div v-if="isOutdatedTemplateWarning" class="btn-menu d-flex align-items-center mx-2">
             <button type="button"
-                class="act-btn btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent"
+                class=" btn d-inline-flex align-items-center justify-content-center flex-shrink-0 p-0 m-0 border-0 rounded-2 lh-1 text-decoration-none shadow-none text-white bg-transparent"
                 @click="toggleVisibilityOutdatedTemplates"
                 :disabled="props.tabElement.isEditorVisible">
                 <span class="mdi mdi-24px mdi-exclamation"></span>
@@ -323,45 +323,3 @@ const performRedo = () => props.modeler?._redo?.()
 
 defineExpose({ _toggleOutDatedTemplateBtn, _saveDiagram, _updateDownloadFile, changeWidth, showConsoleNotification })
 </script>
-
-<style scoped>
-.act-btn {
-    width: 2rem;
-    height: 2rem;
-    min-width: 2rem;
-    min-height: 2rem;
-}
-
-.act-btn.text-white.bg-transparent:hover:not(:disabled):not(.disabled),
-.act-btn.text-white.bg-transparent:focus-visible:not(:disabled):not(.disabled) {
-    background-color: var(--bs-gray-500) !important;
-    color: var(--bs-dark) !important;
-}
-
-.act-btn.bg-light:hover:not(:disabled):not(.disabled),
-.act-btn.bg-light:focus-visible:not(:disabled):not(.disabled) {
-    background-color: var(--bs-gray-200) !important;
-    color: var(--bs-dark) !important;
-}
-
-a.act-btn:focus-visible {
-    box-shadow: none !important;
-    outline: 2px solid var(--bs-dark);
-    outline-offset: 0;
-}
-
-button.act-btn:focus:not(:focus-visible) {
-    box-shadow: none !important;
-    outline: none;
-}
-
-button.act-btn:focus-visible {
-    outline: none;
-    box-shadow: inset 0 0 0 2px var(--bs-dark) !important;
-}
-
-.act-btn.disabled {
-    opacity: 0.45;
-    pointer-events: none;
-}
-</style>
