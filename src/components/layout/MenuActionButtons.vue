@@ -15,11 +15,13 @@
    limitations under the License.
 -->
 <template>
-    <div class="d-flex flex-row flex-wrap justify-content-between bg-secondary position-relative" style="z-index: 11; min-width: 200px; min-height: 44px;" :style="style">
-        <div class="d-flex flex-row justify-content-start">   
+    <div class="d-flex flex-row flex-wrap justify-content-between align-items-center bg-secondary position-relative" style="z-index: 11; min-width: 200px; min-height: 44px;" :style="style">
+        <div class="d-flex flex-row justify-content-start align-items-center">
             <slot name="leftButtons"></slot>
         </div>
-            <slot name="rightButtons"></slot>            
+        <div class="d-flex align-items-center px-2">
+            <slot name="rightButtons"></slot>
+        </div>
     </div>
 </template>
 <script setup>

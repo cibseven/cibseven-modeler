@@ -1,6 +1,7 @@
 {
   "titles": {
-    "search": "Busque coincidentes, cargue uno creado, comience con una versión en blanco o importe un archivo local.",
+    "searchIntro": "Busque coincidencias, cargue una que haya creado, comience con una versión en blanco o importe un archivo local.",
+    "search": "Buscar un modelo de proceso, definición o formulario",
     "recent": "Recientes",
     "lastSaved": "Último guardado"
   },
@@ -118,11 +119,13 @@
     "zoomIn": "Acercar",
     "zoomOut": "Alejar",
     "resetViewport": "Restablecer vista",
-    "minimap": "Alternar minimapa",
-    "fullscreen": "Alternar pantalla completa",
+    "minimap": "Minimapa",
+    "fullscreen": "Pantalla completa",
     "expandScript": "Abrir en editor completo",
     "collapsePanel": "Contraer panel",
-    "expandPanel": "Expandir panel"
+    "expandPanel": "Expandir panel",
+    "undo": "Deshacer",
+    "redo": "Rehacer"
   },
   "scriptEditorModal": {
     "title": "Editar script"

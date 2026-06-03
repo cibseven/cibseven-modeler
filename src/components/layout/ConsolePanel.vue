@@ -23,7 +23,7 @@
                     <span class="mdi mdi-24px mdi-content-copy"></span></button>
                 <button type="button" :title="$t('buttons.delete')" class="btn btn-link text-muted" @click="emit('clean-console')">
                     <span class="mdi mdi-24px mdi-trash-can-outline"></span></button>
-                <button type="button" :title="$t('buttons.close')" class="btn btn-link text-muted" @click="toggleConsole()">
+                <button type="button" :title="$t('buttons.close')" class="btn btn-link text-muted" @click="toggleConsole(false)">
                     <span class="mdi mdi-24px mdi-close"></span>
                 </button>              
             </div>
@@ -52,7 +52,8 @@ const emit = defineEmits([
     'changeHeight',
     'copy-line',
     'clean-console',
-    'showConsoleNotification'
+    'showConsoleNotification',
+    'visibility-changed',
 ])
 
 const MARGIN_TOP = 350
@@ -72,7 +73,11 @@ const styleNav = computed(() => {
 
 const isVisible = ref(false)
 
-let isResizing = false // to check if the user is resizing 
+let isResizing = false // to check if the user is resizing
+
+watch(isVisible, visible => {
+    emit('visibility-changed', visible)
+})
 
 onMounted(() => {
     if (isVisible.value) emit('changeHeight', props.parentHeight - parent.value.clientHeight)
@@ -88,16 +93,10 @@ watch(height, newW => {
     if (props.isPropertyPanelVisible) emit('changeHeight', props.parentHeight - newW)
 })
 
-const toggleConsole = () => {
-    isVisible.value = !isVisible.value
-    if (isVisible.value) {
-        height.value = 300
-        emit('showConsoleNotification', props.processID)
-
-    }
-    else {
-        height.value = 0
-    }
+const toggleConsole = next => {
+    isVisible.value = next ?? !isVisible.value
+    height.value = isVisible.value ? 300 : 0
+    if (isVisible.value) emit('showConsoleNotification', props.processID)
     return isVisible.value
 }
 
