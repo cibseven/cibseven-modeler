@@ -87,7 +87,6 @@ const props = defineProps({
     showModal: { type: Boolean, required: true },
     modalData: { type: Object, default: null },
     isBatch: { type: Boolean, default: false },
-    // (xmlExternalUrl, id, name, processkey, diagramType, isSaved, canSave, canReplaceXml) => void
     functionAfterAccepting: { type: Function, required: true },
     functionAfterCanceling: { type: Function, default: null },
     functionApplyAll: { type: Function, default: () => {} },
