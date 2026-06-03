@@ -81,7 +81,10 @@ export const getProcessKeyFromBpmn = (resXmlExternalUrl) => {
 
 export const setTagValueOfXml = (resXmlExternalUrl, xmlTag, attribute, xmlPropertyValue) => {
 	const doc = new DOMParser().parseFromString(resXmlExternalUrl, 'text/xml')
-	doc.querySelector(`*|${xmlTag}`)?.setAttribute(attribute, xmlPropertyValue)
+	// Strip any namespace prefix (e.g. "bpmn:process" → "process") before building
+	// the CSS selector so *|bpmn:process never causes a SyntaxError.
+	const localName = xmlTag.includes(':') ? xmlTag.split(':').pop() : xmlTag
+	doc.querySelector(`*|${localName}`)?.setAttribute(attribute, xmlPropertyValue)
 	return new XMLSerializer().serializeToString(doc)
 }
 

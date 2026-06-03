@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 <template>
-    <div class="modal fade" ref="modalEl" tabindex="-1" :aria-hidden="!showModal">
+    <div class="modal fade" ref="modalEl" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
