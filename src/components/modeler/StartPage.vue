@@ -125,7 +125,8 @@
 
       <ConfirmModal :showModal="showModalAcceptCancelMessage" :title="modalTitle.title"
           :body="modalTitle.body" @hideModal="hideModal" :id="processIdForDelete" type="closeTab"
-          :searchListIndex="searchListIndex" :name="processNameForDelete"  :functionAfterAccepting="functionAfterAccepting ? functionAfterAccepting : () => {}"
+          :searchListIndex="searchListIndex" :functionAfterAccepting="functionAfterAccepting ? functionAfterAccepting : () => {}"
+          :acceptLabel="$t('buttons.delDiagram')"
           @resetVariablesForModalAcceptCancelMessage="resetVariablesForModalAcceptCancelMessage">
       </ConfirmModal>
       <TaskPopper ref="downloadPopper" />
@@ -208,7 +209,8 @@ const modalTitle = computed(() => {
       return { title: t('modalDelete.title', {
         item: t(`items.${itemKey.value}`)
       } ), body: t('modalDelete.body', {
-        item: t(`items.${itemKey.value}`)
+        item: t(`items.${itemKey.value}`),
+        name: processNameForDelete.value
       } )  }
 })
 
