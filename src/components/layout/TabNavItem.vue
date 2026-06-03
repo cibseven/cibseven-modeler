@@ -119,15 +119,18 @@ defineExpose({
 
 <style scoped>
 .nav-link.active {
-    border-left: 2px solid var(--bs-primary) !important;
-    border-bottom: 2px solid #fff !important; /* O usa 'none' si quieres quitarlo */
+    border-left: none !important;
+    border-bottom: 2px solid var(--bs-light) !important;
     cursor: pointer;
 }
 
 .dashboard.active {
-    border-left: 2px solid var(--bs-primary) !important;
     border-bottom: 2px solid var(--bs-light) !important;
     cursor: pointer;
+}
+
+.dashboard {
+    background-color: white !important;
 }
 
 .nav-link {
@@ -136,7 +139,7 @@ defineExpose({
 }
 
 .nav-icon.active {
-    background-color: var(--bg-light) !important;  
+    background-color: var(--bs-light) !important;  
 }
 
 .btn-close:hover {

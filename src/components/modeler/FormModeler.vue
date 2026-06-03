@@ -160,6 +160,12 @@ const getCurrentSchemaJson = () => {
 	}
 }
 
+const _getCommandStack = () => formEditor.value?.get('commandStack')
+
+const _undo = () => _getCommandStack()?.undo()
+
+const _redo = () => _getCommandStack()?.redo()
+
 defineExpose({
     _validate,
 	_saveXmlAfterUpdate,
@@ -167,7 +173,9 @@ defineExpose({
     togglePropertiesPanel,
 	destroyFormJs,
 	getFormId,
-	importJson
+	importJson,
+	_undo,
+	_redo,
 })
 
 </script>

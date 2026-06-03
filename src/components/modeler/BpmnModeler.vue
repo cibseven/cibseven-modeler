@@ -21,20 +21,20 @@
 				<div v-show="!props.isModelerVisible" class="position-relative" :style="styleCanvas">
 					<div class="canvas h-100 w-100" ref="canvas" tabindex="0"></div>
 					<div class="position-absolute top-0 end-0 d-flex flex-column gap-1 m-2" style="z-index: 10;">
-						<button @click="zoomIn" class="btn btn-sm btn-light border" :title="$t('buttons.zoomIn')">
+						<button @click="zoomIn" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomIn')">
 							<span class="mdi mdi-18px mdi-magnify-plus-outline"></span>
 						</button>
-						<button @click="zoomOut" class="btn btn-sm btn-light border" :title="$t('buttons.zoomOut')">
+						<button @click="zoomOut" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomOut')">
 							<span class="mdi mdi-18px mdi-magnify-minus-outline"></span>
 						</button>
-						<button @click="resetViewport" class="btn btn-sm btn-light border" :title="$t('buttons.resetViewport')">
+						<button @click="resetViewport" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.resetViewport')">
 							<span class="mdi mdi-18px mdi-fit-to-screen-outline"></span>
 						</button>
 						<button @click="toggleMinimap" :title="$t('buttons.minimap')"
-							:class="['btn btn-sm border', isMinimapOpen ? 'btn-secondary' : 'btn-light']">
+							:class="['btn btn-sm border text-secondary', isMinimapOpen ? 'btn-secondary' : 'btn-light']">
 							<span class="mdi mdi-18px mdi-map-outline"></span>
 						</button>
-						<button @click="toggleFullscreen" class="btn btn-sm btn-light border" :title="$t('buttons.fullscreen')">
+						<button @click="toggleFullscreen" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.fullscreen')">
 							<span :class="['mdi', 'mdi-18px', isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen']"></span>
 						</button>
 					</div>
@@ -52,7 +52,8 @@
 			<ConsolePanel ref="consolePanel" :isModelerVisible="props.isModelerVisible" :parentHeight="parentHeight"
 				:rightPos="canvasWidth" :processID="props.tabElement.id" @changeHeight="changeHeight"
 				@copy-line="copyLine" @clean-console="cleanConsole" @blur="focusLost"
-				@show-console-notification="emit('showConsoleNotification', $event)">
+				@show-console-notification="emit('showConsoleNotification', $event)"
+				@visibility-changed="onConsolePanelVisibility">
 				<MonacoThemeScope overrideTheme="consoleTheme" v-show="isConsoleOpen">
 					<MonacoConsole ref="monacoEditorConsole" theme="vs" :width="canvasWidth" :height="canvasHeight"
 						:consoleErrors="props.consoleErrors">
@@ -61,22 +62,10 @@
 			</ConsolePanel>
 			<MenuActionButtons :key="`menu-action-buttons-${props.tabElement.key}`" :width="canvasWidth + 24">
 				<template #leftButtons>
-					<slot name="menu" />					
-					<component
-						v-if="BpmnFilterButtonComponent"
-						:is="BpmnFilterButtonComponent"
-						ref="popover"
-						position="top"
-						:container="containerModeler"
-						classesOn="mdi mdi-24px mdi-filter-outline"
-						classesOff="mdi mdi-24px mdi-filter"
-						:filter-bpmn="config.modeler?.filterBpmn"
-						:tab-element-id="props.tabElement.id"
-						:get-bpmn-modeler="() => bpmnModeler"
-					/>
+					<slot name="menu" />
 				</template>
 				<template #rightButtons>
-					<div class="d-flex">
+					<div class="d-flex align-items-center">
 						<component v-if="VersionButtonComponent && processHistoryListComp?.length > 0"
 							:is="VersionButtonComponent" :history-list="processHistoryListComp" :active-version="activeVersion" />
 						<component v-if="CompareButtonComponent && processHistoryListComp?.length > 1"
@@ -227,11 +216,8 @@ const resizableDiv = ref(null)
 //config.js
 const config = inject('config', {})
 
-//popover for task filters
-const BpmnFilterButtonComponent = inject('bpmnFilterButtonComponent', null)
 const CompareButtonComponent = inject('compareButtonComponent', null)
 const VersionButtonComponent = inject('versionButtonComponent', null)
-const popover = ref(null)
 //element templates modal
 const elementTemplatesModal = ref(null)
 const scriptEditorModal = ref(null)
@@ -314,6 +300,8 @@ const {
 	isConsoleOpen,
 } = useModeler(props, emit, monacoEditorConsole, consolePanel)
 
+const onConsolePanelVisibility = open => { isConsoleOpen.value = open }
+
 const { addCustomizeTemplateButton, customizedModalElementTemplatesData, applyTemplateToTask } = useCustomizedTemplateModal()
 const { updateParentHeight, updateParentWidth,  parentWidth, parentHeight } = usePropertiesPanel(props, emit, containerModeler, resizableDiv)
 
@@ -354,7 +342,6 @@ onMounted(async () => {
 
 	await _openDiagram(props.xml)
 	templatesList.value = checkJSON(props.xml, props.elementTemplateJson) ?? []
-	
 	if (templatesList.value.length > 0 && props.isActiveTab && !props.isModelerVisible) {
 		typeOfSelector.value = 'templates'
 		isShowModalListSelector.value = true
@@ -465,7 +452,6 @@ const initializeModeler = async () => {
 		const info = getProcessInformation(bpmnModeler)
 		const name = info?.name || info?.id || null
 		if (name) emit('updateTabName', name, props.tabElementIndex)
-		if (popover.value?.isFilterOn) popover.value.bpmnFilter(bpmnModeler)
 		_openCalledElementWhenCalActivity(e)
 	})
 
@@ -961,16 +947,24 @@ const _saveXmlAfterUpdate = (isBpmn, updateXml, tabElementIndex) => {
 
 const _getElementRegistryFromModeler = type => getElementRegistryFromModeler(bpmnModeler, type)
 
+const _undo = () => bpmnModeler?.get('commandStack')?.undo()
+const _redo = () => bpmnModeler?.get('commandStack')?.redo()
+
 defineExpose({
 	toggleConsole,
 	addLineWithErrorToConsole,
 	togglePropertiesPanel,
 	isConsolePanelShowing,
+	isConsoleOpen,
 	_saveXmlAfterUpdate,
 	_toggleModalListSelectorFromActionButton,
 	_getElementRegistryFromModeler,
 	_validate,
 	_saveDiagram,
+	_undo,
+	_redo,
+	getBpmnModeler: () => bpmnModeler,
+	getContainerElement: () => containerModeler.value,
 })
 </script>
 
@@ -981,6 +975,13 @@ svg {
 .djs-minimap .toggle {
 	display: none;
 }
+.djs-minimap {
+	position: absolute !important;
+	left: auto !important;
+	right: 60px !important;
+}
+
+
 /*for the resize panel to work */
 #js-properties-panel {
 	min-width: 200px;
@@ -1046,7 +1047,103 @@ input[name="historyTimeToLive"].is-invalid {
 	background-color: var(--bs-primary);
 }
 
+/* Force palette to always display 2 columns */
+.djs-palette {
+	width: 94px !important;
+	border-radius: 0.25rem !important;
+	border-color: var(--bs-gray-500) !important;
+}
+
 .container.modeler .bts-log .bts-header {
 	background-color: var(--bs-primary);
+}
+
+.bjs-container .bjsl-button-warning {
+	background-color: var(--bs-warning) !important;
+}
+
+.bjs-container .bjsl-button-error {
+	background-color: var(--bs-danger) !important;
+}
+
+/* Style the linted elements with warning/error overlays */
+.bjs-container .bjsl-icon.bjsl-icon-warning {
+	--icon-bg-color: var(--bs-warning);
+}
+
+.bjs-container .bjsl-icon.bjsl-icon-error {
+	--icon-bg-color: var(--bs-danger);
+}
+
+/* Style the hover/active error and warning states */
+.bjs-container .bjsl-icon.warning {
+	--icon-bg-color: var(--bs-warning);
+}
+
+.bjs-container .bjsl-icon.error {
+	--icon-bg-color: var(--bs-danger);
+}
+
+/* Style the linting issue icons with Bootstrap colors */
+.bjs-container .bjsl-icon.bjsl-icon-warning,
+.bjs-container .bjsl-icon.warning,
+.bjs-container .bjsl-current-element-issues .bjsl-icon {
+	--icon-bg-color: var(--bs-warning);
+}
+
+.bjs-container .bjsl-icon.bjsl-icon-error,
+.bjs-container .bjsl-icon.error,
+.bjs-container .bjsl-current-element-issues .bjsl-icon.error {
+	--icon-bg-color: var(--bs-danger);
+}
+
+.bjs-container .bjsl-issues li {
+	align-items: center;
+}
+
+.bjs-container .bjsl-issues .icon {
+	--icon-color: var(--bs-warning);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	margin-top: 0;
+}
+
+.bjs-container .bjsl-issues .error .icon,
+.bjs-container .bjsl-issues .icon.error {
+	--icon-color: var(--bs-danger);
+}
+
+.bjs-container .bjsl-issues .warning .icon,
+.bjs-container .bjsl-issues .icon.warning {
+	--icon-color: var(--bs-warning);
+}
+
+
+/* Lint summary button (bpmn-js-bpmnlint) */
+.bjs-container .bjsl-button {
+	align-items: center;
+}
+
+.bjs-container .bjsl-button .icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-top: 0;
+}
+
+/* Style the linting button when inactive */
+.bjs-container .bjsl-button.bjsl-button-inactive {
+	color: var(--bs-gray-700) !important;
+}
+
+.bjs-container .bjsl-button.bjsl-button-inactive:hover {
+	color: var(--bs-dark) !important;
+}
+
+.bjs-container .bjs-powered-by {
+	bottom: 1.125rem !important;
+	right: 0rem !important;
 }
 </style>

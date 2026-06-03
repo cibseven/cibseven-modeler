@@ -53,7 +53,8 @@
 				<ConsolePanel ref="consolePanel" :isModelerVisible="props.isModelerVisible" :parentHeight="parentHeight"
 					:rightPos="canvasWidth" :processID="props.tabElement.id" @changeHeight="changeHeight"
 					@copy-line="copyLine" @clean-console="cleanConsole" @blur="focusLost"
-					@show-console-notification="emit('show-console-notification', $event)">
+					@show-console-notification="emit('show-console-notification', $event)"
+					@visibility-changed="onConsolePanelVisibility">
 					<MonacoThemeScope overrideTheme="consoleTheme" v-show="isConsoleOpen">
 						<MonacoConsole ref="monacoEditorConsole" theme="vs" :width="canvasWidth" :height="canvasHeight"
 							:consoleErrors="props.consoleErrors">
@@ -65,7 +66,7 @@
 						<slot name="menu" />
 					</template>
 					<template #rightButtons>
-						<div class="d-flex">
+						<div class="d-flex align-items-center">
 							<component v-if="VersionButtonComponent && processHistoryListComp?.length > 0"
 								:is="VersionButtonComponent" :history-list="processHistoryListComp" :active-version="activeVersion" />
 							<component v-if="CompareButtonComponent && processHistoryListComp?.length > 1"
@@ -202,6 +203,8 @@ const {
 	toggleVersionNotSaved,
 	toggleEnableSave,
 } = useModeler(props, emit, monacoEditorConsole, consolePanel)
+
+const onConsolePanelVisibility = open => { isConsoleOpen.value = open }
 
 const VersionButtonComponent = inject('versionButtonComponent', null)
 const CompareButtonComponent = inject('compareButtonComponent', null)
@@ -443,6 +446,12 @@ const changeHeight = value => { canvasHeight.value = value }
 
 const focusLost = () => monacoEditorConsole.value?.focusLost()
 
+const _getCommandStack = () => dmnModeler?.getActiveViewer()?.get('commandStack')
+
+const _undo = () => _getCommandStack()?.undo()
+
+const _redo = () => _getCommandStack()?.redo()
+
 defineExpose({
 	_validate,
 	_saveXmlAfterUpdate,
@@ -451,7 +460,10 @@ defineExpose({
 	togglePropertiesPanel,
 	toggleConsole,
 	isConsolePanelShowing,
+	isConsoleOpen,
 	addLineWithErrorToConsole,
+	_undo,
+	_redo,
 })
 </script>
 

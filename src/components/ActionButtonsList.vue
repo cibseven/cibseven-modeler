@@ -15,64 +15,129 @@
    limitations under the License.
 -->
 <template>
-    <div class="act-btns d-flex flex-wrap flex-row-reverse m-0 px-1 justify-content-end"
+    <div class="d-flex flex-wrap flex-row-reverse m-0 px-1 justify-content-end align-items-center"
         style="z-index: 11;" >
-        <div v-show="isOutdatedTemplateWarning" class="btn-menu mx-1">
-            <button class="btn btn-outline-light border-0 btn-sm opacity-100" @click="toggleVisibilityOutdatedTemplates"
-                :disabled="props.tabElement.isEditorVisible">
-                <span class="mdi mdi-24px mdi-exclamation"></span>
-            </button>
-        </div>
-        <div v-show="!props.isButtonDisabled" class="btn-menu mx-1">
-            <button class="btn btn-outline-light border-0 btn-sm" :disabled="props.isButtonDisabled"
-                @click="toggleVisibilityEditor">
-                <span class="mdi mdi-24px"
-                    :class="{ 'mdi-xml': !tabElement.isEditorVisible, 'mdi-map': props.tabElement.isEditorVisible }"></span>
-            </button>
-        </div>
-        <div v-show="!props.isButtonDisabled" class="btn-menu mx-1">
+        <!-- Right section: save, deploy, download as svg, normal download -->
+        <div v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
             <a @click="canBeDownloaded" :href="downloadLink" :download="downloadName" :name="downloadName"
-                :title="$t('buttons.downloadDiagram')" :aria-label="$t('buttons.downloadDiagram')" class="btn btn-outline-light border-0 btn-sm"
-                :class="{ 'disabled': props.isButtonDisabled }">
+                :title="$t('buttons.downloadDiagram')" :aria-label="$t('buttons.downloadDiagram')"
+                class="btn btn-outline-light border-0 btn-sm"
+                :class="{ disabled: props.isButtonDisabled }">
                 <span class="mdi mdi-24px mdi-download"></span>
             </a>
         </div>
         <template v-if="extraDownloadLinks?.[props.tabElementIndex]">
             <div v-for="(link, i) in extraDownloadLinks[props.tabElementIndex]" :key="i"
-                v-show="!props.isButtonDisabled" class="btn-menu mx-1">
+                v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
                 <a @click="canBeDownloaded"
                     :href="link.href"
                     :download="link.download"
                     :title="$t(link.titleKey)"
                     :aria-label="$t(link.titleKey)"
                     class="btn btn-outline-light border-0 btn-sm"
-                    :class="{ 'disabled': props.isButtonDisabled || link.disabled }">
+                    :class="{ disabled: props.isButtonDisabled || link.disabled }">
                     <span :class="`mdi mdi-24px ${link.icon}`"></span>
                 </a>
             </div>
         </template>
-        <div v-show="!props.isButtonDisabled &&  modelProperties[props.tabElement.type].canDeploy" class="btn-menu mx-1">
-            <button @click="canDeploy" class="btn btn-outline-light border-0 btn-sm" type="button" aria-haspopup="true"
+        <div v-show="!props.isButtonDisabled &&  modelProperties[props.tabElement.type].canDeploy" class="btn-menu d-flex align-items-center mx-1">
+            <button type="button"
+                class="btn btn-outline-light border-0 btn-sm"
+                @click="canDeploy" aria-haspopup="true"
                 aria-expanded="false" :title="$t('buttons.deploy')">
                 <span class="mdi mdi-24px mdi-rocket"></span>
             </button>
         </div>
-        <div class="btn-menu mx-1" v-show="!isButtonDisabled">
-            <button class="btn btn-outline-light border-0 btn-sm" type="button" :title="$t('buttons.saveDiagram')"
+        <div class="btn-menu d-flex align-items-center mx-1" v-show="!isButtonDisabled">
+            <button type="button"
+                class="btn btn-outline-light border-0 btn-sm"
+                :title="$t('buttons.saveDiagram')"
                 :disabled="(!props.canSave && !props.tabElement.changedVersion) || isSaving" @click="_saveDiagram">
                 <span class="mdi mdi-24px" :class="isSaving ? 'mdi-loading mdi-spin' : 'mdi-content-save-outline'"></span>
             </button>
-        </div>    
-        <div class="btn-menu mx-1" v-show="modelProperties[props.tabElement.type].canOpenConsole">
-            <button class="btn btn-outline-light border-0 btn-sm position-relative" type="button" :title="$t('buttons.console')"
-                :disabled="props.tabElement.isEditorVisible" @click="openConsole">
-                <span class="mdi mdi-24px mdi-console"></span>
-                <span v-if="hasConsoleNotification" class="bg-danger position-absolute rounded" style="bottom: 5px; width: 7px; height: 7px; right: 5px;"></span>
+        </div>
+
+        <!-- Separator -->
+        <div class="btn-menu d-flex align-items-center mx-1 opacity-50">
+            <span aria-hidden="true">|</span>
+        </div>
+
+        <!-- Undo/Redo buttons -->
+        <div class="btn-menu d-flex align-items-center mx-1" v-show="!props.isButtonDisabled">
+            <button type="button"
+                class="btn btn-outline-light border-0 btn-sm"
+                :title="`${$t('buttons.redo')} (Ctrl+Y)`"
+                @click="performRedo">
+                <span class="mdi mdi-24px mdi-redo-variant"></span>
             </button>
         </div>
-        <div class="btn-menu mx-1" v-if="props.tabElement.id && haslinkToProject">
-            <button class="btn btn-outline-light border-0 btn-sm position-relative" type="button" :title="$t('buttons.linkToProject')" @click="linkToProject">
+        <div class="btn-menu d-flex align-items-center mx-1" v-show="!props.isButtonDisabled">
+            <button type="button"
+                class="btn btn-outline-light border-0 btn-sm"
+                :title="`${$t('buttons.undo')} (Ctrl+Z)`"
+                @click="performUndo">
+                <span class="mdi mdi-24px mdi-undo-variant"></span>
+            </button>
+        </div>
+
+        <!-- Separator -->
+        <div class="btn-menu d-flex align-items-center mx-1 opacity-50">
+            <span aria-hidden="true">|</span>
+        </div>
+
+        <!-- Left section: filters, xml, console -->
+        <div
+            v-if="BpmnFilterButtonComponent && isBpmnTab"
+            v-show="!props.isButtonDisabled"
+            class="btn-menu d-flex align-items-center mx-1"
+        >
+            <component
+                :is="BpmnFilterButtonComponent"
+                :container="props.modeler?.getContainerElement?.()"
+                :filter-bpmn="config.modeler?.filterBpmn"
+                :tab-element-id="props.tabElement.id"
+                :get-bpmn-modeler="() => props.modeler?.getBpmnModeler?.()"
+                classesOn="mdi mdi-24px mdi-filter-outline"
+                classesOff="mdi mdi-24px mdi-filter"
+            />
+        </div>
+        <div v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
+            <button type="button"
+                class="btn btn-outline-light border-0 btn-sm"
+                :class="{ active: props.tabElement.isEditorVisible }"
+                :disabled="props.isButtonDisabled"
+                @click="toggleVisibilityEditor">
+                <span class="mdi mdi-24px"
+                    :class="{ 'mdi-xml': !tabElement.isEditorVisible, 'mdi-map': props.tabElement.isEditorVisible }"></span>
+            </button>
+        </div>
+        <div class="btn-menu d-flex align-items-center mx-1" v-show="modelProperties[props.tabElement.type].canOpenConsole">
+            <button type="button"
+                class="btn btn-outline-light border-0 btn-sm position-relative"
+                :class="{ active: props.consoleOpen }"
+                :title="$t('buttons.console')"
+                :disabled="props.tabElement.isEditorVisible" :aria-expanded="consoleOpen" @click="openConsole">
+                <span class="mdi mdi-24px mdi-console"></span>
+                <span
+                    v-if="hasConsoleNotification"
+                    class="position-absolute end-0 bottom-0 m-1 bg-danger rounded-circle"
+                    style="width: 7px; height: 7px"
+                ></span>
+            </button>
+        </div>
+        <div class="btn-menu d-flex align-items-center mx-1" v-if="props.tabElement.id && haslinkToProject">
+            <button type="button"
+                class="btn btn-outline-light border-0 btn-sm position-relative"
+                :title="$t('buttons.linkToProject')" @click="linkToProject">
                 <span class="mdi mdi-24px mdi-vector-link"></span>
+            </button>
+        </div>
+        <div v-if="isOutdatedTemplateWarning" class="btn-menu d-flex align-items-center mx-1">
+            <button type="button"
+                class="btn btn-outline-light border-0 btn-sm opacity-100"
+                @click="toggleVisibilityOutdatedTemplates"
+                :disabled="props.tabElement.isEditorVisible">
+                <span class="mdi mdi-24px mdi-exclamation"></span>
             </button>
         </div>
     </div>
@@ -80,7 +145,7 @@
 
 <script setup>
 
-import { ref, inject, onMounted } from 'vue'
+import { ref, inject, onMounted, computed } from 'vue'
 import { DIAGRAM_TYPE, DIAGRAM_FILE_EXT } from '../constants/diagramTypes.js'
 
 const props = defineProps({ 
@@ -92,10 +157,14 @@ const props = defineProps({
     modeler: { type: Object, default: null }, 
     tabElement: { type: Object, required: true }, 
     isButtonDisabled: { type: Boolean, required: true, default: false },
+    consoleOpen: { type: Boolean, default: false },
     width: Number
     }   
 )
 const extraDownloadLinks = inject('extraDownloadLinks', null)
+const BpmnFilterButtonComponent = inject('bpmnFilterButtonComponent', null)
+const config = inject('config', {})
+const isBpmnTab = computed(() => props.tabElement.type.startsWith('bpmn'))
 const emit = defineEmits([
     'toggleOutdatedTemplateModal', 
     'openDiagram', 
@@ -107,6 +176,7 @@ const emit = defineEmits([
     'linkDiagram'
 ])
 const isOutdatedTemplateWarning = ref(false)
+
 const isSaving = ref(false)
 
 const downloadName = ref()
@@ -114,7 +184,7 @@ const downloadLink = ref('#')
 const containerWidth = ref(0)
 const hasConsoleNotification = ref(false)
 const haslinkToProject = ref(false)
-const consoleVisible = ref(false)
+
 const modelProperties = {
     [DIAGRAM_TYPE.DMN]: {
         fileExtension: DIAGRAM_FILE_EXT[DIAGRAM_TYPE.DMN],
@@ -194,8 +264,8 @@ const linkToProject = () => {
 }
 
 const openConsole = () => {
-    consoleVisible.value = !consoleVisible.value
-    emit('toggleConsole', props.tabElementIndex, consoleVisible.value)
+    const next = !props.consoleOpen
+    emit('toggleConsole', props.tabElementIndex, next)
     showConsoleNotification(false)
 }
 
@@ -221,8 +291,8 @@ const _saveDiagram = async () => {
     }
 }
 
-const _toggleOutDatedTemplateBtn = comp => 
-    isOutdatedTemplateWarning.value = comp
+const _toggleOutDatedTemplateBtn = comp => isOutdatedTemplateWarning.value = comp
+
 
 
 const _getTagValueFromXml = (mainTag, valueTag) => props.modeler._getTagValueFromXml(mainTag, valueTag)
@@ -246,6 +316,10 @@ const _updateDownloadFile = (downloadLinkValue, downloadNameValue) => {
 }
 
 const showConsoleNotification = value => hasConsoleNotification.value = value
+
+const performUndo = () => props.modeler?._undo?.()
+
+const performRedo = () => props.modeler?._redo?.()
 
 defineExpose({ _toggleOutDatedTemplateBtn, _saveDiagram, _updateDownloadFile, changeWidth, showConsoleNotification })
 </script>

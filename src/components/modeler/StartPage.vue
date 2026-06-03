@@ -17,25 +17,47 @@
 <template>
 
     <div class="flex-column h-100">
-            <div class="container position-relative h-100" style="z-index: 9; overflow: hidden;">
+            <div class="container position-relative h-100 overflow-x-hidden overflow-y-auto" style="z-index: 9;">
                 <h4 class="fw-normal text-center mt-5 mb-3">
-                    {{ $t('titles.search') }}
+                    {{ $t('titles.searchIntro') }}
                 </h4>
                 <div class="position-relative mx-auto w-75">
-                    <div class="input-group" role="group">
-                            <button @click.stop="handleSearch" class="btn btn-secondary" :title="$t('buttons.search')" aria-hidden="true" type="button">                               <span class="mdi mdi-magnify" style="line-height: initial;"></span>
-                            </button> 
-                        <input class="form-control" type="text" :title="$t('titles.search')" :placeholder="$t('titles.search')" :aria-label="$t('titles.search')" autocomplete="off" v-model="inputSearchValue" @input="handleSearch">                            
-                                <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" :title="$t(`filterElements.${filterType}`)">
-                                    {{ $t(`filterElements.${filterType}`) }}
-                                </button>
-                                <div class="dropdown-menu dropdown-menu-end">
-                                    <button type="button" class="dropdown-item" @click="filterElements('bpmn')">{{ $t('filterElements.bpmn') }}</button>
-                                    <button type="button" class="dropdown-item" @click="filterElements('dmn')">{{ $t('filterElements.dmn') }}</button>
-                                    <button type="button" class="dropdown-item" @click="filterElements('form')">{{ $t('filterElements.form') }}</button>
-                                    <div role="separator" class="dropdown-divider"></div>
-                                    <button type="button" class="dropdown-item" @click="filterElements('all')">{{ $t('filterElements.all') }}</button>
-                                </div>
+                    <div class="d-flex align-items-stretch overflow-visible border rounded bg-body start-page-search">
+                        <button
+                            @click.stop="handleSearch"
+                            type="button"
+                            class="btn border-0 rounded-start bg-body text-secondary shadow-none start-page-search-segment d-flex align-items-center"
+                            :title="$t('titles.search')"
+                            :aria-label="$t('buttons.search')"
+                        >
+                            <span class="mdi mdi-magnify mdi-18px"></span>
+                        </button>
+                        <input
+                            class="start-page-search-field flex-grow-1 min-w-0 w-100 border-0 shadow-none bg-body rounded-0 py-2"
+                            type="text"
+                            :title="$t('titles.search')"
+                            :placeholder="$t('titles.search')"
+                            :aria-label="$t('titles.search')"
+                            autocomplete="off"
+                            v-model="inputSearchValue"
+                            @input="handleSearch">
+                        <div class="dropdown align-self-stretch d-flex">
+                            <button
+                                type="button"
+                                class="btn dropdown-toggle border-0 border-start rounded-start-0 rounded-end bg-body text-secondary shadow-none start-page-search-segment h-100 d-flex align-items-center px-3 py-2"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false"
+                                :title="$t(`filterElements.${filterType}`)">
+                                {{ $t(`filterElements.${filterType}`) }}
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end">
+                                <button type="button" class="dropdown-item" @click="filterElements('bpmn')">{{ $t('filterElements.bpmn') }}</button>
+                                <button type="button" class="dropdown-item" @click="filterElements('dmn')">{{ $t('filterElements.dmn') }}</button>
+                                <button type="button" class="dropdown-item" @click="filterElements('form')">{{ $t('filterElements.form') }}</button>
+                                <div role="separator" class="dropdown-divider"></div>
+                                <button type="button" class="dropdown-item" @click="filterElements('all')">{{ $t('filterElements.all') }}</button>
+                            </div>
+                        </div>
                     </div>
                 <div>
                     <h6 class="mt-4">{{ $t("titles.recent") }}</h6>
@@ -71,7 +93,7 @@
                             </div>
                             <input ref="fileInput" type="file" accept=".bpmn,.dmn,.form" multiple :aria-label="$t('buttons.importFile')" style="display: none;"
                                 @change="handleFileChange" />
-                            <div class="dropup float-right">
+                            <div class="dropdown">
                                 <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
                                     aria-expanded="false">
                                     {{ $t('buttons.createDiagram') }}
@@ -343,3 +365,15 @@ defineExpose({
     openDiagramEmitFromChild
 })
 </script>
+
+<style scoped>
+/* TODO: Unify search box styles across the project (shared component or global styles). */
+.start-page-search .start-page-search-segment:hover,
+.start-page-search .start-page-search-segment:focus-visible {
+    background-color: var(--bs-gray-200) !important;
+}
+
+.start-page-search .dropdown-toggle.show {
+    background-color: var(--bs-gray-200) !important;
+}
+</style>
