@@ -28,6 +28,7 @@
                             type="button"
                             class="btn border-0 rounded-start bg-body text-secondary shadow-none start-page-search-segment d-flex align-items-center"
                             :title="$t('titles.search')"
+                            :aria-label="$t('buttons.search')"
                         >
                             <span class="mdi mdi-magnify mdi-18px"></span>
                         </button>
