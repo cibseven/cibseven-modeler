@@ -947,8 +947,8 @@ const _saveXmlAfterUpdate = (isBpmn, updateXml, tabElementIndex) => {
 
 const _getElementRegistryFromModeler = type => getElementRegistryFromModeler(bpmnModeler, type)
 
-const _undo = () => bpmnModeler.get('commandStack').undo()
-const _redo = () => bpmnModeler.get('commandStack').redo()
+const _undo = () => bpmnModeler?.get('commandStack')?.undo()
+const _redo = () => bpmnModeler?.get('commandStack')?.redo()
 
 defineExpose({
 	toggleConsole,
