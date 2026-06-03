@@ -54,6 +54,16 @@
 		"title": "Error loading file.",
 		"body": "The file could not be loaded correctly."
 	},
+	"toastImportBatch": {
+		"title": "Import complete",
+		"body": "Import finished."
+	},
+	"importSummary": {
+		"imported": "{count} imported",
+		"upToDate": "{count} already up to date",
+		"skipped": "{count} skipped",
+		"failed": "{count} failed"
+	},
 	"toastCantSaveFailValidationXml": {
 		"title": "Validation error.",
 		"body": "Malformed XML. Please, solve it before saving"
@@ -89,6 +99,10 @@
 	"ttlFieldRequired": "This field is required for deployment",
 	"buttons": {
 		"accept": "Accept",
+		"rename": "Rename",
+		"replace": "Replace",
+		"skip": "Skip",
+		"cancelRemaining": "Cancel remaining",
 		"discardChanges": "Discard changes",
 		"filter": "Select filter",
 		"saveDiagram": "Save diagram",
@@ -112,6 +126,7 @@
 		"searchTemplates": "Search templates",
 		"console": "Console",
 		"close": "Close",
+		"continue": "Continue",
 		"delete": "Delete",
 		"copy": "Copy",
 		"linkToProject": "Link to project",
@@ -124,6 +139,8 @@
 		"expandScript": "Open in full editor",
 		"collapsePanel": "Collapse panel",
 		"expandPanel": "Expand panel",
+		"replaceAll": "Replace All",
+		"skipAll": "Skip All",
 		"undo": "Undo",
 		"redo": "Redo"
 	},
@@ -358,8 +375,15 @@
 	"dropFileToLoad": "Drop the file to load it.",
 	"loading": "Loading",
 	"modalImportedFile": {
-		"title": "This {item} already exists in the modeler",
-		"body": "Do you want to continue working with the imported {item}?"
+		"title": "The {item} \"{name}\" already exists in the modeler",
+		"body": "Do you want to continue working with the imported {item}?",
+		"newKeyLabel": "New process key (ID)",
+		"newKeyLabelForm": "New form key (ID)",
+		"renameSameKey": "The new key must be different from the current one",
+		"replaceHint": "Overwrite the existing {item} with the imported one.",
+		"renameHint": "Import as a new {item} with a different key.",
+		"skipHint": "Keep the existing {item} and discard the import.",
+		"applyToAll": "Apply this choice to all remaining conflicts"
 	},
 	"notFound": "Not found",
 	"modalNewDiagram": {

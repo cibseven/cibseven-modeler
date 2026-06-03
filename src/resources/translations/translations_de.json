@@ -54,6 +54,16 @@
     "title": "Fehler beim Laden der Datei",
     "body": "Die Datei konnte nicht korrekt geladen werden."
   },
+  "toastImportBatch": {
+    "title": "Import abgeschlossen",
+    "body": "Import abgeschlossen."
+  },
+  "importSummary": {
+    "imported": "{count} importiert",
+    "upToDate": "{count} bereits aktuell",
+    "skipped": "{count} übersprungen",
+    "failed": "{count} fehlgeschlagen"
+  },
   "toastCantSaveFailValidationXml": {
     "title": "Validierungsfehler",
     "body": "Defektes XML. Bitte lösen Sie das Problem vor dem Speichern."
@@ -89,6 +99,10 @@
   "ttlFieldRequired": "Dieses Feld ist für die Bereitstellung erforderlich",
   "buttons": {
     "accept": "Ok",
+    "rename": "Umbenennen",
+    "replace": "Ersetzen",
+    "skip": "Überspringen",
+    "cancelRemaining": "Verbleibende abbrechen",
     "discardChanges": "Änderungen verwerfen",
     "filter": "Filter auswählen",
     "saveDiagram": "Diagramm speichern",
@@ -112,6 +126,7 @@
     "searchTemplates": "Vorlagen templates",
     "console": "Konsole",
     "close": "Schließen",
+    "continue": "Weiter",
     "delete": "Löschen",
     "copy": "Kopieren",
     "linkToProject": "Link zum Projekt",
@@ -124,6 +139,8 @@
     "expandScript": "Im vollständigen Editor öffnen",
     "collapsePanel": "Bereich einklappen",
     "expandPanel": "Bereich ausklappen",
+    "replaceAll": "Alle ersetzen",
+    "skipAll": "Alle überspringen",
     "undo": "Rückgängig",
     "redo": "Wiederholen"
   },
@@ -358,8 +375,15 @@
   "dropFileToLoad": "Legen Sie die Datei ab, um sie zu laden.",
   "loading": "Lädt",
   "modalImportedFile": {
-    "title": "Dieser Prozess existiert bereits im Web Modeller.",
-    "body": "Möchten Sie mit dem importierten Prozess weiterarbeiten?"
+    "title": "Der {item} \"{name}\" existiert bereits im Modeler",
+    "body": "Möchten Sie mit dem importierten {item} weiterarbeiten?",
+    "newKeyLabel": "Neuer Prozessschlüssel (ID)",
+    "newKeyLabelForm": "Neuer Formularschlüssel (ID)",
+    "renameSameKey": "Der neue Schlüssel muss sich vom aktuellen unterscheiden",
+    "replaceHint": "Den vorhandenen {item} mit dem importierten überschreiben.",
+    "renameHint": "Als neuen {item} mit einem anderen Schlüssel importieren.",
+    "skipHint": "Den vorhandenen {item} behalten und den Import verwerfen.",
+    "applyToAll": "Diese Auswahl auf alle verbleibenden Konflikte anwenden"
   },
   "notFound": "Nicht gefunden",
   "modalNewDiagram": {

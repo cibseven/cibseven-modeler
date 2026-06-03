@@ -54,6 +54,16 @@
     "title": "Error cargando archivo.",
     "body": "El archivo no se ha podido cargar correctamente."
   },
+  "toastImportBatch": {
+    "title": "Importación completada",
+    "body": "Importación finalizada."
+  },
+  "importSummary": {
+    "imported": "{count} importados",
+    "upToDate": "{count} ya actualizados",
+    "skipped": "{count} omitidos",
+    "failed": "{count} fallidos"
+  },
   "toastCantSaveFailValidationXml": {
     "title": "Error de validación.",
     "body": "XML mal formado. Por favor, resuélvalo antes de guardar"
@@ -89,6 +99,10 @@
   "ttlFieldRequired": "Este campo es obligatorio para el despliegue",
   "buttons": {
     "accept": "Aceptar",
+    "rename": "Renombrar",
+    "replace": "Reemplazar",
+    "skip": "Omitir",
+    "cancelRemaining": "Cancelar restantes",
     "discardChanges": "Descartar cambios",
     "filter": "Seleccionar filtro",
     "saveDiagram": "Guardar diagrama",
@@ -112,6 +126,7 @@
     "searchTemplates": "Buscar templates",
     "console": "Consola",
     "close": "Cerrar",
+    "continue": "Continuar",
     "delete": "Eliminar",
     "copy": "Copiar",
     "linkToProject": "Enlazar al proyecto",
@@ -124,6 +139,8 @@
     "expandScript": "Abrir en editor completo",
     "collapsePanel": "Contraer panel",
     "expandPanel": "Expandir panel",
+    "replaceAll": "Reemplazar todo",
+    "skipAll": "Omitir todo",
     "undo": "Deshacer",
     "redo": "Rehacer"
   },
@@ -358,8 +375,15 @@
   "dropFileToLoad": "Suelte el archivo para cargarlo",
   "loading": "Cargando",
   "modalImportedFile": {
-    "title": "Este {item} ya existe en el modeler",
-    "body": "¿Quiere continuar con el {item} importado?"
+    "title": "El {item} \"{name}\" ya existe en el modeler",
+    "body": "¿Quiere continuar con el {item} importado?",
+    "newKeyLabel": "Nueva clave de proceso (ID)",
+    "newKeyLabelForm": "Nueva clave de formulario (ID)",
+    "renameSameKey": "La nueva clave debe ser diferente a la actual",
+    "replaceHint": "Sobrescribir el {item} existente con el importado.",
+    "renameHint": "Importar como un nuevo {item} con una clave diferente.",
+    "skipHint": "Mantener el {item} existente y descartar la importación.",
+    "applyToAll": "Aplicar esta opción a todos los conflictos restantes"
   },
   "notFound": "No encontrado",
   "modalNewDiagram": {

@@ -91,8 +91,8 @@
                                 <button @click="handleOpenFileInput" :title="$t('buttons.importFile')" type="button"
                                 class="btn border border-dark btn-light"><i class="mdi mdi-import me-1"></i>{{ $t('buttons.importFile') }}</button>
                             </div>
-                            <input ref="fileInput" type="file" accept=".bpmn,.dmn,.form" :aria-label="$t('buttons.importFile')" style="display: none;"
-                                @change="handleFileChange" />                            
+                            <input ref="fileInput" type="file" accept=".bpmn,.dmn,.form" multiple :aria-label="$t('buttons.importFile')" style="display: none;"
+                                @change="handleFileChange" />
                             <div class="dropdown">
                                 <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
                                     aria-expanded="false">
@@ -257,13 +257,8 @@ const handleOpenFileInput = () => {
 
 const handleFileChange = event => {
     const fileInput = event.target
-    const selectedFile = fileInput.files[0]
-    if (!selectedFile || (!selectedFile.name.endsWith('.bpmn') && !selectedFile.name.endsWith('.dmn') && !selectedFile.name.endsWith('.form'))) { // shows toast error message if the file is not a .bpmn, .dmn, or .form
-        emit('showToastMessage', { isSuccess: false, toastText: 'toastLoadErrorFileExtension' })
-        return
-    }
-    emit('openSelectedFile', event) //fires event that opens a file in the modeler
-    // reset the file input to allow selecting the same file again
+    if (!fileInput.files.length) return
+    emit('openSelectedFile', event)
     fileInput.value = null
 }
 

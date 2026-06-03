@@ -80,11 +80,12 @@ export const getProcessKeyFromBpmn = (resXmlExternalUrl) => {
 }
 
 export const setTagValueOfXml = (resXmlExternalUrl, xmlTag, attribute, xmlPropertyValue) => {
-	const xmlDoc = new DOMParser()
-	const attributes = xmlDoc.parseFromString(resXmlExternalUrl, 'text/xml')
-	const processElements = attributes.getElementsByTagName(xmlTag)
-	processElements[0]?.setAttribute(attribute, xmlPropertyValue)
-	return new XMLSerializer().serializeToString(attributes)
+	const doc = new DOMParser().parseFromString(resXmlExternalUrl, 'text/xml')
+	// Strip any namespace prefix (e.g. "bpmn:process" → "process") before building
+	// the CSS selector so *|bpmn:process never causes a SyntaxError.
+	const localName = xmlTag.includes(':') ? xmlTag.split(':').pop() : xmlTag
+	doc.querySelector(`*|${localName}`)?.setAttribute(attribute, xmlPropertyValue)
+	return new XMLSerializer().serializeToString(doc)
 }
 
 export const checkCamundaVersion = (xmlString) => {

@@ -33,8 +33,7 @@
 							<router-link :to="props.actionTo">{{ props.actionLabel }}</router-link>
 						</span>
 						<span v-else class="align-items-center">
-							{{ props.bodyText }}
-							{{ props.bodyTextAlt }}
+							{{ props.bodyTextAlt || props.bodyText }}
 						</span>
 					</div>
 				</div>

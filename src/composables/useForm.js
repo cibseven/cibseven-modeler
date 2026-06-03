@@ -126,10 +126,14 @@ export default function useForm(props, emit, canvas, propertyPanel) {
       if (formEditor.value) formEditor.value.destroy()
     }
  
-    const importJson = async json => {
-      if (!json) return
-      if(formEditor.value) formEditor.value.importSchema(JSON.parse(json))
-        validateJson(json)
+    const importJson = async incomingJson => {
+      if (!incomingJson) return
+      const parsed = typeof incomingJson === 'object' ? incomingJson : JSON.parse(incomingJson)
+      // Update the closure schema so a later destroy/re-init (restartFormJs on tab
+      // switch) reloads THIS content instead of the stale snapshot captured at setup.
+      json = parsed
+      if (formEditor.value) await formEditor.value.importSchema(parsed)
+      validateJson(parsed)
     }
 
     //*TODO refactor name of this method and useModeler composable to a generic one
