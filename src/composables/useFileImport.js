@@ -422,7 +422,6 @@ export default function useFileImport({
     const isBatch = files.length > 1
     _batchPolicy.value = null
 
-    let imported = 0
     let savedCount = 0
     let unchangedCount = 0
     const invalidNames = []
@@ -453,7 +452,6 @@ export default function useFileImport({
           }
           reader.readAsText(file)
         })
-        imported++
         if (didSave === true) savedCount++
         else if (didSave === 'unchanged') unchangedCount++
       } catch {
