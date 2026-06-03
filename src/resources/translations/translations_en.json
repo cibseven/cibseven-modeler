@@ -55,7 +55,7 @@
 	},
 	"toastImportBatch": {
 		"title": "Import complete",
-		"body": ""
+		"body": "Import finished."
 	},
 	"importSummary": {
 		"imported": "{count} imported",
@@ -377,7 +377,6 @@
 		"newKeyLabel": "New process key (ID)",
 		"newKeyLabelForm": "New form key (ID)",
 		"renameSameKey": "The new key must be different from the current one",
-		"renameInfo": "A new {item} will be created with this key. The original will remain unchanged.",
 		"replaceHint": "Overwrite the existing {item} with the imported one.",
 		"renameHint": "Import as a new {item} with a different key.",
 		"skipHint": "Keep the existing {item} and discard the import.",

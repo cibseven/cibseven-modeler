@@ -55,17 +55,13 @@
   },
   "toastImportBatch": {
     "title": "Імпорт завершено",
-    "body": ""
+    "body": "Імпорт завершено."
   },
   "importSummary": {
     "imported": "{count} імпортовано",
     "upToDate": "{count} вже актуальні",
     "skipped": "{count} пропущено",
     "failed": "{count} не вдалося"
-  },
-  "toastImportBatchPartial": {
-    "title": "Імпорт частково завершено",
-    "body": "{imported} з {total} файлів імпортовано."
   },
   "toastCantSaveFailValidationXml": {
     "title": "Помилка валідації",
@@ -381,7 +377,6 @@
     "newKeyLabel": "Новий ключ процесу (ID)",
     "newKeyLabelForm": "Новий ключ форми (ID)",
     "renameSameKey": "Новий ключ повинен відрізнятися від поточного",
-    "renameInfo": "Буде створено новий {item} з цим ключем. Оригінал залишиться без змін.",
     "replaceHint": "Перезаписати наявний {item} імпортованим.",
     "renameHint": "Імпортувати як новий {item} з іншим ключем.",
     "skipHint": "Залишити наявний {item} і відхилити імпорт.",

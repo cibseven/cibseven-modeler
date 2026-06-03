@@ -55,17 +55,13 @@
   },
   "toastImportBatch": {
     "title": "Import abgeschlossen",
-    "body": ""
+    "body": "Import abgeschlossen."
   },
   "importSummary": {
     "imported": "{count} importiert",
     "upToDate": "{count} bereits aktuell",
     "skipped": "{count} übersprungen",
     "failed": "{count} fehlgeschlagen"
-  },
-  "toastImportBatchPartial": {
-    "title": "Import teilweise abgeschlossen",
-    "body": "{imported} von {total} Dateien importiert."
   },
   "toastCantSaveFailValidationXml": {
     "title": "Validierungsfehler",
@@ -381,7 +377,6 @@
     "newKeyLabel": "Neuer Prozessschlüssel (ID)",
     "newKeyLabelForm": "Neuer Formularschlüssel (ID)",
     "renameSameKey": "Der neue Schlüssel muss sich vom aktuellen unterscheiden",
-    "renameInfo": "Es wird ein neuer {item} mit diesem Schlüssel erstellt. Das Original bleibt unverändert.",
     "replaceHint": "Den vorhandenen {item} mit dem importierten überschreiben.",
     "renameHint": "Als neuen {item} mit einem anderen Schlüssel importieren.",
     "skipHint": "Den vorhandenen {item} behalten und den Import verwerfen.",

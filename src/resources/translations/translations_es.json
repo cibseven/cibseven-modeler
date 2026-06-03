@@ -55,17 +55,13 @@
   },
   "toastImportBatch": {
     "title": "Importación completada",
-    "body": ""
+    "body": "Importación finalizada."
   },
   "importSummary": {
     "imported": "{count} importados",
     "upToDate": "{count} ya actualizados",
     "skipped": "{count} omitidos",
     "failed": "{count} fallidos"
-  },
-  "toastImportBatchPartial": {
-    "title": "Importación parcialmente completada",
-    "body": "{imported} de {total} archivos importados."
   },
   "toastCantSaveFailValidationXml": {
     "title": "Error de validación.",
@@ -381,7 +377,6 @@
     "newKeyLabel": "Nueva clave de proceso (ID)",
     "newKeyLabelForm": "Nueva clave de formulario (ID)",
     "renameSameKey": "La nueva clave debe ser diferente a la actual",
-    "renameInfo": "Se creará un nuevo {item} con esta clave. El original no se verá afectado.",
     "replaceHint": "Sobrescribir el {item} existente con el importado.",
     "renameHint": "Importar como un nuevo {item} con una clave diferente.",
     "skipHint": "Mantener el {item} existente y descartar la importación.",
