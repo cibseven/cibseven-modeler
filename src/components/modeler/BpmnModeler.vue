@@ -452,7 +452,6 @@ const initializeModeler = async () => {
 		const info = getProcessInformation(bpmnModeler)
 		const name = info?.name || info?.id || null
 		if (name) emit('updateTabName', name, props.tabElementIndex)
-		if (popover.value?.isFilterOn) popover.value.bpmnFilter(bpmnModeler)
 		_openCalledElementWhenCalActivity(e)
 	})
 
