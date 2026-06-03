@@ -59,7 +59,7 @@
 
         <!-- Separator -->
         <div class="btn-menu d-flex align-items-center mx-1 opacity-50">
-            <span>|</span>
+            <span aria-hidden="true">|</span>
         </div>
 
         <!-- Undo/Redo buttons -->
