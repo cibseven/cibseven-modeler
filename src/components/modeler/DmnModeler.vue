@@ -446,6 +446,12 @@ const changeHeight = value => { canvasHeight.value = value }
 
 const focusLost = () => monacoEditorConsole.value?.focusLost()
 
+const _getCommandStack = () => dmnModeler?.getActiveViewer()?.get('commandStack')
+
+const _undo = () => _getCommandStack()?.undo()
+
+const _redo = () => _getCommandStack()?.redo()
+
 defineExpose({
 	_validate,
 	_saveXmlAfterUpdate,
@@ -456,6 +462,8 @@ defineExpose({
 	isConsolePanelShowing,
 	isConsoleOpen,
 	addLineWithErrorToConsole,
+	_undo,
+	_redo,
 })
 </script>
 

@@ -53,6 +53,14 @@ function consoleNotificationBadge(wrapper) {
     return consoleBtn.find('span.bg-danger')
 }
 
+function undoButton(wrapper) {
+    return wrapper.find('button[title="buttons.undo (Ctrl+Z)"]')
+}
+
+function redoButton(wrapper) {
+    return wrapper.find('button[title="buttons.redo (Ctrl+Y)"]')
+}
+
 describe('ActionButtonsList', () => {
     beforeEach(() => vi.clearAllMocks())
 
@@ -185,6 +193,102 @@ describe('ActionButtonsList', () => {
             await wrapper.vm.$nextTick()
 
             expect(consoleNotificationBadge(wrapper).exists()).toBe(false)
+        })
+    })
+
+    describe('undo / redo buttons', () => {
+        it('hides undo and redo buttons when isButtonDisabled is true', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), {
+                isButtonDisabled: true,
+                modeler: { _undo: vi.fn(), _redo: vi.fn() },
+            })
+
+            expect(undoButton(wrapper).exists()).toBe(true)
+            expect(redoButton(wrapper).exists()).toBe(true)
+            expect(undoButton(wrapper).isVisible()).toBe(false)
+            expect(redoButton(wrapper).isVisible()).toBe(false)
+        })
+
+        it('shows undo and redo buttons when isButtonDisabled is false', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), {
+                isButtonDisabled: false,
+                modeler: { _undo: vi.fn(), _redo: vi.fn() },
+            })
+
+            expect(undoButton(wrapper).isVisible()).toBe(true)
+            expect(redoButton(wrapper).isVisible()).toBe(true)
+        })
+
+        it('performUndo calls modeler._undo when exposed', () => {
+            const _undo = vi.fn()
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.DMN), {
+                modeler: { _undo, _redo: vi.fn() },
+            })
+
+            wrapper.vm.performUndo()
+
+            expect(_undo).toHaveBeenCalledOnce()
+        })
+
+        it('performRedo calls modeler._redo when exposed', () => {
+            const _redo = vi.fn()
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.FORM), {
+                modeler: { _undo: vi.fn(), _redo },
+            })
+
+            wrapper.vm.performRedo()
+
+            expect(_redo).toHaveBeenCalledOnce()
+        })
+
+        it('performUndo is a no-op when modeler is null', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), { modeler: null })
+
+            expect(() => wrapper.vm.performUndo()).not.toThrow()
+        })
+
+        it('performRedo is a no-op when modeler does not expose _redo', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), {
+                modeler: { _undo: vi.fn() },
+            })
+
+            expect(() => wrapper.vm.performRedo()).not.toThrow()
+        })
+
+        it('clicking undo invokes modeler._undo when available', async () => {
+            const _undo = vi.fn()
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), {
+                modeler: { _undo, _redo: vi.fn() },
+            })
+
+            await undoButton(wrapper).trigger('click')
+
+            expect(_undo).toHaveBeenCalledOnce()
+        })
+
+        it('clicking redo invokes modeler._redo when available', async () => {
+            const _redo = vi.fn()
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.DMN), {
+                modeler: { _undo: vi.fn(), _redo },
+            })
+
+            await redoButton(wrapper).trigger('click')
+
+            expect(_redo).toHaveBeenCalledOnce()
+        })
+
+        it('clicking undo does not throw when modeler lacks _undo', async () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.FORM), { modeler: {} })
+
+            await expect(undoButton(wrapper).trigger('click')).resolves.toBeUndefined()
+        })
+
+        it('clicking redo does not throw when modeler lacks _redo', async () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.FORM), {
+                modeler: { _undo: vi.fn() },
+            })
+
+            await expect(redoButton(wrapper).trigger('click')).resolves.toBeUndefined()
         })
     })
 

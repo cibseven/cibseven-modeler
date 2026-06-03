@@ -28,11 +28,10 @@
                             type="button"
                             class="btn border-0 rounded-start bg-body text-secondary shadow-none start-page-search-segment d-flex align-items-center"
                             :title="$t('titles.search')"
-                            aria-hidden="true">
+                        >
                             <span class="mdi mdi-magnify mdi-18px"></span>
                         </button>
                         <input
-                            id="start-page-search"
                             class="start-page-search-field flex-grow-1 min-w-0 w-100 border-0 shadow-none bg-body rounded-0 py-2"
                             type="text"
                             :title="$t('titles.search')"
@@ -372,6 +371,7 @@ defineExpose({
 </script>
 
 <style scoped>
+/* TODO: Unify search box styles across the project (shared component or global styles). */
 .start-page-search .start-page-search-segment:hover,
 .start-page-search .start-page-search-segment:focus-visible {
     background-color: var(--bs-gray-200) !important;

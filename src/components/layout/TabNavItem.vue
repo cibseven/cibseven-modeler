@@ -125,7 +125,6 @@ defineExpose({
 }
 
 .dashboard.active {
-    border-left: 2px !important;
     border-bottom: 2px solid var(--bs-light) !important;
     cursor: pointer;
 }
