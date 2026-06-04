@@ -57,7 +57,7 @@
 				:isActiveTab="index === activeTab" :clipboard="clipboard" :xml="tabNavListXml[index]"
 				:isModelerVisible="tabNavList[index].isModelerVisible" :elementTemplateJson="elementTemplateJson"
 				:consoleErrors="consoleErrorsList[index]" :activePropertiesTab="props.activePropertiesTab"
-				:chat-token="props.chatToken" :chat-user="props.chatUser" :chat-context="props.chatContext"
+				:chat-token="props.chatToken" :chat-user="props.chatUser" :chat-context="props.chatContext" :chat-transport="props.chatTransport"
 				:chat-unread="props.chatUnread" :chat-on-tab-change="props.chatOnTabChange" :chat-on-message="props.chatOnMessage"
 				@showToastMessage="showToastMessage"
 				@updateStoredProcesses="getStoredDiagrams" @showPropertyPanel="showPropertyPanel"
@@ -100,7 +100,7 @@
 				:isModelerVisible="tabNavList[index].isModelerVisible"
 				:consoleErrors="consoleErrorsList[index]"
 				:activePropertiesTab="props.activePropertiesTab"
-				:chat-token="props.chatToken" :chat-user="props.chatUser" :chat-context="props.chatContext"
+				:chat-token="props.chatToken" :chat-user="props.chatUser" :chat-context="props.chatContext" :chat-transport="props.chatTransport"
 				:chat-unread="props.chatUnread" :chat-on-tab-change="props.chatOnTabChange" :chat-on-message="props.chatOnMessage"
 				>
 				<div v-if="tabElement.isModelerVisible" class="h-100">
@@ -132,7 +132,7 @@
 				@show-console-notification="showConsoleNotification"
 				:isModelerVisible="tabNavList[index].isModelerVisible"
 				:activePropertiesTab="props.activePropertiesTab"
-				:chat-token="props.chatToken" :chat-user="props.chatUser" :chat-context="props.chatContext"
+				:chat-token="props.chatToken" :chat-user="props.chatUser" :chat-context="props.chatContext" :chat-transport="props.chatTransport"
 				:chat-unread="props.chatUnread" :chat-on-tab-change="props.chatOnTabChange" :chat-on-message="props.chatOnMessage">
 				<div v-if="tabElement.isModelerVisible" class="h-100">
 					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index] != null"
@@ -224,6 +224,7 @@ const props = defineProps({
 	chatToken: { type: String, default: '' },
 	chatUser: { type: Object, default: null },
 	chatContext: { type: String, default: 'modeler' },
+	chatTransport: { type: String, default: 'longpolling' },
 	chatUnread: { type: Number, default: 0 },
 	chatOnTabChange: { type: Function, default: null },
 	chatOnMessage: { type: Function, default: null },

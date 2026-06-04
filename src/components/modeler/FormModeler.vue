@@ -27,7 +27,7 @@
 			<PropertiesPanel :parent="formContainer" :parentWidth="parentWidth" v-show="isVisiblePropertyPanel"
 				@changeWidth="changeWidth" minWidth="300" ref="resizableDiv"
 				:tabElement="props.tabElement" :isActiveTab="props.isActiveTab" :activePropertiesTab="props.activePropertiesTab"
-				:chat-token="props.chatToken" :chat-user="props.chatUser" :chat-context="props.chatContext"
+				:chat-token="props.chatToken" :chat-user="props.chatUser" :chat-context="props.chatContext" :chat-transport="props.chatTransport"
 				:chat-unread="props.chatUnread" :chat-on-tab-change="props.chatOnTabChange" :chat-on-message="props.chatOnMessage" />
 			<MenuActionButtons :width="canvasWidth">
 				<template #leftButtons>
@@ -84,6 +84,7 @@ const props = defineProps({
 	chatToken: { type: String, default: '' },
 	chatUser: { type: Object, default: null },
 	chatContext: { type: String, default: 'modeler' },
+	chatTransport: { type: String, default: 'longpolling' },
 	chatUnread: { type: Number, default: 0 },
 	chatOnTabChange: { type: Function, default: null },
 	chatOnMessage: { type: Function, default: null },
