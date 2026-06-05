@@ -45,6 +45,7 @@
                         :chat-token="props.chatToken"
                         :chat-user="props.chatUser"
                         :chat-context="props.chatContext"
+                        :chat-transport="props.chatTransport"
                         :active-properties-tab="props.activePropertiesTab"
                         :chat-on-message="props.chatOnMessage" />
                 </div>
@@ -77,6 +78,7 @@ const props = defineProps({
     chatToken: { type: String, default: '' },
     chatUser: { type: Object, default: null },
     chatContext: { type: String, default: 'modeler' },
+    chatTransport: { type: String, default: 'longpolling' },
     chatUnread: { type: Number, default: 0 },
     chatOnTabChange: { type: Function, default: null },
     chatOnMessage: { type: Function, default: null },

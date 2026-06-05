@@ -45,7 +45,7 @@
 				<div v-show="isPropertyPanelVisible && !props.isModelerVisible">
 					<PropertiesPanel ref="resDiv" :parentWidth="parentWidth" @changeWidth="changeWidth" minWidth="300"
 						:tabElement="props.tabElement" :isActiveTab="props.isActiveTab" :activePropertiesTab="props.activePropertiesTab" :selectedElement="selectedElement"
-						:chat-token="props.chatToken" :chat-user="props.chatUser" :chat-context="props.chatContext"
+						:chat-token="props.chatToken" :chat-user="props.chatUser" :chat-context="props.chatContext" :chat-transport="props.chatTransport"
 						:chat-unread="props.chatUnread" :chat-on-tab-change="props.chatOnTabChange" :chat-on-message="props.chatOnMessage" />
 				</div>
 			</div>
@@ -166,6 +166,7 @@ const props = defineProps({
 	chatToken: { type: String, default: '' },
 	chatUser: { type: Object, default: null },
 	chatContext: { type: String, default: 'modeler' },
+	chatTransport: { type: String, default: 'longpolling' },
 	chatUnread: { type: Number, default: 0 },
 	chatOnTabChange: { type: Function, default: null },
 	chatOnMessage: { type: Function, default: null },
