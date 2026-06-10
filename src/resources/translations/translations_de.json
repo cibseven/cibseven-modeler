@@ -374,6 +374,9 @@
   "ID must not be empty": "ID darf nicht leer sein.",
   "dropFileToLoad": "Legen Sie die Datei ab, um sie zu laden.",
   "loading": "Lädt",
+  "modal": {
+    "autoCreate": "Beim nächsten Mal automatisch erstellen (Dialog überspringen)"
+  },
   "modalImportedFile": {
     "title": "Der {item} \"{name}\" existiert bereits im Modeler",
     "body": "Möchten Sie mit dem importierten {item} weiterarbeiten?",

@@ -44,6 +44,13 @@
                         $t("modalNewDiagram.duplicatedId") }}
                         </div>
                     </div>
+                    <div class="form-check mt-3">
+                        <input class="form-check-input" type="checkbox" id="dontShowAgainModalCheck"
+                            v-model="dontShowAgain" @change="savePreference">
+                        <label class="form-check-label small text-muted" for="dontShowAgainModalCheck">
+                            {{ $t('modal.autoCreate') }}
+                        </label>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-primary" @click="handleClick">{{
@@ -63,6 +70,7 @@ import * as bootstrap from 'bootstrap'
 import { onMounted, ref, computed } from 'vue'
 import { useStore } from 'vuex'
 import { useI18n } from 'vue-i18n'
+import { SKIP_CREATION_MODAL_KEY } from '../../constants/diagramTypes.js'
 const { t } = useI18n()
 
 const modalNewDiagram = ref(null)
@@ -83,6 +91,11 @@ const isValidId = computed(() => {
 let modalBootstrap = null
 
 const type = ref('bpmn-c7')
+const dontShowAgain = ref(localStorage.getItem(SKIP_CREATION_MODAL_KEY) === 'true')
+
+const savePreference = () => {
+    localStorage.setItem(SKIP_CREATION_MODAL_KEY, String(dontShowAgain.value))
+}
 
 onMounted(() => {
     if (!modalNewDiagram.value) return
