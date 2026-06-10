@@ -45,11 +45,24 @@
                     </li>
                 </ul>
             </li>
+            <li v-if="props.tabNavList.length > 0" class="nav-item ms-auto d-flex align-items-center pe-1">
+                <button type="button" class="btn btn-sm btn-link text-muted p-0 lh-1"
+                    :title="$t('buttons.closeAllTabs')" @click="handleCloseAll">
+                    <span class="mdi mdi-close-box-multiple-outline mdi-18px"></span>
+                </button>
+            </li>
         </ul>
         <ConfirmModal :showModal="showModalAcceptCancelMessage" :title="modalCloseNotSavedText.title"
             type="closeTab" :body="modalCloseNotSavedText.body" @hideModal="hideModal"
             :acceptLabel="modalCloseNotSavedText.acceptLabel"
             :functionAfterAccepting="removeSelectedTabFromModal">
+        </ConfirmModal>
+        <ConfirmModal :showModal="showCloseAllModal" type="closeAll"
+            :title="$t('tabs.closeAllTitle')" :body="$t('tabs.closeAllBody')"
+            :acceptLabel="$t('buttons.discardChanges')"
+            :functionAfterAccepting="confirmCloseAll"
+            @hideModal="showCloseAllModal = false"
+            @resetVariablesForModalAcceptCancelMessage="showCloseAllModal = false">
         </ConfirmModal>
     </div>
 </template>
@@ -79,10 +92,13 @@ const emit = defineEmits([
     'saveWithKeyboardFromTab',
     'openDiagramFromNavTab',
     'selectedTab',
-    'switchTabFromTabNav'
+    'switchTabFromTabNav',
+    'closeAllTabs'
 ])
 const showModalAcceptCancelMessage = ref(false)
+const showCloseAllModal = ref(false)
 const tabIndex = ref(null)
+const hasUnsavedTabs = computed(() => props.tabNavList.some(tab => tab.canSave))
 const tabNavItem = ref({})
 const hiddenItems = ref([])
 const isVisibleTab = ref([])
@@ -155,6 +171,16 @@ const hideModal = () => showModalAcceptCancelMessage.value = false
 const removeSelectedTabFromModal = () => emit('removeSelectedTabFromModal', tabIndex.value)
 
 const removeSelectedTab = tabElementIndex => emit('removeSelectedTab', tabElementIndex)
+
+const handleCloseAll = () => {
+    if (hasUnsavedTabs.value) {
+        showCloseAllModal.value = true
+    } else {
+        emit('closeAllTabs')
+    }
+}
+
+const confirmCloseAll = () => emit('closeAllTabs')
 
 const selectedTab = index => {
     emit('selectedTab', index)

@@ -142,13 +142,16 @@
     "replaceAll": "Alle ersetzen",
     "skipAll": "Alle überspringen",
     "undo": "Rückgängig",
-    "redo": "Wiederholen"
+    "redo": "Wiederholen",
+    "closeAllTabs": "Alle Tabs schließen"
   },
   "scriptEditorModal": {
     "title": "Skript bearbeiten"
   },
   "tabs": {
-    "unsavedChanges": "Ungespeicherte Änderungen"
+    "unsavedChanges": "Ungespeicherte Änderungen",
+    "closeAllTitle": "Alle Tabs schließen",
+    "closeAllBody": "Einige Tabs haben ungespeicherte Änderungen. Alle ungespeicherten Änderungen gehen verloren."
   },
   "deployForm": {
     "deploymentName": {

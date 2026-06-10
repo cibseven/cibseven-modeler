@@ -142,13 +142,16 @@
     "replaceAll": "Замінити все",
     "skipAll": "Пропустити все",
     "undo": "Скасувати",
-    "redo": "Повторити"
+    "redo": "Повторити",
+    "closeAllTabs": "Закрити всі вкладки"
   },
   "scriptEditorModal": {
     "title": "Редагувати скрипт"
   },
   "tabs": {
-    "unsavedChanges": "Незбережені зміни"
+    "unsavedChanges": "Незбережені зміни",
+    "closeAllTitle": "Закрити всі вкладки",
+    "closeAllBody": "Деякі вкладки мають незбережені зміни. Усі незбережені зміни буде втрачено."
   },
   "deployForm": {
     "deploymentName": {
