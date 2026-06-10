@@ -39,6 +39,9 @@ export const DIAGRAM_FILE_EXT = Object.freeze({
 /** localStorage key used to persist open tabs across page reloads. */
 export const TAB_STORAGE_KEY = 'cibseven:modeler.navList'
 
+/** localStorage key for the "skip creation modal" user preference. */
+export const SKIP_CREATION_MODAL_KEY = 'cibseven:modeler.skipCreationModal'
+
 /** localStorage keys used to persist deployment form values across modal interactions. */
 export const DEPLOY_STORAGE_KEYS = Object.freeze({
 	AUTH: 'cibseven:modeler.deploy.auth',

@@ -207,7 +207,7 @@ import DropZone from '../DropZone.vue'
 //composables
 import useTabManager from '../../composables/useTabManager.js'
 import useFileImport from '../../composables/useFileImport.js'
-import { DIAGRAM_TYPE } from '../../constants/diagramTypes.js'
+import { DIAGRAM_TYPE, SKIP_CREATION_MODAL_KEY } from '../../constants/diagramTypes.js'
 
 // Provide monaco for child components (MonacoEditor, MonacoConsole)
 // This is necessary when used as a library since the host app doesn't provide monaco
@@ -331,7 +331,7 @@ watch(() => store.getters['modeler/elementTemplates/allElementTemplateContents']
 
 //emit calls an exposed function from StartPage
 const createNewBpmnDiagram = async (diagramXML, type) => {
-	await modalNewDiagram.value._toggleModalNewDiagram(true, async (nameUpdated, idUpdated) => {
+	const callback = async (nameUpdated, idUpdated) => {
 		const uniqueId = idUpdated ? idUpdated.trim() : _assignUniqueId('Process', generateUniqueId())
 		const name = nameUpdated ? nameUpdated.trim() : uniqueId
 		let finalXml = setTagValueOfXml(await _fetchDefaultDiagramXML(diagramXML), 'bpmn:process', 'id', uniqueId)
@@ -342,11 +342,13 @@ const createNewBpmnDiagram = async (diagramXML, type) => {
 		tabNavListXml.value[tabNavList.value.length - 1] = finalXml
 		editorXML.value[tabNavList.value.length - 1] = finalXml
 		switchTabFromTabNav(tabNavList.value.length - 1)
-	}, type)
+	}
+	if (localStorage.getItem(SKIP_CREATION_MODAL_KEY) === 'true') { await callback(null, null); return }
+	await modalNewDiagram.value._toggleModalNewDiagram(true, callback, type)
 }
 
 const createNewDmnDiagram = async (dmnXML, type) => {
-	await modalNewDiagram.value._toggleModalNewDiagram(true, async (nameUpdated, idUpdated) => {
+	const callback = async (nameUpdated, idUpdated) => {
 		const uniqueId = idUpdated ? idUpdated.trim() : _assignUniqueId('Dmn', generateUniqueId())
 		const name = nameUpdated ? nameUpdated.trim() : uniqueId
 		let finalXml = setTagValueOfXml(await _fetchDefaultDiagramXML(dmnXML), 'definitions', 'id', uniqueId)
@@ -357,18 +359,22 @@ const createNewDmnDiagram = async (dmnXML, type) => {
 		tabNavListXml.value[tabNavList.value.length - 1] = finalXml
 		editorXML.value[tabNavList.value.length - 1] = finalXml
 		switchTabFromTabNav(tabNavList.value.length - 1)
-	}, type)
+	}
+	if (localStorage.getItem(SKIP_CREATION_MODAL_KEY) === 'true') { await callback(null, null); return }
+	await modalNewDiagram.value._toggleModalNewDiagram(true, callback, type)
 }
 
 const createNewFormDiagram = async(formJson, type) => {
-	await modalNewDiagram.value._toggleModalNewDiagram(true, async (nameUpdated, idUpdated) => {
+	const callback = async (nameUpdated, idUpdated) => {
 		const uniqueId = idUpdated ? idUpdated.trim() : _assignUniqueId('Form', generateUniqueId())
 		formJson.id = uniqueId
 		tabNavList.value.push({ version: 0, type: type, name: uniqueId, navId: uniqueId, id: uniqueId, key: uniqueId, keyOfTabNav: uniqueId, canSave: true, isSaved: false, isModelerVisible: false, isPropertyPanelVisible: false, isEditorVisible: false, isBpmn: false })
 		tabNavListXml.value[tabNavList.value.length - 1] = JSON.stringify(formJson, null, 2)
 		editorXML.value[tabNavList.value.length - 1] = JSON.stringify(formJson, null, 2)
 		switchTabFromTabNav(tabNavList.value.length - 1)
-	}, type)
+	}
+	if (localStorage.getItem(SKIP_CREATION_MODAL_KEY) === 'true') { await callback(null, null); return }
+	await modalNewDiagram.value._toggleModalNewDiagram(true, callback, type)
 }
 
 const saveWithKeyboardFromTab = (e, tabElementName, tabElementIndex) => {

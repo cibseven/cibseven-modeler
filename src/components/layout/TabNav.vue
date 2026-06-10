@@ -95,11 +95,12 @@ onMounted(async () => {
 })
 
 const modalCloseNotSavedText = computed(() => {
-     if (props.activeTab >-1) {
+    const idx = tabIndex.value
+    if (idx !== null && idx >= 0 && props.tabNavList[idx]) {
         return { title: t('modalCloseNotSaved.title', {
-            item: t(`items.${props.tabNavList[props.activeTab].type}`)
+            item: t(`items.${props.tabNavList[idx].type}`)
         } ), body: t('modalCloseNotSaved.body', {
-            item: t(`items.${props.tabNavList[props.activeTab].type}`)
+            item: t(`items.${props.tabNavList[idx].type}`)
         } ), acceptLabel: t('buttons.discardChanges') }
     }
     return { title: '', body: '', acceptLabel: '' }
