@@ -94,7 +94,9 @@ const style = computed(() => {
     return { width: `${width.value}px !important` }
 })
 
-let isResizing = false // to check if the user is resizing 
+let isResizing = false // to check if the user is resizing
+let startX = null
+let startWidth = null
 
 onMounted(() => {
     emit('changeWidth', props.parentWidth - parent.value.clientWidth)
@@ -109,16 +111,25 @@ watch(width, newW => {
     if (props.isPropertyPanelVisible) emit('changeWidth', props.parentWidth - newW)
 })
 
-const handleDown = () => isResizing = true
+const handleDown = e => {
+    isResizing = true
+    startX = e.clientX
+    startWidth = Number(width.value)
+    e.preventDefault()
+}
 
-const handleUp = () => isResizing = false
+const handleUp = () => {
+    isResizing = false
+    startX = null
+    startWidth = null
+}
 
 const handleMove = e => {
     if (isResizing && !collapsed.value) resizeMovement(e)
 }
 
 const resizeMovement = e => {
-    const newWidth = props.parentWidth - e.clientX
+    const newWidth = startWidth + (startX - e.clientX)
     //checks if its not less than the min width and the max size
     if (newWidth >= props.minWidth && newWidth <= props.parentWidth - notResizingMaxWidth) {
         width.value = newWidth
@@ -185,7 +196,7 @@ defineExpose({ _changeWidth, _restorePropertiesPanelWidth, _resetPropertiesPanel
 }
 
 .panel-toggle-strip:hover {
-    background-color: white;
+    background-color: #E9F0F7;
 }
 
 .resizable-component>.resizable-l {
@@ -197,8 +208,8 @@ defineExpose({ _changeWidth, _restorePropertiesPanelWidth, _resetPropertiesPanel
     -moz-user-select: none;
     -webkit-user-select: none;
     cursor: w-resize;
-    width: 20px;
-    left: 10px;
+    width: 8px;
+    left: 20px;
     top: 0;
     bottom: 44px;
 }
