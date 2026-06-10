@@ -29,13 +29,9 @@
                 <div class="modal-footer">
                     <button type="button" @click.prevent="handleAcceptMessage" class="btn btn-danger">{{
                         props.acceptLabel || $t("buttons.accept") }}</button>
-                    <button type="button" ref="closeButton" class="btn btn-secondary" data-bs-dismiss="modal"
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
                         @click="handleCloseMessage">{{ $t("buttons.cancel")
                         }}</button>
-                    <template v-if="props.showApplyAll">
-                        <button type="button" class="btn btn-danger" @click.prevent="applyAll('replace')">{{ $t("buttons.replaceAll") }}</button>
-                        <button type="button" class="btn btn-secondary" @click.prevent="applyAll('skip')">{{ $t("buttons.skipAll") }}</button>
-                    </template>
                 </div>
             </div>
         </div>
@@ -72,12 +68,9 @@ const props = defineProps({
     title: { type: String, required: true },
     body: { type: String, required: true },
     acceptLabel: { type: String, default: null },
-    showApplyAll: { type: Boolean, default: false },
-    functionApplyAll: { type: Function, default: () => {} },
 })
 
 const idSaved = ref(null)
-const closeButton = ref(null)
 
 let modalBootstrap = null
 let _closedByButton = false
@@ -136,10 +129,5 @@ const _showModalComp = () => {
     modalBootstrap.show()
 }
 
-const applyAll = choice => {
-    _closedByButton = true
-    props.functionApplyAll(choice)
-    modalBootstrap.hide()
-}
 
 </script>
