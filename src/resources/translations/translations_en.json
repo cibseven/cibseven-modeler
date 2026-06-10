@@ -142,13 +142,16 @@
 		"replaceAll": "Replace All",
 		"skipAll": "Skip All",
 		"undo": "Undo",
-		"redo": "Redo"
+		"redo": "Redo",
+		"closeAllTabs": "Close all tabs"
 	},
 	"scriptEditorModal": {
 		"title": "Edit script"
 	},
 	"tabs": {
-		"unsavedChanges": "Unsaved changes"
+		"unsavedChanges": "Unsaved changes",
+		"closeAllTitle": "Close all tabs",
+		"closeAllBody": "Some tabs have unsaved changes. All unsaved changes will be lost."
 	},
 	"deployForm": {
 		"deploymentName": {

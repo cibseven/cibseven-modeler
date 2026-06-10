@@ -123,7 +123,8 @@ const handleAcceptMessage = () => {
     } else if (props.type === 'changeVersion') {
         const { encodedXml, version } = props.modalData
         props.functionAfterAccepting(encodedXml, version) //changes the xml to the version selected
-
+    } else if (props.type === 'closeAll') {
+        props.functionAfterAccepting()
     }
 
     modalBootstrap.hide()

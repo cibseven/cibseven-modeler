@@ -31,7 +31,8 @@
 		@selectedTab="selectedTab" :tabNavList="tabNavList" @openDiagramFromNavTab="openDiagramFromNavTabFromChild"
 		@saveWithKeyboardFromTab="saveWithKeyboardFromTab" @removeSelectedTab="removeSelectedTab"
 		@removeSelectedTabFromModal="removeSelectedTab" @showToastMessage="showToastMessage"
-		@resizeTabNav="resizeTabNav" @orderTabNavListHiddenTab="orderTabNavListHiddenTab">
+		@resizeTabNav="resizeTabNav" @orderTabNavListHiddenTab="orderTabNavListHiddenTab"
+		@closeAllTabs="closeAllTabs">
 	</TabNav>
 
 	<div ref="modelerTabPanes" class="tab-content flex-grow-1" style="min-height: 0;" :key="`modelerid1-i`">
@@ -627,6 +628,19 @@ const selectedTab = async tabElementIndex => {
 const removeSelectedTab = tabElementIndex => {
 	_closeSelectedTab(tabElementIndex)
 	switchTabFromTabNavWhenClosing(tabElementIndex)
+}
+
+const closeAllTabs = () => {
+	tabNavList.value.forEach((tab, i) => {
+		if (tab.type === 'form' && modeler.value?.[i]) {
+			try { modeler.value[i].destroyFormJs() } catch { /* ignore */ }
+		}
+	})
+	tabNavList.value = []
+	tabNavListXml.value = []
+	editorXML.value = []
+	selectedTab(-1)
+	_saveTabNavSavedLocalStorage()
 }
 
 //hides modal from AcceptCancelMessage
