@@ -16,42 +16,47 @@
 -->
 <template>
     <div>
-        <ul class="nav nav-tabs d-flex" role="tablist" style="flex-wrap: nowrap" ref="tabNav">
-            <TabNavItem spanIconClass="mdi mdi-24px mdi-text-box-search-outline" :isDashboard="true"
-                @switchTabFromTabNavItem="switchTabFromTabNavItem" navId="dashboard" :activeTab="props.activeTab"
-                name="dashboard" :index="-1" @selectedTab="selectedTab">
-            </TabNavItem>
-            <TabNavItem @switchTabFromTabNavItem="switchTabFromTabNavItem"
-                :isSaved="props.tabNavList[index].isSaved" :maxTabItemWidth="maxTabItemWidth"
-                :tabNavList="props.tabNavList[index]" :editorXML="editorXML[index]"
-                v-on:keydown.ctrl.s="(e) => saveWithKeyboard(e, navItem.name, index)" :activeTab="props.activeTab"
-                @openDiagram="openDiagram" @selectedTab="selectedTab" v-for="(navItem, index) in props.tabNavList"
-                :key="navItem.keyOfTabNav" :processkey="navItem.key" :id="navItem.name" :navId="navItem.id"
-                :name="navItem.name" :index="index" @removeSelectedTab="removeSelectedTab" @showModalMessage="showModal"
-                @showToastMessage="showToastMessageFromItem" :ref="(el) => (tabNavItem[index] = el)"
-                :keyOfTabNav="navItem.keyOfTabNav" :isVisible="isVisibleTab[index]">
-            </TabNavItem>
-
-            <li class="nav-item dropdown tab-dropdown" v-if="isVisibleTabDropdown && tabNavList.length > 0">
-                <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button"
-                    style="height: 40px; border-color: #CCD7E4;" aria-expanded="false"><span class="visually-hidden">{{ $t('buttons.moreTabs') }}</span></a>
-                <ul class="dropdown-menu">
-                    <li v-for="(navItem, index) in hiddenItems" :key="navItem.id">
-                        <a class="dropdown-item d-flex align-items-center gap-2" href="#" @click.prevent="selectHiddenTab(index)">
-                            <span v-if="navItem.canSave" class="mdi mdi-18px mdi-circle-medium text-warning" :title="$t('tabs.unsavedChanges')" :aria-label="$t('tabs.unsavedChanges')"></span>
-                            {{ navItem.name !== 'undefined' && navItem.name !== '' ? navItem.name : '(' + navItem.key + ')'
-                            }}
-                        </a>
-                    </li>
-                </ul>
-            </li>
-            <li v-if="props.tabNavList.length > 0" class="nav-item ms-auto d-flex align-items-center pe-1">
+        <div class="d-flex">
+            <ul class="nav nav-tabs" role="tablist" style="flex-wrap: nowrap; min-width: 0; overflow: hidden" ref="tabNav">
+                <TabNavItem spanIconClass="mdi mdi-24px mdi-text-box-search-outline" :isDashboard="true"
+                    @switchTabFromTabNavItem="switchTabFromTabNavItem" navId="dashboard" :activeTab="props.activeTab"
+                    name="dashboard" :index="-1" @selectedTab="selectedTab">
+                </TabNavItem>
+                <TabNavItem @switchTabFromTabNavItem="switchTabFromTabNavItem"
+                    :isSaved="props.tabNavList[index].isSaved" :maxTabItemWidth="maxTabItemWidth"
+                    :tabNavList="props.tabNavList[index]" :editorXML="editorXML[index]"
+                    v-on:keydown.ctrl.s="(e) => saveWithKeyboard(e, navItem.name, index)" :activeTab="props.activeTab"
+                    @openDiagram="openDiagram" @selectedTab="selectedTab" v-for="(navItem, index) in props.tabNavList"
+                    :key="navItem.keyOfTabNav" :processkey="navItem.key" :id="navItem.name" :navId="navItem.id"
+                    :name="navItem.name" :index="index" @removeSelectedTab="removeSelectedTab" @showModalMessage="showModal"
+                    @showToastMessage="showToastMessageFromItem" :ref="(el) => (tabNavItem[index] = el)"
+                    :keyOfTabNav="navItem.keyOfTabNav" :isVisible="isVisibleTab[index]">
+                </TabNavItem>
+            </ul>
+            <ul v-if="isVisibleTabDropdown && tabNavList.length > 0" class="nav nav-tabs flex-shrink-0 mb-0">
+                <li class="nav-item dropdown tab-dropdown">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button"
+                        style="height: 40px; border-color: #CCD7E4;" aria-expanded="false"><span class="visually-hidden">{{ $t('buttons.moreTabs') }}</span></a>
+                    <ul class="dropdown-menu">
+                        <li v-for="(navItem, index) in hiddenItems" :key="navItem.id">
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="#" @click.prevent="selectHiddenTab(index)">
+                                <span v-if="navItem.canSave" class="mdi mdi-18px mdi-circle-medium text-warning" :title="$t('tabs.unsavedChanges')" :aria-label="$t('tabs.unsavedChanges')"></span>
+                                {{ navItem.name !== 'undefined' && navItem.name !== '' ? navItem.name : '(' + navItem.key + ')'
+                                }}
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+            <!-- Filler pushes the close-all button to the right edge and keeps the bottom border running -->
+            <div class="flex-grow-1 border-bottom"></div>
+            <div v-if="props.tabNavList.length > 0" class="d-flex align-items-center px-3 border-bottom flex-shrink-0">
                 <button type="button" class="btn btn-sm btn-link text-muted p-0 lh-1"
                     :title="$t('buttons.closeAllTabs')" @click="handleCloseAll">
                     <span class="mdi mdi-close-box-multiple-outline mdi-18px"></span>
                 </button>
-            </li>
-        </ul>
+            </div>
+        </div>
         <ConfirmModal :showModal="showModalAcceptCancelMessage" :title="modalCloseNotSavedText.title"
             type="closeTab" :body="modalCloseNotSavedText.body" @hideModal="hideModal"
             :acceptLabel="modalCloseNotSavedText.acceptLabel"
@@ -137,6 +142,7 @@ watch(() => props.tabNavWidth,() => {
 const selectHiddenTab = index => emit('orderTabNavListHiddenTab', hiddenItems.value.length - index)
 
 const tabsVisibleAndCalculate = () => {
+    const availableWidth = tabNav.value?.parentElement?.offsetWidth ?? props.tabNavWidth
 
     const dashboardTabWidth = document.querySelector('.dashboard').offsetWidth ?? 60
     const tabs = document.querySelectorAll('.calculated-tab')
@@ -146,7 +152,7 @@ const tabsVisibleAndCalculate = () => {
     const sumOfTabsSizaArr = []
     for (let i = 0; i < props.tabNavList.length; i++) {
         sumSizeTabs += tabs[i]?.offsetWidth ?? maxTabItemWidth + 20 // if the tab is hidden set space to maxwidth plus a margin
-        if (sumSizeTabs >= props.tabNavWidth) {
+        if (sumSizeTabs >= availableWidth) {
             isVisibleTabDropdown.value = true
             visibleTabs.push(false)
             sumOfTabsSizaArr.push(sumSizeTabs)
@@ -200,10 +206,11 @@ const selectTab = index => {
 }
 
 const _calculateTabsVisible = () => {
+    const availableWidth = tabNav.value?.parentElement?.offsetWidth ?? props.tabNavWidth
     let maxTabs = 0
     const visibleTabs = []
     for (let i = 0; i < sizeOfTabItems.value.length; i++) {
-        if (sizeOfTabItems.value[i] >= props.tabNavWidth) {
+        if (sizeOfTabItems.value[i] >= availableWidth) {
             isVisibleTabDropdown.value = true
             visibleTabs.push(false)
         } else {
