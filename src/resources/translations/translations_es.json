@@ -184,6 +184,21 @@
         "body": "Cada archivo adicional debe tener un nombre de recurso no vacío."
       }
     },
+    "forms": {
+      "addButton": "Añadir formulario",
+      "search": "Buscar formularios...",
+      "typeToSearch": "Escribe al menos 3 caracteres para buscar",
+      "empty": "No se encontraron formularios",
+      "referenced": "Referenciado",
+      "loadError": {
+        "title": "No se pudieron cargar los formularios",
+        "body": "No se pudo cargar la lista de formularios guardados."
+      },
+      "addError": {
+        "title": "No se pudo añadir el formulario",
+        "body": "El formulario seleccionado no se pudo añadir al despliegue."
+      }
+    },
     "authentication": "Autenticación",
     "asAnotherUser": "Como otro usuario",
     "username": "Nombre de usuario",

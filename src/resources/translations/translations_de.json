@@ -184,6 +184,21 @@
         "body": "Jede zusätzliche Datei muss einen nicht leeren Ressourcennamen haben."
       }
     },
+    "forms": {
+      "addButton": "Formular hinzufügen",
+      "search": "Formulare suchen...",
+      "typeToSearch": "Mindestens 3 Zeichen eingeben, um zu suchen",
+      "empty": "Keine Formulare gefunden",
+      "referenced": "Referenziert",
+      "loadError": {
+        "title": "Formulare konnten nicht geladen werden",
+        "body": "Die Liste der gespeicherten Formulare konnte nicht geladen werden."
+      },
+      "addError": {
+        "title": "Formular konnte nicht hinzugefügt werden",
+        "body": "Das ausgewählte Formular konnte dem Deployment nicht hinzugefügt werden."
+      }
+    },
     "authentication": "Authentifizierung",
     "asAnotherUser": "Als anderer Benutzer",
     "username": "Benutzername",
