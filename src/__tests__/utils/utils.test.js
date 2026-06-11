@@ -26,6 +26,7 @@ import {
     getProcessKeyFromBpmn,
     generateUniqueId,
     checkJSON,
+    getFormRefsFromBpmn,
 } from '../../utils.js'
 
 describe('Utils', () => {
@@ -426,6 +427,57 @@ describe('Utils', () => {
             const result = checkJSON(xml, templates)
             expect(result.length).toBe(1)
             expect(result[0].nameOfTemplate).toBe('unknown-template')
+        })
+    })
+
+    describe('getFormRefsFromBpmn', () => {
+        const bpmnWith = (...refs) => {
+            const tasks = refs.map((r, i) =>
+                `<bpmn:userTask id="t${i}" camunda:formRef="${r}"/>`
+            ).join('')
+            return `<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" ` +
+                `xmlns:camunda="http://camunda.org/schema/1.0/bpmn">` +
+                `<bpmn:process id="proc">${tasks}</bpmn:process>` +
+                `</bpmn:definitions>`
+        }
+
+        it('returns empty array for null, undefined, and empty string', () => {
+            expect(getFormRefsFromBpmn(null)).toEqual([])
+            expect(getFormRefsFromBpmn(undefined)).toEqual([])
+            expect(getFormRefsFromBpmn('')).toEqual([])
+        })
+
+        it('returns empty array when no formRef attributes are present', () => {
+            const xml = bpmnWith().replace('<bpmn:userTask', '<!-- no tasks --><bpmn:userTask id="t0"')
+                .replace('camunda:formRef="undefined"', '')
+            expect(getFormRefsFromBpmn(
+                '<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL">' +
+                '<bpmn:process id="proc"><bpmn:userTask id="t1"/></bpmn:process>' +
+                '</bpmn:definitions>'
+            )).toEqual([])
+        })
+
+        it('returns a single formRef value', () => {
+            expect(getFormRefsFromBpmn(bpmnWith('invoice-form'))).toEqual(['invoice-form'])
+        })
+
+        it('returns multiple distinct formRef values', () => {
+            const result = getFormRefsFromBpmn(bpmnWith('form-a', 'form-b'))
+            expect(result).toHaveLength(2)
+            expect(result).toContain('form-a')
+            expect(result).toContain('form-b')
+        })
+
+        it('deduplicates repeated formRef values', () => {
+            expect(getFormRefsFromBpmn(bpmnWith('my-form', 'my-form'))).toEqual(['my-form'])
+        })
+
+        it('trims whitespace from formRef values', () => {
+            expect(getFormRefsFromBpmn(bpmnWith('  my-form  '))).toEqual(['my-form'])
+        })
+
+        it('returns empty array for invalid XML', () => {
+            expect(getFormRefsFromBpmn('not xml <<>>')).toEqual([])
         })
     })
 })

@@ -84,10 +84,13 @@
 									type="text"
 									class="form-control form-control-sm mb-2"
 									:placeholder="$t('deployForm.forms.search')"
+									:aria-label="$t('deployForm.forms.search')"
 									v-model="formPickerSearch"
 								/>
 								<div v-if="formPickerLoading" class="text-center py-2">
-									<span class="spinner-border spinner-border-sm" role="status"></span>
+									<span class="spinner-border spinner-border-sm" role="status">
+										<span class="visually-hidden">{{ $t('loading') }}</span>
+									</span>
 								</div>
 								<div v-else style="max-height: 200px; overflow-y: auto;">
 									<div
@@ -103,9 +106,12 @@
 									<div
 										v-for="form in formPickerList"
 										:key="form.id"
+										role="button"
+										tabindex="0"
 										class="d-flex align-items-center gap-2 px-1 py-1 rounded"
 										:style="{ opacity: addedFormIds.has(form.formId) ? 0.5 : 1, cursor: addedFormIds.has(form.formId) ? 'default' : 'pointer' }"
-										@click="addFormResource(form)">
+										@click="addFormResource(form)"
+										@keyup.enter="addFormResource(form)">
 										<span class="flex-grow-1 text-truncate small">{{ form.name || form.formId }}</span>
 										<span class="text-muted small text-nowrap flex-shrink-0">{{ form.formId }}</span>
 										<span
@@ -117,6 +123,7 @@
 											v-if="formPickerAddingId === form.id"
 											class="spinner-border spinner-border-sm flex-shrink-0"
 											role="status">
+											<span class="visually-hidden">{{ $t('loading') }}</span>
 										</span>
 										<span v-else-if="addedFormIds.has(form.formId)" class="mdi mdi-check text-success flex-shrink-0"></span>
 									</div>
@@ -254,6 +261,7 @@ import * as bootstrap from 'bootstrap'
 
 import { deployProcess, startProcess } from '../../services/deployService'
 import { fetchForms, fetchFormById } from '../../services/formService'
+import { debounce } from 'min-dash'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getProcessKeyFromBpmn, getTagValueFromXml, formatFileSize, getFormRefsFromBpmn } from '../../utils.js'
@@ -539,24 +547,24 @@ const _getProcessKeyForDeployName = () => {
 	return foundExternalProcessKey
 }
 
-let _formPickerSearchTimer = null
+const _fetchFormPickerResults = debounce(async () => {
+	try {
+		formPickerList.value = await fetchForms(0, 10, formPickerSearch.value.trim()) ?? []
+	} catch {
+		emit('showToastMessage', { isSuccess: false, toastText: 'deployForm.forms.loadError', bodyTextAlt: '' })
+	} finally {
+		formPickerLoading.value = false
+	}
+}, 500)
+
 watch(formPickerSearch, (val) => {
-	clearTimeout(_formPickerSearchTimer)
 	formPickerList.value = []
 	if ((val?.trim().length ?? 0) < 3) {
 		formPickerLoading.value = false
 		return
 	}
 	formPickerLoading.value = true
-	_formPickerSearchTimer = setTimeout(async () => {
-		try {
-			formPickerList.value = await fetchForms(0, 10, val.trim()) ?? []
-		} catch {
-			emit('showToastMessage', { isSuccess: false, toastText: 'deployForm.forms.loadError', bodyTextAlt: '' })
-		} finally {
-			formPickerLoading.value = false
-		}
-	}, 500)
+	_fetchFormPickerResults()
 })
 
 const addFormResource = async (form) => {
@@ -575,9 +583,9 @@ const addFormResource = async (form) => {
 
 const _autoAddReferencedForms = async () => {
 	if (!isBpmn.value) return
-	const refs = getFormRefsFromBpmn(props.diagram)
-	if (!refs.length) return
-	for (const ref of refs) {
+	detectedFormRefs.value = getFormRefsFromBpmn(props.diagram)
+	if (!detectedFormRefs.value.length) return
+	for (const ref of detectedFormRefs.value) {
 		try {
 			const forms = await fetchForms(0, 1, ref)
 			const match = (forms ?? []).find(f => f.formId === ref)
@@ -594,7 +602,7 @@ const _showModalComp = () => {
 	additionalDeploymentResources.value = []
 	formPickerList.value = []
 	formPickerSearch.value = ''
-	detectedFormRefs.value = isBpmn.value ? getFormRefsFromBpmn(props.diagram) : []
+	detectedFormRefs.value = []
 	checkIfProcessStartable()
 	disableDeployButton.value = false
 	modalBootstrap.show()

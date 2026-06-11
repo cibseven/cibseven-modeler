@@ -329,7 +329,7 @@ export const getFormRefsFromBpmn = (xmlString) => {
 		const refs = new Set()
 		Array.from(xmlDoc.getElementsByTagName('*')).forEach(el => {
 			const ref = el.getAttributeNS('http://camunda.org/schema/1.0/bpmn', 'formRef')
-			if (ref) refs.add(ref)
+			if (ref) refs.add(ref.trim())
 		})
 		return Array.from(refs)
 	} catch { return [] }
