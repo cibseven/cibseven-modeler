@@ -448,8 +448,6 @@ describe('Utils', () => {
         })
 
         it('returns empty array when no formRef attributes are present', () => {
-            const xml = bpmnWith().replace('<bpmn:userTask', '<!-- no tasks --><bpmn:userTask id="t0"')
-                .replace('camunda:formRef="undefined"', '')
             expect(getFormRefsFromBpmn(
                 '<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL">' +
                 '<bpmn:process id="proc"><bpmn:userTask id="t1"/></bpmn:process>' +
