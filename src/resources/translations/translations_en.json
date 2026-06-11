@@ -184,6 +184,21 @@
 				"body": "Every additional file must have a non-empty resource name."
 			}
 		},
+		"forms": {
+			"addButton": "Add form",
+			"search": "Search forms...",
+			"typeToSearch": "Type at least 3 characters to search",
+			"empty": "No forms found",
+			"referenced": "Referenced",
+			"loadError": {
+				"title": "Failed to load forms",
+				"body": "The list of saved forms could not be loaded."
+			},
+			"addError": {
+				"title": "Failed to add form",
+				"body": "The selected form could not be added to the deployment."
+			}
+		},
 		"authentication": "Authentication",
 		"asAnotherUser": "As another user",
 		"username": "Username",

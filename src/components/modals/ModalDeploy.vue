@@ -77,6 +77,52 @@
 									@change="onAdditionalFilesSelected"
 								/>
 							</div>
+
+							<!-- Form picker panel (BPMN only) -->
+							<div v-if="isBpmn" class="border rounded p-2 mb-2">
+								<input
+									type="text"
+									class="form-control form-control-sm mb-2"
+									:placeholder="$t('deployForm.forms.search')"
+									v-model="formPickerSearch"
+								/>
+								<div v-if="formPickerLoading" class="text-center py-2">
+									<span class="spinner-border spinner-border-sm" role="status"></span>
+								</div>
+								<div v-else style="max-height: 200px; overflow-y: auto;">
+									<div
+										v-if="formPickerSearch.trim().length < 3"
+										class="text-muted small text-center py-2">
+										{{ $t('deployForm.forms.typeToSearch') }}
+									</div>
+									<div
+										v-else-if="formPickerList.length === 0"
+										class="text-muted small text-center py-2">
+										{{ $t('deployForm.forms.empty') }}
+									</div>
+									<div
+										v-for="form in formPickerList"
+										:key="form.id"
+										class="d-flex align-items-center gap-2 px-1 py-1 rounded"
+										:style="{ opacity: addedFormIds.has(form.formId) ? 0.5 : 1, cursor: addedFormIds.has(form.formId) ? 'default' : 'pointer' }"
+										@click="addFormResource(form)">
+										<span class="flex-grow-1 text-truncate small">{{ form.name || form.formId }}</span>
+										<span class="text-muted small text-nowrap flex-shrink-0">{{ form.formId }}</span>
+										<span
+											v-if="detectedFormRefs.includes(form.formId)"
+											class="badge text-bg-info small flex-shrink-0">
+											{{ $t('deployForm.forms.referenced') }}
+										</span>
+										<span
+											v-if="formPickerAddingId === form.id"
+											class="spinner-border spinner-border-sm flex-shrink-0"
+											role="status">
+										</span>
+										<span v-else-if="addedFormIds.has(form.formId)" class="mdi mdi-check text-success flex-shrink-0"></span>
+									</div>
+								</div>
+							</div>
+
 							<div
 								v-for="(entry, index) in additionalDeploymentResources"
 								:key="index"
@@ -207,9 +253,10 @@
 import * as bootstrap from 'bootstrap'
 
 import { deployProcess, startProcess } from '../../services/deployService'
+import { fetchForms, fetchFormById } from '../../services/formService'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { getProcessKeyFromBpmn, getTagValueFromXml, formatFileSize } from '../../utils.js'
+import { getProcessKeyFromBpmn, getTagValueFromXml, formatFileSize, getFormRefsFromBpmn } from '../../utils.js'
 import { isHttpOrHttpsUrl } from '../../utils/regexUtils'
 import { DEPLOY_STORAGE_KEYS } from '../../constants/diagramTypes'
 
@@ -235,6 +282,13 @@ const tenantID = ref('')
 const additionalDeploymentResources = ref([])
 const additionalFilesButton = ref(null)
 
+// Form picker
+const formPickerList = ref([])
+const formPickerLoading = ref(false)
+const formPickerAddingId = ref(null)
+const formPickerSearch = ref('')
+const detectedFormRefs = ref([])
+
 // Auth info
 const useCustomEndpoint = ref(false)
 const customEndpoint = ref(null)
@@ -257,6 +311,14 @@ let modalBootstrap = null
 const modalDeploy = ref(null)
 const disableDeployButton = ref(false)
 const isExecutable = ref(null)
+
+const isBpmn = computed(() => props.tabNavList?.type?.startsWith('bpmn'))
+
+const addedFormIds = computed(() =>
+	new Set(additionalDeploymentResources.value
+		.filter(r => r.resourceName.endsWith('.form'))
+		.map(r => r.resourceName.slice(0, -5)))
+)
 
 const canStart = computed(() => {
 	if (isExecutable.value === 'false') return false
@@ -477,12 +539,66 @@ const _getProcessKeyForDeployName = () => {
 	return foundExternalProcessKey
 }
 
+let _formPickerSearchTimer = null
+watch(formPickerSearch, (val) => {
+	clearTimeout(_formPickerSearchTimer)
+	formPickerList.value = []
+	if ((val?.trim().length ?? 0) < 3) {
+		formPickerLoading.value = false
+		return
+	}
+	formPickerLoading.value = true
+	_formPickerSearchTimer = setTimeout(async () => {
+		try {
+			formPickerList.value = await fetchForms(0, 10, val.trim()) ?? []
+		} catch {
+			emit('showToastMessage', { isSuccess: false, toastText: 'deployForm.forms.loadError', bodyTextAlt: '' })
+		} finally {
+			formPickerLoading.value = false
+		}
+	}, 500)
+})
+
+const addFormResource = async (form) => {
+	if (addedFormIds.value.has(form.formId)) return
+	formPickerAddingId.value = form.id
+	try {
+		const content = await fetchFormById(form.id)
+		const blob = new Blob([JSON.stringify(content)], { type: 'application/json' })
+		additionalDeploymentResources.value.push({ resourceName: `${form.formId}.form`, blob })
+	} catch {
+		emit('showToastMessage', { isSuccess: false, toastText: 'deployForm.forms.addError', bodyTextAlt: '' })
+	} finally {
+		formPickerAddingId.value = null
+	}
+}
+
+const _autoAddReferencedForms = async () => {
+	if (!isBpmn.value) return
+	const refs = getFormRefsFromBpmn(props.diagram)
+	if (!refs.length) return
+	for (const ref of refs) {
+		try {
+			const forms = await fetchForms(0, 1, ref)
+			const match = (forms ?? []).find(f => f.formId === ref)
+			if (!match || addedFormIds.value.has(match.formId)) continue
+			const content = await fetchFormById(match.id)
+			const blob = new Blob([JSON.stringify(content)], { type: 'application/json' })
+			additionalDeploymentResources.value.push({ resourceName: `${match.formId}.form`, blob })
+		} catch { /* silently skip — form may not exist in the modeler */ }
+	}
+}
+
 const _showModalComp = () => {
 	deploymentName.value = _getProcessKeyForDeployName() // set the name of the deploy
 	additionalDeploymentResources.value = []
+	formPickerList.value = []
+	formPickerSearch.value = ''
+	detectedFormRefs.value = isBpmn.value ? getFormRefsFromBpmn(props.diagram) : []
 	checkIfProcessStartable()
 	disableDeployButton.value = false
 	modalBootstrap.show()
+	_autoAddReferencedForms()
 }
 
 </script>

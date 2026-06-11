@@ -322,4 +322,17 @@ export const formatFileSize = (bytes) => {
 	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+export const getFormRefsFromBpmn = (xmlString) => {
+	if (!xmlString) return []
+	try {
+		const xmlDoc = new DOMParser().parseFromString(xmlString, 'text/xml')
+		const refs = new Set()
+		Array.from(xmlDoc.getElementsByTagName('*')).forEach(el => {
+			const ref = el.getAttributeNS('http://camunda.org/schema/1.0/bpmn', 'formRef')
+			if (ref) refs.add(ref)
+		})
+		return Array.from(refs)
+	} catch { return [] }
+}
+
 export { TYPEC7, TYPEDMN }
