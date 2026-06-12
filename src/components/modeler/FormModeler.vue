@@ -111,22 +111,7 @@ const emit = defineEmits([
 	'updateIsButtonDisabled',
 	'updateStoredLocalStorageTabNavList',
 ])
-const {
-	initializeFormEditor,
-	save,
-	importJson,
-	propertiesPanelComponent,
-	saveXmlAfterUpdate,
-	restartFormJs,
-	destroyFormJs,
-	getFormId,
-	formEditor,
-	formHistoryListComp,
-	activeVersion,
-	changeActiveVersion,
-	toggleVersionNotSaved,
-	toggleEnableSave,
-} = useForm(props, emit, canvas, propertyPanel)
+const { initializeFormEditor, save, importJson, propertiesPanelComponent, saveXmlAfterUpdate, restartFormJs, destroyFormJs, getFormId, formEditor, formHistoryListComp, activeVersion, changeActiveVersion, toggleVersionNotSaved, toggleEnableSave } = useForm(props, emit, canvas, propertyPanel)
 const { updateParentHeight, updateParentWidth,  parentWidth, changeWidth, canvasWidth, isVisiblePropertyPanel, togglePropertiesPanel } = usePropertiesPanel(props, emit, formContainer, resizableDiv, propertiesPanelComponent, propertyPanel)
 
 const VersionButtonComponent = inject('versionButtonComponent', null)
