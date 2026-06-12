@@ -149,21 +149,30 @@ watch(() => props.showModal, newValue => {
     }
 })
 
+const getItemSearchLabel = item => (item?.name ?? item?.formId ?? '').toString()
+
 const _onModalHidden = () => {
     inputValue.value = ''
     handleSearchInFormList() // Updates the list of items
 }
 
 const handleSearchInFormList = debounce(async () => {
+    const query = inputValue.value.toLowerCase()
+    
     if (props.typeOfSelector === 'templates') {
-        filteredData.value = props.rowTemplate.filter(form => form.name.toLowerCase().includes(inputValue.value.toLowerCase()) || form.id.toLowerCase().includes(inputValue.value.toLowerCase()))
+        filteredData.value = props.rowTemplate.filter(form =>
+            getItemSearchLabel(form).toLowerCase().includes(query)
+            || form.id?.toLowerCase().includes(query))
         return
     }
     else if (props.typeOfSelector === 'changeVersion') { // searching by version number
-        filteredData.value = props.rowTemplate.filter(form => form.name.toLowerCase().includes(inputValue.value.toLowerCase()) || form.version.toString().toLowerCase().includes(inputValue.value.toString().toLowerCase()))
+        filteredData.value = props.rowTemplate.filter(form =>
+            getItemSearchLabel(form).toLowerCase().includes(query)
+            || form.version?.toString().toLowerCase().includes(query))
         return
     }
-    filteredData.value = props.rowTemplate.filter(form => form.name.toLowerCase().includes(inputValue.value.toLowerCase()))
+    filteredData.value = props.rowTemplate.filter(form =>
+        getItemSearchLabel(form).toLowerCase().includes(query))
 }, 100)
 
 const _hideModal = () => modalBootstrap.value.hide()

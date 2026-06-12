@@ -14,7 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { nextTick, onBeforeUnmount, onMounted, ref, inject, watch } from "vue"
+import { nextTick, onBeforeUnmount, onMounted, ref, inject, watch } from 'vue'
 import { useStore } from 'vuex'
 import { FormEditor } from '@bpmn-io/form-js'
 import { saveForm, updateForm } from'../services/formService.js'
@@ -28,11 +28,35 @@ export default function useForm(props, emit, canvas, propertyPanel) {
     const checkSessionHook = inject('checkFormSessionHook', null)
     const createSessionHook = inject('createFormSessionHook', null)
     const closeSessionHook = inject('closeFormSessionHook', null)
+    const fetchFormSnapshotsHook = inject('fetchFormSnapshotsHook', null)
+    const formHistoryListComp = ref(null)
+    const formId = ref(null)
+    const activeVersion = ref(-1)
 
     let json = null
     if (!props.json) return
 
+    const getFormHistoryList = async () => {
+      if (!fetchFormSnapshotsHook || !formId.value) return null
+        const historyList = await fetchFormSnapshotsHook(formId.value)
+        formHistoryListComp.value = historyList
+        activeVersion.value = formHistoryListComp.value?.[0]?.version ?? -1
+        return formHistoryListComp.value
+    }
+
+    const changeActiveVersion = value => { activeVersion.value = value }
+
+    const toggleVersionNotSaved = (isEnabled, index) => {
+      emit('toggleVersionNotSaved', isEnabled, index)
+    }
+
+    const toggleEnableSave = (isEnabled, index) => {
+      emit('toggleEnableSave', isEnabled, index)
+    }
+
     onMounted(async()=> {
+      formId.value = props.tabElement.id
+      formHistoryListComp.value = await getFormHistoryList()
       if (checkSessionHook) await checkSessionHook(props.tabElement, props.tabElementIndex, false)
     })
 
@@ -119,6 +143,10 @@ export default function useForm(props, emit, canvas, propertyPanel) {
         updateFn: () => updateForm(props.tabElement.id, newFormId, json),
         toTabPayload: response => ({ processId: response.id, processName: response.formId, processKey: response.formId, type: 'form' }),
         sessionResponse,
+        afterSave: async response => {
+          formId.value = response.id
+          await getFormHistoryList()
+        },
       })
     }
 
@@ -169,7 +197,7 @@ export default function useForm(props, emit, canvas, propertyPanel) {
       return json?.id
     }
 
-      return { 
+      return {
         initializeFormEditor,
         importJson,
         saveXmlAfterUpdate,
@@ -179,5 +207,11 @@ export default function useForm(props, emit, canvas, propertyPanel) {
         getFormId,
         formEditor,
         propertiesPanelComponent,
+        formHistoryListComp,
+        activeVersion,
+        changeActiveVersion,
+        toggleVersionNotSaved,
+        toggleEnableSave,
+        getFormHistoryList,
     }
 }

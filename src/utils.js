@@ -65,6 +65,11 @@ export function decodeBase64ToUtf8(base64) {
 	return decoder.decode(byteArray)
 }
 
+export function getSnapshotContent(item, type) {
+	const field = type === 'form' ? 'formSchema' : 'diagram'
+	return decodeBase64ToUtf8(item[field])
+}
+
 export const getTagValueFromXml = (resXmlExternalUrl, xmlTag, xmlProperty) => {
 	const attributes = new DOMParser().parseFromString(resXmlExternalUrl, 'text/xml')
 	const processElement = attributes.querySelector(`*|${xmlTag}`)

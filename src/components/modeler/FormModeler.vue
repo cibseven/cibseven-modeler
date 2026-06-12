@@ -33,6 +33,14 @@
 				<template #leftButtons>
 					<slot name="menu" />
 				</template>
+				<template #rightButtons>
+					<div class="d-flex align-items-center">
+						<component v-if="VersionButtonComponent && formHistoryListComp?.length > 0"
+							:is="VersionButtonComponent" :history-list="formHistoryListComp" :active-version="activeVersion" type="form" />
+						<component v-if="CompareButtonComponent && formHistoryListComp?.length > 1"
+							:is="CompareButtonComponent" :history-list="formHistoryListComp" type="form" />
+					</div>
+				</template>
 			</MenuActionButtons>
 		</div>
 		<!-- Extension point for plugins -->
@@ -56,7 +64,7 @@ import PropertiesPanel from '../layout/PropertiesPanel.vue'
 import usePropertiesPanel from '../../composables/usePropertiesPanel'
 import useForm from '../../composables/useForm'
 
-import { ref, onMounted, computed, onUpdated, watch, nextTick } from 'vue'
+import { ref, onMounted, computed, onUpdated, watch, nextTick, inject, provide } from 'vue'
 import { getPlugin } from '../../plugins/pluginsConfig'
 
 const formTool = getPlugin('form-tools')
@@ -103,8 +111,33 @@ const emit = defineEmits([
 	'updateIsButtonDisabled',
 	'updateStoredLocalStorageTabNavList',
 ])
-const { initializeFormEditor, save, importJson, propertiesPanelComponent, saveXmlAfterUpdate, restartFormJs, destroyFormJs, getFormId, formEditor } = useForm(props, emit, canvas, propertyPanel)
+const {
+	initializeFormEditor,
+	save,
+	importJson,
+	propertiesPanelComponent,
+	saveXmlAfterUpdate,
+	restartFormJs,
+	destroyFormJs,
+	getFormId,
+	formEditor,
+	formHistoryListComp,
+	activeVersion,
+	changeActiveVersion,
+	toggleVersionNotSaved,
+	toggleEnableSave,
+} = useForm(props, emit, canvas, propertyPanel)
 const { updateParentHeight, updateParentWidth,  parentWidth, changeWidth, canvasWidth, isVisiblePropertyPanel, togglePropertiesPanel } = usePropertiesPanel(props, emit, formContainer, resizableDiv, propertiesPanelComponent, propertyPanel)
+
+const VersionButtonComponent = inject('versionButtonComponent', null)
+const CompareButtonComponent = inject('compareButtonComponent', null)
+
+provide('loadVersionHook', async (json, version) => {
+	await importJson(json)
+	toggleVersionNotSaved(true, props.tabElementIndex)
+	toggleEnableSave(false, props.tabElementIndex)
+	changeActiveVersion(version)
+})
 
 onMounted(async() => {
     initializeFormEditor(props.tabElement.id)
