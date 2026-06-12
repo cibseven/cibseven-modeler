@@ -65,6 +65,9 @@
 					<template #leftButtons>
 						<slot name="menu" />
 					</template>
+					<template v-if="AutosaveIndicatorComponent" #centerContent>
+						<component :is="AutosaveIndicatorComponent" :tab-element="props.tabElement" />
+					</template>
 					<template #rightButtons>
 						<div class="d-flex align-items-center">
 							<component v-if="VersionButtonComponent && processHistoryListComp?.length > 0"
@@ -105,6 +108,7 @@ import ConsolePanel from '../layout/ConsolePanel.vue'
 import MonacoConsole from '../monaco/MonacoConsole.vue'
 import MonacoThemeScope from '../layout/MonacoThemeScoped.vue'
 import useModeler from '../../composables/useModeler.js'
+import useAutosave from '../../composables/useAutosave.js'
 import usePropertiesPanel from '../../composables/usePropertiesPanel.js'
 import { getTagValueFromXml } from '../../utils.js'
 
@@ -209,6 +213,9 @@ const onConsolePanelVisibility = open => { isConsoleOpen.value = open }
 
 const VersionButtonComponent = inject('versionButtonComponent', null)
 const CompareButtonComponent = inject('compareButtonComponent', null)
+const autosaveOptions = inject('autosaveOptions', null)
+const AutosaveIndicatorComponent = inject('autosaveIndicatorComponent', null)
+const autosave = useAutosave(() => _saveDiagram(true), autosaveOptions)
 
 provide('loadVersionHook', async (xml, version) => {
 	const migratedXml = await migrateDiagram(xml)
@@ -270,6 +277,7 @@ onMounted(async () => {
 		if (viewer && !subscribedViewers.has(viewer)) {
 			viewer.on('commandStack.changed', () => {
 				emit('toggleEnableSave', true, props.tabElementIndex)
+				if (autosaveOptions?.enabled && props.tabElement.isSaved) autosave.schedule()
 			})
 			subscribedViewers.add(viewer)
 		}
@@ -322,6 +330,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+	autosave.cancel()
 	window.removeEventListener('resize', updateParentWidth, true)
 	window.removeEventListener('resize', updateParentHeight, true)
 	document.removeEventListener('fullscreenchange', onFullscreenChange)
@@ -420,7 +429,7 @@ const createObserver = divToObserve => {
 }
 
 
-const _saveDiagram = () => saveDecisionTable(dmnModeler, props.tabElement.type)
+const _saveDiagram = (isAutosave = false) => saveDecisionTable(dmnModeler, props.tabElement.type, isAutosave)
 
 const _saveXmlAfterUpdate = (isBpmn, updatedXml, tabElementIndex) => {
 	saveXmlAfterUpdate(false, updatedXml, tabElementIndex, dmnModeler)

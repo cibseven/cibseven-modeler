@@ -64,7 +64,10 @@
 				<template #leftButtons>
 					<slot name="menu" />
 				</template>
-				<template #rightButtons>
+				<template v-if="AutosaveIndicatorComponent" #centerContent>
+						<component :is="AutosaveIndicatorComponent" :tab-element="props.tabElement" />
+					</template>
+					<template #rightButtons>
 					<div class="d-flex align-items-center">
 						<component v-if="VersionButtonComponent && processHistoryListComp?.length > 0"
 							:is="VersionButtonComponent" :history-list="processHistoryListComp" :active-version="activeVersion" />
@@ -186,6 +189,7 @@ import { onMounted, onBeforeUnmount, inject, provide, ref, onUpdated, watch, com
 import { getPlugin } from '../../plugins/pluginsConfig'
 //composables
 import useModeler from '../../composables/useModeler.js'
+import useAutosave from '../../composables/useAutosave.js'
 import useCustomizedTemplateModal from '../../composables/customizedTemplateModal.js'
 import usePropertiesPanel from '../../composables/usePropertiesPanel'
 import useMonacoEditor from '../../composables/useMonacoEditor.js'
@@ -198,6 +202,9 @@ const bpmnTool = getPlugin('bpmn-tools')
 const monaco = inject('monaco')
 const extraBpmnModules = inject('extraBpmnModules', [])
 const bpmnModelerInitHook = inject('bpmnModelerInitHook', null)
+const autosaveOptions = inject('autosaveOptions', null)
+const AutosaveIndicatorComponent = inject('autosaveIndicatorComponent', null)
+const autosave = useAutosave(() => _saveDiagram(true), autosaveOptions)
 const divScriptTaskID = 'bio-properties-panel-scriptValue'
 const canvasWidth = ref(0)
 const canvasHeight = ref(44)
@@ -354,6 +361,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+	autosave.cancel()
 	document.removeEventListener('fullscreenchange', onFullscreenChange)
 })
 
@@ -454,6 +462,7 @@ const initializeModeler = async () => {
 		const name = info?.name || info?.id || null
 		if (name) emit('updateTabName', name, props.tabElementIndex)
 		_openCalledElementWhenCalActivity(e)
+		if (autosaveOptions?.enabled && props.tabElement.isSaved) autosave.schedule()
 	})
 
 	bpmnModeler.on('element.changed', async e => {
@@ -613,7 +622,7 @@ const _validate = async xml => {
 	validate(bpmnModeler, xml)
 }
 
-const _saveDiagram = async () => await saveProcess(bpmnModeler, typeOfDiagram, _setupDiagramFunctions, _updatetemplatesListButton)
+const _saveDiagram = async (isAutosave = false) => await saveProcess(bpmnModeler, typeOfDiagram, _setupDiagramFunctions, _updatetemplatesListButton, isAutosave)
 
 const _mapScriptLanguage = scriptFormat => {
 	// CIBseven script task languages: Groovy, JavaScript, JRuby (ruby), Jython (python).

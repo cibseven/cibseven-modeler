@@ -70,10 +70,10 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
 
    const { save: _sharedSave } = useDiagramSave(props, emit, { checkSessionHook, createSessionHook })
 
-  const saveDecisionTable = async (modeler, typeOfDiagram) => {
+  const saveDecisionTable = async (modeler, typeOfDiagram, isAutosave = false) => {
     let savedSessionResponse
     if (checkSessionHook) {
-      const { sessionResponse, forceSave } = await checkSessionHook(props.tabElement, props.tabElementIndex, true)
+      const { sessionResponse, forceSave } = await checkSessionHook(props.tabElement, props.tabElementIndex, !isAutosave, { silent: isAutosave })
       if (!forceSave) return
       savedSessionResponse = sessionResponse
     }
@@ -85,10 +85,10 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
     const storedProcessSelectedId = props.tabElement.id
     const storedProcessSelectedProcesskey = props.tabElement.key
     const newProcessName = dmn.name === '' || !props.tabElement.key === '' ? dmn.id : dmn.name
-    _save(storedProcessSelectedId, newProcessName, storedProcessSelectedProcesskey, newProcessKey, xml, blob, typeOfDiagram, null, savedSessionResponse)
+    _save(storedProcessSelectedId, newProcessName, storedProcessSelectedProcesskey, newProcessKey, xml, blob, typeOfDiagram, null, savedSessionResponse, isAutosave)
   }
 
-  const _save = (storedProcessSelectedId, newProcessName, storedProcessSelectedProcesskey, newProcessKey, xml, blob, typeOfDiagram, functionToExecute, sessionResponse) => {
+  const _save = (storedProcessSelectedId, newProcessName, storedProcessSelectedProcesskey, newProcessKey, xml, blob, typeOfDiagram, functionToExecute, sessionResponse, isAutosave = false) => {
     return _sharedSave({
       newName: newProcessName,
       newKey: newProcessKey,
@@ -106,13 +106,14 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
         await getProcessHistoryList()
       },
       functionToExecute,
+      isAutosave,
     })
   }
 
-  const saveProcess = async (modeler, typeOfDiagram, _setupDiagramFunctions, functionToExecute) => {
+  const saveProcess = async (modeler, typeOfDiagram, _setupDiagramFunctions, functionToExecute, isAutosave = false) => {
     let sessionResponse = null
     if (checkSessionHook) {
-      const result = await checkSessionHook(props.tabElement, props.tabElementIndex, true)
+      const result = await checkSessionHook(props.tabElement, props.tabElementIndex, !isAutosave, { silent: isAutosave })
       if (!result.forceSave) return
       sessionResponse = result.sessionResponse
     }
@@ -125,7 +126,7 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
     const storedProcessSelectedProcesskey = props.tabElement.key
     const newProcessName = processInformation.value.name === '' || !processInformation.value.name ? processInformation.value.id :processInformation.value.name // name of the process from the properties panel, if the diagram doesnt have a name it would be the same as the id
     const newProcessKey = processInformation.value.id // id of the process from the properties panel
-    _save(storedProcessSelectedId, newProcessName, storedProcessSelectedProcesskey, newProcessKey, xml, blob, typeOfDiagram, functionToExecute, sessionResponse)
+    _save(storedProcessSelectedId, newProcessName, storedProcessSelectedProcesskey, newProcessKey, xml, blob, typeOfDiagram, functionToExecute, sessionResponse, isAutosave)
   }
 
   const getProcessHistoryList = async () => {

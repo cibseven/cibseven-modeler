@@ -56,6 +56,13 @@
                 <span class="mdi mdi-24px" :class="isSaving ? 'mdi-loading mdi-spin' : 'mdi-content-save-outline'"></span>
             </button>
         </div>
+        <div v-if="AutosaveToggleComponent" v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
+            <component
+                :is="AutosaveToggleComponent"
+                :tab-element="props.tabElement"
+                :is-saving="isSaving"
+            />
+        </div>
 
         <!-- Separator -->
         <div class="btn-menu d-flex align-items-center mx-1 opacity-50">
@@ -163,6 +170,7 @@ const props = defineProps({
 )
 const extraDownloadLinks = inject('extraDownloadLinks', null)
 const BpmnFilterButtonComponent = inject('bpmnFilterButtonComponent', null)
+const AutosaveToggleComponent = inject('autosaveToggleComponent', null)
 const config = inject('config', {})
 const isBpmnTab = computed(() => props.tabElement.type.startsWith('bpmn'))
 const emit = defineEmits([

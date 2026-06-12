@@ -14,6 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+import { inject } from 'vue'
 import { checkBeforeAction } from '../utils.js'
 
 /**
@@ -25,6 +26,8 @@ import { checkBeforeAction } from '../utils.js'
  */
 export default function useDiagramSave(props, emit, sessionHooks = {}) {
   const { createSessionHook = null } = sessionHooks
+  // EE-only: notified after a successful autosave so it can surface a "saved at" indicator. No-op in OSS.
+  const autosaveHook = inject('autosaveHook', null)
 
   /**
    * Persist a diagram (create or update) and emit the common success/error events.
@@ -60,6 +63,7 @@ export default function useDiagramSave(props, emit, sessionHooks = {}) {
     sessionResponse,
     afterSave = null,
     functionToExecute = null,
+    isAutosave = false,
   }) => {
     const keyToCompare = props.tabElement.isSaved ? storedKey : ''
     const toastErrorMessage = checkBeforeAction(newKey, keyToCompare, storeStateSlice, itemKeyField)
@@ -74,13 +78,14 @@ export default function useDiagramSave(props, emit, sessionHooks = {}) {
         const response = await updateFn()
         if (response) {
           emit('updateStoredLocalStorageTabNavList', toTabPayload(response), props.tabElementIndex, xml)
-          emit('showToastMessage', { isSuccess: true, toastText: 'toastUpdateSuccessful', bodyTextAlt: '' })
+          if (!isAutosave) emit('showToastMessage', { isSuccess: true, toastText: 'toastUpdateSuccessful', bodyTextAlt: '' })
           emit('toggleEnableSave', false, props.tabElementIndex)
           emit('toggleVersionNotSaved', false, props.tabElementIndex)
           if (afterSave) await afterSave(response)
           if (createSessionHook && sessionResponse?.message === 'NO_SESSION') {
             createSessionHook(response, blob, props.tabElementIndex, props.tabElement)
           }
+          if (isAutosave && autosaveHook) autosaveHook(props.tabElement, Date.now())
           if (functionToExecute) functionToExecute(xml)
           return true
         }
