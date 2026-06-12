@@ -29,6 +29,7 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
   const createSessionHook = inject('createSessionHook', null)
   const closeSessionHook = inject('closeSessionHook', null)
   const fetchSnapshotsHook = inject('fetchSnapshotsHook', null)
+  const autosaveHook = inject('autosaveHook', null)
   const processHistoryListComp = ref(null)
   const processId = ref(null)
   const processInformation = ref(null)
@@ -74,7 +75,10 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
     let savedSessionResponse
     if (checkSessionHook) {
       const { sessionResponse, forceSave } = await checkSessionHook(props.tabElement, props.tabElementIndex, !isAutosave, { silent: isAutosave })
-      if (!forceSave) return
+      if (!forceSave) {
+        if (isAutosave && autosaveHook) autosaveHook(props.tabElement, { state: 'skipped', reason: 'locked' })
+        return
+      }
       savedSessionResponse = sessionResponse
     }
     const dmn = modeler.getViews()[0]
@@ -114,7 +118,10 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
     let sessionResponse = null
     if (checkSessionHook) {
       const result = await checkSessionHook(props.tabElement, props.tabElementIndex, !isAutosave, { silent: isAutosave })
-      if (!result.forceSave) return
+      if (!result.forceSave) {
+        if (isAutosave && autosaveHook) autosaveHook(props.tabElement, { state: 'skipped', reason: 'locked' })
+        return
+      }
       sessionResponse = result.sessionResponse
     }
   

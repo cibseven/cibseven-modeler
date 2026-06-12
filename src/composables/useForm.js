@@ -30,6 +30,7 @@ export default function useForm(props, emit, canvas, propertyPanel) {
     const createSessionHook = inject('createFormSessionHook', null)
     const closeSessionHook = inject('closeFormSessionHook', null)
     const autosaveOptions = inject('autosaveOptions', null)
+    const autosaveHook = inject('autosaveHook', null)
     const autosave = useAutosave(() => save(true), autosaveOptions)
 
     let json = null
@@ -103,7 +104,10 @@ export default function useForm(props, emit, canvas, propertyPanel) {
       let sessionResponse = null
       if (checkSessionHook) {
         const result = await checkSessionHook(props.tabElement, props.tabElementIndex, !isAutosave, { silent: isAutosave })
-        if (!result.forceSave) return false
+        if (!result.forceSave) {
+          if (isAutosave && autosaveHook) autosaveHook(props.tabElement, { state: 'skipped', reason: 'locked' })
+          return false
+        }
         sessionResponse = result.sessionResponse
       }
 

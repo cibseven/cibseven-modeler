@@ -85,7 +85,8 @@ export default function useDiagramSave(props, emit, sessionHooks = {}) {
           if (createSessionHook && sessionResponse?.message === 'NO_SESSION') {
             createSessionHook(response, blob, props.tabElementIndex, props.tabElement)
           }
-          if (isAutosave && autosaveHook) autosaveHook(props.tabElement, Date.now())
+          // Report autosave status (saved); a manual save clears any stale "skipped" state.
+          if (autosaveHook) autosaveHook(props.tabElement, isAutosave ? { state: 'saved', at: Date.now() } : null)
           if (functionToExecute) functionToExecute(xml)
           return true
         }
