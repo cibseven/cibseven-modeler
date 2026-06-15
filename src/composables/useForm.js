@@ -17,7 +17,7 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, inject, watch } from 'vue'
 import { useStore } from 'vuex'
 import { FormEditor } from '@bpmn-io/form-js'
-import { saveForm, updateForm } from'../services/formService.js'
+import { saveForm, updateForm } from '../services/formService.js'
 import useDiagramSave from './useDiagramSave.js'
 
 export default function useForm(props, emit, canvas, propertyPanel) {
@@ -36,13 +36,15 @@ export default function useForm(props, emit, canvas, propertyPanel) {
     let json = null
     if (!props.json) return
 
-    const getFormHistoryList = async () => {
-      if (!fetchFormSnapshotsHook || !formId.value) return null
-        const historyList = await fetchFormSnapshotsHook(formId.value)
-        formHistoryListComp.value = historyList
-        activeVersion.value = formHistoryListComp.value?.[0]?.version ?? -1
-        return formHistoryListComp.value
-    }
+const getFormHistoryList = async () => {
+  if (!fetchFormSnapshotsHook || !formId.value) return null
+
+  const historyList = await fetchFormSnapshotsHook(formId.value)
+  formHistoryListComp.value = historyList
+  activeVersion.value = formHistoryListComp.value?.[0]?.version ?? -1
+
+  return formHistoryListComp.value
+}
 
     const changeActiveVersion = value => { activeVersion.value = value }
 
