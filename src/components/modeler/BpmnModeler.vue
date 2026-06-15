@@ -992,6 +992,34 @@ svg {
 	width: 100%;
 }
 
+/* The template-state notices (not-found / outdated / deprecated / incompatible)
+   render their message inside a DropdownButton popup anchored to the narrow
+   header button and capped at max-width: 240px, so the message ends up in a tiny
+   box. Make the button position: static so the popup anchors to the full-width,
+   sticky group header instead (its existing min-width then spans the panel),
+   lift the width cap, and let the text fill the popup (it was pinned at 216px). */
+.bio-properties-panel-dropdown-button.bio-properties-panel-template-not-found,
+.bio-properties-panel-dropdown-button.bio-properties-panel-template-update-available,
+.bio-properties-panel-dropdown-button.bio-properties-panel-deprecated-template,
+.bio-properties-panel-dropdown-button.bio-properties-panel-template-incompatible {
+	position: static;
+}
+
+.bio-properties-panel-template-not-found .bio-properties-panel-dropdown-button__menu,
+.bio-properties-panel-template-update-available .bio-properties-panel-dropdown-button__menu,
+.bio-properties-panel-deprecated-template .bio-properties-panel-dropdown-button__menu,
+.bio-properties-panel-template-incompatible .bio-properties-panel-dropdown-button__menu {
+	left: 5px;
+	max-width: none;
+}
+
+.bio-properties-panel-template-not-found-text,
+.bio-properties-panel-template-update-available-text,
+.bio-properties-panel-deprecated-template-text,
+.bio-properties-panel-template-incompatible-text {
+	width: 100% !important;
+}
+
 input[name="historyTimeToLive"].is-invalid {
 	border-color: #dc3545 !important;
 	background-color: #fee !important;

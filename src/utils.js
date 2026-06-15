@@ -120,9 +120,12 @@ export const checkJSON = (xml, template) => {
 		const modelerTemplate = element.getAttributeNS(camundaNamespace, 'modelerTemplate')
 		if (modelerTemplate) {
 			const tagName = element.nodeName.replace(/\d+/g, '') // clean tag name
+			const id = element.getAttribute('id')
 			nodesArray.push({
-				id: element.getAttribute('id'),
-				name: element.getAttribute('name'),
+				id,
+				// Fall back to the element id so name-less elements still show a
+				// meaningful, searchable label instead of an empty row.
+				name: element.getAttribute('name') || id,
 				typeOfTask: tagName,
 				nameOfTemplate: modelerTemplate,
 			})

@@ -428,6 +428,30 @@ describe('Utils', () => {
             expect(result.length).toBe(1)
             expect(result[0].nameOfTemplate).toBe('unknown-template')
         })
+
+        it('uses the element name when present', () => {
+            const xml = `<?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                    xmlns:camunda="http://camunda.org/schema/1.0/bpmn">
+                    <process id="proc">
+                        <serviceTask id="t1" name="My Task" camunda:modelerTemplate="unknown-template" />
+                    </process>
+                </definitions>`
+            const result = checkJSON(xml, templates)
+            expect(result[0].name).toBe('My Task')
+        })
+
+        it('falls back to the element id when the name attribute is missing', () => {
+            const xml = `<?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                    xmlns:camunda="http://camunda.org/schema/1.0/bpmn">
+                    <process id="proc">
+                        <serviceTask id="t1" camunda:modelerTemplate="unknown-template" />
+                    </process>
+                </definitions>`
+            const result = checkJSON(xml, templates)
+            expect(result[0].name).toBe('t1')
+        })
     })
 
     describe('getFormRefsFromBpmn', () => {
