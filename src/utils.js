@@ -55,21 +55,6 @@ const checkIfProcessExists = (storedList, property, value) => {
 	})
 }
 
-export function decodeBase64ToUtf8(base64) {
-	const binaryString = atob(base64)
-	const byteArray = new Uint8Array(binaryString.length)
-	for (let i = 0; i < binaryString.length; i++) {
-		byteArray[i] = binaryString.charCodeAt(i)
-	}
-	const decoder = new TextDecoder('utf-8')
-	return decoder.decode(byteArray)
-}
-
-export function getSnapshotContent(item, type) {
-	const field = type === 'form' ? 'formSchema' : 'diagram'
-	return decodeBase64ToUtf8(item[field])
-}
-
 export const getTagValueFromXml = (resXmlExternalUrl, xmlTag, xmlProperty) => {
 	const attributes = new DOMParser().parseFromString(resXmlExternalUrl, 'text/xml')
 	const processElement = attributes.querySelector(`*|${xmlTag}`)
@@ -193,8 +178,6 @@ export async function loadFromPublic(folder, file) {
 export const parseXml = (xmlString) => {
 	return new DOMParser().parseFromString(xmlString, 'text/xml')
 }
-
-export const base64Decode = decodeBase64ToUtf8
 
 export const applyTheme = (theme) => {
 	document.documentElement.setAttribute('data-bs-theme', theme)

@@ -100,7 +100,6 @@ describe('library.js — public API contract', () => {
 
     describe('Utils', () => {
         it('exports parseXml', expectExport('parseXml'))
-        it('exports base64Decode', expectExport('base64Decode'))
         it('exports applyTheme', expectExport('applyTheme'))
         it('exports getTheme', expectExport('getTheme'))
         it('exports loadFromPublic', expectExport('loadFromPublic'))
