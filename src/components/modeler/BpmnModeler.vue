@@ -993,12 +993,11 @@ svg {
 }
 
 /* The template-state notices (not-found / outdated / deprecated / incompatible)
-   render their message inside a DropdownButton popup. That popup anchors to the
-   narrow header button (position: relative), so its width collapses to the
-   button (min-width: calc(100% - 10px)) and is capped at max-width: 240px — the
-   message ends up in a tiny box. Make the button position: static so the popup
-   instead anchors to the full-width, sticky group header, and stretch it
-   edge-to-edge so it tracks the (resizable) panel width and the text wraps. */
+   render their message inside a DropdownButton popup anchored to the narrow
+   header button and capped at max-width: 240px, so the message ends up in a tiny
+   box. Make the button position: static so the popup anchors to the full-width,
+   sticky group header instead (its existing min-width then spans the panel),
+   lift the width cap, and let the text fill the popup (it was pinned at 216px). */
 .bio-properties-panel-dropdown-button.bio-properties-panel-template-not-found,
 .bio-properties-panel-dropdown-button.bio-properties-panel-template-update-available,
 .bio-properties-panel-dropdown-button.bio-properties-panel-deprecated-template,
@@ -1010,11 +1009,7 @@ svg {
 .bio-properties-panel-template-update-available .bio-properties-panel-dropdown-button__menu,
 .bio-properties-panel-deprecated-template .bio-properties-panel-dropdown-button__menu,
 .bio-properties-panel-template-incompatible .bio-properties-panel-dropdown-button__menu {
-	top: 100%;
 	left: 5px;
-	right: 5px;
-	width: auto;
-	min-width: 0;
 	max-width: none;
 }
 
@@ -1023,8 +1018,6 @@ svg {
 .bio-properties-panel-deprecated-template-text,
 .bio-properties-panel-template-incompatible-text {
 	width: 100% !important;
-	box-sizing: border-box;
-	overflow-wrap: anywhere;
 }
 
 input[name="historyTimeToLive"].is-invalid {
