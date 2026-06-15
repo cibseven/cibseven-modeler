@@ -232,6 +232,8 @@ export default {
       const onMouseUp = () => {
         this.resizing = false
         this.skipClick = true
+        // Reset on the next tick so the click event fired right after mouseup
+        // (end of a column resize) is ignored, not the next genuine click.
         setTimeout(() => {
           this.skipClick = false
         }, 0)
