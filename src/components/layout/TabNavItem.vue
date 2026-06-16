@@ -27,7 +27,9 @@
         </div>
         <div v-if="!props.isDashboard && props.isVisible" class="nav-item d-inline-flex align-items-center">
             <div class="nav-link nav-icon d-inline-flex p-0 calculated-tab"
-                :class="{ 'active': props.activeTab === props.index }">
+                :class="{ 'active': props.activeTab === props.index }"
+                @mousedown.middle.prevent
+                @auxclick.middle="checkIfProcessIsSaved">
                 <div ref="tabItem" :id="`process${props.keyOfTabNav}-tab`" data-bs-toggle="tab" @keyup.enter.stop="selectTab" @click.stop="selectTab" :title="tabTitle"
                     class="ps-4" :style="{ maxWidth: props.maxTabItemWidth + 'px' }" style="vertical-align: middle;line-height: 38px; height: 39px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;"
                     :data-bs-target="`#process${props.keyOfTabNav}-tab-pane`" role="tab"
