@@ -17,11 +17,11 @@
 <template>
     <div class="m-0 p-0">
         <div v-if="props.isDashboard" class="nav-item bg-light dashboard" role="none" @keyup.enter.stop="selectTab" @click.stop="selectTab">
-            <div ref="tabItem" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard-tab-pane"
+            <div ref="tabItem" id="dashboard-tab"
                 style="height: 41px;" :class="{ 'active': props.activeTab === props.index }" role="tab"
                 class="nav-link dashboard nav-icon d-flex align-items-center" aria-labelledby="dashboard-tab" aria-controls="dashboard-tab-pane"
-                tabindex="0" aria-selected="true">
-                    <span :class="props.spanIconClass"></span>
+                tabindex="0" :aria-selected="props.activeTab === props.index">
+                    <span :class="props.spanIconClass" aria-hidden="true"></span>
             </div>
 
         </div>
@@ -30,9 +30,9 @@
                 :class="{ 'active': props.activeTab === props.index }"
                 @mousedown.middle.prevent
                 @auxclick.middle="checkIfProcessIsSaved">
-                <div ref="tabItem" :id="`process${props.keyOfTabNav}-tab`" data-bs-toggle="tab" @keyup.enter.stop="selectTab" @click.stop="selectTab" :title="tabTitle"
+                <div ref="tabItem" :id="`process${props.keyOfTabNav}-tab`" @keyup.enter.stop="selectTab" @click.stop="selectTab" :title="tabTitle"
                     class="ps-4" :style="{ maxWidth: props.maxTabItemWidth + 'px' }" style="vertical-align: middle;line-height: 38px; height: 39px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;"
-                    :data-bs-target="`#process${props.keyOfTabNav}-tab-pane`" role="tab"
+                    role="tab"
                     :aria-labelledby="`process${props.keyOfTabNav}-tab`"
                     :aria-controls="`process${props.keyOfTabNav}-tab-pane`" tabindex="0"
                     :aria-selected="props.activeTab === props.index">

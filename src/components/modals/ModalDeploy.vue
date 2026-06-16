@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 <template>
-	<div class="modal fade" ref="modalDeploy" tabindex="-1" aria-hidden="true">
+	<div class="modal fade" ref="modalDeploy" tabindex="-1" aria-hidden="true" aria-labelledby="deployModalLabel">
 		<div class="modal-dialog" id="modal">
 			<div class="modal-content">
 				<div class="modal-header align-items-center">
@@ -262,7 +262,7 @@ import * as bootstrap from 'bootstrap'
 import { deployProcess, startProcess } from '../../services/deployService'
 import { fetchForms, fetchFormById } from '../../services/formService'
 import { debounce } from 'min-dash'
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getProcessKeyFromBpmn, getTagValueFromXml, formatFileSize, getFormRefsFromBpmn } from '../../utils.js'
 import { isHttpOrHttpsUrl } from '../../utils/regexUtils'
@@ -282,6 +282,7 @@ const emit = defineEmits([
 ])
 
 const { t } = useI18n()
+const announce = inject('announce', () => {})
 
 // Deployment info
 const deploymentName = ref('')
@@ -426,6 +427,7 @@ const _validateAdditionalDeploymentResources = mainResourceName => {
 
 const deploy = async (silent = false) => {
 	disableDeployButton.value = true
+	announce(t('a11y.deploying'))
 
 	let type = 'dmn'
 	if (props.tabNavList.type.startsWith('bpmn')) {

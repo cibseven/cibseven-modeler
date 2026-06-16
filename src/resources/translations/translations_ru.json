@@ -143,7 +143,14 @@
     "skipAll": "Пропустить все",
     "undo": "Отменить",
     "redo": "Повторить",
-    "closeAllTabs": "Закрыть все вкладки"
+    "closeAllTabs": "Закрыть все вкладки",
+    "viewXml": "Показать XML",
+    "viewDiagram": "Показать диаграмму",
+    "outdatedTemplates": "Устаревшие шаблоны"
+  },
+  "a11y": {
+    "deploying": "Развёртывание…",
+    "saving": "Сохранение…"
   },
   "scriptEditorModal": {
     "title": "Редактировать скрипт"

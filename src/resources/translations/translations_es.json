@@ -143,7 +143,14 @@
     "skipAll": "Omitir todo",
     "undo": "Deshacer",
     "redo": "Rehacer",
-    "closeAllTabs": "Cerrar todas las pestañas"
+    "closeAllTabs": "Cerrar todas las pestañas",
+    "viewXml": "Ver XML",
+    "viewDiagram": "Ver diagrama",
+    "outdatedTemplates": "Plantillas obsoletas"
+  },
+  "a11y": {
+    "deploying": "Desplegando…",
+    "saving": "Guardando…"
   },
   "scriptEditorModal": {
     "title": "Editar script"

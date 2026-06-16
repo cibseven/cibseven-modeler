@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 <template>
-  <div class="modal fade" ref="notificationModal" tabindex="-1" aria-hidden="true">
+  <div class="modal fade" ref="notificationModal" tabindex="-1" aria-hidden="true" :aria-label="$t('searchElementTemplates.searchInput')">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-body">

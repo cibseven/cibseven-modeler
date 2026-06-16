@@ -143,7 +143,14 @@
 		"skipAll": "Skip All",
 		"undo": "Undo",
 		"redo": "Redo",
-		"closeAllTabs": "Close all tabs"
+		"closeAllTabs": "Close all tabs",
+		"viewXml": "View XML",
+		"viewDiagram": "View diagram",
+		"outdatedTemplates": "Outdated templates"
+	},
+	"a11y": {
+		"deploying": "Deploying…",
+		"saving": "Saving…"
 	},
 	"scriptEditorModal": {
 		"title": "Edit script"

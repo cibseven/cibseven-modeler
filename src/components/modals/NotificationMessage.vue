@@ -16,11 +16,11 @@
 -->
 <template>
     <teleport to="body">
-        <div class="modal fade" ref="notificationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal fade" ref="notificationModal" tabindex="-1" aria-hidden="true" :aria-labelledby="titleId">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <slot name="title" />
+                        <span :id="titleId"><slot name="title" /></span>
                         <button type="button" class="btn-close" @click.prevent="() => closeModal(false)"
                             aria-label="Close"></button>
                     </div>
@@ -42,7 +42,9 @@
 
 <script setup>
 import * as bootstrap from 'bootstrap'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, useId } from 'vue'
+
+const titleId = useId()
 
 let modalBootstrap = null
 let resolvePromise = null
