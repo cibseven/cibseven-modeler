@@ -143,7 +143,14 @@
     "skipAll": "Alle überspringen",
     "undo": "Rückgängig",
     "redo": "Wiederholen",
-    "closeAllTabs": "Alle Tabs schließen"
+    "closeAllTabs": "Alle Tabs schließen",
+    "viewXml": "XML anzeigen",
+    "viewDiagram": "Diagramm anzeigen",
+    "outdatedTemplates": "Veraltete Vorlagen"
+  },
+  "a11y": {
+    "deploying": "Wird bereitgestellt…",
+    "saving": "Wird gespeichert…"
   },
   "scriptEditorModal": {
     "title": "Skript bearbeiten"

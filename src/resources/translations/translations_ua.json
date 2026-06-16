@@ -143,7 +143,14 @@
     "skipAll": "Пропустити все",
     "undo": "Скасувати",
     "redo": "Повторити",
-    "closeAllTabs": "Закрити всі вкладки"
+    "closeAllTabs": "Закрити всі вкладки",
+    "viewXml": "Показати XML",
+    "viewDiagram": "Показати діаграму",
+    "outdatedTemplates": "Застарілі шаблони"
+  },
+  "a11y": {
+    "deploying": "Розгортання…",
+    "saving": "Збереження…"
   },
   "scriptEditorModal": {
     "title": "Редагувати скрипт"

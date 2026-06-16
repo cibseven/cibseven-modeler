@@ -15,11 +15,11 @@
    limitations under the License.
 -->
 <template>
-    <div class="modal fade" ref="modalEl" tabindex="-1">
+    <div class="modal fade" ref="modalEl" tabindex="-1" aria-hidden="true" :aria-labelledby="titleId">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5">{{ $t('modalImportedFile.title', { item: itemLabel, name: modalData?.name ?? '' }) }}</h1>
+                    <h1 class="modal-title fs-5" :id="titleId">{{ $t('modalImportedFile.title', { item: itemLabel, name: modalData?.name ?? '' }) }}</h1>
                     <button type="button" class="btn-close" @click.prevent="dismiss" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -76,7 +76,9 @@
 
 <script setup>
 import * as bootstrap from 'bootstrap'
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, useId } from 'vue'
+
+const titleId = useId()
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()

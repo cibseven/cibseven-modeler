@@ -37,9 +37,9 @@
                 <li class="nav-item dropdown tab-dropdown">
                     <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button"
                         style="height: 40px; border-color: #CCD7E4;" aria-expanded="false"><span class="visually-hidden">{{ $t('buttons.moreTabs') }}</span></a>
-                    <ul class="dropdown-menu">
+                    <ul class="dropdown-menu" role="menu">
                         <li v-for="(navItem, index) in hiddenItems" :key="navItem.id">
-                            <a class="dropdown-item d-flex align-items-center gap-2" href="#" @click.prevent="selectHiddenTab(index)">
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="#" role="menuitem" @click.prevent="selectHiddenTab(index)">
                                 <span v-if="navItem.canSave" class="mdi mdi-18px mdi-circle-medium text-warning" :title="$t('tabs.unsavedChanges')" :aria-label="$t('tabs.unsavedChanges')"></span>
                                 {{ navItem.name !== 'undefined' && navItem.name !== '' ? navItem.name : '(' + navItem.key + ')'
                                 }}
@@ -52,8 +52,8 @@
             <div class="flex-grow-1 border-bottom"></div>
             <div v-if="props.tabNavList.length > 0" class="d-flex align-items-center px-3 border-bottom flex-shrink-0">
                 <button type="button" class="btn btn-sm btn-link text-muted p-0 lh-1"
-                    :title="$t('buttons.closeAllTabs')" @click="handleCloseAll">
-                    <span class="mdi mdi-close-box-multiple-outline mdi-18px"></span>
+                    :title="$t('buttons.closeAllTabs')" :aria-label="$t('buttons.closeAllTabs')" @click="handleCloseAll">
+                    <span class="mdi mdi-close-box-multiple-outline mdi-18px" aria-hidden="true"></span>
                 </button>
             </div>
         </div>

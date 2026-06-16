@@ -15,11 +15,11 @@
    limitations under the License.
 -->
 <template>
-    <div class="modal fade" ref="modalAcceptCancelMessage" tabindex="-1" :aria-hidden="!showModal">
+    <div class="modal fade" ref="modalAcceptCancelMessage" tabindex="-1" :aria-hidden="!showModal" :aria-labelledby="titleId">
         <div class="modal-dialog p-2 bg-transparent">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5">{{ props.title }}</h1>
+                    <h1 class="modal-title fs-5" :id="titleId">{{ props.title }}</h1>
                     <button type="button" class="btn-close" @click.prevent="handleCloseMessage" data-bs-dismiss="modal"
                         aria-label="Close"></button>
                 </div>
@@ -40,8 +40,9 @@
 
 <script setup>
 import * as bootstrap from 'bootstrap'
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, useId } from 'vue'
 
+const titleId = useId()
 const modalAcceptCancelMessage = ref(null)
 const emit = defineEmits([
     'hideModal',

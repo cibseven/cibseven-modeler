@@ -177,6 +177,9 @@
 		@modalClosed="() => resolveConflict('skip')"
 		@modalHidden="onConflictModalHidden">
 	</ImportConflictModal>
+	<!-- Polite live region: announces transient async states (loading, deploying, saving)
+	     to assistive tech. Success/error completion is announced by the toast (role="alert"). -->
+	<div class="visually-hidden" role="status" aria-live="polite" aria-atomic="true">{{ statusMessage }}</div>
 	</div>
 </template>
 
@@ -214,6 +217,18 @@ import { DIAGRAM_TYPE, SKIP_CREATION_MODAL_KEY } from '../../constants/diagramTy
 // This is necessary when used as a library since the host app doesn't provide monaco
 monaco.editor.setTheme('vs')
 provide('monaco', monaco)
+
+// Polite live-region announcer for transient async states. Children call the
+// injected `announce(message)`; clearing first guarantees re-announcement when
+// the same message is sent twice in a row.
+const statusMessage = ref('')
+let _announceTimer = null
+const announce = message => {
+	statusMessage.value = ''
+	if (_announceTimer) clearTimeout(_announceTimer)
+	_announceTimer = setTimeout(() => { statusMessage.value = message }, 50)
+}
+provide('announce', announce)
 
 const store = useStore()
 const route = useRoute()
@@ -291,6 +306,7 @@ onMounted(async () => {
 onUnmounted(() => {
 	window.removeEventListener('resize', resizeTabWindow)
 	window.removeEventListener('keydown', _handleGlobalKeydown)
+	if (_announceTimer) clearTimeout(_announceTimer)
 })
 
 watch(() => activeTab.value, async newValue => { // when the tab is selected it will resize the tabnav

@@ -15,11 +15,11 @@
    limitations under the License.
 -->
 <template>
-    <div class="modal fade" ref="modalNewDiagram" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" ref="modalNewDiagram" tabindex="-1" aria-hidden="true" :aria-labelledby="titleId">
         <div class="modal-dialog" id="modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title fs-5">{{ modalNewDiagramText.title }}</h5>
+                    <h5 class="modal-title fs-5" :id="titleId">{{ modalNewDiagramText.title }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
                     </button>
                 </div>
@@ -67,7 +67,9 @@
 
 <script setup>
 import * as bootstrap from 'bootstrap'
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, useId } from 'vue'
+
+const titleId = useId()
 import { useStore } from 'vuex'
 import { useI18n } from 'vue-i18n'
 import { SKIP_CREATION_MODAL_KEY } from '../../constants/diagramTypes.js'
