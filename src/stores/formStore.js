@@ -29,7 +29,8 @@ const mutations = {
     state.forms = forms
   },
   setCurrentForm(state, form) {
-    state.formSelected = JSON.stringify(form.formSelected)
+    // Already serialized by the action; don't re-stringify (would double-encode).
+    state.formSelected = form.formSelected
   },
   setCurrentFormId(state, formId) {
     state.formSelectedId = formId
