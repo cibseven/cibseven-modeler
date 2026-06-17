@@ -244,6 +244,10 @@
     <AddElementTemplateModal
       ref="addElementTemplateModal"
       @templateCreated="handleTemplateCreated" />
+
+    <!-- Standalone toast: this view is mounted outside the CibsevenModeler tree,
+         so it surfaces its own client-side errors instead of emitting upward. -->
+    <ToastMessage ref="toastRef" v-bind="toastProps" />
   </div>
 </template>
 
@@ -255,9 +259,15 @@ import CibsevenTable from '../CibsevenTable.vue'
 import { categorizeTemplates } from './elementTemplateUtils';
 import AddElementTemplateModal from './AddElementTemplateModal.vue';
 import CategorizedTemplateView from './CategorizedTemplateView.vue';
+import ToastMessage from '../messages/ToastMessage.vue'
+import useToast from '../../composables/useToast.js'
 
 const config = inject('config')
 const store = useStore()
+
+// Client-side error surfacing (export/parse). Backend ops are surfaced by the
+// host's global ErrorDialog via the axios interceptor — see utils/toast.js.
+const { toastRef, toastProps, showError } = useToast()
 
 const searchInput = ref('')
 const viewMode = ref('table')
@@ -349,9 +359,10 @@ const toggleTemplateVisibility = async (template) => {
         // Reapply search filter after updating visibility
         handleSearch()
     } catch (error) {
-        console.error('Error switching template active state:', error)
-        // The store already handles removing templates that no longer exist (404 errors)
-        // Just need to refresh the filtered list
+        // The backend throws untyped exceptions here, so the host's global ErrorDialog
+        // won't reliably surface this — show a local toast. The store already removes
+        // templates that no longer exist (404); just refresh the filtered list.
+        showError('templatesManagement.visibilityError', error)
         handleSearch()
     }
 }
@@ -370,7 +381,7 @@ const setGroupVisibility = async (taskType, groupName, isVisible) => {
         // Refresh the filtered list to reflect changes
         handleSearch()
     } catch (error) {
-        console.error('Error setting group visibility:', error)
+        showError('templatesManagement.visibilityError', error)
     }
 }
 
@@ -465,7 +476,7 @@ const exportAllTemplates = async () => {
         linkElement.setAttribute('download', exportFileDefaultName)
         linkElement.click()
     } catch (error) {
-        console.error('Error exporting templates:', error)
+        showError('templatesManagement.exportError', error)
     }
 }
 
@@ -502,8 +513,7 @@ const exportSingleTemplate = async (template) => {
         if (template.content && template.content.trim() !== '') {
             templateContent = JSON.parse(template.content)
         } else {
-            console.error('Template has empty or null content:', template.templateId)
-            alert('Cannot export template: content is empty or invalid.')
+            showError('templatesManagement.exportError', new Error(`Template has empty or null content: ${template.templateId}`))
             return
         }
         
@@ -518,8 +528,7 @@ const exportSingleTemplate = async (template) => {
         linkElement.setAttribute('download', exportFileDefaultName)
         linkElement.click()
     } catch (error) {
-        console.error('Error exporting template:', error)
-        alert('Failed to export template. Please try again.')
+        showError('templatesManagement.exportError', error)
     }
 }
 

@@ -309,7 +309,20 @@ export default function useFileImport({
     }
   }
 
+  // A valid extension is not enough: an empty or malformed file (no <definitions>)
+  // would otherwise open as a broken tab that only fails later with a console-only
+  // "no definitions loaded" on save. Reject it here so handleFile surfaces a load error.
+  const _isParseableDiagram = xml => {
+    if (!xml || !xml.trim()) return false
+    const doc = new DOMParser().parseFromString(xml, 'application/xml')
+    if (doc.querySelector('parsererror')) return false
+    return !!doc.querySelector('*|definitions')
+  }
+
   const _openProcessFromImportedFile = async (resXmlExternalUrl, fileName, fileNameWithExtension, isBatch = false) => {
+    if (!_isParseableDiagram(resXmlExternalUrl)) {
+      throw new Error(`Invalid diagram file (no BPMN/DMN definitions): ${fileNameWithExtension}`)
+    }
     let foundExternalProcessKey = getProcessKeyFromBpmn(resXmlExternalUrl) ?? fileName
     let diagramType = null
 
@@ -424,7 +437,8 @@ export default function useFileImport({
 
     let savedCount = 0
     let unchangedCount = 0
-    const invalidNames = []
+    const invalidNames = []   // wrong extension — not a supported diagram file
+    const readErrorNames = [] // valid extension but failed to read/parse/import
 
     for (const file of files) {
       if (isBatch && _batchPolicy.value === 'stop') break
@@ -454,28 +468,34 @@ export default function useFileImport({
         })
         if (didSave === true) savedCount++
         else if (didSave === 'unchanged') unchangedCount++
-      } catch {
-        invalidNames.push(file.name)
+      } catch (err) {
+        // Valid extension but the file couldn't be read/parsed — distinct from a
+        // wrong extension, so it gets the "could not be loaded" message, not "not a BPMN file".
+        console.error('Error importing file:', file.name, err)
+        readErrorNames.push(file.name)
       }
     }
 
     if (savedCount > 0 && onBatchComplete) await onBatchComplete()
 
     if (!isBatch) {
-      // Single-file: success opens a tab silently; only toast on invalid extension.
+      // Single-file: success opens a tab silently; toast only on failure.
       if (invalidNames.length) {
         showToastMessage({ isSuccess: false, toastText: 'toastLoadErrorFileExtension' })
+      } else if (readErrorNames.length) {
+        showToastMessage({ isSuccess: false, toastText: 'toastLoadErrorFile' })
       }
     } else {
       // Batch: compose a summary from all non-zero outcome counts
       // skippedCount covers both user-skipped conflicts AND files not reached due to "Cancel remaining"
+      const failedCount = invalidNames.length + readErrorNames.length
       const validTotal = files.length - invalidNames.length
-      const skippedCount = validTotal - savedCount - unchangedCount
+      const skippedCount = validTotal - savedCount - unchangedCount - readErrorNames.length
       const parts = []
       if (savedCount > 0) parts.push(t('importSummary.imported', { count: savedCount }))
       if (unchangedCount > 0) parts.push(t('importSummary.upToDate', { count: unchangedCount }))
       if (skippedCount > 0) parts.push(t('importSummary.skipped', { count: skippedCount }))
-      if (invalidNames.length > 0) parts.push(t('importSummary.failed', { count: invalidNames.length }))
+      if (failedCount > 0) parts.push(t('importSummary.failed', { count: failedCount }))
       showToastMessage({
         isSuccess: savedCount > 0 || unchangedCount > 0,
         toastText: 'toastImportBatch',

@@ -88,6 +88,10 @@
 		"title": "Process ID already exists",
 		"body": "Change the process ID to a unique one"
 	},
+	"toastSaveErrorMissingId": {
+		"title": "Missing form ID",
+		"body": "Give the form an ID before saving."
+	},
 	"toastUpdateSuccessful": {
 		"title": "Updated successfully",
 		"body": "The process has been successfully updated."
@@ -555,6 +559,14 @@
 		"edit": "Edit",
 		"delete": "Delete",
 		"export": "Export",
+		"exportError": {
+			"title": "Export failed",
+			"body": "The element template could not be exported."
+		},
+		"visibilityError": {
+			"title": "Update failed",
+			"body": "The template visibility could not be updated."
+		},
 		"available": "Available",
 		"hidden": "Hidden",
 		"visible": "Visible",
