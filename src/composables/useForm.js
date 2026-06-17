@@ -96,6 +96,14 @@ export default function useForm(props, emit, canvas, propertyPanel) {
     const { save: _sharedSave } = useDiagramSave(props, emit, { checkSessionHook, createSessionHook })
 
     const save = async () => {
+      // The form id is the backend key (unique & not-null). Never save without one,
+      // otherwise the request fails with a confusing constraint error.
+      const newFormId = json?.id
+      if (!newFormId || !String(newFormId).trim()) {
+        emit('showToastMessage', { isSuccess: false, toastText: 'toastSaveErrorMissingId' })
+        return false
+      }
+
       let sessionResponse = null
       if (checkSessionHook) {
         const result = await checkSessionHook(props.tabElement, props.tabElementIndex, true)
@@ -104,7 +112,6 @@ export default function useForm(props, emit, canvas, propertyPanel) {
       }
 
       emit('updateEditorXML', JSON.stringify(json, null, 2),  props.tabElementIndex)
-      const newFormId = json.id
       const stringifyJson = JSON.stringify(json, null, 2)
 
       return _sharedSave({

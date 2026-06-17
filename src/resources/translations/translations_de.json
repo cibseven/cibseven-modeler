@@ -88,6 +88,10 @@
     "title": "Die Prozess-ID existiert bereits.",
     "body": "Geben Sie eine eindeutige Prozess-ID ein."
   },
+  "toastSaveErrorMissingId": {
+    "title": "Fehlende Formular-ID",
+    "body": "Geben Sie dem Formular eine ID, bevor Sie speichern."
+  },
   "toastUpdateSuccessful": {
     "title": "Erfolgreich aktualisiert",
     "body": "Der Prozess wurde erfolgreich aktualisiert."
@@ -555,6 +559,14 @@
     "edit": "Bearbeiten",
     "delete": "Löschen",
     "export": "Exportieren",
+    "exportError": {
+      "title": "Export fehlgeschlagen",
+      "body": "Die Element-Vorlage konnte nicht exportiert werden."
+    },
+    "visibilityError": {
+      "title": "Aktualisierung fehlgeschlagen",
+      "body": "Die Sichtbarkeit der Vorlage konnte nicht aktualisiert werden."
+    },
     "available": "Verfügbar",
     "hidden": "Ausgeblendet",
     "visible": "Sichtbar",

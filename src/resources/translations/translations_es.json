@@ -88,6 +88,10 @@
     "title": "ID de proceso ya existe",
     "body": "Modifique la ID del proceso a una única"
   },
+  "toastSaveErrorMissingId": {
+    "title": "Falta el ID del formulario",
+    "body": "Asigna un ID al formulario antes de guardar."
+  },
   "toastUpdateSuccessful": {
     "title": "Actualizado con éxito",
     "body": "El proceso ha sido actualizado correctamente."
@@ -555,6 +559,14 @@
     "edit": "Editar",
     "delete": "Eliminar",
     "export": "Exportar",
+    "exportError": {
+      "title": "Error al exportar",
+      "body": "No se pudo exportar la plantilla de elemento."
+    },
+    "visibilityError": {
+      "title": "Error al actualizar",
+      "body": "No se pudo actualizar la visibilidad de la plantilla."
+    },
     "available": "Disponible",
     "hidden": "Oculto",
     "visible": "Visible",

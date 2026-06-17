@@ -349,7 +349,7 @@ watch(() => store.getters['modeler/elementTemplates/allElementTemplateContents']
 //emit calls an exposed function from StartPage
 const createNewBpmnDiagram = async (diagramXML, type) => {
 	const callback = async (nameUpdated, idUpdated) => {
-		const uniqueId = idUpdated ? idUpdated.trim() : _assignUniqueId('Process', generateUniqueId())
+		const uniqueId = idUpdated ? idUpdated.trim() : _assignUniqueId('Process')
 		const name = nameUpdated ? nameUpdated.trim() : uniqueId
 		let finalXml = setTagValueOfXml(await _fetchDefaultDiagramXML(diagramXML), 'bpmn:process', 'id', uniqueId)
 
@@ -366,7 +366,7 @@ const createNewBpmnDiagram = async (diagramXML, type) => {
 
 const createNewDmnDiagram = async (dmnXML, type) => {
 	const callback = async (nameUpdated, idUpdated) => {
-		const uniqueId = idUpdated ? idUpdated.trim() : _assignUniqueId('Dmn', generateUniqueId())
+		const uniqueId = idUpdated ? idUpdated.trim() : _assignUniqueId('Dmn')
 		const name = nameUpdated ? nameUpdated.trim() : uniqueId
 		let finalXml = setTagValueOfXml(await _fetchDefaultDiagramXML(dmnXML), 'definitions', 'id', uniqueId)
 
@@ -383,7 +383,7 @@ const createNewDmnDiagram = async (dmnXML, type) => {
 
 const createNewFormDiagram = async(formJson, type) => {
 	const callback = async (nameUpdated, idUpdated) => {
-		const uniqueId = idUpdated ? idUpdated.trim() : _assignUniqueId('Form', generateUniqueId())
+		const uniqueId = idUpdated ? idUpdated.trim() : _assignUniqueId('Form')
 		formJson.id = uniqueId
 		tabNavList.value.push({ version: 0, type: type, name: uniqueId, navId: uniqueId, id: uniqueId, key: uniqueId, keyOfTabNav: uniqueId, canSave: true, isSaved: false, isModelerVisible: false, isPropertyPanelVisible: false, isEditorVisible: false, isBpmn: false })
 		tabNavListXml.value[tabNavList.value.length - 1] = JSON.stringify(formJson, null, 2)
@@ -701,16 +701,22 @@ const _initializeTabSize = () => {
 	tabNavWidth.value = modelerTabPanes.value.clientWidth
 }
 
-const _assignUniqueId = (name, id) => {
-	if (!processes.value) return
-	const foundProcess = processes.value.find(el => el.id === id)
-
-	if (!foundProcess) { // check until process not found
-		return `${name}_${generateUniqueId()}`
-	}
-	else {
-		_assignUniqueId(`${name}_${generateUniqueId()}`)
-	}
+// Always returns a unique `${name}_<random>` id. It must never return
+// undefined/empty: a form/diagram created with an empty id then fails to save
+// (formId is unique & not-null in the backend). The previous version returned
+// undefined when the processes list hadn't loaded yet and didn't return on the
+// collision branch — both produced empty ids. This no longer depends on the
+// list being loaded and checks against saved processes and open tabs.
+const _assignUniqueId = name => {
+	const taken = new Set([
+		...(processes.value ?? []).map(el => el.id),
+		...tabNavList.value.map(tab => tab.id),
+	])
+	let candidate
+	do {
+		candidate = `${name}_${generateUniqueId()}`
+	} while (taken.has(candidate))
+	return candidate
 }
 
 const onBatchComplete = async () => {
