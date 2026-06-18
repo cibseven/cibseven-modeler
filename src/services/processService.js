@@ -49,6 +49,27 @@ const getUnifiedDiagrams = (firstResult, maxResults, keyword, type) => {
   })
 }
 
+/**
+ * Authoritative (database-backed) duplicate-key check, beyond the loaded/paginated
+ * store list. Returns true when a diagram/form with this EXACT key already exists.
+ * The unified-diagrams search is keyword-based, so we fetch a small page and require
+ * an exact match. On any error we return false so a transient failure never blocks the
+ * user — the backend's unique constraint remains the final guard.
+ *
+ * @param {string} key - process key (bpmn/dmn) or form id.
+ * @param {'form'|string} type - 'form' matches forms (formId); otherwise processes (processkey).
+ */
+const keyExistsRemote = async (key, type) => {
+  if (!key) return false
+  try {
+    const results = await getUnifiedDiagrams(0, 10, key, '')
+    const field = type === 'form' ? 'formId' : 'processkey'
+    return (results ?? []).some(d => d[field] === key)
+  } catch {
+    return false
+  }
+}
+
 const fetchProcessByName = name => {
   const formData = new FormData()
   formData.append('name', name)
@@ -97,6 +118,7 @@ export {
   fetchDecisionDiagram,
   fetchProcesses,
   getUnifiedDiagrams,
+  keyExistsRemote,
   fetchProcessByName,
   fetchProcessById,
   saveDiagramProcess,

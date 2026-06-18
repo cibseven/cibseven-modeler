@@ -45,6 +45,7 @@ describe('ModalNewDiagram duplicate-id validation', () => {
 
         await wrapper.find('#processIdInput').setValue('existing-id')
         await wrapper.find('.btn-primary').trigger('click')
+        await flushPromises()
 
         expect(wrapper.find('.invalid-feedback').text()).toContain('modalNewDiagram.duplicatedId')
         expect(cb).not.toHaveBeenCalled()
@@ -59,17 +60,21 @@ describe('ModalNewDiagram duplicate-id validation', () => {
         await wrapper.find('#processNameInput').setValue('My Process')
         await wrapper.find('#processIdInput').setValue('unique-id')
         await wrapper.find('.btn-primary').trigger('click')
+        await flushPromises()
 
         expect(cb).toHaveBeenCalledWith('My Process', 'unique-id')
         wrapper.unmount()
     })
 
-    it('calls checkDuplicateId with the typed id and the diagram type', async () => {
+    it('checks the id (with type) only on Create click', async () => {
         const check = vi.fn(() => false)
         const wrapper = mountModal(check)
         await open(wrapper, vi.fn(), 'form')
 
         await wrapper.find('#processIdInput').setValue('some-form')
+        expect(check).not.toHaveBeenCalled() // not while typing
+
+        await wrapper.find('.btn-primary').trigger('click')
         await flushPromises()
 
         expect(check).toHaveBeenCalledWith('some-form', 'form')

@@ -212,6 +212,7 @@ import DropZone from '../DropZone.vue'
 import useTabManager from '../../composables/useTabManager.js'
 import useFileImport from '../../composables/useFileImport.js'
 import { DIAGRAM_TYPE, SKIP_CREATION_MODAL_KEY } from '../../constants/diagramTypes.js'
+import { keyExistsRemote } from '../../services/processService.js'
 
 // Provide monaco for child components (MonacoEditor, MonacoConsole)
 // This is necessary when used as a library since the host app doesn't provide monaco
@@ -327,11 +328,15 @@ const validateRenameKey = newKey => {
 	return null
 }
 
-// Used by the new-diagram modal for a live, type-aware duplicate-id check (best-effort
-// against the loaded list; the backend unique constraint is authoritative).
-const checkDuplicateId = (id, type) => type === 'form'
-	? !!forms.value?.find(f => f.formId === id)
-	: !!processes.value?.find(p => p.processkey === id)
+// Used by the new-diagram modal for a live, type-aware duplicate-id check: instant against
+// the loaded list, then an authoritative backend lookup for ids on not-yet-loaded pages.
+const checkDuplicateId = async (id, type) => {
+	const inLoaded = type === 'form'
+		? forms.value?.some(f => f.formId === id)
+		: processes.value?.some(p => p.processkey === id)
+	if (inLoaded) return true
+	return keyExistsRemote(id, type)
+}
 
 const _loadElementTemplatesByConfig = async () => {
 	// Get only template contents from store (optimized for bpmn.js)

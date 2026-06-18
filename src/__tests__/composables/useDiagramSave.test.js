@@ -17,6 +17,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { defineComponent, ref } from 'vue'
+
+vi.mock('../../services/processService.js', () => ({ keyExistsRemote: vi.fn().mockResolvedValue(false) }))
+import { keyExistsRemote } from '../../services/processService.js'
 import useDiagramSave from '../../composables/useDiagramSave.js'
 
 /**
@@ -212,6 +215,16 @@ describe('useDiagramSave', () => {
             const result = await save(makeSaveOpts({ newKey: 'same-key', storedKey: 'same-key', storeStateSlice, itemKeyField: 'processkey' }))
 
             expect(result).toBe(true)
+        })
+
+        it('emits duplicate toast when the key exists on the backend but not in the loaded list', async () => {
+            keyExistsRemote.mockResolvedValueOnce(true)
+            const { save, emitted } = withSetup({ tabElement: makeTabElement() })
+            const result = await save(makeSaveOpts({ newKey: 'remote-dup', storedKey: '', storeStateSlice: [], itemKeyField: 'processkey' }))
+
+            expect(keyExistsRemote).toHaveBeenCalledWith('remote-dup', 'process')
+            expect(result).toBe(false)
+            expect(emitted.find(e => e.event === 'showToastMessage').args[0].toastText).toBe('toastSaveErrorDuplicateKey')
         })
     })
 

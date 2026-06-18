@@ -30,7 +30,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="processIdInput">{{ modalNewDiagramText.processId }}</label>
-                        <input id="processIdInput" ref="processIdInputRef" type="text" class="form-control form-control-sm" v-model="idOfProcess" @keyup.enter="handleClick">
+                        <input id="processIdInput" ref="processIdInputRef" type="text" class="form-control form-control-sm" v-model="idOfProcess" @input="isIdDuplicated = false" @keyup.enter="handleClick">
                         <div v-if="!isValidId && idOfProcess !== ''" tabindex="-1" role="alert" aria-live="assertive"
                             aria-atomic="true" class="d-block invalid-feedback">{{
                         $t("modalNewDiagram.qnameError") }}
@@ -90,11 +90,8 @@ const isValidId = computed(() => {
     // Check if the idOfProcess.value starts with a non-digit character and contains no spaces, asterisks, or punctuation except for period and hyphen
     return /^\D[^\s*?!@#$%^&()_+={}[\]|\\:;"'<>,/¿¡]*$/.test(idOfProcess.value)
 })
-// Live, type-aware duplicate check (parent supplies the lookup against the loaded list)
-const isIdDuplicated = computed(() => {
-    const id = idOfProcess.value.trim()
-    return !!id && !!props.checkDuplicateId?.(id, type.value)
-})
+// Set on Create-click by the parent-supplied check (loaded list + backend); cleared on input.
+const isIdDuplicated = ref(false)
 
 let modalBootstrap = null
 
@@ -123,9 +120,12 @@ const modalNewDiagramText = computed(() => {
         item: t(`Items.${type.value}`)
       } )  }
 })
-const handleClick = () => {
+const handleClick = async () => {
     isIdFilled.value = idOfProcess.value !== ''
-    if (!isIdFilled.value || !isValidId.value || isIdDuplicated.value) return
+    if (!isIdFilled.value || !isValidId.value) return
+
+    isIdDuplicated.value = !!(await props.checkDuplicateId?.(idOfProcess.value.trim(), type.value))
+    if (isIdDuplicated.value) return
 
     functionOnCallback(nameOfProcess.value, idOfProcess.value)
     _resetField()
@@ -155,6 +155,7 @@ const _resetField = () => {
     nameOfProcess.value = ''
     idOfProcess.value = ''
     isIdFilled.value = true
+    isIdDuplicated.value = false
 }
 
 defineExpose({ _toggleModalNewDiagram })
