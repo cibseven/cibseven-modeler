@@ -95,7 +95,7 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
       storedKey: storedProcessSelectedProcesskey,
       xml,
       blob,
-      storeStateSlice: store.state.modeler?.processes,
+      storeStateSlice: store.state.modeler?.processes?.processes,
       itemKeyField: 'processkey',
       createFn: () => saveDiagramProcess(newProcessName, newProcessKey, blob, typeOfDiagram),
       updateFn: () => updateDiagramProcess(storedProcessSelectedId, newProcessName, newProcessKey, blob, typeOfDiagram),

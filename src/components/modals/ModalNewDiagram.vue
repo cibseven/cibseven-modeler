@@ -70,10 +70,14 @@ import * as bootstrap from 'bootstrap'
 import { onMounted, ref, computed, useId } from 'vue'
 
 const titleId = useId()
-import { useStore } from 'vuex'
 import { useI18n } from 'vue-i18n'
 import { SKIP_CREATION_MODAL_KEY } from '../../constants/diagramTypes.js'
 const { t } = useI18n()
+
+const props = defineProps({
+    // (id, type) => boolean — true when a diagram/form with that id already exists
+    checkDuplicateId: { type: Function, default: null },
+})
 
 const modalNewDiagram = ref(null)
 const processNameInputRef = ref(null)
@@ -82,12 +86,14 @@ let functionOnCallback = null
 const nameOfProcess = ref('')
 const idOfProcess = ref('')
 const isIdFilled = ref(true)
-const isIdDuplicated = ref(false)
-const store = useStore()
-const processes = ref(store.state.processes?.data)
 const isValidId = computed(() => {
     // Check if the idOfProcess.value starts with a non-digit character and contains no spaces, asterisks, or punctuation except for period and hyphen
     return /^\D[^\s*?!@#$%^&()_+={}[\]|\\:;"'<>,/¿¡]*$/.test(idOfProcess.value)
+})
+// Live, type-aware duplicate check (parent supplies the lookup against the loaded list)
+const isIdDuplicated = computed(() => {
+    const id = idOfProcess.value.trim()
+    return !!id && !!props.checkDuplicateId?.(id, type.value)
 })
 
 let modalBootstrap = null
@@ -118,14 +124,9 @@ const modalNewDiagramText = computed(() => {
       } )  }
 })
 const handleClick = () => {
-
-    if (idOfProcess.value === '') isIdFilled.value = false
-    else isIdFilled.value = true
-
-    isIdDuplicated.value = _checkIfProcessExists(idOfProcess.value)
+    isIdFilled.value = idOfProcess.value !== ''
     if (!isIdFilled.value || !isValidId.value || isIdDuplicated.value) return
 
-    isIdFilled.value = true
     functionOnCallback(nameOfProcess.value, idOfProcess.value)
     _resetField()
     modalBootstrap.hide()
@@ -150,15 +151,7 @@ const _toggleModalNewDiagram = async (comp, callback, elementType) => {
     }
 }
 
-const _checkIfProcessExists = id => {
-    if (!processes.value) return false
-    const foundProcess = processes.value.find(el => el.processkey === id)
-    if (foundProcess) return true
-    return false
-}
-
 const _resetField = () => {
-    processes.value = store.state.processes?.data
     nameOfProcess.value = ''
     idOfProcess.value = ''
     isIdFilled.value = true

@@ -296,27 +296,30 @@ describe('Utils', () => {
     })
 
     describe('checkBeforeAction', () => {
-        const storeList = {
-            processes: [
-                { key: 'process-a' },
-                { key: 'process-b' },
-            ]
-        }
+        // The 3rd arg is now the items array (processes or forms), not the module state.
+        const processList = [{ processkey: 'process-a' }, { processkey: 'process-b' }]
+        const formList = [{ formId: 'form-a' }, { formId: 'form-b' }]
 
         it('Returns empty string when key is unique', () => {
-            expect(checkBeforeAction('process-new', 'process-new', storeList, 'key')).toBe('')
+            expect(checkBeforeAction('process-new', 'process-new', processList, 'processkey')).toBe('')
         })
 
         it('Returns empty string when new key matches the stored selected key', () => {
-            expect(checkBeforeAction('process-a', 'process-a', storeList, 'key')).toBe('')
+            expect(checkBeforeAction('process-a', 'process-a', processList, 'processkey')).toBe('')
         })
 
-        it('Returns error key when a duplicate exists and key changed', () => {
-            expect(checkBeforeAction('process-a', 'process-old', storeList, 'key')).toBe('toastSaveErrorDuplicateKey')
+        it('Returns error key when a duplicate process exists and key changed', () => {
+            expect(checkBeforeAction('process-a', 'process-old', processList, 'processkey')).toBe('toastSaveErrorDuplicateKey')
         })
 
-        it('Returns empty string when storeList is empty', () => {
-            expect(checkBeforeAction('process-a', 'process-old', { processes: [] }, 'key')).toBe('')
+        it('Detects duplicate forms by formId (the path that was broken)', () => {
+            expect(checkBeforeAction('form-a', 'form-old', formList, 'formId')).toBe('toastSaveErrorDuplicateKey')
+            expect(checkBeforeAction('form-new', 'form-old', formList, 'formId')).toBe('')
+        })
+
+        it('Returns empty string when the list is empty or missing', () => {
+            expect(checkBeforeAction('process-a', 'process-old', [], 'processkey')).toBe('')
+            expect(checkBeforeAction('process-a', 'process-old', undefined, 'processkey')).toBe('')
         })
     })
 

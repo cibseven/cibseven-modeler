@@ -120,7 +120,7 @@ export default function useForm(props, emit, canvas, propertyPanel) {
         storedKey: props.tabElement.key,
         xml: stringifyJson,
         blob: json,
-        storeStateSlice: store.state.modeler?.forms,
+        storeStateSlice: store.state.modeler?.forms?.forms,
         itemKeyField: 'formId',
         createFn: () => saveForm(newFormId, json),
         updateFn: () => updateForm(props.tabElement.id, newFormId, json),

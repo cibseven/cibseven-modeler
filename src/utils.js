@@ -48,10 +48,11 @@ export const checkBeforeAction = (
 	return toastErrorMessage
 }
 
-// if returns true it cannot be created or updated because there is already one in the database
+// if returns truthy it cannot be created or updated because there is already one with that key.
+// `storedList` is the items array (processes or forms); `property` is the key field to match.
 const checkIfProcessExists = (storedList, property, value) => {
-	return storedList?.processes?.find((process) => {
-		return process[property] === value
+	return storedList?.find((item) => {
+		return item[property] === value
 	})
 }
 

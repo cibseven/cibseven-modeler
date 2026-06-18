@@ -50,7 +50,7 @@ function makeSaveOpts(overrides = {}) {
         storedKey: '',
         xml: '<xml/>',
         blob: {},
-        storeStateSlice: { processes: [] },
+        storeStateSlice: [],
         itemKeyField: 'processkey',
         createFn: vi.fn().mockResolvedValue({ id: 'new-id', name: 'My Diagram', processkey: 'my-key' }),
         updateFn: vi.fn().mockResolvedValue({ id: 'upd-id', name: 'My Diagram', processkey: 'my-key' }),
@@ -197,9 +197,7 @@ describe('useDiagramSave', () => {
 
     describe('duplicate key validation', () => {
         it('returns false and emits duplicate key toast when key already exists', async () => {
-            const storeStateSlice = {
-                processes: [{ processkey: 'existing-key' }],
-            }
+            const storeStateSlice = [{ processkey: 'existing-key' }]
             const { save, emitted } = withSetup({ tabElement: makeTabElement() })
             const result = await save(makeSaveOpts({ newKey: 'existing-key', storedKey: '', storeStateSlice, itemKeyField: 'processkey' }))
 
@@ -209,9 +207,7 @@ describe('useDiagramSave', () => {
         })
 
         it('allows save when key matches the currently stored key (update same key)', async () => {
-            const storeStateSlice = {
-                processes: [{ processkey: 'same-key' }],
-            }
+            const storeStateSlice = [{ processkey: 'same-key' }]
             const { save } = withSetup({ tabElement: makeTabElement({ isSaved: true }) })
             const result = await save(makeSaveOpts({ newKey: 'same-key', storedKey: 'same-key', storeStateSlice, itemKeyField: 'processkey' }))
 

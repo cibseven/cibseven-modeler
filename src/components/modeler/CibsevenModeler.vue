@@ -155,7 +155,7 @@
 	</div>
 </div>
 
-	<ModalNewDiagram ref="modalNewDiagram" :showModal="isShowModalNewDiagram">
+	<ModalNewDiagram ref="modalNewDiagram" :showModal="isShowModalNewDiagram" :check-duplicate-id="checkDuplicateId">
 	</ModalNewDiagram>
 	<modal-deploy :diagram="editorXML[activeTab]" v-if="activeTab > -1" :showModal="isShowModal"
 		:tabNavList="tabNavList[activeTab]" @toggleModal="toggleModal" @showToastMessage="showToastMessage"
@@ -326,6 +326,12 @@ const validateRenameKey = newKey => {
 	if (exists) return t('toastSaveErrorDuplicateKey.body')
 	return null
 }
+
+// Used by the new-diagram modal for a live, type-aware duplicate-id check (best-effort
+// against the loaded list; the backend unique constraint is authoritative).
+const checkDuplicateId = (id, type) => type === 'form'
+	? !!forms.value?.find(f => f.formId === id)
+	: !!processes.value?.find(p => p.processkey === id)
 
 const _loadElementTemplatesByConfig = async () => {
 	// Get only template contents from store (optimized for bpmn.js)
