@@ -49,12 +49,23 @@ const getUnifiedDiagrams = (firstResult, maxResults, keyword, type) => {
   })
 }
 
+const fetchProcessByKey = key => {
+  const formData = new FormData()
+  formData.append('key', key)
+  return getAxios().post(getModelerServicePath() + '/process/find-by-key/data', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
 /**
  * Authoritative (database-backed) duplicate-key check, beyond the loaded/paginated
  * store list. Returns true when a diagram/form with this EXACT key already exists.
- * The unified-diagrams search is keyword-based, so we fetch a small page and require
- * an exact match. On any error we return false so a transient failure never blocks the
- * user — the backend's unique constraint remains the final guard.
+ *
+ * Processes/DMN use the exact `find-by-key` endpoint (200 = exists, 404 = not found).
+ * Forms have no exact-lookup endpoint, so we fall back to the keyword (substring) search
+ * on a larger page and require an exact formId match — best-effort. On any error we
+ * return false so a transient failure never blocks the user; the backend's unique
+ * constraint remains the final guard.
  *
  * @param {string} key - process key (bpmn/dmn) or form id.
  * @param {'form'|string} type - 'form' matches forms (formId); otherwise processes (processkey).
@@ -62,9 +73,12 @@ const getUnifiedDiagrams = (firstResult, maxResults, keyword, type) => {
 const keyExistsRemote = async (key, type) => {
   if (!key) return false
   try {
-    const results = await getUnifiedDiagrams(0, 10, key, '')
-    const field = type === 'form' ? 'formId' : 'processkey'
-    return (results ?? []).some(d => d[field] === key)
+    if (type === 'form') {
+      const results = await getUnifiedDiagrams(0, 50, key, '')
+      return (results ?? []).some(d => d.formId === key)
+    }
+    await fetchProcessByKey(key) // resolves (200) only if it exists; 404 rejects → caught below
+    return true
   } catch {
     return false
   }
