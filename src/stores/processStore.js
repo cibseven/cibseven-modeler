@@ -25,9 +25,6 @@ const state = () => ({
   processes: null,
   unifiedDiagrams: null,
   processSelected: null,
-  processSelectedId: null,
-  processSelectedName: null,
-  processSelectedProcesskey: null,
   processHistoryList: null,
   isLoading: false,
   error: null
@@ -42,15 +39,9 @@ const mutations = {
   },
   setCurrentProcess(state, updatedPayload) {
     state.processSelected = updatedPayload.processSelected
-    state.processSelectedId = updatedPayload.processId
-    state.processSelectedName = updatedPayload.processName
-    state.processSelectedProcesskey = updatedPayload.processKey
   },
   setResetProcessSelected(state) {
     state.processSelected = null
-    state.processSelectedId = null
-    state.processSelectedName = null
-    state.processSelectedProcesskey = null
   },
   setProcessHistoryList(state, processHistoryList) {
     state.processHistoryList = processHistoryList
@@ -152,9 +143,6 @@ const actions = {
 const getters = {
   allProcesses: (state) => state.processes,
   selectedProcess: (state) => state.processSelected,
-  selectedProcessId: (state) => state.processSelectedId,
-  selectedProcessName: (state) => state.processSelectedName,
-  selectedProcessKey: (state) => state.processSelectedProcesskey,
   processHistoryList: (state) => state.processHistoryList,
   isLoading: (state) => state.isLoading,
   error: (state) => state.error,
