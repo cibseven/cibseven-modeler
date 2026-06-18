@@ -16,46 +16,40 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-const m = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }))
-vi.mock('../../axiosConfig', () => ({ getAxios: () => ({ get: m.get, post: m.post }) }))
+const m = vi.hoisted(() => ({ get: vi.fn() }))
+vi.mock('../../axiosConfig', () => ({ getAxios: () => ({ get: m.get }) }))
 vi.mock('../../services/servicesConfig', () => ({ getModelerServicePath: () => 'svc' }))
 
 import { keyExistsRemote } from '../../services/processService'
 
 describe('keyExistsRemote', () => {
-    beforeEach(() => { m.get.mockReset(); m.post.mockReset() })
+    beforeEach(() => m.get.mockReset())
 
-    // Processes/DMN → exact find-by-key (POST): 200 = exists, 404 = rejects = not found.
-    it('returns true when find-by-key resolves (process exists)', async () => {
-        m.post.mockResolvedValueOnce('<xml/>')
+    // Both types use an exact by-key GET: 200 resolves = exists, 404 rejects = not found.
+    it('returns true and hits /process/find-by-key when a process exists', async () => {
+        m.get.mockResolvedValueOnce({})
         expect(await keyExistsRemote('proc-1', 'bpmn-c7')).toBe(true)
-        expect(m.post).toHaveBeenCalledWith(expect.stringContaining('/process/find-by-key/data'), expect.anything(), expect.anything())
+        expect(m.get).toHaveBeenCalledWith(expect.stringContaining('/process/find-by-key'), { params: { key: 'proc-1' } })
     })
 
-    it('returns false when find-by-key 404s (process not found)', async () => {
-        m.post.mockRejectedValueOnce(Object.assign(new Error('not found'), { response: { status: 404 } }))
-        expect(await keyExistsRemote('proc-1', 'bpmn-c7')).toBe(false)
-    })
-
-    // Forms → keyword search (GET), exact formId match required.
-    it('matches forms by exact formId', async () => {
-        m.get.mockResolvedValueOnce([{ formId: 'form-a' }])
+    it('returns true and hits /form/find-by-formid when a form exists', async () => {
+        m.get.mockResolvedValueOnce({})
         expect(await keyExistsRemote('form-a', 'form')).toBe(true)
+        expect(m.get).toHaveBeenCalledWith(expect.stringContaining('/form/find-by-formid'), { params: { formId: 'form-a' } })
     })
 
-    it('ignores partial form matches (fuzzy keyword search)', async () => {
-        m.get.mockResolvedValueOnce([{ formId: 'form-a-2' }])
-        expect(await keyExistsRemote('form-a', 'form')).toBe(false)
+    it('returns false when the lookup 404s (not found)', async () => {
+        m.get.mockRejectedValueOnce(Object.assign(new Error('not found'), { response: { status: 404 } }))
+        expect(await keyExistsRemote('proc-1', 'bpmn-c7')).toBe(false)
     })
 
     it('returns false for an empty key without calling the backend', async () => {
         expect(await keyExistsRemote('', 'form')).toBe(false)
         expect(m.get).not.toHaveBeenCalled()
-        expect(m.post).not.toHaveBeenCalled()
     })
 
     it('returns false (never throws) when the request fails', async () => {
-        m.post.mockRejectedValueOnce(new Error('network'))
+        m.get.mockRejectedValueOnce(new Error('network'))
         expect(await keyExistsRemote('proc-1', 'bpmn-c7')).toBe(false)
     })
 })
