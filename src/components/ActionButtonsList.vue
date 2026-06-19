@@ -118,7 +118,7 @@
                     :class="{ 'mdi-xml': !tabElement.isEditorVisible, 'mdi-map': props.tabElement.isEditorVisible }" aria-hidden="true"></span>
             </button>
         </div>
-        <div class="btn-menu d-flex align-items-center mx-1" v-show="modelProperties[props.tabElement.type].canOpenConsole">
+        <div class="btn-menu d-flex align-items-center mx-1" v-if="modelProperties[props.tabElement.type].canOpenConsole">
             <button type="button"
                 class="btn btn-outline-light border-0 btn-sm position-relative"
                 :class="{ active: props.consoleOpen }"

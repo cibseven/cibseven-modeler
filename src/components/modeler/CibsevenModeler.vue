@@ -190,7 +190,7 @@ import * as monaco from '../../monaco-setup.js'
 import { useStore } from 'vuex'
 import { useRoute, useRouter } from 'vue-router'
 
-import { compareXML, getTimeStamp, getTagValueFromXml, checkCamundaVersion, generateUniqueId, setTagValueOfXml, filterTemplates } from '../../utils.js'
+import { compareXML, getTimeStamp, getTagValueFromXml, checkCamundaVersion, generateUniqueId, setTagValueOfXml, filterTemplates, resolveTabIndexById } from '../../utils.js'
 import Clipboard from 'diagram-js/lib/features/clipboard/Clipboard'
 import { ref, onMounted, onUnmounted, nextTick, watch, computed, inject, provide } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -496,7 +496,7 @@ const toggleOutdatedTemplateBtn = (comp, tabElementIndex) => actionButton.value[
 // shows or hide warning button of outdated templates
 const toggleOutdatedTemplateModal = comp => modeler.value[activeTab.value]._toggleModalListSelectorFromActionButton(comp, 'templates')
 
-const toggleConsole = (tabElementIndex, isVisible) => modeler.value[tabElementIndex].toggleConsole(isVisible)
+const toggleConsole = (tabElementIndex, isVisible) => modeler.value[tabElementIndex]?.toggleConsole?.(isVisible)
 
 const toggleModal = isShowing => isShowModal.value = isShowing
 
@@ -697,7 +697,8 @@ const resizeTabWindow = () => { //to be called from the listener and not be pass
 
 const addErrorMessageToConsole = (id, error) => {
 	const correctTabIndex = checkCorrectTab(id)
-	modeler.value[correctTabIndex].addLineWithErrorToConsole(error)
+	if (correctTabIndex < 0) return // the tab is gone (closed / on dashboard) — no console to write to
+	modeler.value[correctTabIndex]?.addLineWithErrorToConsole?.(error)
 	showConsoleNotification(id)
 }
 
@@ -815,19 +816,16 @@ const _checkExistingProcessFromExternalReturn = async (decodedProcessId, externa
 	}
 }
 
-const checkCorrectTab = id => {
-	let foundIndex = activeTab.value
-	// in case the tabs has been closed or the order of tabs changed
-	if (tabNavList.value[foundIndex].id !== id) foundIndex = tabNavList.value.findIndex(el => el.id === id)
-	return foundIndex
-}
+// Resolves the tab for a console message; -1 when none (dashboard / closed tab).
+const checkCorrectTab = id => resolveTabIndexById(activeTab.value, tabNavList.value, id)
 
 //checks if the console is closed to show the notification
 const showConsoleNotification = id => {
 	const correctTabIndex = checkCorrectTab(id)
+	if (correctTabIndex < 0) return // dashboard or the tab was closed — nothing to notify
+	if (!modeler.value[correctTabIndex]?.toggleConsole) return // form tabs have no console
 	//check that the panel is not open to show the notification
-
-	if (!modeler.value[correctTabIndex].isConsolePanelShowing()) actionButton.value[correctTabIndex].showConsoleNotification(true)
+	if (!modeler.value[correctTabIndex]?.isConsolePanelShowing?.()) actionButton.value[correctTabIndex]?.showConsoleNotification?.(true)
 }
 
 // method to handle file selection when a file is dropped onto the component
