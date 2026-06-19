@@ -21,20 +21,20 @@
 				<div v-show="!props.isModelerVisible" class="position-relative" :style="styleCanvas">
 					<div class="canvas h-100 w-100" ref="canvas" tabindex="0"></div>
 					<div class="position-absolute top-0 end-0 d-flex flex-column gap-1 m-2" style="z-index: 10;">
-						<button @click="zoomIn" class="btn btn-sm btn-light border" :title="$t('buttons.zoomIn')" :aria-label="$t('buttons.zoomIn')">
+						<button @click="zoomIn" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomIn')" :aria-label="$t('buttons.zoomIn')">
 							<span class="mdi mdi-18px mdi-magnify-plus-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="zoomOut" class="btn btn-sm btn-light border" :title="$t('buttons.zoomOut')" :aria-label="$t('buttons.zoomOut')">
+						<button @click="zoomOut" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomOut')" :aria-label="$t('buttons.zoomOut')">
 							<span class="mdi mdi-18px mdi-magnify-minus-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="resetViewport" class="btn btn-sm btn-light border" :title="$t('buttons.resetViewport')" :aria-label="$t('buttons.resetViewport')">
+						<button @click="resetViewport" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.resetViewport')" :aria-label="$t('buttons.resetViewport')">
 							<span class="mdi mdi-18px mdi-fit-to-screen-outline" aria-hidden="true"></span>
 						</button>
 						<button @click="toggleMinimap" :title="$t('buttons.minimap')" :aria-label="$t('buttons.minimap')" :aria-pressed="isMinimapOpen"
-							:class="['btn btn-sm border', isMinimapOpen ? 'btn-secondary' : 'btn-light']">
+							:class="['btn btn-sm border text-secondary', isMinimapOpen ? 'btn-secondary' : 'btn-light']">
 							<span class="mdi mdi-18px mdi-map-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="toggleFullscreen" class="btn btn-sm btn-light border" :title="$t('buttons.fullscreen')" :aria-label="$t('buttons.fullscreen')" :aria-pressed="isFullscreen">
+						<button @click="toggleFullscreen" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.fullscreen')" :aria-label="$t('buttons.fullscreen')" :aria-pressed="isFullscreen">
 							<span :class="['mdi', 'mdi-18px', isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen']" aria-hidden="true"></span>
 						</button>
 					</div>
@@ -61,7 +61,7 @@
 						</MonacoConsole>
 					</MonacoThemeScope>
 				</ConsolePanel>
-				<MenuActionButtons :width="canvasWidth">
+				<MenuActionButtons :width="canvasWidth + 24">
 					<template #leftButtons>
 						<slot name="menu" />
 					</template>
