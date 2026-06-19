@@ -327,7 +327,7 @@ export default function useFileImport({
     let diagramType = null
 
     if (fileNameWithExtension.endsWith('.dmn')) {
-      foundExternalProcessKey = getTagValueFromXml(resXmlExternalUrl, 'definitions', 'id')
+      foundExternalProcessKey = getTagValueFromXml(resXmlExternalUrl, 'definitions', 'id') ?? fileName
       diagramType = DIAGRAM_TYPE.DMN
     } else if (foundExternalProcessKey) {
       diagramType = checkCamundaVersion(resXmlExternalUrl)
