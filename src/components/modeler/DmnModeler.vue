@@ -243,20 +243,6 @@ onMounted(async () => {
 
 	const activeEditor = dmnModeler.getActiveViewer()
 
-	activeEditor.on('propertiesPanel.detach', async () => {
-		isDrdShowing.value = false
-		if (!props.isModelerVisible) togglePropertiesPanel(false)
-		await nextTick()
-		const decisionTableRef = containerModeler.value?.querySelector('.dmn-decision-table-container')
-		if (decisionTableRef) observerDecisionTables = createObserver(decisionTableRef)
-	})
-
-	activeEditor.on('propertiesPanel.attach', () => {
-		isDrdShowing.value = true
-		if (!props.isModelerVisible) togglePropertiesPanel(true)
-		observerDecisionTables?.disconnect()
-	})
-
 	activeEditor.on('element.changed', () => {
 		_setupDiagramFunctions()
 		updateParentWidth()
@@ -276,7 +262,30 @@ onMounted(async () => {
 	}
 	subscribeCommandStackToViewer(activeEditor)
 
-	propertiesPanelComponent.value = dmnModeler.getActiveViewer().get('propertiesPanel')
+	// propertiesPanel is only registered on the DRD viewer. A DMN without DMNDI layout
+	// causes importXML to leave the decision-table view active, so the initial
+	// getActiveViewer() may not be the DRD viewer. Retrieve it safely here and also
+	// register the attach/detach listeners lazily via views.changed (same pattern as
+	// drdSelectionListenerRegistered below).
+	let drdListenersRegistered = false
+	const _registerDrdListeners = (viewer) => {
+		if (drdListenersRegistered || !viewer) return
+		try { propertiesPanelComponent.value = viewer.get('propertiesPanel') } catch { return }
+		viewer.on('propertiesPanel.detach', async () => {
+			isDrdShowing.value = false
+			if (!props.isModelerVisible) togglePropertiesPanel(false)
+			await nextTick()
+			const decisionTableRef = containerModeler.value?.querySelector('.dmn-decision-table-container')
+			if (decisionTableRef) observerDecisionTables = createObserver(decisionTableRef)
+		})
+		viewer.on('propertiesPanel.attach', () => {
+			isDrdShowing.value = true
+			if (!props.isModelerVisible) togglePropertiesPanel(true)
+			observerDecisionTables?.disconnect()
+		})
+		drdListenersRegistered = true
+	}
+	_registerDrdListeners(activeEditor)
 
 	// Track view changes to update XML and download links
 	let drdSelectionListenerRegistered = false
@@ -286,10 +295,12 @@ onMounted(async () => {
 			selectedElement.value = { id: el.id, name: el.name || el.id, type: el.$type }
 		} else {
 			selectedElement.value = null
+			const viewer = dmnModeler.getActiveViewer()
+			// Register DRD-specific listeners lazily — only once the DRD viewer is first active.
+			_registerDrdListeners(viewer)
 			// Register selection.changed on the DRD viewer once it is available.
 			// dmnModeler.get() is not available at the manager level; use getActiveViewer() here.
 			if (!drdSelectionListenerRegistered) {
-				const viewer = dmnModeler.getActiveViewer()
 				if (viewer) {
 					viewer.get('eventBus').on('selection.changed', ({ newSelection }) => {
 						const el = newSelection?.length === 1 ? newSelection[0] : null
