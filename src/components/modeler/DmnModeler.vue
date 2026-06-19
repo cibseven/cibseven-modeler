@@ -269,8 +269,8 @@ onMounted(async () => {
 	// drdSelectionListenerRegistered below).
 	let drdListenersRegistered = false
 	const _registerDrdListeners = (viewer) => {
-		if (drdListenersRegistered || !viewer) return
-		try { propertiesPanelComponent.value = viewer.get('propertiesPanel') } catch { return }
+		if (drdListenersRegistered || !viewer) return false
+		try { propertiesPanelComponent.value = viewer.get('propertiesPanel') } catch { return false }
 		viewer.on('propertiesPanel.detach', async () => {
 			isDrdShowing.value = false
 			if (!props.isModelerVisible) togglePropertiesPanel(false)
@@ -284,8 +284,16 @@ onMounted(async () => {
 			observerDecisionTables?.disconnect()
 		})
 		drdListenersRegistered = true
+		return true
 	}
-	_registerDrdListeners(activeEditor)
+	// If the initial active view is a decision table (DMN with no DMNDI layout),
+	// the DRD viewer isn't available yet — hide the properties panel immediately
+	// so it doesn't render as an empty pane. Listeners are registered lazily
+	// in views.changed when the user first navigates to the DRD view.
+	if (!_registerDrdListeners(activeEditor)) {
+		isDrdShowing.value = false
+		togglePropertiesPanel(false)
+	}
 
 	// Track view changes to update XML and download links
 	let drdSelectionListenerRegistered = false
