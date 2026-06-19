@@ -17,6 +17,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { defineComponent, ref } from 'vue'
+
+vi.mock('../../services/processService.js', () => ({ keyExistsRemote: vi.fn().mockResolvedValue(false) }))
+import { keyExistsRemote } from '../../services/processService.js'
 import useDiagramSave from '../../composables/useDiagramSave.js'
 
 /**
@@ -50,7 +53,7 @@ function makeSaveOpts(overrides = {}) {
         storedKey: '',
         xml: '<xml/>',
         blob: {},
-        storeStateSlice: { processes: [] },
+        storeStateSlice: [],
         itemKeyField: 'processkey',
         createFn: vi.fn().mockResolvedValue({ id: 'new-id', name: 'My Diagram', processkey: 'my-key' }),
         updateFn: vi.fn().mockResolvedValue({ id: 'upd-id', name: 'My Diagram', processkey: 'my-key' }),
@@ -197,9 +200,7 @@ describe('useDiagramSave', () => {
 
     describe('duplicate key validation', () => {
         it('returns false and emits duplicate key toast when key already exists', async () => {
-            const storeStateSlice = {
-                processes: [{ processkey: 'existing-key' }],
-            }
+            const storeStateSlice = [{ processkey: 'existing-key' }]
             const { save, emitted } = withSetup({ tabElement: makeTabElement() })
             const result = await save(makeSaveOpts({ newKey: 'existing-key', storedKey: '', storeStateSlice, itemKeyField: 'processkey' }))
 
@@ -209,13 +210,21 @@ describe('useDiagramSave', () => {
         })
 
         it('allows save when key matches the currently stored key (update same key)', async () => {
-            const storeStateSlice = {
-                processes: [{ processkey: 'same-key' }],
-            }
+            const storeStateSlice = [{ processkey: 'same-key' }]
             const { save } = withSetup({ tabElement: makeTabElement({ isSaved: true }) })
             const result = await save(makeSaveOpts({ newKey: 'same-key', storedKey: 'same-key', storeStateSlice, itemKeyField: 'processkey' }))
 
             expect(result).toBe(true)
+        })
+
+        it('emits duplicate toast when the key exists on the backend but not in the loaded list', async () => {
+            keyExistsRemote.mockResolvedValueOnce(true)
+            const { save, emitted } = withSetup({ tabElement: makeTabElement() })
+            const result = await save(makeSaveOpts({ newKey: 'remote-dup', storedKey: '', storeStateSlice: [], itemKeyField: 'processkey' }))
+
+            expect(keyExistsRemote).toHaveBeenCalledWith('remote-dup', 'process')
+            expect(result).toBe(false)
+            expect(emitted.find(e => e.event === 'showToastMessage').args[0].toastText).toBe('toastSaveErrorDuplicateKey')
         })
     })
 

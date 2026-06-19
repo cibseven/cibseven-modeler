@@ -28,6 +28,11 @@ const fetchFormById = id => {
     return getAxios().get(getModelerServicePath() + '/form/' + id + '/data')
 }
 
+// Exact lookup by formId (the unique key). Resolves with the form, or rejects (404) when none exists.
+const fetchFormByFormId = formId => {
+  return getAxios().get(getModelerServicePath() + '/form/find-by-formid', { params: { formId } })
+}
+
 const saveForm = (id, formJson) => {
   const blob = new Blob([JSON.stringify(formJson)], { type: 'application/json' })
 
@@ -60,6 +65,7 @@ const deleteFormById = id => {
 export {
   fetchForms,
   fetchFormById,
+  fetchFormByFormId,
   saveForm,
   updateForm,
   deleteFormById,

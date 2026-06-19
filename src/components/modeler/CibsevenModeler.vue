@@ -155,7 +155,7 @@
 	</div>
 </div>
 
-	<ModalNewDiagram ref="modalNewDiagram" :showModal="isShowModalNewDiagram">
+	<ModalNewDiagram ref="modalNewDiagram" :showModal="isShowModalNewDiagram" :check-duplicate-id="checkDuplicateId">
 	</ModalNewDiagram>
 	<modal-deploy :diagram="editorXML[activeTab]" v-if="activeTab > -1" :showModal="isShowModal"
 		:tabNavList="tabNavList[activeTab]" @toggleModal="toggleModal" @showToastMessage="showToastMessage"
@@ -212,6 +212,7 @@ import DropZone from '../DropZone.vue'
 import useTabManager from '../../composables/useTabManager.js'
 import useFileImport from '../../composables/useFileImport.js'
 import { DIAGRAM_TYPE, SKIP_CREATION_MODAL_KEY } from '../../constants/diagramTypes.js'
+import { keyExistsRemote } from '../../services/processService.js'
 
 // Provide monaco for child components (MonacoEditor, MonacoConsole)
 // This is necessary when used as a library since the host app doesn't provide monaco
@@ -325,6 +326,16 @@ const validateRenameKey = newKey => {
 		: processes.value.find(p => p.processkey === newKey)
 	if (exists) return t('toastSaveErrorDuplicateKey.body')
 	return null
+}
+
+// Used by the new-diagram modal for a live, type-aware duplicate-id check: instant against
+// the loaded list, then an authoritative backend lookup for ids on not-yet-loaded pages.
+const checkDuplicateId = async (id, type) => {
+	const inLoaded = type === 'form'
+		? forms.value?.some(f => f.formId === id)
+		: processes.value?.some(p => p.processkey === id)
+	if (inLoaded) return true
+	return keyExistsRemote(id, type)
 }
 
 const _loadElementTemplatesByConfig = async () => {

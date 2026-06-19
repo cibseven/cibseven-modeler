@@ -15,6 +15,7 @@
  *  limitations under the License.
  */
 import { checkBeforeAction } from '../utils.js'
+import { keyExistsRemote } from '../services/processService.js'
 
 /**
  * Shared save/update logic for BPMN, DMN and Form diagram composables.
@@ -62,10 +63,16 @@ export default function useDiagramSave(props, emit, sessionHooks = {}) {
     functionToExecute = null,
   }) => {
     const keyToCompare = props.tabElement.isSaved ? storedKey : ''
-    const toastErrorMessage = checkBeforeAction(newKey, keyToCompare, storeStateSlice, itemKeyField)
+    // Instant check against the loaded list…
+    let duplicate = !!checkBeforeAction(newKey, keyToCompare, storeStateSlice, itemKeyField)
+    // …then an authoritative backend check, but only when the key is new/changed
+    // (covers ids that exist on a not-yet-loaded page; the DB constraint is the final guard).
+    if (!duplicate && newKey && newKey !== keyToCompare) {
+      duplicate = await keyExistsRemote(newKey, itemKeyField === 'formId' ? 'form' : 'process')
+    }
 
-    if (toastErrorMessage) {
-      emit('showToastMessage', { isSuccess: false, toastText: toastErrorMessage, bodyTextAlt: '' })
+    if (duplicate) {
+      emit('showToastMessage', { isSuccess: false, toastText: 'toastSaveErrorDuplicateKey', bodyTextAlt: '' })
       return false
     }
 

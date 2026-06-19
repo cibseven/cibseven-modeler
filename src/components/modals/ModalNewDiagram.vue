@@ -30,7 +30,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="processIdInput">{{ modalNewDiagramText.processId }}</label>
-                        <input id="processIdInput" ref="processIdInputRef" type="text" class="form-control form-control-sm" v-model="idOfProcess" @keyup.enter="handleClick">
+                        <input id="processIdInput" ref="processIdInputRef" type="text" class="form-control form-control-sm" v-model="idOfProcess" @input="isIdDuplicated = false" @keyup.enter="handleClick">
                         <div v-if="!isValidId && idOfProcess !== ''" tabindex="-1" role="alert" aria-live="assertive"
                             aria-atomic="true" class="d-block invalid-feedback">{{
                         $t("modalNewDiagram.qnameError") }}
@@ -70,10 +70,14 @@ import * as bootstrap from 'bootstrap'
 import { onMounted, ref, computed, useId } from 'vue'
 
 const titleId = useId()
-import { useStore } from 'vuex'
 import { useI18n } from 'vue-i18n'
 import { SKIP_CREATION_MODAL_KEY } from '../../constants/diagramTypes.js'
 const { t } = useI18n()
+
+const props = defineProps({
+    // (id, type) => boolean — true when a diagram/form with that id already exists
+    checkDuplicateId: { type: Function, default: null },
+})
 
 const modalNewDiagram = ref(null)
 const processNameInputRef = ref(null)
@@ -82,13 +86,12 @@ let functionOnCallback = null
 const nameOfProcess = ref('')
 const idOfProcess = ref('')
 const isIdFilled = ref(true)
-const isIdDuplicated = ref(false)
-const store = useStore()
-const processes = ref(store.state.processes?.data)
 const isValidId = computed(() => {
     // Check if the idOfProcess.value starts with a non-digit character and contains no spaces, asterisks, or punctuation except for period and hyphen
     return /^\D[^\s*?!@#$%^&()_+={}[\]|\\:;"'<>,/¿¡]*$/.test(idOfProcess.value)
 })
+// Set on Create-click by the parent-supplied check (loaded list + backend); cleared on input.
+const isIdDuplicated = ref(false)
 
 let modalBootstrap = null
 
@@ -117,15 +120,13 @@ const modalNewDiagramText = computed(() => {
         item: t(`Items.${type.value}`)
       } )  }
 })
-const handleClick = () => {
+const handleClick = async () => {
+    isIdFilled.value = idOfProcess.value !== ''
+    if (!isIdFilled.value || !isValidId.value) return
 
-    if (idOfProcess.value === '') isIdFilled.value = false
-    else isIdFilled.value = true
+    isIdDuplicated.value = !!(await props.checkDuplicateId?.(idOfProcess.value.trim(), type.value))
+    if (isIdDuplicated.value) return
 
-    isIdDuplicated.value = _checkIfProcessExists(idOfProcess.value)
-    if (!isIdFilled.value || !isValidId.value || isIdDuplicated.value) return
-
-    isIdFilled.value = true
     functionOnCallback(nameOfProcess.value, idOfProcess.value)
     _resetField()
     modalBootstrap.hide()
@@ -150,18 +151,11 @@ const _toggleModalNewDiagram = async (comp, callback, elementType) => {
     }
 }
 
-const _checkIfProcessExists = id => {
-    if (!processes.value) return false
-    const foundProcess = processes.value.find(el => el.processkey === id)
-    if (foundProcess) return true
-    return false
-}
-
 const _resetField = () => {
-    processes.value = store.state.processes?.data
     nameOfProcess.value = ''
     idOfProcess.value = ''
     isIdFilled.value = true
+    isIdDuplicated.value = false
 }
 
 defineExpose({ _toggleModalNewDiagram })
