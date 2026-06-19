@@ -305,7 +305,13 @@ onMounted(async () => {
 			selectedElement.value = null
 			const viewer = dmnModeler.getActiveViewer()
 			// Register DRD-specific listeners lazily — only once the DRD viewer is first active.
-			_registerDrdListeners(viewer)
+			// propertiesPanel.attach fires during the same views.changed emit, before our listener
+			// is in place, so show the panel eagerly on first registration instead of waiting.
+			const justRegistered = _registerDrdListeners(viewer)
+			if (justRegistered && !props.isModelerVisible) {
+				isDrdShowing.value = true
+				togglePropertiesPanel(true)
+			}
 			// Register selection.changed on the DRD viewer once it is available.
 			// dmnModeler.get() is not available at the manager level; use getActiveViewer() here.
 			if (!drdSelectionListenerRegistered) {
