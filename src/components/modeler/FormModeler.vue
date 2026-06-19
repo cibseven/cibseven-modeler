@@ -29,7 +29,7 @@
 				:tabElement="props.tabElement" :isActiveTab="props.isActiveTab" :activePropertiesTab="props.activePropertiesTab"
 				:chat-token="props.chatToken" :chat-user="props.chatUser" :chat-context="props.chatContext" :chat-transport="props.chatTransport"
 				:chat-unread="props.chatUnread" :chat-on-tab-change="props.chatOnTabChange" :chat-on-message="props.chatOnMessage" />
-			<MenuActionButtons :width="canvasWidth">
+			<MenuActionButtons :width="canvasWidth + 24">
 				<template #leftButtons>
 					<slot name="menu" />
 				</template>

@@ -61,7 +61,7 @@
 						</MonacoConsole>
 					</MonacoThemeScope>
 				</ConsolePanel>
-				<MenuActionButtons :width="canvasWidth">
+				<MenuActionButtons :width="canvasWidth + 24">
 					<template #leftButtons>
 						<slot name="menu" />
 					</template>
