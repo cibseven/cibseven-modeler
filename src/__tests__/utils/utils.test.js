@@ -27,6 +27,7 @@ import {
     generateUniqueId,
     checkJSON,
     getFormRefsFromBpmn,
+    resolveTabIndexById,
 } from '../../utils.js'
 
 describe('Utils', () => {
@@ -320,6 +321,32 @@ describe('Utils', () => {
         it('Returns empty string when the list is empty or missing', () => {
             expect(checkBeforeAction('process-a', 'process-old', [], 'processkey')).toBe('')
             expect(checkBeforeAction('process-a', 'process-old', undefined, 'processkey')).toBe('')
+        })
+    })
+
+    describe('resolveTabIndexById', () => {
+        const tabs = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
+
+        it('returns the active index when it already matches the id', () => {
+            expect(resolveTabIndexById(1, tabs, 'b')).toBe(1)
+        })
+
+        it('falls back to findIndex when the active tab is a different one', () => {
+            expect(resolveTabIndexById(0, tabs, 'c')).toBe(2)
+        })
+
+        it('does not read tabs[-1] on the dashboard (activeIndex -1) and finds the open tab', () => {
+            expect(resolveTabIndexById(-1, tabs, 'b')).toBe(1)
+        })
+
+        it('returns -1 when the id is not open (closed tab)', () => {
+            expect(resolveTabIndexById(0, tabs, 'gone')).toBe(-1)
+            expect(resolveTabIndexById(-1, tabs, 'gone')).toBe(-1)
+        })
+
+        it('returns -1 for an empty or missing tab list', () => {
+            expect(resolveTabIndexById(-1, [], 'a')).toBe(-1)
+            expect(resolveTabIndexById(0, undefined, 'a')).toBe(-1)
         })
     })
 

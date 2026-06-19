@@ -320,6 +320,7 @@ let modalBootstrap = null
 const modalDeploy = ref(null)
 const disableDeployButton = ref(false)
 const isExecutable = ref(null)
+const deployingTabId = ref(null) // snapshotted at open time; prevents wrong-tab attribution on tab-switch
 
 const isBpmn = computed(() => props.tabNavList?.type?.startsWith('bpmn'))
 
@@ -484,7 +485,7 @@ const deploy = async (silent = false) => {
 				if (parsedError?.message) errorMessage = parsedError.message
 			} catch { /* ignore JSON parse error, keep original message */ }
 		}
-		emit('addErrorMessageToConsole', props.tabNavList.id, `${errorMessage}\n`)
+		emit('addErrorMessageToConsole', deployingTabId.value ?? props.tabNavList.id, `${errorMessage}\n`)
 		return errorMessage
 	}
 	return errors
@@ -600,6 +601,7 @@ const _autoAddReferencedForms = async () => {
 }
 
 const _showModalComp = () => {
+	deployingTabId.value = props.tabNavList.id // capture before the user can switch tabs
 	deploymentName.value = _getProcessKeyForDeployName() // set the name of the deploy
 	additionalDeploymentResources.value = []
 	formPickerList.value = []

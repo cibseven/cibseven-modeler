@@ -56,6 +56,13 @@ const checkIfProcessExists = (storedList, property, value) => {
 	})
 }
 
+// Index of the tab whose id matches, preferring the active tab; -1 if none
+// (e.g. on the dashboard where activeIndex is -1, or the tab was closed).
+export const resolveTabIndexById = (activeIndex, tabs, id) => {
+	if (activeIndex >= 0 && tabs?.[activeIndex]?.id === id) return activeIndex
+	return tabs?.findIndex(t => t.id === id) ?? -1
+}
+
 export function decodeBase64ToUtf8(base64) {
 	const binaryString = atob(base64)
 	const byteArray = new Uint8Array(binaryString.length)
