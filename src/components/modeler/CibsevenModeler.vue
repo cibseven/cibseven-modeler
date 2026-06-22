@@ -641,9 +641,11 @@ const openDiagram = (valueFromChild, processId, processName, processKey, typeOfD
 	if (foundElIndex < 0) {
 		const keyOfTabNav = generateUniqueId()
 		tabNavList.value.push({ type: typeOfDiagram, name: processName, navId: processName, id: processId, key: processKey, keyOfTabNav: keyOfTabNav, isSaved: isSaved, canSave: canSave, isModelerVisible: false, isPropertyPanelVisible: false, isEditorVisible: false, replaceXml: canReplaceXml })
-		tabNavListXml.value.push(valueFromChild) //adds xml		
+		tabNavListXml.value.push(valueFromChild) //adds xml
 		_saveTabNavSavedLocalStorage()
-		switchTabFromTabNav(tabNavListXml.value.length - 1)
+		const newIndex = tabNavListXml.value.length - 1
+		switchTabFromTabNav(newIndex)
+		return newIndex // return the new tab's index, not the -1 from the initial lookup
 	}
 	return foundElIndex
 }
