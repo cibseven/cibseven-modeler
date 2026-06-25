@@ -60,6 +60,7 @@
 	},
 	"importSummary": {
 		"imported": "{count} imported",
+		"replaced": "{count} replaced",
 		"upToDate": "{count} already up to date",
 		"skipped": "{count} skipped",
 		"failed": "{count} failed"
