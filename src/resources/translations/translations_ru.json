@@ -60,6 +60,7 @@
   },
   "importSummary": {
     "imported": "{count} импортировано",
+    "replaced": "{count} заменено",
     "upToDate": "{count} уже актуальны",
     "skipped": "{count} пропущено",
     "failed": "{count} не удалось"
