@@ -81,7 +81,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUpdated, onBeforeUnmount, watch, nextTick, inject, provide } from 'vue'
+import { ref, computed, onMounted, onUpdated, onBeforeUnmount, onUnmounted, watch, nextTick, inject, provide } from 'vue'
 import DmnJS from 'dmn-js/lib/Modeler'
 import { debounce } from 'min-dash'
 import { migrateDiagram } from '@bpmn-io/dmn-migrate'
@@ -354,8 +354,12 @@ onBeforeUnmount(() => {
 		canvas.value.removeEventListener('focus', canvasFocusHandler)
 	}
 	if (observerDecisionTables) observerDecisionTables.disconnect()
-	// Destroy the dmn-js instance so its views, eventBus and detached DOM are
-	// released; otherwise each closed tab leaks a full modeler.
+})
+
+// Destroy in onUnmounted (not onBeforeUnmount) so child components can detach
+// their own listeners from the modeler first; otherwise it would be pulled out
+// from under them during their unmount. Releases dmn-js views, eventBus and DOM.
+onUnmounted(() => {
 	dmnModeler?.destroy()
 	dmnModeler = null
 })

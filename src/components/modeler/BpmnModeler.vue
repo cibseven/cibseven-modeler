@@ -182,7 +182,7 @@ import ScriptEditorModal from '../modals/ScriptEditorModal.vue'
 // Specific imports
 import { getHeadersForSelector } from './SelectorHeaders'
 
-import { onMounted, onBeforeUnmount, inject, provide, ref, onUpdated, watch, computed, nextTick, watchEffect } from 'vue'
+import { onMounted, onBeforeUnmount, onUnmounted, inject, provide, ref, onUpdated, watch, computed, nextTick, watchEffect } from 'vue'
 import { getPlugin } from '../../plugins/pluginsConfig'
 //composables
 import useModeler from '../../composables/useModeler.js'
@@ -358,8 +358,15 @@ onBeforeUnmount(() => {
 	window.removeEventListener('resize', updateParentWidth, true)
 	window.removeEventListener('resize', updateParentHeight, true)
 	document.removeEventListener('fullscreenchange', onFullscreenChange)
-	// Destroy the bpmn-js instance so its eventBus, minimap, properties panel and
-	// detached DOM are released; otherwise each closed tab leaks a full modeler.
+})
+
+// Destroy in onUnmounted (not onBeforeUnmount): child components (e.g. the EE
+// BpmnFilterPopover) detach their own eventBus listeners from the modeler in
+// their unmount hooks, which run before the parent's onUnmounted. Destroying/
+// nulling it earlier would pull the modeler out from under them (null.off).
+onUnmounted(() => {
+	// Release the bpmn-js instance so its eventBus, minimap, properties panel and
+	// detached DOM are freed; otherwise each closed tab leaks a full modeler.
 	bpmnModeler?.destroy()
 	bpmnModeler = null
 })
