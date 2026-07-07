@@ -354,6 +354,10 @@ onBeforeUnmount(() => {
 		canvas.value.removeEventListener('focus', canvasFocusHandler)
 	}
 	if (observerDecisionTables) observerDecisionTables.disconnect()
+	// Destroy the dmn-js instance so its views, eventBus and detached DOM are
+	// released; otherwise each closed tab leaks a full modeler.
+	dmnModeler?.destroy()
+	dmnModeler = null
 })
 
 onUpdated(() => {
