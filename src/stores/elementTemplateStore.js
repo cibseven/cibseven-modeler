@@ -45,7 +45,8 @@ const state = () => ({
 
 const mutations = {
   setElementTemplates(state, templates) {
-    state.elementTemplates = templates
+    // Non-array guard: a disabled modeler backend returns SPA HTML, not templates.
+    state.elementTemplates = Array.isArray(templates) ? templates : []
   },
   setLoading(state, isLoading) {
     state.isLoading = isLoading
@@ -102,9 +103,11 @@ const actions = {
     commit('clearError')
     
     try {
-      const response = await getAllElementTemplates()
-      const templates = response.data || response || []
-      commit('setElementTemplates', templates)
+      const templates = await getAllElementTemplates()
+      if (!Array.isArray(templates)) {
+        console.warn('Element templates response was not an array (modeler backend disabled?); using [].')
+      }
+      commit('setElementTemplates', Array.isArray(templates) ? templates : [])
     } catch (error) {
       console.error('Error fetching element templates:', error)
       commit('setError', error)
