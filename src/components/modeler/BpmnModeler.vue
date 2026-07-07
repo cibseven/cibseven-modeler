@@ -182,7 +182,7 @@ import ScriptEditorModal from '../modals/ScriptEditorModal.vue'
 // Specific imports
 import { getHeadersForSelector } from './SelectorHeaders'
 
-import { onMounted, onBeforeUnmount, inject, provide, ref, onUpdated, watch, computed, nextTick, watchEffect } from 'vue'
+import { onMounted, onBeforeUnmount, onUnmounted, inject, provide, ref, onUpdated, watch, computed, nextTick, watchEffect } from 'vue'
 import { getPlugin } from '../../plugins/pluginsConfig'
 //composables
 import useModeler from '../../composables/useModeler.js'
@@ -355,7 +355,15 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+	window.removeEventListener('resize', updateParentWidth, true)
+	window.removeEventListener('resize', updateParentHeight, true)
 	document.removeEventListener('fullscreenchange', onFullscreenChange)
+})
+
+// Destroy after children unmount so they detach their listeners first (avoids null.off).
+onUnmounted(() => {
+	bpmnModeler?.destroy()
+	bpmnModeler = null
 })
 
 onUpdated(() => {

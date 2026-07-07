@@ -81,7 +81,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUpdated, onBeforeUnmount, watch, nextTick, inject, provide } from 'vue'
+import { ref, computed, onMounted, onUpdated, onBeforeUnmount, onUnmounted, watch, nextTick, inject, provide } from 'vue'
 import DmnJS from 'dmn-js/lib/Modeler'
 import { debounce } from 'min-dash'
 import { migrateDiagram } from '@bpmn-io/dmn-migrate'
@@ -354,6 +354,12 @@ onBeforeUnmount(() => {
 		canvas.value.removeEventListener('focus', canvasFocusHandler)
 	}
 	if (observerDecisionTables) observerDecisionTables.disconnect()
+})
+
+// Destroy after children unmount so they detach their listeners first (avoids null.off).
+onUnmounted(() => {
+	dmnModeler?.destroy()
+	dmnModeler = null
 })
 
 onUpdated(() => {
