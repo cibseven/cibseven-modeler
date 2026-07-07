@@ -101,6 +101,10 @@
     "title": "Error",
     "body": "Ups, algo ha salido mal"
   },
+  "toastSessionLockFailed": {
+    "title": "Bloqueo de edición no adquirido",
+    "body": "El diagrama se guardó, pero no se pudo crear el bloqueo de edición. Otros pueden editarlo al mismo tiempo."
+  },
   "ttlFieldRequired": "Este campo es obligatorio para el despliegue",
   "buttons": {
     "accept": "Aceptar",

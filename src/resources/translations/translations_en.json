@@ -101,6 +101,10 @@
 		"title": "Error",
 		"body": "Ooops, something went wrong"
 	},
+	"toastSessionLockFailed": {
+		"title": "Edit lock not acquired",
+		"body": "The diagram was saved, but the edit lock could not be created. Others may edit it at the same time."
+	},
 	"ttlFieldRequired": "This field is required for deployment",
 	"buttons": {
 		"accept": "Accept",

@@ -85,7 +85,7 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
     const storedProcessSelectedId = props.tabElement.id
     const storedProcessSelectedProcesskey = props.tabElement.key
     const newProcessName = dmn.name === '' || !props.tabElement.key === '' ? dmn.id : dmn.name
-    _save(storedProcessSelectedId, newProcessName, storedProcessSelectedProcesskey, newProcessKey, xml, blob, typeOfDiagram, null, savedSessionResponse)
+    return _save(storedProcessSelectedId, newProcessName, storedProcessSelectedProcesskey, newProcessKey, xml, blob, typeOfDiagram, null, savedSessionResponse)
   }
 
   const _save = (storedProcessSelectedId, newProcessName, storedProcessSelectedProcesskey, newProcessKey, xml, blob, typeOfDiagram, functionToExecute, sessionResponse) => {
@@ -125,7 +125,7 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
     const storedProcessSelectedProcesskey = props.tabElement.key
     const newProcessName = processInformation.value.name === '' || !processInformation.value.name ? processInformation.value.id :processInformation.value.name // name of the process from the properties panel, if the diagram doesnt have a name it would be the same as the id
     const newProcessKey = processInformation.value.id // id of the process from the properties panel
-    _save(storedProcessSelectedId, newProcessName, storedProcessSelectedProcesskey, newProcessKey, xml, blob, typeOfDiagram, functionToExecute, sessionResponse)
+    return _save(storedProcessSelectedId, newProcessName, storedProcessSelectedProcesskey, newProcessKey, xml, blob, typeOfDiagram, functionToExecute, sessionResponse)
   }
 
   const getProcessHistoryList = async () => {

@@ -248,4 +248,46 @@ describe('useDiagramSave', () => {
             expect(functionToExecute).not.toHaveBeenCalled()
         })
     })
+
+    describe('falsy response and session-hook failure (regression)', () => {
+        it('returns false and warns when createFn resolves falsy', async () => {
+            const { save, emitted } = withSetup({ tabElement: makeTabElement() })
+            const result = await save(makeSaveOpts({ createFn: vi.fn().mockResolvedValue(null) }))
+
+            expect(result).toBe(false)
+            const toast = emitted.find(e => e.event === 'showToastMessage')
+            expect(toast.args[0].isSuccess).toBe(false)
+            expect(toast.args[0].toastText).toBe('toastSomethingWentWrong')
+        })
+
+        it('returns false when updateFn resolves falsy', async () => {
+            const { save, emitted } = withSetup({ tabElement: makeTabElement({ isSaved: true }) })
+            const result = await save(makeSaveOpts({ updateFn: vi.fn().mockResolvedValue(undefined) }))
+
+            expect(result).toBe(false)
+            expect(emitted.find(e => e.event === 'showToastMessage').args[0].toastText).toBe('toastSomethingWentWrong')
+        })
+
+        it('still succeeds but warns when the session hook fails', async () => {
+            const createSessionHook = vi.fn().mockRejectedValue(new Error('session POST failed'))
+            const { save, emitted } = withSetup({ tabElement: makeTabElement(), createSessionHook })
+            const result = await save(makeSaveOpts({ sessionResponse: { message: 'NO_SESSION' } }))
+
+            expect(result).toBe(true) // the diagram save itself succeeded
+            expect(createSessionHook).toHaveBeenCalledOnce()
+            const toasts = emitted.filter(e => e.event === 'showToastMessage').map(t => t.args[0].toastText)
+            expect(toasts).toContain('toastSaveSuccessful')
+            expect(toasts).toContain('toastSessionLockFailed')
+        })
+
+        it('does not warn when the session hook succeeds', async () => {
+            const createSessionHook = vi.fn().mockResolvedValue({ sessionId: 's1' })
+            const { save, emitted } = withSetup({ tabElement: makeTabElement(), createSessionHook })
+            const result = await save(makeSaveOpts({ sessionResponse: { message: 'NO_SESSION' } }))
+
+            expect(result).toBe(true)
+            const toasts = emitted.filter(e => e.event === 'showToastMessage').map(t => t.args[0].toastText)
+            expect(toasts).not.toContain('toastSessionLockFailed')
+        })
+    })
 })
