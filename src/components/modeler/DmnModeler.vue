@@ -356,9 +356,7 @@ onBeforeUnmount(() => {
 	if (observerDecisionTables) observerDecisionTables.disconnect()
 })
 
-// Destroy in onUnmounted (not onBeforeUnmount) so child components can detach
-// their own listeners from the modeler first; otherwise it would be pulled out
-// from under them during their unmount. Releases dmn-js views, eventBus and DOM.
+// Destroy after children unmount so they detach their listeners first (avoids null.off).
 onUnmounted(() => {
 	dmnModeler?.destroy()
 	dmnModeler = null

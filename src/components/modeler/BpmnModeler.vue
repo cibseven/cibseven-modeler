@@ -360,13 +360,8 @@ onBeforeUnmount(() => {
 	document.removeEventListener('fullscreenchange', onFullscreenChange)
 })
 
-// Destroy in onUnmounted (not onBeforeUnmount): child components (e.g. the EE
-// BpmnFilterPopover) detach their own eventBus listeners from the modeler in
-// their unmount hooks, which run before the parent's onUnmounted. Destroying/
-// nulling it earlier would pull the modeler out from under them (null.off).
+// Destroy after children unmount so they detach their listeners first (avoids null.off).
 onUnmounted(() => {
-	// Release the bpmn-js instance so its eventBus, minimap, properties panel and
-	// detached DOM are freed; otherwise each closed tab leaks a full modeler.
 	bpmnModeler?.destroy()
 	bpmnModeler = null
 })
