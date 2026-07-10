@@ -50,6 +50,10 @@ const getUnifiedDiagrams = (firstResult, maxResults, keyword, type) => {
   })
 }
 
+const getUnifiedDiagramById = id => {
+  return getAxios().get(getModelerServicePath() + '/unified-diagrams/' + id)
+}
+
 const fetchProcessByKey = key => {
   return getAxios().get(getModelerServicePath() + '/process/find-by-key', { params: { key } })
 }
@@ -122,6 +126,7 @@ export {
   fetchDecisionDiagram,
   fetchProcesses,
   getUnifiedDiagrams,
+  getUnifiedDiagramById,
   keyExistsRemote,
   fetchProcessByName,
   fetchProcessById,

@@ -17,6 +17,7 @@
 import {
   fetchProcesses,
   getUnifiedDiagrams,
+  getUnifiedDiagramById,
   fetchProcessById,
   fetchProcessByName,
 } from '../services/processService'
@@ -71,6 +72,15 @@ const actions = {
       commit('setError', error)
     } finally {
       commit('setLoading', false)
+    }
+  },
+
+  async fetchUnifiedDiagramById(_context, id) {
+    try {
+      return await getUnifiedDiagramById(id)
+    } catch (error) {
+      if (error.response?.status === 404) return null
+      throw error
     }
   },
 

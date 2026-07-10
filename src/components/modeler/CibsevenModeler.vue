@@ -847,7 +847,7 @@ const _checkExternalReturn = async () => {
 		}
 	} else if (route.params.diagramId || url.href.includes('diagramId=')) {
 		const diagramId = route.params.diagramId || route.query.diagramId
-		const diagram = diagrams.value?.find(d => d.id === diagramId)
+		const diagram = await store.dispatch('modeler/processes/fetchUnifiedDiagramById', diagramId)
 		if (diagram) {
 			if (diagram.type === 'form') {
 				await store.dispatch('modeler/forms/fetchFormById', diagramId)
@@ -859,6 +859,8 @@ const _checkExternalReturn = async () => {
 				const selectedDiagram = store.state.modeler.processes.processSelected
 				openDiagramFromChild(selectedDiagram, diagram.id, diagram.name, diagram.processkey, diagram.type, true, false, false)
 			}
+		} else {
+			console.warn('Diagram not found for id:', diagramId)
 		}
 	}
 }
