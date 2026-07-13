@@ -75,7 +75,7 @@ const actions = {
     }
   },
 
-  async fetchUnifiedDiagramById(_context, id) {
+  async fetchUnifiedDiagramById({ commit }, id) {
     try {
       return await getUnifiedDiagramById(id)
     } catch (error) {
