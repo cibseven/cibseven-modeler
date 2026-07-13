@@ -859,8 +859,6 @@ const _checkExternalReturn = async () => {
 				const selectedDiagram = store.state.modeler.processes.processSelected
 				openDiagramFromChild(selectedDiagram, diagram.id, diagram.name, diagram.processkey, diagram.type, true, false, false)
 			}
-		} else {
-			console.warn('Diagram not found for id:', diagramId)
 		}
 	}
 }

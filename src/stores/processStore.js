@@ -79,8 +79,8 @@ const actions = {
     try {
       return await getUnifiedDiagramById(id)
     } catch (error) {
-      if (error.response?.status === 404) return null
-      throw error
+      console.error(error)
+      commit('setError', error)
     }
   },
 
