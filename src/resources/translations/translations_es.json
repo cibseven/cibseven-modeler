@@ -121,6 +121,9 @@
     "newDmn": "DMN",
     "newForm": "Form",
     "newBpmnc7": "BPMN 7",
+    "createBpmn": "Crear BPMN",
+    "createDmn": "Crear DMN",
+    "createForm": "Crear formulario",
     "importFile": "Importar archivo local",
     "edit": "Editar",
     "delDiagram": "Eliminar",
@@ -601,9 +604,9 @@
     "form": "Formulario"
   },
   "filterElements": {
-    "dmn": "Dmn",
+    "dmn": "DMN",
     "form": "Formularios",
-    "bpmn": "Bpmn",
+    "bpmn": "BPMN",
     "all": "Todo"
   },
   "bcomponents": {
