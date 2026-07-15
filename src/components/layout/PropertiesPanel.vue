@@ -57,7 +57,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted, onUpdated, inject } from 'vue'
+import { ref, watch, computed, onMounted, onBeforeUnmount, onUpdated, inject } from 'vue'
 
 const TOGGLE_STRIP_WIDTH = 24
 const notResizingMaxWidth = 200 // the rest of the width that the panel will not surpass
@@ -102,6 +102,11 @@ onMounted(() => {
     emit('changeWidth', props.parentWidth - parent.value.clientWidth)
     document.documentElement.addEventListener('mousemove', handleMove, true)
     document.documentElement.addEventListener('mouseup', handleUp, true)
+})
+
+onBeforeUnmount(() => {
+    document.documentElement.removeEventListener('mousemove', handleMove, true)
+    document.documentElement.removeEventListener('mouseup', handleUp, true)
 })
 
 onUpdated(() => props.isPropertyPanelVisible && emit('changeWidth', props.parentWidth - width.value))

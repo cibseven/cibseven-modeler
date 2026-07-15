@@ -36,7 +36,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted, onUpdated } from 'vue'
+import { ref, watch, computed, onMounted, onBeforeUnmount, onUpdated } from 'vue'
 
 const parent = ref(null)
 const props = defineProps({
@@ -83,6 +83,11 @@ onMounted(() => {
     if (isVisible.value) emit('changeHeight', props.parentHeight - parent.value.clientHeight)
     document.documentElement.addEventListener('mousemove', handleMove, true)
     document.documentElement.addEventListener('mouseup', handleUp, true)
+})
+
+onBeforeUnmount(() => {
+    document.documentElement.removeEventListener('mousemove', handleMove, true)
+    document.documentElement.removeEventListener('mouseup', handleUp, true)
 })
 
 onUpdated(() => props.isPropertyPanelVisible && emit('changeHeight', props.parentHeight - height.value))
