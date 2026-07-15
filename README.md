@@ -1,92 +1,59 @@
 # CIB seven Modeler
 
-This template should help get you started developing with Vue 3 in Vite.
+A BPMN / DMN / Form process modeler for the CIB seven platform, built on [bpmn-js](https://bpmn.io/toolkit/bpmn-js/), dmn-js and form-js.
 
-## Recommended IDE Setup
+This repository contains a Vue 3 **component library** (published to npm as `cibseven-modeler`). It is not a standalone application: it is embedded by [cibseven-webclient](https://github.com/cibseven/cibseven-webclient), extended by the Enterprise Edition (`cibseven-modeler-ee`), and consumed by CIB flow. The modeler's REST backend (element templates, diagrams, editing sessions) lives in the **cibseven-webclient** repository (`cibseven-webclient-core`, package `org.cibseven.modeler.*`) — not here.
 
-- [VSCode](https://code.visualstudio.com/)
-- [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur)
-- [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin)
+## Features
 
-## Customize Configuration
+- BPMN 2.0 modeling (Camunda 7 profile), DMN decision tables/DRD, and form modeling
+- Properties panel, element templates (with icons, filtering and scoped groups), Monaco-based script editing
+- BPMN linting via bpmnlint (including a local custom rule plugin)
+- Start page with diagram search, filters and recent diagrams
+- Extension points (plugin slots and provide/inject hooks) used by the Enterprise Edition
 
-See [Vite Configuration Reference](https://vitejs.dev/config/).
+## Architecture Notes
 
-## Project Setup
+- **Library entry:** `src/library.js` — all public exports; keep them backwards compatible, consumers depend on them.
+- **Store:** Vuex 4 via the factory `createModelerStore()` (`src/store.js`); host applications register the returned modules.
+- **Host integration contract:** the host application injects its HTTP setup at startup:
+  - `setServicesBasePath(path)` — REST base path (default `services/v1`); never hardcode URL prefixes
+  - `setAxiosInstance(axios)` — shared axios instance (carries auth headers)
+- **Extension points:** `registerPlugin(slot, component)` plus `provide`d `*Hook`s consumed by `CibsevenModeler` — the EE package builds on these; keep them stable.
+- **Peer dependencies:** singleton/identity-bearing packages (vue, bpmn-js, dmn-js, diagram-js, …) are peers and must never be bundled — duplicate copies break `instanceof` checks and module-global state.
 
-To set up the project, follow these steps:
+## Development
 
-1. **Install Dependencies**
-
-    ```sh
-    npm install
-    ```
-
-2. **Create `.env` File**
-
-    To run the project locally, create a `.env` file in the root of the `frontend` folder with the following content:
-
-    ```
-    VITE_BASE_URL=http://localhost:8090/cibseven-modeler/
-    VITE_BASE_URL_CIBSEVEN=http://localhost:8090
-    VITE_CLIENT=client/
-    ```
-
-3. **Compile and Hot-Reload for Development**
-
-    ```sh
-    npm run dev
-    ```
-
-4. **Compile and Minify for Production**
-
-    ```sh
-    npm run build
-    ```
-
-5. **Lint with [ESLint](https://eslint.org/)**
-
-    ```sh
-    npm run lint
-    ```
-
-6. **Update BPMN Lint Rules**
-
-    If there have been changes to the BPMN lint rules in the .bpmnlint file, update the configuration by running the following command inside the `frontend` folder:
-
-    ```sh
-    npx bpmnlint-pack-config -c .bpmnlintrc -o linterConfig.js -t es
-    ```
-
-## BPMNLint Bug Fix Implementation
-
-To address a bug in the BPMN library related to DataStoreReference, we have overridden the no-overlapping-elements rule with a custom version.
-
-The modified line is number 70, where an optional chaining operator has been added:
-```javascript
-if (isOutsideParentBoundary(diObjects.get(element)?.bounds, parentDi.bounds))
+```sh
+npm install            # install dependencies (exact versions enforced — see check-exact)
+npm run dev            # local development harness (Vite dev server)
+npm run test           # unit tests (Vitest + @vue/test-utils, jsdom)
+npm run test:coverage  # tests with istanbul coverage (reports in target/coverage/)
+npm run lint           # ESLint 9 flat config
+npm run build          # library build -> dist/cibseven-modeler.es.js / .umd.js / .css
 ```
 
-Currently, the .bpmnlint file is configured so it doesn't take the default configuration:
-```json
-"rules": {
-    "no-overlapping-elements": "off",
-    "local/custom-no-overlapping-elements": "warn"
-}
+To test local changes inside a host application, temporarily point the host's `package.json` at this folder (`"cibseven-modeler": "file:../cibseven-modeler"`), rebuild (`npm run build`), and `npm install` in the host. Revert the `file:` link (and lockfile) before committing.
+
+## BPMN Linting
+
+Lint rules are configured in `.bpmnlintrc` and packed into `linterConfig.js`. After changing rules, regenerate with:
+
+```sh
+npx bpmnlint-pack-config -c .bpmnlintrc -o linterConfig.js -t es
 ```
 
-The value 'off' tells the library to not take the custom script, and local/custom-no-overlapping-elements to take the custom one.
+`bpmnlint-plugin-local/` contains a customized `no-overlapping-elements` rule (adds an optional-chaining guard for DataStoreReference DI objects). The stock rule is set to `off` and the local variant to `warn`. When updating `bpmn-js-bpmnlint`, check whether the upstream bug is fixed so the custom rule can be removed.
 
-For future updates of bpmn-js-bpmnlint please check first if this issue has been solved to remove the custom script and keep the library up to date.
+## Publishing
 
-## Local Development Setup
+Published to the CIB seven npm registry (`artifacts.cibseven.org/repository/npm-hosted/`) via the CI pipeline (`Jenkinsfile`). Exact dependency versions are enforced — run `npm run check-exact` before releasing.
 
-Ensure you have the `.env` file set up as described above. This configuration is necessary for the application to interact correctly with the local development environment.
+## Documentation
 
-## Additional Resources
+- User and configuration documentation: [CIB seven docs → Webapps → Modeler](https://docs.cibseven.org/manual/latest/webapps/modeler/)
+- Agent/contributor conventions: [AGENTS.md](AGENTS.md)
 
-For more information on configuration and usage, check out:
+## License
 
-- [Vite Documentation](https://vitejs.dev/)
-- [Vue 3 Documentation](https://v3.vuejs.org/)
-- [ESLint Documentation](https://eslint.org/)
+Apache License 2.0 — see [LICENSE](LICENSE).
