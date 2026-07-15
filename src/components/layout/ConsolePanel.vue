@@ -30,13 +30,17 @@
             <div class="d-flex h-100 flex-grow" v-show="isVisible">
                 <slot />
             </div>
-            <div class="resizable-t" role="presentation" @mousedown="handleDown" />
+            <!-- Focusable resize separator (WAI-ARIA window-splitter pattern) -->
+            <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -->
+            <div class="resizable-t" role="separator" aria-orientation="horizontal"
+                tabindex="0" @mousedown="onHandleMouseDown" @keydown="onHandleKeydown" />
         </div>
     </div>
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted, onBeforeUnmount, onUpdated } from 'vue'
+import { ref, watch, computed, onMounted, onUpdated } from 'vue'
+import { useResizable } from '../../composables/useResizable.js'
 
 const parent = ref(null)
 const props = defineProps({
@@ -73,7 +77,16 @@ const styleNav = computed(() => {
 
 const isVisible = ref(false)
 
-let isResizing = false // to check if the user is resizing
+const { isResizing, onMouseDown: onHandleMouseDown, onKeydown: onHandleKeydown } = useResizable({
+    axis: 'y',
+    getSize: () => height.value,
+    setSize: n => {
+        height.value = n
+        if (n > 0 && !isVisible.value) isVisible.value = true
+    },
+    min: () => 0,
+    max: () => props.parentHeight - MARGIN_TOP,
+})
 
 watch(isVisible, visible => {
     emit('visibility-changed', visible)
@@ -81,13 +94,6 @@ watch(isVisible, visible => {
 
 onMounted(() => {
     if (isVisible.value) emit('changeHeight', props.parentHeight - parent.value.clientHeight)
-    document.documentElement.addEventListener('mousemove', handleMove, true)
-    document.documentElement.addEventListener('mouseup', handleUp, true)
-})
-
-onBeforeUnmount(() => {
-    document.documentElement.removeEventListener('mousemove', handleMove, true)
-    document.documentElement.removeEventListener('mouseup', handleUp, true)
 })
 
 onUpdated(() => props.isPropertyPanelVisible && emit('changeHeight', props.parentHeight - height.value))
@@ -106,27 +112,6 @@ const toggleConsole = next => {
 }
 
 const isOpen = () => isVisible.value
-
-const handleDown = () => isResizing = true
-
-const handleUp = () => isResizing = false
-
-const handleMove = e => {
-    if (isResizing) resizeMovement(e)
-}
-
-const resizeMovement = e => {
-
-    const newHeight = props.parentHeight - e.clientY
-    //checks if its not less than the min height and the max size
-    if (newHeight <= props.parentHeight - MARGIN_TOP) { // margin top
-        height.value = newHeight
-        if (!isVisible.value) isVisible.value = true
-    }
-    else if (newHeight <= 0) {
-        height.value = 0
-    }
-}
 
 const _changeHeight = () => { if (parent.value) props.parentHeight - parent.value.clientHeight }
 
