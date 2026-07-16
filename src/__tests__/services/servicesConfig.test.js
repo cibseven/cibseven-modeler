@@ -14,7 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, afterEach } from 'vitest'
 import {
     getServicesBasePath,
     setServicesBasePath,
@@ -171,7 +171,6 @@ describe('servicesConfig', () => {
         })
 
         it('reverting base path restores original paths', () => {
-            const original = getModelerServicePath()
             setServicesBasePath('temporary/path')
             setServicesBasePath('services/v1')
             const restored = getModelerServicePath()

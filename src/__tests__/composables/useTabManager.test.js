@@ -80,9 +80,6 @@ describe('useTabManager', () => {
 
   describe('_saveTabNavSavedLocalStorage', () => {
     it('clears transient properties before saving', () => {
-      const modelerRef = createMockModelerRef()
-      const composable = useTabManager(modelerRef)
-      
       const mockTab = { id: 1, isSaved: true, canSave: true, isModelerVisible: true, sessionId: 'session1' }
       const copyTab = { ...mockTab }
       
@@ -103,7 +100,6 @@ describe('useTabManager', () => {
     })
 
     it('filters tabs by isSaved property', () => {
-      const modelerRef = createMockModelerRef()
       const tabs = [
         { id: 1, isSaved: true },
         { id: 2, isSaved: false },

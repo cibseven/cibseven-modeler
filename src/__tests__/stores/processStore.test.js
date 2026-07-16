@@ -41,7 +41,7 @@ const makeStore = () => createStore({
             modules: {
                 forms: {
                     namespaced: true,
-                    mutations: { setForms: (state, forms) => {} },
+                    mutations: { setForms: (_state, _forms) => {} },
                 }
             }
         }
@@ -212,7 +212,7 @@ describe('processStore', () => {
             const process = { id: 'p1', name: 'My Process' }
             m.fetchProcessByName.mockResolvedValue(process)
             const store = makeStore()
-            const result = await store.dispatch('processes/fetchProcessByName', 'My Process')
+            await store.dispatch('processes/fetchProcessByName', 'My Process')
             expect(m.fetchProcessByName).toHaveBeenCalledWith('My Process')
         })
     })

@@ -52,7 +52,7 @@ vi.mock('../../utils.js', () => ({
     filterTemplates: (templates, excluded) => templates.filter(t => !excluded.includes(t.id)),
 }))
 vi.mock('../../components/templates/elementTemplateUtils.js', () => ({
-    categorizeTemplates: vi.fn(templates => ({ categories: [] })),
+    categorizeTemplates: vi.fn(_templates => ({ categories: [] })),
 }))
 
 import elementTemplateStore from '../../stores/elementTemplateStore.js'
@@ -222,7 +222,7 @@ describe('elementTemplateStore', () => {
             store.commit('elementTemplates/setElementTemplates', [{ id: 't1', active: false }])
             try {
                 await store.dispatch('elementTemplates/toggleTemplateActiveState', { templateId: 't1', isActive: true })
-            } catch (e) {
+            } catch (_e) {
                 // Expected to throw
             }
             expect(store.state.elementTemplates.elementTemplates).toHaveLength(0)
@@ -429,7 +429,7 @@ describe('elementTemplateStore', () => {
             
             try {
                 await store.dispatch('elementTemplates/toggleTemplateActiveState', { templateId: 't1', isActive: true })
-            } catch (e) {
+            } catch (_e) {
                 // Error handling
             }
         })
@@ -623,7 +623,7 @@ describe('elementTemplateStore', () => {
             try {
                 await store.dispatch('elementTemplates/toggleTemplateActiveState',
                     { templateId: 't1', isActive: true })
-            } catch (e) {
+            } catch (_e) {
                 // Expected
             }
             

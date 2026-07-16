@@ -200,7 +200,6 @@ describe('formStore', () => {
     describe('saveForm', () => {
         it('saves new form', async () => {
             m.saveForm.mockResolvedValue({ id: 'f1', formId: 'form1' })
-            const store = makeStore()
             const formData = { type: 'default', components: [] }
 
             const result = await m.saveForm(formData)
@@ -211,7 +210,6 @@ describe('formStore', () => {
 
         it('updates existing form', async () => {
             m.updateForm.mockResolvedValue({ id: 'f1', formId: 'form1' })
-            const store = makeStore()
             const formData = { id: 'f1', type: 'default', components: [] }
 
             const result = await m.updateForm(formData)
@@ -224,7 +222,6 @@ describe('formStore', () => {
     describe('deleteForm', () => {
         it('deletes form by id', async () => {
             m.deleteForm.mockResolvedValue({})
-            const store = makeStore()
 
             await m.deleteForm('f1')
 

@@ -14,7 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { registerPlugin, getPlugin } from '../../plugins/pluginsConfig.js'
 
 describe('pluginsConfig', () => {
