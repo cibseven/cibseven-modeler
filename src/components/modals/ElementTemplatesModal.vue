@@ -110,6 +110,7 @@ import { useStore } from 'vuex'
 let modalBootstrap = null
 const filteredElementTemplates = ref()
 const modelerEvent = ref(null)
+const applicableTemplateIds = ref(null) // Set of template ids loaded in the modeler; null = show all
 const searchTemplate = ref('')
 const inputSearchValue = ref('')
 const externSwitchValue = ref(true)
@@ -125,19 +126,37 @@ const props = defineProps({
 // Get categorized template data from store
 const elementTemplates = computed(() => store.getters['modeler/elementTemplates/categorizedTemplateData'])
 
+// Restrict the offered templates to those actually loaded in the modeler (config.excludeTemplates
+// strips some), so the picker can never list a template that applyTemplate would reject.
+const availableTemplates = computed(() => {
+  const all = elementTemplates.value
+  const ids = applicableTemplateIds.value
+  if (!ids) return all
+  const result = {}
+  for (const taskType in all) {
+    const groups = {}
+    for (const groupName in all[taskType]) {
+      const kept = all[taskType][groupName].filter(t => ids.has(t.id))
+      if (kept.length) groups[groupName] = kept
+    }
+    if (Object.keys(groups).length) result[taskType] = groups
+  }
+  return result
+})
+
 const isUserTask = computed(()=>{
   return modelerEvent.value?.element?.type ==='bpmn:UserTask'
 })
 
 watch(modelerEvent, newValue => {
   if (!newValue) return
-  filteredElementTemplates.value = elementTemplates.value[modelerEvent.value?.element?.type] ?? elementTemplates.value
+  filteredElementTemplates.value = availableTemplates.value[modelerEvent.value?.element?.type] ?? availableTemplates.value
 
   handleSearch()
 })
 
 const handleSearch = debounce(async () => {
-  const taskElementTemplates = elementTemplates.value[modelerEvent.value?.element?.type] ?? elementTemplates.value
+  const taskElementTemplates = availableTemplates.value[modelerEvent.value?.element?.type] ?? availableTemplates.value
   filteredElementTemplates.value = JSON.parse(JSON.stringify(taskElementTemplates))
   const taskElementTemplatesArray = Object.entries(taskElementTemplates)
 
@@ -185,8 +204,9 @@ const selectTemplate = id => {
   modalBootstrap.hide()
 }
 
-const show = e => {
+const show = (e, applicableIds = null) => {
   modelerEvent.value = e
+  applicableTemplateIds.value = applicableIds ? new Set(applicableIds) : null
   modalBootstrap.show()
 }
 
