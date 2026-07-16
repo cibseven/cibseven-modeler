@@ -101,6 +101,10 @@
     "title": "Error",
     "body": "Ups, algo ha salido mal"
   },
+  "toastSessionLockFailed": {
+    "title": "Bloqueo de edición no adquirido",
+    "body": "El diagrama se guardó, pero no se pudo crear el bloqueo de edición. Otros pueden editarlo al mismo tiempo."
+  },
   "ttlFieldRequired": "Este campo es obligatorio para el despliegue",
   "buttons": {
     "accept": "Aceptar",
@@ -117,6 +121,9 @@
     "newDmn": "DMN",
     "newForm": "Form",
     "newBpmnc7": "BPMN 7",
+    "createBpmn": "Crear BPMN",
+    "createDmn": "Crear DMN",
+    "createForm": "Crear formulario",
     "importFile": "Importar archivo local",
     "edit": "Editar",
     "delDiagram": "Eliminar",
@@ -597,9 +604,9 @@
     "form": "Formulario"
   },
   "filterElements": {
-    "dmn": "Dmn",
+    "dmn": "DMN",
     "form": "Formularios",
-    "bpmn": "Bpmn",
+    "bpmn": "BPMN",
     "all": "Todo"
   },
   "bcomponents": {

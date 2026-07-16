@@ -28,6 +28,22 @@ export default function useDiagramSave(props, emit, sessionHooks = {}) {
   const { createSessionHook = null } = sessionHooks
 
   /**
+   * Create the edit-lock session after a successful save. The diagram is already
+   * persisted at this point, so a session-creation failure must NOT fail the save:
+   * it is awaited (no unhandled rejection) and surfaced as its own warning toast.
+   */
+  const _createSessionSafely = async (response, blob, sessionResponse) => {
+    if (createSessionHook && sessionResponse?.message === 'NO_SESSION') {
+      try {
+        await createSessionHook(response, blob, props.tabElementIndex, props.tabElement)
+      } catch (error) {
+        console.error('Failed to create edit-lock session after save', error)
+        emit('showToastMessage', { isSuccess: false, toastText: 'toastSessionLockFailed' })
+      }
+    }
+  }
+
+  /**
    * Persist a diagram (create or update) and emit the common success/error events.
    *
    * @param {object} opts
@@ -79,18 +95,18 @@ export default function useDiagramSave(props, emit, sessionHooks = {}) {
     if (props.tabElement.isSaved || props.tabElement.replaceXml) {
       try {
         const response = await updateFn()
-        if (response) {
-          emit('updateStoredLocalStorageTabNavList', toTabPayload(response), props.tabElementIndex, xml)
-          emit('showToastMessage', { isSuccess: true, toastText: 'toastUpdateSuccessful', bodyTextAlt: '' })
-          emit('toggleEnableSave', false, props.tabElementIndex)
-          emit('toggleVersionNotSaved', false, props.tabElementIndex)
-          if (afterSave) await afterSave(response)
-          if (createSessionHook && sessionResponse?.message === 'NO_SESSION') {
-            createSessionHook(response, blob, props.tabElementIndex, props.tabElement)
-          }
-          if (functionToExecute) functionToExecute(xml)
-          return true
+        if (!response) {
+          emit('showToastMessage', { isSuccess: false, toastText: 'toastSomethingWentWrong' })
+          return false
         }
+        emit('updateStoredLocalStorageTabNavList', toTabPayload(response), props.tabElementIndex, xml)
+        emit('showToastMessage', { isSuccess: true, toastText: 'toastUpdateSuccessful', bodyTextAlt: '' })
+        emit('toggleEnableSave', false, props.tabElementIndex)
+        emit('toggleVersionNotSaved', false, props.tabElementIndex)
+        if (afterSave) await afterSave(response)
+        await _createSessionSafely(response, blob, sessionResponse)
+        if (functionToExecute) functionToExecute(xml)
+        return true
       } catch (error) {
         emit('showToastMessage', { isSuccess: false, toastText: 'toastSomethingWentWrong' })
         console.error(error)
@@ -99,19 +115,19 @@ export default function useDiagramSave(props, emit, sessionHooks = {}) {
     } else {
       try {
         const response = await createFn()
-        if (response) {
-          emit('updateStoredLocalStorageTabNavList', toTabPayload(response), props.tabElementIndex, xml)
-          emit('showToastMessage', { isSuccess: true, toastText: 'toastSaveSuccessful' })
-          emit('toggleEnableSave', false, props.tabElementIndex)
-          emit('toggleIsSaved', true, props.tabElementIndex)
-          emit('toggleVersionNotSaved', false, props.tabElementIndex)
-          if (afterSave) await afterSave(response)
-          if (createSessionHook && sessionResponse?.message === 'NO_SESSION') {
-            createSessionHook(response, blob, props.tabElementIndex, props.tabElement)
-          }
-          if (functionToExecute) functionToExecute(xml)
-          return true
+        if (!response) {
+          emit('showToastMessage', { isSuccess: false, toastText: 'toastSomethingWentWrong' })
+          return false
         }
+        emit('updateStoredLocalStorageTabNavList', toTabPayload(response), props.tabElementIndex, xml)
+        emit('showToastMessage', { isSuccess: true, toastText: 'toastSaveSuccessful' })
+        emit('toggleEnableSave', false, props.tabElementIndex)
+        emit('toggleIsSaved', true, props.tabElementIndex)
+        emit('toggleVersionNotSaved', false, props.tabElementIndex)
+        if (afterSave) await afterSave(response)
+        await _createSessionSafely(response, blob, sessionResponse)
+        if (functionToExecute) functionToExecute(xml)
+        return true
       } catch (error) {
         emit('showToastMessage', { isSuccess: false, toastText: 'toastSomethingWentWrong' })
         console.error(error)

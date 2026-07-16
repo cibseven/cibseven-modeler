@@ -18,7 +18,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createStore } from 'vuex'
 
 const m = vi.hoisted(() => ({
-    getAllElementTemplates: vi.fn().mockResolvedValue({ data: [] }),
+    getAllElementTemplates: vi.fn().mockResolvedValue([]),
     setTemplateIsActive: vi.fn().mockResolvedValue({}),
     updateElementTemplate: vi.fn().mockResolvedValue({}),
     addElementTemplate: vi.fn().mockResolvedValue({}),
@@ -94,6 +94,12 @@ describe('elementTemplateStore', () => {
             const templates = [{ id: 't1', name: 'Template 1' }]
             store.commit('elementTemplates/setElementTemplates', templates)
             expect(store.state.elementTemplates.elementTemplates).toEqual(templates)
+        })
+
+        it('setElementTemplates coerces a non-array payload to []', () => {
+            const store = makeStore()
+            store.commit('elementTemplates/setElementTemplates', '<!doctype html><html>not an array</html>')
+            expect(store.state.elementTemplates.elementTemplates).toEqual([])
         })
 
         it('setLoading sets loading state', () => {
@@ -175,21 +181,21 @@ describe('elementTemplateStore', () => {
     describe('actions', () => {
         it('fetchAllElementTemplates fetches and stores templates', async () => {
             const templates = [{ id: 't1', name: 'Template 1' }]
-            m.getAllElementTemplates.mockResolvedValue({ data: templates })
+            m.getAllElementTemplates.mockResolvedValue(templates)
             const store = makeStore()
             await store.dispatch('elementTemplates/fetchAllElementTemplates')
             expect(store.state.elementTemplates.elementTemplates).toEqual(templates)
         })
 
         it('fetchAllElementTemplates handles empty response', async () => {
-            m.getAllElementTemplates.mockResolvedValue({ data: [] })
+            m.getAllElementTemplates.mockResolvedValue([])
             const store = makeStore()
             await store.dispatch('elementTemplates/fetchAllElementTemplates')
             expect(store.state.elementTemplates.elementTemplates).toEqual([])
         })
 
         it('fetchAllElementTemplates sets loading during fetch', async () => {
-            m.getAllElementTemplates.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({ data: [] }), 100)))
+            m.getAllElementTemplates.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve([]), 100)))
             const store = makeStore()
             const promise = store.dispatch('elementTemplates/fetchAllElementTemplates')
             expect(store.state.elementTemplates.isLoading).toBe(true)
@@ -204,6 +210,30 @@ describe('elementTemplateStore', () => {
             await store.dispatch('elementTemplates/fetchAllElementTemplates')
             expect(store.state.elementTemplates.error).toBeDefined()
             expect(store.state.elementTemplates.elementTemplates).toEqual([])
+        })
+
+        it('fetchAllElementTemplates stores [] when the endpoint returns HTML (disabled backend)', async () => {
+            vi.spyOn(console, 'warn').mockImplementation(() => {})
+            m.getAllElementTemplates.mockResolvedValue('<!doctype html><html>SPA fallback</html>')
+            const store = makeStore()
+
+            await store.dispatch('elementTemplates/fetchAllElementTemplates')
+
+            expect(store.state.elementTemplates.elementTemplates).toEqual([])
+            expect(store.getters['elementTemplates/allElementTemplateContents']).toEqual([])
+            expect(console.warn).toHaveBeenCalled()
+        })
+
+        it('fetchAllElementTemplates stores a valid array response without warning', async () => {
+            vi.spyOn(console, 'warn').mockImplementation(() => {})
+            const templates = [{ id: '1', active: true, content: '{}' }]
+            m.getAllElementTemplates.mockResolvedValue(templates)
+            const store = makeStore()
+
+            await store.dispatch('elementTemplates/fetchAllElementTemplates')
+
+            expect(store.state.elementTemplates.elementTemplates).toEqual(templates)
+            expect(console.warn).not.toHaveBeenCalled()
         })
 
         it('toggleTemplateActiveState updates template active state', async () => {
@@ -388,7 +418,7 @@ describe('elementTemplateStore', () => {
     describe('async operations and error handling', () => {
         it('handles concurrent template operations', async () => {
             const templates = [{ id: 't1', name: 'Template 1' }]
-            m.getAllElementTemplates.mockResolvedValue({ data: templates })
+            m.getAllElementTemplates.mockResolvedValue(templates)
             m.addElementTemplate.mockResolvedValue({ id: 't2', name: 'Template 2' })
 
             const store = makeStore()
@@ -483,7 +513,7 @@ describe('elementTemplateStore', () => {
                 name: `Template ${i}`,
                 active: i % 2 === 0
             }))
-            m.getAllElementTemplates.mockResolvedValue({ data: largeDataset })
+            m.getAllElementTemplates.mockResolvedValue(largeDataset)
 
             const store = makeStore()
             await store.dispatch('elementTemplates/fetchAllElementTemplates')
@@ -566,7 +596,7 @@ describe('elementTemplateStore', () => {
     describe('advanced action scenarios', () => {
         it('fetches and caches templates', async () => {
             const templates = [{ id: 't1', name: 'T1' }]
-            m.getAllElementTemplates.mockResolvedValue({ data: templates })
+            m.getAllElementTemplates.mockResolvedValue(templates)
             
             const store = makeStore()
             await store.dispatch('elementTemplates/fetchAllElementTemplates')
@@ -652,12 +682,10 @@ describe('elementTemplateStore', () => {
     describe('concurrent operations', () => {
         it('handles multiple simultaneous updates', async () => {
             const store = makeStore()
-            m.getAllElementTemplates.mockResolvedValue({ 
-                data: [
-                    { id: 't1', name: 'T1' },
-                    { id: 't2', name: 'T2' }
-                ]
-            })
+            m.getAllElementTemplates.mockResolvedValue([
+                { id: 't1', name: 'T1' },
+                { id: 't2', name: 'T2' }
+            ])
 
             const promise1 = store.dispatch('elementTemplates/fetchAllElementTemplates')
             const promise2 = store.dispatch('elementTemplates/fetchAllElementTemplates')
@@ -667,13 +695,13 @@ describe('elementTemplateStore', () => {
         })
 
         it('handles loading state during fetch', async () => {
+            const store = makeStore()
             let loadingDuringFetch = false
             m.getAllElementTemplates.mockImplementation(async () => {
                 loadingDuringFetch = store.getters['elementTemplates/isLoading']
-                return { data: [] }
+                return []
             })
 
-            const store = makeStore()
             await store.dispatch('elementTemplates/fetchAllElementTemplates')
             expect(loadingDuringFetch).toBe(true)
         })
@@ -749,7 +777,7 @@ describe('elementTemplateStore', () => {
             const store = makeStore()
             store.commit('elementTemplates/setError', new Error('Previous error'))
             
-            m.getAllElementTemplates.mockResolvedValue({ data: [] })
+            m.getAllElementTemplates.mockResolvedValue([])
             await store.dispatch('elementTemplates/fetchAllElementTemplates')
             
             expect(store.getters['elementTemplates/error']).toBeNull()

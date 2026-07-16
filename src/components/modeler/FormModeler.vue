@@ -56,7 +56,7 @@ import PropertiesPanel from '../layout/PropertiesPanel.vue'
 import usePropertiesPanel from '../../composables/usePropertiesPanel'
 import useForm from '../../composables/useForm'
 
-import { ref, onMounted, computed, onUpdated, watch, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, onUpdated, watch, nextTick } from 'vue'
 import { getPlugin } from '../../plugins/pluginsConfig'
 
 const formTool = getPlugin('form-tools')
@@ -112,6 +112,11 @@ onMounted(async() => {
 	window.addEventListener('resize', updateParentHeight, true)
 	await nextTick()
 	emit('resizeTabNav', canvasWidth.value)
+})
+
+onBeforeUnmount(() => {
+	window.removeEventListener('resize', updateParentWidth, true)
+	window.removeEventListener('resize', updateParentHeight, true)
 })
 
 onUpdated(() => {

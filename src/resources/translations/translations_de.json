@@ -101,6 +101,10 @@
     "title": "Fehler",
     "body": "Hoppla, etwas ist schief gelaufen."
   },
+  "toastSessionLockFailed": {
+    "title": "Bearbeitungssperre nicht gesetzt",
+    "body": "Das Diagramm wurde gespeichert, aber die Bearbeitungssperre konnte nicht erstellt werden. Andere können es gleichzeitig bearbeiten."
+  },
   "ttlFieldRequired": "Dieses Feld ist für die Bereitstellung erforderlich",
   "buttons": {
     "accept": "Ok",
@@ -117,6 +121,9 @@
     "newDmn": "DMN",
     "newForm": "Form",
     "newBpmnc7": "BPMN 7",
+    "createBpmn": "BPMN erstellen",
+    "createDmn": "DMN erstellen",
+    "createForm": "Formular erstellen",
     "importFile": "Lokale Datei importieren",
     "edit": "Bearbeiten",
     "delDiagram": "Löschen",

@@ -101,6 +101,10 @@
 		"title": "Error",
 		"body": "Ooops, something went wrong"
 	},
+	"toastSessionLockFailed": {
+		"title": "Edit lock not acquired",
+		"body": "The diagram was saved, but the edit lock could not be created. Others may edit it at the same time."
+	},
 	"ttlFieldRequired": "This field is required for deployment",
 	"buttons": {
 		"accept": "Accept",
@@ -117,6 +121,9 @@
 		"newDmn": "DMN",
 		"newForm": "Form",
 		"newBpmnc7": "BPMN 7",
+		"createBpmn": "Create BPMN",
+		"createDmn": "Create DMN",
+		"createForm": "Create Form",
 		"importFile": "Import local file",
 		"edit": "Edit",
 		"delDiagram": "Delete",
@@ -597,9 +604,9 @@
 		"form": "Form"
 	},
 	"filterElements": {
-		"dmn": "Dmn",
+		"dmn": "DMN",
 		"form": "Forms",
-		"bpmn": "Bpmn",
+		"bpmn": "BPMN",
 		"all": "All"
 	},
 	"bcomponents": {

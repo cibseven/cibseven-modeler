@@ -93,26 +93,16 @@
                             </div>
                             <input ref="fileInput" type="file" accept=".bpmn,.dmn,.form" multiple :aria-label="$t('buttons.importFile')" style="display: none;"
                                 @change="handleFileChange" />
-                            <div class="dropdown">
-                                <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                                    aria-expanded="false">
-                                    {{ $t('buttons.createDiagram') }}
+                            <div class="d-flex gap-2">
+                                <button :title="$t('buttons.createBpmn')" type="button" class="btn btn-secondary" @click="handleClickCreateBpmnc7Diagram">
+                                    {{ $t('buttons.createBpmn') }}
                                 </button>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li> <button :title="$t('buttons.newBpmnc7')" type="button" class="dropdown-item" @click="handleClickCreateBpmnc7Diagram">
-                                            {{ $t('buttons.newBpmnc7') }}
-                                        </button>
-                                    </li>
-                                    <li> <button :title="$t('buttons.newDmn')" type="button" class="dropdown-item" @click="handleClickCreateDmnDiagram">
-                                            {{ $t('buttons.newDmn') }}
-                                        </button>
-                                    </li>
-                                    <li> <button :title="$t('buttons.newForm')" type="button" class="dropdown-item" @click="handleClickCreateFormDiagram">
-                                            {{ $t('buttons.newForm') }}
-                                        </button>
-                                    </li>
-
-                                </ul>
+                                <button :title="$t('buttons.createDmn')" type="button" class="btn btn-secondary" @click="handleClickCreateDmnDiagram">
+                                    {{ $t('buttons.createDmn') }}
+                                </button>
+                                <button :title="$t('buttons.createForm')" type="button" class="btn btn-secondary" @click="handleClickCreateFormDiagram">
+                                    {{ $t('buttons.createForm') }}
+                                </button>
                             </div>
                         </div>
 

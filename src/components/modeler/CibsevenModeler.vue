@@ -847,7 +847,7 @@ const _checkExternalReturn = async () => {
 		}
 	} else if (route.params.diagramId || url.href.includes('diagramId=')) {
 		const diagramId = route.params.diagramId || route.query.diagramId
-		const diagram = diagrams.value?.find(d => d.id === diagramId)
+		const diagram = await store.dispatch('modeler/processes/fetchUnifiedDiagramById', diagramId)
 		if (diagram) {
 			if (diagram.type === 'form') {
 				await store.dispatch('modeler/forms/fetchFormById', diagramId)
