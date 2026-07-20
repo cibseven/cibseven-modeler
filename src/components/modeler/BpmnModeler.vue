@@ -1056,9 +1056,13 @@ input[name="historyTimeToLive"].is-invalid {
 	color: #fff;
 }
 
-.container.modeler .bts-toggle-mode:hover,
-.container.modeler .bjs-container.simulation .bts-toggle-mode:hover {
+.container.modeler .bts-toggle-mode:hover {
 	background-color: var(--bs-secondary);
+	color: #fff;
+}
+
+.container.modeler .bjs-container.simulation .bts-toggle-mode:hover {
+	background-color: #2b78e8;
 	color: #fff;
 }
 
