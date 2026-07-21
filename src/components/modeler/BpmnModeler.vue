@@ -1048,17 +1048,21 @@ input[name="historyTimeToLive"].is-invalid {
 
 .container.modeler .bts-toggle-mode {
 	background-color: transparent;
-	color: var(--bs-secondary);
+	color: var(--bs-dark);
+	border: var(--bs-border-width, 1px) solid transparent;
+	border-radius: 0.375rem;
 }
 
 .container.modeler .bjs-container.simulation .bts-toggle-mode {
 	background-color: #4395ff;
 	color: #fff;
+	border-color: #4395ff;
 }
 
 .container.modeler .bts-toggle-mode:hover {
-	background-color: var(--bs-secondary);
-	color: #fff;
+	background-color: transparent;
+	border-color: var(--bs-dark);
+	color: var(--bs-dark);
 }
 
 .container.modeler .bjs-container.simulation .bts-toggle-mode:hover {
