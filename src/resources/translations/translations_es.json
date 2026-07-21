@@ -140,6 +140,7 @@
     "resetViewport": "Restablecer vista",
     "minimap": "Minimapa",
     "fullscreen": "Pantalla completa",
+    "exitFullscreen": "Salir de pantalla completa",
     "expandScript": "Abrir en editor completo",
     "collapsePanel": "Contraer panel",
     "expandPanel": "Expandir panel",

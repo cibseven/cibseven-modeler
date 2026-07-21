@@ -140,6 +140,7 @@
     "resetViewport": "Ansicht zurücksetzen",
     "minimap": "Minimalkarte",
     "fullscreen": "Vollbild",
+    "exitFullscreen": "Vollbild beenden",
     "expandScript": "Im vollständigen Editor öffnen",
     "collapsePanel": "Bereich einklappen",
     "expandPanel": "Bereich ausklappen",

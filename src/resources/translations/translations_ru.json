@@ -140,6 +140,7 @@
     "resetViewport": "Сбросить вид",
     "minimap": "Миникарта",
     "fullscreen": "Полный экран",
+    "exitFullscreen": "Выйти из полноэкранного режима",
     "expandScript": "Открыть в полном редакторе",
     "collapsePanel": "Свернуть панель",
     "expandPanel": "Развернуть панель",
