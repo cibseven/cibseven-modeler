@@ -6,7 +6,7 @@
  * Version 2.0; you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -48,7 +48,7 @@ describe('deployService', () => {
                 '',
                 '',
                 'Process 1',
-                'http://instance.com',
+                'https://instance.com',
                 'tenant1',
                 '<bpmn />',
                 false,
@@ -68,7 +68,7 @@ describe('deployService', () => {
                 'user',
                 'pass',
                 'Process 2',
-                'http://instance.com',
+                'https://instance.com',
                 '',
                 '<bpmn />',
                 false,
@@ -88,7 +88,7 @@ describe('deployService', () => {
                 '',
                 '',
                 'Process 3',
-                'http://custom.com',
+                'https://custom.com',
                 'tenant1',
                 '<bpmn />',
                 true,
@@ -111,7 +111,7 @@ describe('deployService', () => {
                 '',
                 '',
                 'Process 4',
-                'http://instance.com',
+                'https://instance.com',
                 'tenant1',
                 '<bpmn />',
                 false,
@@ -132,7 +132,7 @@ describe('deployService', () => {
                     '',
                     '',
                     'Process 5',
-                    'http://instance.com',
+                    'https://instance.com',
                     'tenant1',
                     '<bpmn />',
                     false,
@@ -171,7 +171,7 @@ describe('deployService', () => {
                 '',
                 '',
                 'Process 7',
-                'http://instance.com',
+                'https://instance.com',
                 'tenant1',
                 '<bpmn />',
                 false,
@@ -190,7 +190,7 @@ describe('deployService', () => {
                 '',
                 '',
                 'Process 8',
-                'http://instance.com',
+                'https://instance.com',
                 '',
                 '<bpmn />',
                 false,
@@ -209,7 +209,7 @@ describe('deployService', () => {
                 '',
                 '',
                 'Decision 1',
-                'http://instance.com',
+                'https://instance.com',
                 '',
                 '<dmn />',
                 false,
@@ -230,7 +230,7 @@ describe('deployService', () => {
                 '',
                 '',
                 'Process_1',
-                'http://instance.com',
+                'https://instance.com',
                 false
             )
 
@@ -247,7 +247,7 @@ describe('deployService', () => {
                 'user',
                 'pass',
                 'Process_2',
-                'http://instance.com',
+                'https://instance.com',
                 false
             )
 
@@ -264,7 +264,7 @@ describe('deployService', () => {
                 '',
                 '',
                 'Process_3',
-                'http://custom.com',
+                'https://custom.com',
                 true
             )
 
@@ -280,7 +280,7 @@ describe('deployService', () => {
                 '',
                 '',
                 'Process_4',
-                'http://instance.com',
+                'https://instance.com',
                 false
             )
 
@@ -299,7 +299,7 @@ describe('deployService', () => {
                     '',
                     '',
                     'Process_5',
-                    'http://instance.com',
+                    'https://instance.com',
                     false
                 )
                 expect(true).toBe(false)
@@ -315,7 +315,7 @@ describe('deployService', () => {
                 '',
                 '',
                 'Process_6',
-                'http://instance.com',
+                'https://instance.com',
                 false
             )
 
@@ -329,7 +329,7 @@ describe('deployService', () => {
                 '',
                 '',
                 'Process_7',
-                'http://instance.com',
+                'https://instance.com',
                 false
             )
 
@@ -345,7 +345,7 @@ describe('deployService', () => {
                 '',
                 '',
                 'MyProcess_v1',
-                'http://instance.com',
+                'https://instance.com',
                 false
             )
 
