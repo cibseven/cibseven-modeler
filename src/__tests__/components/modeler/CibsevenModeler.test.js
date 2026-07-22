@@ -423,7 +423,7 @@ describe('CibsevenModeler', () => {
 
     it('creates new BPMN tab when creation modal is skipped', async () => {
       localStorage.setItem('cibseven:modeler.skipCreationModal', 'true')
-      global.fetch = vi.fn().mockResolvedValue({
+      globalThis.fetch = vi.fn().mockResolvedValue({
         ok: true,
         text: () => Promise.resolve(
           '<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"><bpmn:process id="p"/></bpmn:definitions>',
@@ -438,7 +438,7 @@ describe('CibsevenModeler', () => {
 
     it('creates new DMN tab when creation modal is skipped', async () => {
       localStorage.setItem('cibseven:modeler.skipCreationModal', 'true')
-      global.fetch = vi.fn().mockResolvedValue({
+      globalThis.fetch = vi.fn().mockResolvedValue({
         ok: true,
         text: () => Promise.resolve(
           '<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL"><decision id="d"/></definitions>',

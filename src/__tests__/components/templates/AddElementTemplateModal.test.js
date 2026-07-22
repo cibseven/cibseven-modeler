@@ -16,7 +16,6 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
-import { createStore } from 'vuex'
 import AddElementTemplateModal from '../../../components/templates/AddElementTemplateModal.vue'
 
 const modalShow = vi.fn()
