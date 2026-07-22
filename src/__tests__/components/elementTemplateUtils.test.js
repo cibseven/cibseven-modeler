@@ -14,8 +14,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { describe, it, expect } from 'vitest'
-import { categorizeTemplates } from '../../components/templates/elementTemplateUtils.js'
+import { describe, it, expect, vi } from 'vitest'
+import { categorizeTemplates, applicableTaskTypes } from '../../components/templates/elementTemplateUtils.js'
 
 const ICON_DATA_URI = 'data:image/svg+xml;base64,PHN2Zy8+'
 
@@ -140,5 +140,148 @@ describe('categorizeTemplates — exposed icon and templateVersion fields', () =
         expect(result['bpmn:ServiceTask']['undefined'][0].templateVersion).toBe(2)
         expect(result['bpmn:UserTask']['undefined'][0].icon).toBe(ICON_DATA_URI)
         expect(result['bpmn:UserTask']['undefined'][0].templateVersion).toBe(2)
+    })
+})
+
+describe('applicableTaskTypes', () => {
+    it('maps BPMN task types to human-readable labels', () => {
+        expect(applicableTaskTypes['bpmn:UserTask']).toBe('User Task')
+        expect(applicableTaskTypes['bpmn:StartEvent']).toBe('Start Event')
+    })
+})
+
+describe('categorizeTemplates — grouping and options', () => {
+    it('parses group name from template name before first dash', () => {
+        const raw = [makeRawTemplate({ parsed: {
+            id: 'com.example.template-1',
+            name: 'MyGroup-Task Name (v1)',
+            version: 1,
+            appliesTo: ['bpmn:ServiceTask'],
+        } })]
+
+        const result = categorizeTemplates(raw)
+        const entry = result['bpmn:ServiceTask']['MyGroup'][0]
+
+        expect(entry.name).toBe('Task Name ')
+    })
+
+    it('sorts templates within a group alphabetically by name', () => {
+        const raw = [
+            makeRawTemplate({ templateId: 'b', parsed: {
+                id: 'com.example.b-1',
+                name: 'Zebra',
+                appliesTo: ['bpmn:ServiceTask'],
+            } }),
+            makeRawTemplate({ templateId: 'a', parsed: {
+                id: 'com.example.a-1',
+                name: 'Alpha',
+                appliesTo: ['bpmn:ServiceTask'],
+            } }),
+        ]
+
+        const result = categorizeTemplates(raw)
+        const names = result['bpmn:ServiceTask']['undefined'].map(t => t.name)
+
+        expect(names).toEqual(['Alpha', 'Zebra'])
+    })
+
+    it('sorts group names alphabetically within a task type', () => {
+        const raw = [
+            makeRawTemplate({ templateId: 'z', parsed: {
+                id: 'com.example.z-1',
+                name: 'ZGroup-Task',
+                appliesTo: ['bpmn:ServiceTask'],
+            } }),
+            makeRawTemplate({ templateId: 'a', parsed: {
+                id: 'com.example.a-1',
+                name: 'AGroup-Task',
+                appliesTo: ['bpmn:ServiceTask'],
+            } }),
+        ]
+
+        const result = categorizeTemplates(raw)
+
+        expect(Object.keys(result['bpmn:ServiceTask'])).toEqual(['AGroup', 'ZGroup'])
+    })
+
+    it('filterActive excludes inactive templates', () => {
+        const raw = [
+            makeRawTemplate({ active: false, parsed: {
+                id: 'com.example.inactive-1',
+                name: 'Inactive',
+                appliesTo: ['bpmn:ServiceTask'],
+            } }),
+            makeRawTemplate({ templateId: 'active', parsed: {
+                id: 'com.example.active-1',
+                name: 'Active',
+                appliesTo: ['bpmn:ServiceTask'],
+            } }),
+        ]
+
+        const result = categorizeTemplates(raw, { filterActive: true })
+
+        expect(result['bpmn:ServiceTask']['undefined']).toHaveLength(1)
+        expect(result['bpmn:ServiceTask']['undefined'][0].name).toBe('Active')
+    })
+
+    it('preserveOriginalTemplate keeps reference to raw template object', () => {
+        const rawTemplate = makeRawTemplate({ parsed: {
+            id: 'com.example.foo-1',
+            name: 'Foo',
+            appliesTo: ['bpmn:ServiceTask'],
+        } })
+
+        const result = categorizeTemplates([rawTemplate], { preserveOriginalTemplate: true })
+        const entry = result['bpmn:ServiceTask']['undefined'][0]
+
+        expect(entry.template).toBe(rawTemplate)
+    })
+
+    it('sets extern true when implementation type is external', () => {
+        const raw = [makeRawTemplate({ parsed: {
+            id: 'com.example.ext-1',
+            name: 'External Task',
+            appliesTo: ['bpmn:ServiceTask'],
+            properties: [{ label: 'Implementation Type', value: 'external' }],
+        } })]
+
+        const result = categorizeTemplates(raw)
+
+        expect(result['bpmn:ServiceTask']['undefined'][0].extern).toBe(true)
+    })
+
+    it('sets extern false when implementation type is not external', () => {
+        const raw = [makeRawTemplate({ parsed: {
+            id: 'com.example.int-1',
+            name: 'Internal Task',
+            appliesTo: ['bpmn:ServiceTask'],
+            properties: [{ label: 'Implementation Type', value: 'java' }],
+        } })]
+
+        const result = categorizeTemplates(raw)
+
+        expect(result['bpmn:ServiceTask']['undefined'][0].extern).toBe(false)
+    })
+
+    it('skips templates with empty content and warns', () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+        const raw = [{ templateId: 'empty', content: '   ', active: true }]
+
+        const result = categorizeTemplates(raw)
+
+        expect(result).toEqual({})
+        expect(warnSpy).toHaveBeenCalledWith('Template empty has empty or null content')
+        warnSpy.mockRestore()
+    })
+
+    it('skips templates with invalid JSON and logs error', () => {
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+        const raw = [{ templateId: 'bad', content: '{not json', active: true }]
+
+        const result = categorizeTemplates(raw)
+
+        expect(result).toEqual({})
+        expect(errorSpy).toHaveBeenCalled()
+        errorSpy.mockRestore()
     })
 })

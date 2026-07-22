@@ -20,10 +20,11 @@ const m = vi.hoisted(() => ({
     get: vi.fn(),
     post: vi.fn(),
     patch: vi.fn(),
+    put: vi.fn(),
     delete: vi.fn(),
 }))
 
-vi.mock('../../axiosConfig', () => ({ getAxios: () => ({ get: m.get, post: m.post, patch: m.patch, delete: m.delete }) }))
+vi.mock('../../axiosConfig', () => ({ getAxios: () => ({ get: m.get, post: m.post, patch: m.patch, put: m.put, delete: m.delete }) }))
 vi.mock('../../services/servicesConfig', () => ({ getElementTemplatesPath: () => '/api/templates' }))
 
 import {
@@ -38,6 +39,12 @@ import {
     bulkDeleteTemplates,
     bulkUpdateTemplateVisibility,
     searchTemplates,
+    filterTemplates as filterTemplatesService,
+    validateTemplate,
+    importTemplates,
+    exportTemplates,
+    getTemplateStatistics,
+    updateElementTemplateFull,
 } from '../../services/elementTemplateService'
 
 describe('elementTemplateService', () => {
@@ -499,6 +506,64 @@ describe('elementTemplateService', () => {
 
             expect(m.patch).toHaveBeenCalled()
             expect(m.post).toHaveBeenCalled()
+        })
+    })
+
+    describe('filterTemplates service', () => {
+        it('filters templates with query params', async () => {
+            m.get.mockResolvedValue({ data: [{ id: 't1' }] })
+            const result = await filterTemplatesService({ activeOnly: true, createdBy: 'admin' })
+            expect(m.get).toHaveBeenCalledWith(expect.stringContaining('/filter?'))
+            expect(result.data).toEqual([{ id: 't1' }])
+        })
+    })
+
+    describe('validateTemplate service', () => {
+        it('posts template data for validation', async () => {
+            m.post.mockResolvedValue({ data: { valid: true } })
+            const payload = { templateId: 'com.example.t' }
+            const result = await validateTemplate(payload)
+            expect(m.post).toHaveBeenCalledWith('/api/templates/validate', payload)
+            expect(result.data.valid).toBe(true)
+        })
+    })
+
+    describe('importTemplates service', () => {
+        it('imports templates in bulk', async () => {
+            m.post.mockResolvedValue({ data: { imported: 2 } })
+            const templates = [{ templateId: 'a' }, { templateId: 'b' }]
+            const result = await importTemplates(templates)
+            expect(m.post).toHaveBeenCalledWith('/api/templates/import', templates)
+            expect(result.data.imported).toBe(2)
+        })
+    })
+
+    describe('exportTemplates service', () => {
+        it('exports templates with query params', async () => {
+            m.get.mockResolvedValue({ data: [{ id: 't1' }] })
+            await exportTemplates({ templateIds: ['t1', 't2'], activeOnly: true })
+            const callUrl = m.get.mock.calls.at(-1)[0]
+            expect(callUrl).toContain('/export?')
+            expect(callUrl).toContain('templateIds')
+            expect(callUrl).toContain('activeOnly=true')
+        })
+    })
+
+    describe('getTemplateStatistics service', () => {
+        it('fetches template statistics', async () => {
+            m.get.mockResolvedValue({ data: { total: 10 } })
+            const result = await getTemplateStatistics()
+            expect(m.get).toHaveBeenCalledWith('/api/templates/statistics')
+            expect(result.data.total).toBe(10)
+        })
+    })
+
+    describe('updateElementTemplateFull service', () => {
+        it('performs full template update via PUT', async () => {
+            m.put.mockResolvedValue({ data: { id: 't1', name: 'Updated' } })
+            const result = await updateElementTemplateFull('t1', { name: 'Updated' })
+            expect(m.put).toHaveBeenCalledWith('/api/templates/t1', { name: 'Updated' })
+            expect(result.data.name).toBe('Updated')
         })
     })
 })

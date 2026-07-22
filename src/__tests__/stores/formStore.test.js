@@ -450,4 +450,22 @@ describe('formStore', () => {
             expect(store.getters['forms/error']).toEqual(error)
         })
     })
+
+    describe('actions', () => {
+        it('resetSelectedForm clears selected form state', async () => {
+            const store = makeStore()
+            store.commit('forms/setFormSelected', '{"id":"f1"}')
+            store.commit('forms/setCurrentFormId', 'f1')
+            await store.dispatch('forms/resetSelectedForm')
+            expect(store.state.forms.formSelected).toBeNull()
+            expect(store.state.forms.formSelectedId).toBeNull()
+        })
+
+        it('clearError action clears error state', async () => {
+            const store = makeStore()
+            store.commit('forms/setError', new Error('bad'))
+            await store.dispatch('forms/clearError')
+            expect(store.state.forms.error).toBeNull()
+        })
+    })
 })

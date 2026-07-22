@@ -28,6 +28,8 @@ const m = vi.hoisted(() => ({
     bulkDeleteTemplates: vi.fn().mockResolvedValue({}),
     bulkUpdateTemplateVisibility: vi.fn().mockResolvedValue({}),
     searchTemplates: vi.fn().mockResolvedValue([]),
+    importTemplates: vi.fn().mockResolvedValue({ imported: [] }),
+    updateElementTemplateFull: vi.fn().mockResolvedValue({}),
 }))
 
 vi.mock('../../services/elementTemplateService.js', () => ({
@@ -41,19 +43,24 @@ vi.mock('../../services/elementTemplateService.js', () => ({
     bulkDeleteTemplates: m.bulkDeleteTemplates,
     bulkUpdateTemplateVisibility: m.bulkUpdateTemplateVisibility,
     searchTemplates: m.searchTemplates,
-    filterTemplates: (templates, excluded) => templates.filter(t => !excluded.includes(t.id)),
+    filterTemplates: vi.fn().mockResolvedValue([]),
     validateTemplate: vi.fn().mockResolvedValue(true),
-    importTemplates: vi.fn().mockResolvedValue([]),
+    importTemplates: m.importTemplates,
     exportTemplates: vi.fn().mockResolvedValue(''),
     getTemplateStatistics: vi.fn().mockResolvedValue({}),
-    updateElementTemplateFull: vi.fn().mockResolvedValue({}),
+    updateElementTemplateFull: m.updateElementTemplateFull,
 }))
 vi.mock('../../utils.js', () => ({
-    filterTemplates: (templates, excluded) => templates.filter(t => !excluded.includes(t.id)),
+    filterTemplates: (templates, config) => {
+        const excluded = config?.excludeTemplates ?? []
+        if (!excluded.length) return templates
+        return templates.filter(t => !excluded.includes(t.id))
+    },
 }))
-vi.mock('../../components/templates/elementTemplateUtils.js', () => ({
-    categorizeTemplates: vi.fn(_templates => ({ categories: [] })),
-}))
+vi.mock('../../components/templates/elementTemplateUtils.js', async (importOriginal) => {
+    const actual = await importOriginal()
+    return actual
+})
 
 import elementTemplateStore from '../../stores/elementTemplateStore.js'
 
@@ -842,6 +849,274 @@ describe('elementTemplateStore', () => {
             ])
 
             expect(store.getters['elementTemplates/excludeTemplates']).toEqual(['t1', 't2'])
+        })
+    })
+
+    describe('switchTemplateActiveState and group actions', () => {
+        it('switches template active state and updates exclude list when deactivating', async () => {
+            const store = makeStore()
+            store.commit('elementTemplates/setElementTemplates', [{
+                id: 'db-1',
+                templateId: 'com.example.template',
+                name: 'Template',
+                active: true,
+            }])
+            m.setTemplateIsActive.mockResolvedValue({
+                id: 'db-1',
+                templateId: 'com.example.template',
+                active: false,
+            })
+
+            await store.dispatch('elementTemplates/switchTemplateActiveState', 'db-1')
+
+            expect(m.setTemplateIsActive).toHaveBeenCalledWith('db-1', false)
+            expect(store.getters['elementTemplates/excludeTemplates']).toContain('com.example.template')
+        })
+
+        it('imports templates and adds them to the store', async () => {
+            const store = makeStore()
+            m.importTemplates.mockResolvedValue({
+                imported: [{ id: 'new-1', templateId: 'com.example.new', active: true }],
+            })
+
+            await store.dispatch('elementTemplates/importTemplates', [{ templateId: 'com.example.new' }])
+
+            expect(store.state.elementTemplates.elementTemplates).toHaveLength(1)
+        })
+
+        it('updates template with full payload', async () => {
+            const store = makeStore()
+            store.commit('elementTemplates/setElementTemplates', [{ id: 'db-1', name: 'Old' }])
+            m.updateElementTemplateFull.mockResolvedValue({ id: 'db-1', name: 'Updated' })
+
+            await store.dispatch('elementTemplates/updateElementTemplateFull', {
+                templateId: 'db-1',
+                templateData: { name: 'Updated' },
+            })
+
+            expect(store.state.elementTemplates.elementTemplates[0].name).toBe('Updated')
+        })
+
+        it('sets visibility for all templates in a group', async () => {
+            const store = makeStore()
+            const content = JSON.stringify({
+                id: 'com.example.alpha',
+                name: 'GroupA-Alpha',
+                appliesTo: ['bpmn:ServiceTask'],
+            })
+            store.commit('elementTemplates/setElementTemplates', [{
+                id: 'db-1',
+                templateId: 'com.example.alpha',
+                content,
+                active: true,
+            }])
+            m.setTemplateIsActive.mockResolvedValue({ id: 'db-1', templateId: 'com.example.alpha', active: false })
+
+            const result = await store.dispatch('elementTemplates/setGroupVisibility', {
+                taskType: 'bpmn:ServiceTask',
+                groupName: 'GroupA',
+                isVisible: false,
+            })
+
+            expect(result.updated).toBe(1)
+            expect(m.setTemplateIsActive).toHaveBeenCalled()
+        })
+
+        it('bulk updates template visibility in store', async () => {
+            const store = makeStore()
+            store.commit('elementTemplates/setElementTemplates', [
+                { id: 't1', active: false },
+                { id: 't2', active: false },
+            ])
+            m.bulkUpdateTemplateVisibility.mockResolvedValue({ updated: ['t1', 't2'] })
+
+            await store.dispatch('elementTemplates/bulkUpdateTemplateVisibility', {
+                templateIds: ['t1', 't2'],
+                active: true,
+            })
+
+            expect(store.getters['elementTemplates/getTemplateById']('t1').active).toBe(true)
+            expect(store.getters['elementTemplates/getTemplateById']('t2').active).toBe(true)
+        })
+
+        it('searches templates with loading state', async () => {
+            const store = makeStore()
+            m.searchTemplates.mockResolvedValue([{ id: 't1', name: 'Found' }])
+
+            const results = await store.dispatch('elementTemplates/searchTemplates', { name: 'Found' })
+
+            expect(results).toEqual([{ id: 't1', name: 'Found' }])
+            expect(store.getters['elementTemplates/isLoading']).toBe(false)
+        })
+
+        it('bulk deletes templates from store', async () => {
+            const store = makeStore()
+            store.commit('elementTemplates/setElementTemplates', [
+                { id: 't1' },
+                { id: 't2' },
+            ])
+            m.bulkDeleteTemplates.mockResolvedValue({ deleted: ['t1'] })
+
+            await store.dispatch('elementTemplates/bulkDeleteTemplates', ['t1'])
+
+            expect(store.getters['elementTemplates/getTemplateById']('t1')).toBeUndefined()
+            expect(store.getters['elementTemplates/getTemplateById']('t2')).toBeDefined()
+        })
+
+        it('filters templates via service action', async () => {
+            const store = makeStore()
+            const { filterTemplates } = await import('../../services/elementTemplateService.js')
+            vi.mocked(filterTemplates).mockResolvedValue([{ id: 't1' }])
+
+            const results = await store.dispatch('elementTemplates/filterTemplatesFromService', { active: true })
+
+            expect(results).toEqual([{ id: 't1' }])
+            expect(store.getters['elementTemplates/isLoading']).toBe(false)
+        })
+
+        it('validates template data through service', async () => {
+            const store = makeStore()
+            const result = await store.dispatch('elementTemplates/validateTemplate', { id: 'com.example' })
+            expect(result).toBe(true)
+        })
+
+        it('exports templates through service', async () => {
+            const store = makeStore()
+            const { exportTemplates } = await import('../../services/elementTemplateService.js')
+            vi.mocked(exportTemplates).mockResolvedValue('export-data')
+
+            const result = await store.dispatch('elementTemplates/exportTemplates', { ids: ['t1'] })
+
+            expect(result).toBe('export-data')
+        })
+
+        it('gets template statistics through service', async () => {
+            const store = makeStore()
+            const { getTemplateStatistics } = await import('../../services/elementTemplateService.js')
+            vi.mocked(getTemplateStatistics).mockResolvedValue({ total: 5 })
+
+            const stats = await store.dispatch('elementTemplates/getTemplateStatistics')
+
+            expect(stats).toEqual({ total: 5 })
+        })
+
+        it('bulk sets group visibility across groups', async () => {
+            const store = makeStore()
+            const content = JSON.stringify({
+                id: 'com.example.alpha',
+                name: 'GroupA-Alpha',
+                appliesTo: ['bpmn:ServiceTask'],
+            })
+            store.commit('elementTemplates/setElementTemplates', [{
+                id: 'db-1',
+                templateId: 'com.example.alpha',
+                content,
+                active: true,
+            }])
+            m.setTemplateIsActive.mockResolvedValue({ id: 'db-1', active: false })
+
+            const result = await store.dispatch('elementTemplates/bulkSetGroupVisibility', [{
+                taskType: 'bpmn:ServiceTask',
+                groupName: 'GroupA',
+                isVisible: false,
+            }])
+
+            expect(result.groupsUpdated).toBe(1)
+            expect(result.totalTemplatesUpdated).toBeGreaterThanOrEqual(1)
+        })
+
+        it('categorizedTemplateData getter filters active templates', () => {
+            const store = makeStore()
+            store.commit('elementTemplates/setElementTemplates', [
+                {
+                    id: 't1',
+                    active: true,
+                    content: JSON.stringify({ id: 'com.a', name: 'A', appliesTo: ['bpmn:ServiceTask'] }),
+                },
+                {
+                    id: 't2',
+                    active: false,
+                    content: JSON.stringify({ id: 'com.b', name: 'B', appliesTo: ['bpmn:UserTask'] }),
+                },
+            ])
+
+            const categorized = store.getters['elementTemplates/categorizedTemplateData']
+            expect(Object.keys(categorized).length).toBeGreaterThan(0)
+        })
+
+        it('isTemplateExcluded returns true for excluded ids', () => {
+            const store = makeStore()
+            store.commit('elementTemplates/setElementTemplates', [{ id: 't1', templateId: 'com.example' }])
+            store.dispatch('elementTemplates/setExcludeTemplates', ['t1'])
+
+            expect(store.getters['elementTemplates/isTemplateExcluded']({ id: 't1' })).toBe(true)
+        })
+
+        it('handles bulk delete errors', async () => {
+            const store = makeStore()
+            m.bulkDeleteTemplates.mockRejectedValue(new Error('delete failed'))
+            await expect(store.dispatch('elementTemplates/bulkDeleteTemplates', ['t1'])).rejects.toThrow('delete failed')
+            expect(store.state.elementTemplates.error).toBeDefined()
+        })
+
+        it('handles export template errors', async () => {
+            const store = makeStore()
+            const { exportTemplates } = await import('../../services/elementTemplateService.js')
+            vi.mocked(exportTemplates).mockRejectedValue(new Error('export failed'))
+            await expect(store.dispatch('elementTemplates/exportTemplates')).rejects.toThrow('export failed')
+        })
+
+        it('duplicates template through service', async () => {
+            const store = makeStore()
+            m.duplicateElementTemplate.mockResolvedValue({ id: 'copy-1', templateId: 'com.example.copy' })
+            store.commit('elementTemplates/setElementTemplates', [{ id: 't1', templateId: 'com.example' }])
+
+            const copy = await store.dispatch('elementTemplates/duplicateElementTemplate', 't1')
+
+            expect(copy.id).toBe('copy-1')
+            expect(store.getters['elementTemplates/getTemplateById']('copy-1')).toBeDefined()
+        })
+
+        it('deletes template from store on successful delete', async () => {
+            const store = makeStore()
+            store.commit('elementTemplates/setElementTemplates', [{ id: 't1' }])
+            m.deleteElementTemplate.mockResolvedValue({})
+
+            await store.dispatch('elementTemplates/deleteElementTemplate', 't1')
+
+            expect(store.getters['elementTemplates/getTemplateById']('t1')).toBeUndefined()
+        })
+
+        it('handles import errors and sets error state', async () => {
+            const store = makeStore()
+            m.importTemplates.mockRejectedValue(new Error('import failed'))
+
+            await expect(store.dispatch('elementTemplates/importTemplates', [{ id: 'x' }])).rejects.toThrow('import failed')
+            expect(store.state.elementTemplates.error).toBeDefined()
+            expect(store.getters['elementTemplates/isLoading']).toBe(false)
+        })
+
+        it('exposes template count getters', () => {
+            const store = makeStore()
+            store.commit('elementTemplates/setElementTemplates', [
+                { id: 't1', active: true, content: '{}' },
+                { id: 't2', active: false, content: '{}' },
+            ])
+            expect(store.getters['elementTemplates/templatesCount']).toBe(2)
+            expect(store.getters['elementTemplates/activeTemplatesCount']).toBe(1)
+            expect(store.getters['elementTemplates/inactiveElementTemplates']).toHaveLength(1)
+        })
+
+        it('parses active template contents and skips invalid entries', () => {
+            const store = makeStore()
+            store.commit('elementTemplates/setElementTemplates', [
+                { id: 't1', active: true, templateId: 'com.a', content: JSON.stringify({ id: 'com.a', name: 'A', appliesTo: ['bpmn:ServiceTask'] }) },
+                { id: 't2', active: true, templateId: 'com.b', content: 'not-json' },
+                { id: 't3', active: true, templateId: 'com.c', content: '' },
+            ])
+            const contents = store.getters['elementTemplates/allElementTemplateContents']
+            expect(contents).toHaveLength(1)
+            expect(contents[0].id).toBe('com.a')
         })
     })
 })

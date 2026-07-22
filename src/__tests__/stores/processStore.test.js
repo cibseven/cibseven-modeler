@@ -215,6 +215,37 @@ describe('processStore', () => {
             await store.dispatch('processes/fetchProcessByName', 'My Process')
             expect(m.fetchProcessByName).toHaveBeenCalledWith('My Process')
         })
+
+        it('fetchProcessByName stores error on failure', async () => {
+            m.fetchProcessByName.mockRejectedValue(new Error('Not found'))
+            const store = makeStore()
+            await store.dispatch('processes/fetchProcessByName', 'Missing')
+            expect(store.state.processes.error).toBeDefined()
+            expect(store.state.processes.isLoading).toBe(false)
+        })
+
+        it('resetSelectedProcess clears selected process', () => {
+            const store = makeStore()
+            store.commit('processes/setCurrentProcess', { processSelected: { id: 'p1' } })
+            store.dispatch('processes/resetSelectedProcess')
+            expect(store.state.processes.processSelected).toBeNull()
+        })
+
+        it('fetchProcessById stores selected process', async () => {
+            m.fetchProcessById.mockResolvedValue({ id: 'p1', name: 'Process' })
+            const store = makeStore()
+            await store.dispatch('processes/fetchProcessById', 'p1')
+            expect(store.state.processes.processSelected).toEqual({ id: 'p1', name: 'Process' })
+            expect(store.state.processes.isLoading).toBe(false)
+        })
+
+        it('fetchProcessById stores error on failure', async () => {
+            m.fetchProcessById.mockRejectedValue(new Error('missing'))
+            const store = makeStore()
+            await store.dispatch('processes/fetchProcessById', 'missing')
+            expect(store.state.processes.error).toBeDefined()
+            expect(store.state.processes.isLoading).toBe(false)
+        })
     })
 
     describe('getters', () => {

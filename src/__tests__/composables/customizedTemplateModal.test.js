@@ -17,6 +17,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import useCustomizedTemplateModal from '../../composables/customizedTemplateModal.js'
 
+vi.mock('../../i18n.js', () => ({
+  translateValue: vi.fn(() => 'Select'),
+}))
+
 const makeTemplate = id => ({ id, name: id, appliesTo: [], properties: [] })
 
 // Wire the composable to a mock bpmn-js modeler. customizedModalElementTemplatesData()
@@ -62,5 +66,84 @@ describe('useCustomizedTemplateModal — applyTemplateToTask', () => {
 
     expect(() => applyTemplateToTask('tmpl-1', event)).not.toThrow()
     expect(applyTemplate).not.toHaveBeenCalled()
+  })
+})
+
+describe('useCustomizedTemplateModal — customizedModalElementTemplatesData', () => {
+  it('groups templates by task type and group name with sorting', () => {
+    const templates = [
+      {
+        id: 'com.example.z-2',
+        name: 'ZGroup-Zebra',
+        appliesTo: ['bpmn:ServiceTask'],
+        description: 'Z desc',
+        properties: [{ label: 'Implementation Type', value: 'external' }],
+        metaKeys: ['k1'],
+      },
+      {
+        id: 'com.example.a-1',
+        name: 'AGroup-Alpha (v1)',
+        appliesTo: ['bpmn:ServiceTask', 'bpmn:UserTask'],
+        description: '',
+        properties: [],
+      },
+    ]
+    const elementTemplates = { getAll: () => templates }
+    const modeler = { get: () => elementTemplates }
+
+    const api = useCustomizedTemplateModal()
+    const groups = api.customizedModalElementTemplatesData(modeler, { value: null }, { value: null })
+
+    expect(Object.keys(groups['bpmn:ServiceTask'])).toEqual(['AGroup', 'ZGroup'])
+    expect(groups['bpmn:ServiceTask']['ZGroup'][0].extern).toBe(true)
+    expect(groups['bpmn:ServiceTask']['ZGroup'][0].version).toBe('2')
+    expect(groups['bpmn:UserTask']['AGroup'][0].name).toBe('Alpha ')
+  })
+})
+
+describe('useCustomizedTemplateModal — addCustomizeTemplateButton', () => {
+  it('injects modal button for supported task types and opens modal', async () => {
+    const show = vi.fn()
+    const templates = [{ id: 'tmpl-1' }]
+    const elementTemplates = { getAll: () => templates }
+    const modeler = { get: () => elementTemplates }
+
+    const container = document.createElement('div')
+    const group = document.createElement('div')
+    group.setAttribute('data-group-id', 'group-ElementTemplates__Template')
+    const button = document.createElement('button')
+    button.classList.add('bio-properties-panel-select-template-button')
+    group.appendChild(button)
+    container.appendChild(group)
+
+    const api = useCustomizedTemplateModal()
+    api.customizedModalElementTemplatesData(
+      modeler,
+      { value: container },
+      { value: { show } },
+    )
+
+    await api.addCustomizeTemplateButton({ element: { type: 'bpmn:UserTask', id: 'Task_1' } })
+
+    expect(container.querySelector('.bio-properties-panel-select-template-button')).toBeNull()
+    const modalButton = container.querySelector('.btn.border-0')
+    expect(modalButton).toBeTruthy()
+    modalButton.onclick()
+    expect(show).toHaveBeenCalledWith(
+      { element: { type: 'bpmn:UserTask', id: 'Task_1' } },
+      ['tmpl-1'],
+    )
+  })
+
+  it('returns early for unsupported element types', async () => {
+    const elementTemplates = { getAll: () => [] }
+    const modeler = { get: () => elementTemplates }
+    const api = useCustomizedTemplateModal()
+    const container = document.createElement('div')
+    api.customizedModalElementTemplatesData(modeler, { value: container }, { value: { show: vi.fn() } })
+
+    await api.addCustomizeTemplateButton({ element: { type: 'bpmn:Gateway' } })
+
+    expect(container.querySelector('.btn.border-0')).toBeNull()
   })
 })

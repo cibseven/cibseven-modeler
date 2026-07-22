@@ -174,13 +174,21 @@ describe('xmlStore', () => {
             expect(store.state.xml.xmlFromModeler).toBe(xml)
         })
 
-        it('clearAllXmlAction clears all XML via action', async () => {
+        it('clearExternalXml and clearModelerXml actions clear respective state', async () => {
             const store = makeStore()
-            store.commit('xml/setXmlFromExternalReturn', '<bpmn />')
-            store.commit('xml/setXmlFromModeler', '<bpmn />')
-            await store.dispatch('xml/clearAllXml')
+            store.commit('xml/setXmlFromExternalReturn', '<external />')
+            store.commit('xml/setXmlFromModeler', '<modeler />')
+            await store.dispatch('xml/clearExternalXml')
             expect(store.state.xml.xmlFromExternalReturn).toBeNull()
+            await store.dispatch('xml/clearModelerXml')
             expect(store.state.xml.xmlFromModeler).toBeNull()
+        })
+
+        it('clearError action clears error state', async () => {
+            const store = makeStore()
+            store.commit('xml/setError', new Error('oops'))
+            await store.dispatch('xml/clearError')
+            expect(store.state.xml.error).toBeNull()
         })
     })
 
@@ -224,6 +232,20 @@ describe('xmlStore', () => {
             expect(store.getters['xml/hasModelerXml']).toBe(false)
             store.commit('xml/setXmlFromModeler', '<bpmn />')
             expect(store.getters['xml/hasModelerXml']).toBe(true)
+        })
+
+        it('returns hasAnyXml when either source is populated', () => {
+            const store = makeStore()
+            expect(store.getters['xml/hasAnyXml']).toBe(false)
+            store.commit('xml/setXmlFromExternalReturn', '<bpmn />')
+            expect(store.getters['xml/hasAnyXml']).toBe(true)
+        })
+
+        it('getCurrentXml prefers modeler xml over external', () => {
+            const store = makeStore()
+            store.commit('xml/setXmlFromExternalReturn', '<external />')
+            store.commit('xml/setXmlFromModeler', '<modeler />')
+            expect(store.getters['xml/getCurrentXml']).toBe('<modeler />')
         })
     })
 

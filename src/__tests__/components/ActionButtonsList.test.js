@@ -320,4 +320,33 @@ describe('ActionButtonsList', () => {
             expect(wrapper.emitted('showToastMessage')[0][0].isSuccess).toBe(false)
         })
     })
+
+    describe('editor and console actions', () => {
+        it('toggles editor visibility through emit', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7))
+            wrapper.vm.toggleVisibilityEditor()
+            expect(wrapper.emitted('toggleEditor')).toHaveLength(1)
+        })
+
+        it('opens outdated template modal', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7))
+            wrapper.vm.toggleVisibilityOutdatedTemplates()
+            expect(wrapper.emitted('toggleOutdatedTemplateModal')).toEqual([[true]])
+        })
+
+        it('opens console via parent emit', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), {
+                tabElementIndex: 2,
+            })
+            wrapper.vm.openConsole()
+            expect(wrapper.emitted('toggleConsole')).toEqual([[2, true]])
+        })
+
+        it('updates download link via exposed helper', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7))
+            wrapper.vm._updateDownloadFile('blob:url', 'diagram.bpmn')
+            expect(wrapper.vm.downloadLink).toBe('blob:url')
+            expect(wrapper.vm.downloadName).toBe('diagram.bpmn')
+        })
+    })
 })
