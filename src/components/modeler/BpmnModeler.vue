@@ -21,20 +21,19 @@
 				<div v-show="!props.isModelerVisible" class="position-relative" :style="styleCanvas">
 					<div class="canvas h-100 w-100" ref="canvas" tabindex="0"></div>
 					<div class="position-absolute top-0 end-0 d-flex flex-column gap-1 m-2" style="z-index: 10;">
-						<button @click="zoomIn" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomIn')" :aria-label="$t('buttons.zoomIn')">
+						<button @click="zoomIn" :class="CANVAS_CONTROL_BTN_CLASS" :title="$t('buttons.zoomIn')" :aria-label="$t('buttons.zoomIn')">
 							<span class="mdi mdi-18px mdi-magnify-plus-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="zoomOut" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomOut')" :aria-label="$t('buttons.zoomOut')">
+						<button @click="zoomOut" :class="CANVAS_CONTROL_BTN_CLASS" :title="$t('buttons.zoomOut')" :aria-label="$t('buttons.zoomOut')">
 							<span class="mdi mdi-18px mdi-magnify-minus-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="resetViewport" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.resetViewport')" :aria-label="$t('buttons.resetViewport')">
+						<button @click="resetViewport" :class="CANVAS_CONTROL_BTN_CLASS" :title="$t('buttons.resetViewport')" :aria-label="$t('buttons.resetViewport')">
 							<span class="mdi mdi-18px mdi-fit-to-screen-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="toggleMinimap" :title="$t('buttons.minimap')" :aria-label="$t('buttons.minimap')" :aria-pressed="isMinimapOpen"
-							:class="['btn btn-sm border', isMinimapOpen ? 'btn-secondary text-white' : 'btn-light text-secondary']">
+						<button @click="toggleMinimap" :class="CANVAS_CONTROL_BTN_CLASS" :title="$t('buttons.minimap')" :aria-label="$t('buttons.minimap')" :aria-pressed="isMinimapOpen">
 							<span class="mdi mdi-18px mdi-map-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="toggleFullscreen" class="btn btn-sm btn-light border text-secondary"
+						<button @click="toggleFullscreen" :class="CANVAS_CONTROL_BTN_CLASS"
 							:title="isFullscreen ? $t('buttons.exitFullscreen') : $t('buttons.fullscreen')"
 							:aria-label="isFullscreen ? $t('buttons.exitFullscreen') : $t('buttons.fullscreen')"
 							:aria-pressed="isFullscreen">
@@ -214,6 +213,7 @@ const consolePanel = ref(null)
 //variables for the list selector component
 const listSelector = ref(null)
 const TYPEC7 = 'bpmn-c7'
+const CANVAS_CONTROL_BTN_CLASS = 'btn btn-sm bg-white text-secondary border border-secondary shadow-sm canvas-control-btn d-inline-flex align-items-center justify-content-center p-1'
 const propertiesPanelComponent = ref(null)
 const isVisiblePropertyPanel = ref(true)
 const resizableDiv = ref(null)
@@ -647,7 +647,7 @@ const _createMonacoEditor = (scriptDivId, textArea, scriptFormat = null) => {
 	divMonaco.style.overflow = 'hidden'
 
 	const expandBtn = document.createElement('button')
-	expandBtn.className = 'btn btn-sm btn-light border position-absolute'
+	expandBtn.className = `${CANVAS_CONTROL_BTN_CLASS} position-absolute`
 	expandBtn.style.bottom = '4px'
 	expandBtn.style.right = '4px'
 	expandBtn.style.zIndex = '10'
@@ -1143,27 +1143,79 @@ input[name="historyTimeToLive"].is-invalid {
 	color: var(--bs-secondary);
 }
 
-.container.modeler .bts-palette .bts-entry {
-	background-color: var(--bs-light);
-	color: var(--bs-secondary);
-	border: var(--bs-border-width, 1px) solid var(--bs-border-color);
-	border-radius: var(--bs-border-radius, 0.25rem);
+/* Canvas controls use Bootstrap classes; custom rules cover sizing and interaction states. */
+.canvas-control-btn {
+	width: 2.25rem;
+	height: 2.25rem;
+	line-height: 1;
 }
 
-.container.modeler .bts-palette .bts-entry:not(.disabled):hover {
-	background-color: var(--bs-gray-200, #e9ecef);
+/* Token simulation palette buttons are rendered by bpmn-js-token-simulation (no Bootstrap classes). */
+.container.modeler .bts-palette .bts-entry {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.125rem;
+	height: 2.125rem;
+	margin-bottom: 0.375rem;
+	padding: 0.25rem;
+	background-color: var(--bs-white);
 	color: var(--bs-secondary);
+	border: var(--bs-border-width) solid var(--bs-gray-600);
+	border-radius: var(--bs-border-radius);
+	box-shadow: var(--bs-box-shadow-sm);
+	line-height: 1;
+	box-sizing: border-box;
+	cursor: pointer;
+}
+
+.container.modeler .bts-palette .bts-entry:last-child {
+	margin-bottom: 0;
+}
+
+.container.modeler .bts-palette .bts-entry:first-child {
+	margin-top: 0.25rem;
+}
+
+.canvas-control-btn:hover:not(:disabled):not(.disabled),
+.container.modeler .bts-palette .bts-entry:not(.disabled):hover {
+	background-color: var(--bs-gray-200) !important;
+	border-color: var(--bs-gray-600) !important;
+	color: var(--bs-secondary) !important;
+}
+
+.canvas-control-btn:focus-visible:not(:disabled):not(.disabled),
+.container.modeler .bts-palette .bts-entry:not(.disabled):focus-visible {
+	background-color: var(--bs-gray-200) !important;
+	border-color: var(--bs-gray-600) !important;
+	color: var(--bs-secondary) !important;
+	outline: 2px solid var(--bs-dark);
+	outline-offset: 2px;
+	box-shadow: 0 0 0 1px var(--bs-white), var(--bs-box-shadow-sm) !important;
+}
+
+.canvas-control-btn:active:not(:disabled):not(.disabled),
+.container.modeler .bts-palette .bts-entry:not(.disabled):active {
+	background-color: var(--bs-gray-200) !important;
+	border-color: var(--bs-gray-600) !important;
+	color: var(--bs-secondary) !important;
+	box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.12) !important;
+}
+
+.canvas-control-btn:disabled,
+.canvas-control-btn.disabled,
+.container.modeler .bts-palette .bts-entry.disabled {
+	background-color: var(--bs-white) !important;
+	border-color: var(--bs-gray-500) !important;
+	color: var(--bs-gray-600) !important;
+	cursor: not-allowed;
+	opacity: 1;
 }
 
 .container.modeler .bts-palette .bts-entry.active {
-	background-color: var(--bs-secondary);
-	color: #fff;
-}
-
-.container.modeler .bts-palette .bts-entry.disabled {
-	background-color: var(--bs-light);
+	background-color: var(--bs-white);
+	border-color: var(--bs-gray-600);
 	color: var(--bs-secondary);
-	opacity: 0.65;
 }
 
 /* Force palette to always display 2 columns */
