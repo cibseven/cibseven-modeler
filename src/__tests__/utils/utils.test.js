@@ -609,7 +609,7 @@ describe('Utils', () => {
             const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
             globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 404 })
 
-            return expect(loadFromPublic('folder', 'missing.json')).resolves.toBeNull()
+            await expect(loadFromPublic('folder', 'missing.json')).resolves.toBeNull()
             warnSpy.mockRestore()
         })
 
@@ -617,7 +617,7 @@ describe('Utils', () => {
             const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
             globalThis.fetch = vi.fn().mockRejectedValue(new Error('network'))
 
-            return expect(loadFromPublic('folder', 'file.json')).resolves.toBeNull()
+            await expect(loadFromPublic('folder', 'file.json')).resolves.toBeNull()
             warnSpy.mockRestore()
         })
     })

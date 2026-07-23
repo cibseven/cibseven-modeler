@@ -258,7 +258,7 @@ describe('elementTemplateStore', () => {
             m.setTemplateIsActive.mockRejectedValue(error)
             const store = makeStore()
             store.commit('elementTemplates/setElementTemplates', [{ id: 't1', active: false }])
-            return expect(
+            await expect(
                 store.dispatch('elementTemplates/toggleTemplateActiveState', { templateId: 't1', isActive: true })
             ).rejects.toThrow('Not found')
             expect(store.state.elementTemplates.elementTemplates).toHaveLength(0)
@@ -464,7 +464,7 @@ describe('elementTemplateStore', () => {
             const store = makeStore()
             store.commit('elementTemplates/setElementTemplates', [{ id: 't1', active: false }])
             
-            return expect(
+            await expect(
                 store.dispatch('elementTemplates/toggleTemplateActiveState', { templateId: 't1', isActive: true })
             ).rejects.toThrow('Network error')
             expect(store.state.elementTemplates.error).toEqual(error)
@@ -1035,7 +1035,7 @@ describe('elementTemplateStore', () => {
             const store = makeStore()
             const error = new Error('delete failed')
             m.bulkDeleteTemplates.mockRejectedValue(error)
-            return expect(store.dispatch('elementTemplates/bulkDeleteTemplates', ['t1'])).rejects.toThrow('delete failed')
+            await expect(store.dispatch('elementTemplates/bulkDeleteTemplates', ['t1'])).rejects.toThrow('delete failed')
             expect(store.state.elementTemplates.error).toEqual(error)
         })
 
@@ -1072,7 +1072,7 @@ describe('elementTemplateStore', () => {
             const error = new Error('import failed')
             m.importTemplates.mockRejectedValue(error)
 
-            return expect(store.dispatch('elementTemplates/importTemplates', [{ id: 'x' }])).rejects.toThrow('import failed')
+            await expect(store.dispatch('elementTemplates/importTemplates', [{ id: 'x' }])).rejects.toThrow('import failed')
             expect(store.state.elementTemplates.error).toEqual(error)
             expect(store.getters['elementTemplates/isLoading']).toBe(false)
         })
