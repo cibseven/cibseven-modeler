@@ -260,5 +260,133 @@ describe('BpmnModeler', () => {
       await flushPromises()
       expect(BpmnJS).toHaveBeenCalled()
     })
+    it('zoomOut decreases canvas zoom', async () => {
+      const wrapper = mountBpmnModeler()
+      await flushPromises()
+      bpmnInstance.canvas.zoom.mockImplementation((val) => (val === undefined ? 1 : val))
+      bpmnInstance.canvas.zoom.mockClear()
+      await wrapper.findAll('button')[1].trigger('click')
+      expect(bpmnInstance.canvas.zoom).toHaveBeenCalledWith(0.8)
+    })
+
+    it('_undo and _redo call commandStack', async () => {
+      const wrapper = mountBpmnModeler()
+      await flushPromises()
+      wrapper.vm._undo()
+      wrapper.vm._redo()
+      expect(bpmnInstance.instance.get('commandStack').undo).toHaveBeenCalled()
+      expect(bpmnInstance.instance.get('commandStack').redo).toHaveBeenCalled()
+    })
+    it('emits error toast when diagram validation fails on open', async () => {
+      modelerMocks.validate.mockRejectedValueOnce(new Error('invalid bpmn'))
+      const wrapper = mountBpmnModeler()
+      await flushPromises()
+      expect(wrapper.emitted('showToastMessage')).toBeTruthy()
+      expect(wrapper.emitted('showDiagram')?.some(args => args[0] === false)).toBe(true)
+    })
+
+    it('resetViewport fits canvas to viewport', async () => {
+      const wrapper = mountBpmnModeler()
+      await flushPromises()
+      bpmnInstance.canvas.zoom.mockClear()
+      await wrapper.findAll('button')[2].trigger('click')
+      expect(bpmnInstance.canvas.zoom).toHaveBeenCalledWith('fit-viewport')
+    })
+
+    it('opens template selector when outdated templates exist on mount', async () => {
+      const { checkJSON } = await import('../../../utils.js')
+      vi.mocked(checkJSON).mockReturnValueOnce([{ id: 't1', nameOfTemplate: { value: 'Old' } }])
+      mountBpmnModeler({ elementTemplateJson: [{ id: 't1' }] })
+      await flushPromises()
+      expect(modelerMocks.isShowModalListSelector.value).toBe(true)
+      expect(modelerMocks.typeOfSelector.value).toBe('templates')
+    })
+  })
+
+  describe('exposed API', () => {
+    it('calls validate through exposed _validate', async () => {
+      const wrapper = mountBpmnModeler()
+      await flushPromises()
+      await wrapper.vm._validate('<bpmn:definitions/>')
+      expect(modelerMocks.validate).toHaveBeenCalled()
+    })
+
+    it('calls saveProcess through exposed _saveDiagram', async () => {
+      const wrapper = mountBpmnModeler()
+      await flushPromises()
+      await wrapper.vm._saveDiagram()
+      expect(modelerMocks.saveProcess).toHaveBeenCalled()
+    })
+
+    it('delegates console toggle to useModeler', async () => {
+      const wrapper = mountBpmnModeler()
+      await flushPromises()
+      wrapper.vm.toggleConsole(true)
+      expect(modelerMocks.toggleConsole).toHaveBeenCalledWith(true)
+    })
+
+    it('forwards saveXmlAfterUpdate to useModeler', async () => {
+      const wrapper = mountBpmnModeler()
+      await flushPromises()
+      wrapper.vm._saveXmlAfterUpdate(true, '<bpmn/>', 0)
+      expect(modelerMocks.saveXmlAfterUpdate).toHaveBeenCalledWith(true, '<bpmn/>', 0, bpmnInstance.instance)
+    })
+
+    it('returns bpmn modeler instance from getter', async () => {
+      const wrapper = mountBpmnModeler()
+      await flushPromises()
+      expect(wrapper.vm.getBpmnModeler()).toBe(bpmnInstance.instance)
+    })
+
+    it('delegates addLineWithErrorToConsole to useModeler', async () => {
+      const wrapper = mountBpmnModeler()
+      await flushPromises()
+      wrapper.vm.addLineWithErrorToConsole('err-1', 'message')
+      expect(modelerMocks.addLineWithErrorToConsole).toHaveBeenCalledWith('err-1', 'message')
+    })
+
+    it('delegates isConsolePanelShowing to useModeler', async () => {
+      const wrapper = mountBpmnModeler()
+      await flushPromises()
+      modelerMocks.isConsolePanelShowing.mockReturnValue(true)
+      expect(wrapper.vm.isConsolePanelShowing()).toBe(true)
+    })
+
+    it('opens list selector from action button', async () => {
+      const wrapper = mountBpmnModeler()
+      await flushPromises()
+      wrapper.vm._toggleModalListSelectorFromActionButton(true, 'templates')
+      expect(modelerMocks.typeOfSelector.value).toBe('templates')
+      expect(modelerMocks.isShowModalListSelector.value).toBe(true)
+    })
+
+    it('gets element registry from modeler', async () => {
+      modelerMocks.getElementRegistryFromModeler.mockReturnValue([{ id: 'Task_1' }])
+      const wrapper = mountBpmnModeler()
+      await flushPromises()
+      const result = wrapper.vm._getElementRegistryFromModeler('bpmn:UserTask')
+      expect(modelerMocks.getElementRegistryFromModeler).toHaveBeenCalledWith(bpmnInstance.instance, 'bpmn:UserTask')
+      expect(result).toEqual([{ id: 'Task_1' }])
+    })
+
+    it('togglePropertiesPanel detaches panel when hidden', async () => {
+      const wrapper = mountBpmnModeler()
+      await flushPromises()
+      wrapper.vm.propertiesPanelComponent = bpmnInstance.propertiesPanel
+      wrapper.vm.resizableDiv = { _resetPropertiesPanelWidth: vi.fn(), _restorePropertiesPanelWidth: vi.fn() }
+      wrapper.vm.togglePropertiesPanel(false)
+      expect(bpmnInstance.propertiesPanel.detach).toHaveBeenCalled()
+      expect(wrapper.vm.resizableDiv._resetPropertiesPanelWidth).toHaveBeenCalled()
+    })
+
+    it('togglePropertiesPanel attaches panel when shown', async () => {
+      const wrapper = mountBpmnModeler()
+      await flushPromises()
+      wrapper.vm.propertiesPanelComponent = bpmnInstance.propertiesPanel
+      wrapper.vm.resizableDiv = { _resetPropertiesPanelWidth: vi.fn(), _restorePropertiesPanelWidth: vi.fn() }
+      wrapper.vm.togglePropertiesPanel(true)
+      expect(bpmnInstance.propertiesPanel.attachTo).toHaveBeenCalled()
+      expect(wrapper.vm.resizableDiv._restorePropertiesPanelWidth).toHaveBeenCalled()
+    })
   })
 })

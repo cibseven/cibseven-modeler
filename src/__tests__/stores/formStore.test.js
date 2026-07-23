@@ -15,6 +15,7 @@
  *  limitations under the License.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { delayedResolveMock } from '../helpers/modelerTestUtils.js'
 
 const m = vi.hoisted(() => ({
     fetchForms: vi.fn().mockResolvedValue([]),
@@ -132,9 +133,7 @@ describe('formStore', () => {
 
         it('sets loading state during fetch', async () => {
             const schema = { type: 'default', id: 'formA', components: [] }
-            m.fetchFormById.mockImplementation(() =>
-                new Promise(resolve => setTimeout(() => resolve(schema), 50))
-            )
+            m.fetchFormById.mockImplementation(delayedResolveMock(schema, 50))
             const store = makeStore()
             const promise = store.dispatch('forms/fetchFormById', 'fdb-1')
             expect(store.state.forms.isLoading).toBe(true)
@@ -147,7 +146,7 @@ describe('formStore', () => {
             m.fetchFormById.mockRejectedValue(error)
             const store = makeStore()
             await store.dispatch('forms/fetchFormById', 'fdb-1')
-            expect(store.state.forms.error).toBeDefined()
+            expect(store.state.forms.error).toEqual(error)
         })
 
         it('stores form with components', async () => {
@@ -192,7 +191,7 @@ describe('formStore', () => {
 
             await store.dispatch('forms/fetchForms', { firstResult: 0, maxResults: 10, keyword: '' })
 
-            expect(store.state.forms.error).toBeDefined()
+            expect(store.state.forms.error).toEqual(error)
             expect(store.state.forms.forms).toBeNull()
         })
     })
@@ -344,11 +343,12 @@ describe('formStore', () => {
             const existingForms = [{ id: 'f1', name: 'Form 1' }]
             store.commit('forms/setForms', existingForms)
             
-            m.fetchForms.mockRejectedValue(new Error('Fetch failed'))
+            const error = new Error('Fetch failed')
+            m.fetchForms.mockRejectedValue(error)
             await store.dispatch('forms/fetchForms', { firstResult: 0, maxResults: 10, keyword: '' })
             
             // Some stores might preserve, others might not - test actual behavior
-            expect(store.state.forms.error).toBeDefined()
+            expect(store.state.forms.error).toEqual(error)
         })
 
         it('clears previous error before new fetch attempt', async () => {
@@ -448,6 +448,24 @@ describe('formStore', () => {
             const error = new Error('Test')
             store.commit('forms/setError', error)
             expect(store.getters['forms/error']).toEqual(error)
+        })
+    })
+
+    describe('actions', () => {
+        it('resetSelectedForm clears selected form state', async () => {
+            const store = makeStore()
+            store.commit('forms/setFormSelected', '{"id":"f1"}')
+            store.commit('forms/setCurrentFormId', 'f1')
+            await store.dispatch('forms/resetSelectedForm')
+            expect(store.state.forms.formSelected).toBeNull()
+            expect(store.state.forms.formSelectedId).toBeNull()
+        })
+
+        it('clearError action clears error state', async () => {
+            const store = makeStore()
+            store.commit('forms/setError', new Error('bad'))
+            await store.dispatch('forms/clearError')
+            expect(store.state.forms.error).toBeNull()
         })
     })
 })

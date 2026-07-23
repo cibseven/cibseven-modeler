@@ -22,7 +22,7 @@ const m = vi.hoisted(() => ({
     put: vi.fn(),
     delete: vi.fn(),
 }))
-vi.mock('../../axiosConfig', () => ({ getAxios: () => ({ get: m.get, post: m.post, put: m.put, delete: m.delete }) }))
+vi.mock('../../axiosConfig', () => ({ getAxios: () => m }))
 vi.mock('../../services/servicesConfig', () => ({ getModelerServicePath: () => 'svc' }))
 
 import {
@@ -96,11 +96,7 @@ describe('processService', () => {
         it('handles fetch errors', async () => {
             m.get.mockRejectedValue(new Error('Network error'))
 
-            try {
-                await fetchProcesses(0, 10)
-            } catch (error) {
-                expect(error).toBeDefined()
-            }
+            return expect(fetchProcesses(0, 10)).rejects.toThrow('Network error')
         })
     })
 
@@ -167,7 +163,10 @@ describe('processService', () => {
 
             await getUnifiedDiagrams(0, 10, '', 'bpmn-c7')
 
-            expect(m.get).toHaveBeenCalled()
+            expect(m.get).toHaveBeenCalledWith(
+                'svc/unified-diagrams',
+                expect.objectContaining({ params: expect.objectContaining({ type: 'bpmn-c7' }) })
+            )
         })
 
         it('supports keyword search', async () => {
@@ -175,7 +174,10 @@ describe('processService', () => {
 
             await getUnifiedDiagrams(0, 10, 'invoice')
 
-            expect(m.get).toHaveBeenCalled()
+            expect(m.get).toHaveBeenCalledWith(
+                'svc/unified-diagrams',
+                expect.objectContaining({ params: expect.objectContaining({ keyword: 'invoice' }) })
+            )
         })
     })
 
@@ -194,12 +196,7 @@ describe('processService', () => {
             const blob = new Blob(['<bpmn />'], { type: 'text/xml' })
             m.post.mockRejectedValue(new Error('Save failed'))
 
-            try {
-                await saveDiagramProcess('proc1', 'Process 1', blob, 'bpmn-c7')
-                expect(false).toBe(true)
-            } catch (error) {
-                expect(error).toBeDefined()
-            }
+            return expect(saveDiagramProcess('proc1', 'Process 1', blob, 'bpmn-c7')).rejects.toThrow('Save failed')
         })
     })
 
@@ -227,11 +224,7 @@ describe('processService', () => {
         it('handles delete errors', async () => {
             m.delete.mockRejectedValue(new Error('Delete failed'))
 
-            try {
-                await deleteProcessById('p1')
-            } catch (error) {
-                expect(error).toBeDefined()
-            }
+            return expect(deleteProcessById('p1')).rejects.toThrow('Delete failed')
         })
     })
 
@@ -259,15 +252,4 @@ describe('processService', () => {
         })
     })
 
-    describe('downloadDiagram', () => {
-        it('downloads diagram file', async () => {
-            const xml = '<bpmn />'
-            m.get.mockResolvedValue({ data: xml })
-
-            const result = await fetchDiagram('p1')
-
-            expect(m.get).toHaveBeenCalled()
-            expect(result).toBeDefined()
-        })
-    })
 })

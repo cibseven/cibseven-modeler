@@ -20,10 +20,11 @@ const m = vi.hoisted(() => ({
     get: vi.fn(),
     post: vi.fn(),
     patch: vi.fn(),
+    put: vi.fn(),
     delete: vi.fn(),
 }))
 
-vi.mock('../../axiosConfig', () => ({ getAxios: () => ({ get: m.get, post: m.post, patch: m.patch, delete: m.delete }) }))
+vi.mock('../../axiosConfig', () => ({ getAxios: () => m }))
 vi.mock('../../services/servicesConfig', () => ({ getElementTemplatesPath: () => '/api/templates' }))
 
 import {
@@ -38,6 +39,12 @@ import {
     bulkDeleteTemplates,
     bulkUpdateTemplateVisibility,
     searchTemplates,
+    filterTemplates as filterTemplatesService,
+    validateTemplate,
+    importTemplates,
+    exportTemplates,
+    getTemplateStatistics,
+    updateElementTemplateFull,
 } from '../../services/elementTemplateService'
 
 describe('elementTemplateService', () => {
@@ -67,12 +74,7 @@ describe('elementTemplateService', () => {
         it('handles API errors', async () => {
             m.get.mockRejectedValue(new Error('API Error'))
 
-            try {
-                await getAllElementTemplates()
-                expect(true).toBe(false)
-            } catch (error) {
-                expect(error).toBeDefined()
-            }
+            return expect(getAllElementTemplates()).rejects.toThrow('API Error')
         })
     })
 
@@ -118,7 +120,9 @@ describe('elementTemplateService', () => {
         it('handles update with multiple fields', async () => {
             m.patch.mockResolvedValue({ data: { id: 't1', name: 'New', active: false } })
 
-            await updateElementTemplate('t1', { name: 'New', active: false })
+            await Promise.all([
+                updateElementTemplate('t1', { name: 'New', active: false }),
+            ])
 
             expect(m.patch).toHaveBeenCalled()
         })
@@ -167,12 +171,7 @@ describe('elementTemplateService', () => {
         it('handles creation errors', async () => {
             m.post.mockRejectedValue(new Error('Creation failed'))
 
-            try {
-                await addElementTemplate({ name: 'Invalid' })
-                expect(true).toBe(false)
-            } catch (error) {
-                expect(error).toBeDefined()
-            }
+            return expect(addElementTemplate({ name: 'Invalid' })).rejects.toThrow('Creation failed')
         })
     })
 
@@ -190,12 +189,7 @@ describe('elementTemplateService', () => {
         it('handles non-existent template', async () => {
             m.get.mockRejectedValue(new Error('Not found'))
 
-            try {
-                await getElementTemplateById('nonexistent')
-                expect(true).toBe(false)
-            } catch (error) {
-                expect(error).toBeDefined()
-            }
+            return expect(getElementTemplateById('nonexistent')).rejects.toThrow('Not found')
         })
     })
 
@@ -212,23 +206,13 @@ describe('elementTemplateService', () => {
         it('handles deletion of non-existent template', async () => {
             m.delete.mockRejectedValue(new Error('Not found'))
 
-            try {
-                await deleteElementTemplate('nonexistent')
-                expect(true).toBe(false)
-            } catch (error) {
-                expect(error).toBeDefined()
-            }
+            return expect(deleteElementTemplate('nonexistent')).rejects.toThrow('Not found')
         })
 
         it('handles deletion errors gracefully', async () => {
             m.delete.mockRejectedValue(new Error('Server error'))
 
-            try {
-                await deleteElementTemplate('t1')
-                expect(true).toBe(false)
-            } catch (error) {
-                expect(error.message).toContain('Server error')
-            }
+            return expect(deleteElementTemplate('t1')).rejects.toThrow('Server error')
         })
     })
 
@@ -248,8 +232,10 @@ describe('elementTemplateService', () => {
             m.patch.mockResolvedValueOnce({ data: { id: 't1', active: true } })
             m.patch.mockResolvedValueOnce({ data: { id: 't2', active: true } })
 
-            await updateElementTemplate('t1', { active: true })
-            await updateElementTemplate('t2', { active: true })
+            await Promise.all([
+                updateElementTemplate('t1', { active: true }),
+                updateElementTemplate('t2', { active: true }),
+            ])
 
             expect(m.patch).toHaveBeenCalledTimes(2)
         })
@@ -257,9 +243,7 @@ describe('elementTemplateService', () => {
         it('deletes multiple templates', async () => {
             m.delete.mockResolvedValue({ data: { success: true } })
 
-            await deleteElementTemplate('t1')
-            await deleteElementTemplate('t2')
-            await deleteElementTemplate('t3')
+            await Promise.all(['t1', 't2', 't3'].map(id => deleteElementTemplate(id)))
 
             expect(m.delete).toHaveBeenCalledTimes(3)
         })
@@ -279,18 +263,13 @@ describe('elementTemplateService', () => {
         it('handles duplication errors', async () => {
             m.post.mockRejectedValue(new Error('Duplication failed'))
 
-            try {
-                await duplicateElementTemplate('t1')
-                expect(true).toBe(false)
-            } catch (error) {
-                expect(error).toBeDefined()
-            }
+            return expect(duplicateElementTemplate('t1')).rejects.toThrow('Duplication failed')
         })
 
         it('duplicates template with large content', async () => {
             m.post.mockResolvedValue({ data: { id: 't2', content: {} } })
 
-            await duplicateElementTemplate('t1')
+            await Promise.all([duplicateElementTemplate('t1')])
 
             expect(m.post).toHaveBeenCalled()
         })
@@ -317,12 +296,7 @@ describe('elementTemplateService', () => {
         it('handles bulk delete errors', async () => {
             m.post.mockRejectedValue(new Error('Bulk delete failed'))
 
-            try {
-                await bulkDeleteTemplates(['t1', 't2'])
-                expect(true).toBe(false)
-            } catch (error) {
-                expect(error).toBeDefined()
-            }
+            return expect(bulkDeleteTemplates(['t1', 't2'])).rejects.toThrow('Bulk delete failed')
         })
 
         it('bulk deletes large number of templates', async () => {
@@ -367,12 +341,7 @@ describe('elementTemplateService', () => {
         it('handles bulk update errors', async () => {
             m.patch.mockRejectedValue(new Error('Bulk update failed'))
 
-            try {
-                await bulkUpdateTemplateVisibility(['t1'], true)
-                expect(true).toBe(false)
-            } catch (error) {
-                expect(error).toBeDefined()
-            }
+            return expect(bulkUpdateTemplateVisibility(['t1'], true)).rejects.toThrow('Bulk update failed')
         })
     })
 
@@ -445,12 +414,7 @@ describe('elementTemplateService', () => {
         it('handles search errors', async () => {
             m.get.mockRejectedValue(new Error('Search failed'))
 
-            try {
-                await searchTemplates({ name: 'Test' })
-                expect(true).toBe(false)
-            } catch (error) {
-                expect(error).toBeDefined()
-            }
+            return expect(searchTemplates({ name: 'Test' })).rejects.toThrow('Search failed')
         })
 
         it('returns multiple search results', async () => {
@@ -499,6 +463,64 @@ describe('elementTemplateService', () => {
 
             expect(m.patch).toHaveBeenCalled()
             expect(m.post).toHaveBeenCalled()
+        })
+    })
+
+    describe('filterTemplates service', () => {
+        it('filters templates with query params', async () => {
+            m.get.mockResolvedValue({ data: [{ id: 't1' }] })
+            const result = await filterTemplatesService({ activeOnly: true, createdBy: 'admin' })
+            expect(m.get).toHaveBeenCalledWith(expect.stringContaining('/filter?'))
+            expect(result.data).toEqual([{ id: 't1' }])
+        })
+    })
+
+    describe('validateTemplate service', () => {
+        it('posts template data for validation', async () => {
+            m.post.mockResolvedValue({ data: { valid: true } })
+            const payload = { templateId: 'com.example.t' }
+            const result = await validateTemplate(payload)
+            expect(m.post).toHaveBeenCalledWith('/api/templates/validate', payload)
+            expect(result.data.valid).toBe(true)
+        })
+    })
+
+    describe('importTemplates service', () => {
+        it('imports templates in bulk', async () => {
+            m.post.mockResolvedValue({ data: { imported: 2 } })
+            const templates = [{ templateId: 'a' }, { templateId: 'b' }]
+            const result = await importTemplates(templates)
+            expect(m.post).toHaveBeenCalledWith('/api/templates/import', templates)
+            expect(result.data.imported).toBe(2)
+        })
+    })
+
+    describe('exportTemplates service', () => {
+        it('exports templates with query params', async () => {
+            m.get.mockResolvedValue({ data: [{ id: 't1' }] })
+            await exportTemplates({ templateIds: ['t1', 't2'], activeOnly: true })
+            const callUrl = m.get.mock.calls.at(-1)[0]
+            expect(callUrl).toContain('/export?')
+            expect(callUrl).toContain('templateIds')
+            expect(callUrl).toContain('activeOnly=true')
+        })
+    })
+
+    describe('getTemplateStatistics service', () => {
+        it('fetches template statistics', async () => {
+            m.get.mockResolvedValue({ data: { total: 10 } })
+            const result = await getTemplateStatistics()
+            expect(m.get).toHaveBeenCalledWith('/api/templates/statistics')
+            expect(result.data.total).toBe(10)
+        })
+    })
+
+    describe('updateElementTemplateFull service', () => {
+        it('performs full template update via PUT', async () => {
+            m.put.mockResolvedValue({ data: { id: 't1', name: 'Updated' } })
+            const result = await updateElementTemplateFull('t1', { name: 'Updated' })
+            expect(m.put).toHaveBeenCalledWith('/api/templates/t1', { name: 'Updated' })
+            expect(result.data.name).toBe('Updated')
         })
     })
 })

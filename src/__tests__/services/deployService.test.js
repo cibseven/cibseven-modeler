@@ -23,7 +23,7 @@ const m = vi.hoisted(() => ({
     delete: vi.fn(),
 }))
 
-vi.mock('../../axiosConfig', () => ({ getAxios: () => ({ get: m.get, post: m.post, put: m.put, delete: m.delete }) }))
+vi.mock('../../axiosConfig', () => ({ getAxios: () => m }))
 vi.mock('../../services/servicesConfig', () => ({ 
     getModelerServicePath: () => '/api/modeler',
     getServicesBasePath: () => '/api/services'
@@ -48,14 +48,20 @@ describe('deployService', () => {
                 '',
                 '',
                 'Process 1',
-                'http://instance.com',
+                'https://instance.com',
                 'tenant1',
                 '<bpmn />',
                 false,
                 'bpmn'
             )
 
-            expect(m.post).toHaveBeenCalled()
+            expect(m.post).toHaveBeenCalledWith(
+                '/api/modeler/deployment/create',
+                expect.any(FormData),
+                expect.objectContaining({
+                    headers: expect.objectContaining({ authorization: 'Bearer token123' }),
+                })
+            )
             expect(result.data).toEqual({ deploymentId: 'd1' })
         })
 
@@ -68,14 +74,15 @@ describe('deployService', () => {
                 'user',
                 'pass',
                 'Process 2',
-                'http://instance.com',
+                'https://instance.com',
                 '',
                 '<bpmn />',
                 false,
                 'bpmn'
             )
 
-            expect(m.post).toHaveBeenCalled()
+            const [, , config] = m.post.mock.calls[0]
+            expect(config.headers.authorization).toMatch(/^Basic /)
             expect(result.data).toEqual({ deploymentId: 'd2' })
         })
 
@@ -88,14 +95,20 @@ describe('deployService', () => {
                 '',
                 '',
                 'Process 3',
-                'http://custom.com',
+                'https://custom.com',
                 'tenant1',
                 '<bpmn />',
                 true,
                 'bpmn'
             )
 
-            expect(m.post).toHaveBeenCalled()
+            expect(m.post).toHaveBeenCalledWith(
+                'https://custom.com//api/services/modeler/deployment/create',
+                expect.any(FormData),
+                expect.objectContaining({
+                    headers: expect.objectContaining({ authorization: 'Bearer token123' }),
+                })
+            )
         })
 
         it('includes additional resources', async () => {
@@ -111,7 +124,7 @@ describe('deployService', () => {
                 '',
                 '',
                 'Process 4',
-                'http://instance.com',
+                'https://instance.com',
                 'tenant1',
                 '<bpmn />',
                 false,
@@ -119,49 +132,45 @@ describe('deployService', () => {
                 additionalResources
             )
 
-            expect(m.post).toHaveBeenCalled()
+            expect(m.post).toHaveBeenCalledWith(
+                '/api/modeler/deployment/create',
+                expect.any(FormData),
+                expect.objectContaining({
+                    headers: expect.objectContaining({ authorization: 'Bearer token123' }),
+                })
+            )
         })
 
         it('handles deployment errors', async () => {
             m.post.mockRejectedValue(new Error('Deployment failed'))
 
-            try {
-                await deployProcess(
-                    'token',
-                    'Bearer token123',
-                    '',
-                    '',
-                    'Process 5',
-                    'http://instance.com',
-                    'tenant1',
-                    '<bpmn />',
-                    false,
-                    'bpmn'
-                )
-                expect(true).toBe(false)
-            } catch (error) {
-                expect(error).toBeDefined()
-            }
+            return expect(deployProcess(
+                'token',
+                'Bearer token123',
+                '',
+                '',
+                'Process 5',
+                'https://instance.com',
+                'tenant1',
+                '<bpmn />',
+                false,
+                'bpmn'
+            )).rejects.toThrow('Deployment failed')
         })
 
         it('throws error on invalid custom endpoint URL', async () => {
-            try {
-                await deployProcess(
-                    'token',
-                    'Bearer token123',
-                    '',
-                    '',
-                    'Process 6',
-                    'not-a-valid-url',
-                    'tenant1',
-                    '<bpmn />',
-                    true,
-                    'bpmn'
-                )
-                expect(true).toBe(false)
-            } catch (error) {
-                expect(error.message).toContain('Invalid http(s) deployment URL')
-            }
+            return expect(deployProcess(
+                'token',
+                'Bearer token123',
+                '',
+                '',
+                'Process 6',
+                'not-a-valid-url',
+                'tenant1',
+                '<bpmn />',
+                true,
+                'bpmn'
+            )).rejects.toThrow('Invalid http(s) deployment URL')
         })
 
         it('requires authentication method', async () => {
@@ -171,7 +180,7 @@ describe('deployService', () => {
                 '',
                 '',
                 'Process 7',
-                'http://instance.com',
+                'https://instance.com',
                 'tenant1',
                 '<bpmn />',
                 false,
@@ -190,14 +199,15 @@ describe('deployService', () => {
                 '',
                 '',
                 'Process 8',
-                'http://instance.com',
+                'https://instance.com',
                 '',
                 '<bpmn />',
                 false,
                 'bpmn'
             )
 
-            expect(m.post).toHaveBeenCalled()
+            const [, , config] = m.post.mock.calls[0]
+            expect(config.headers.authorization).toBe('Bearer token-without-bearer')
         })
 
         it('handles DMN diagram deployment', async () => {
@@ -209,14 +219,20 @@ describe('deployService', () => {
                 '',
                 '',
                 'Decision 1',
-                'http://instance.com',
+                'https://instance.com',
                 '',
                 '<dmn />',
                 false,
                 'dmn'
             )
 
-            expect(m.post).toHaveBeenCalled()
+            expect(m.post).toHaveBeenCalledWith(
+                '/api/modeler/deployment/create',
+                expect.any(FormData),
+                expect.objectContaining({
+                    headers: expect.objectContaining({ authorization: 'Bearer token123' }),
+                })
+            )
         })
     })
 
@@ -230,11 +246,17 @@ describe('deployService', () => {
                 '',
                 '',
                 'Process_1',
-                'http://instance.com',
+                'https://instance.com',
                 false
             )
 
-            expect(m.post).toHaveBeenCalled()
+            expect(m.post).toHaveBeenCalledWith(
+                '/api/modeler/deployment/start/Process_1',
+                expect.any(Object),
+                expect.objectContaining({
+                    headers: expect.objectContaining({ authorization: 'Bearer token123' }),
+                })
+            )
             expect(result.data).toEqual({ processInstanceId: 'pi1' })
         })
 
@@ -247,11 +269,17 @@ describe('deployService', () => {
                 'user',
                 'pass',
                 'Process_2',
-                'http://instance.com',
+                'https://instance.com',
                 false
             )
 
-            expect(m.post).toHaveBeenCalled()
+            const [, , config] = m.post.mock.calls[0]
+            expect(m.post).toHaveBeenCalledWith(
+                '/api/modeler/deployment/start/Process_2',
+                expect.any(Object),
+                expect.objectContaining({ headers: expect.any(Object) })
+            )
+            expect(config.headers.authorization).toMatch(/^Basic /)
             expect(result.data).toEqual({ processInstanceId: 'pi2' })
         })
 
@@ -264,11 +292,17 @@ describe('deployService', () => {
                 '',
                 '',
                 'Process_3',
-                'http://custom.com',
+                'https://custom.com',
                 true
             )
 
-            expect(m.post).toHaveBeenCalled()
+            expect(m.post).toHaveBeenCalledWith(
+                'https://custom.com//api/services/modeler/deployment/start/Process_3',
+                expect.any(Object),
+                expect.objectContaining({
+                    headers: expect.objectContaining({ authorization: 'Bearer token123' }),
+                })
+            )
         })
 
         it('includes language variable in request', async () => {
@@ -280,7 +314,7 @@ describe('deployService', () => {
                 '',
                 '',
                 'Process_4',
-                'http://instance.com',
+                'https://instance.com',
                 false
             )
 
@@ -292,20 +326,15 @@ describe('deployService', () => {
         it('handles process start errors', async () => {
             m.post.mockRejectedValue(new Error('Start failed'))
 
-            try {
-                await startProcess(
-                    'token',
-                    'Bearer token123',
-                    '',
-                    '',
-                    'Process_5',
-                    'http://instance.com',
-                    false
-                )
-                expect(true).toBe(false)
-            } catch (error) {
-                expect(error).toBeDefined()
-            }
+            return expect(startProcess(
+                'token',
+                'Bearer token123',
+                '',
+                '',
+                'Process_5',
+                'https://instance.com',
+                false
+            )).rejects.toThrow('Start failed')
         })
 
         it('requires valid authentication', async () => {
@@ -315,7 +344,7 @@ describe('deployService', () => {
                 '',
                 '',
                 'Process_6',
-                'http://instance.com',
+                'https://instance.com',
                 false
             )
 
@@ -329,7 +358,7 @@ describe('deployService', () => {
                 '',
                 '',
                 'Process_7',
-                'http://instance.com',
+                'https://instance.com',
                 false
             )
 
@@ -345,7 +374,7 @@ describe('deployService', () => {
                 '',
                 '',
                 'MyProcess_v1',
-                'http://instance.com',
+                'https://instance.com',
                 false
             )
 

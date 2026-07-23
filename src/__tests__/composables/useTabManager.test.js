@@ -18,6 +18,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ref } from 'vue'
 
 import useTabManager from '../../composables/useTabManager.js'
+import { TAB_STORAGE_KEY } from '../../constants/diagramTypes.js'
 
 describe('useTabManager', () => {
   beforeEach(() => {
@@ -44,11 +45,11 @@ describe('useTabManager', () => {
       const modelerRef = createMockModelerRef()
       const composable = useTabManager(modelerRef)
       
-      expect(composable._copyArray).toBeDefined()
-      expect(composable._saveTabNavSavedLocalStorage).toBeDefined()
-      expect(composable._loadTabNavList).toBeDefined()
-      expect(composable._closeSelectedTab).toBeDefined()
-      expect(composable.orderTabNavListHiddenTab).toBeDefined()
+      expect(typeof composable._copyArray).toBe('function')
+      expect(typeof composable._saveTabNavSavedLocalStorage).toBe('function')
+      expect(typeof composable._loadTabNavList).toBe('function')
+      expect(typeof composable._closeSelectedTab).toBe('function')
+      expect(typeof composable.orderTabNavListHiddenTab).toBe('function')
     })
   })
 
@@ -79,17 +80,22 @@ describe('useTabManager', () => {
   })
 
   describe('_saveTabNavSavedLocalStorage', () => {
-    it('clears transient properties before saving', () => {
-      const mockTab = { id: 1, isSaved: true, canSave: true, isModelerVisible: true, sessionId: 'session1' }
-      const copyTab = { ...mockTab }
-      
-      // Simulate what the function does
-      copyTab.canSave = false
-      copyTab.isModelerVisible = false
-      copyTab.sessionId = null
-      
-      expect(copyTab.canSave).toBe(false)
-      expect(copyTab.sessionId).toBeNull()
+    it('persists only saved tabs with transient props cleared', () => {
+      const composable = useTabManager(createMockModelerRef())
+      composable.tabNavList.value = [
+        { id: 1, isSaved: true, canSave: true, isModelerVisible: true, sessionId: 's1' },
+        { id: 2, isSaved: false, canSave: true, isModelerVisible: true, sessionId: 's2' },
+      ]
+      composable._saveTabNavSavedLocalStorage()
+      const stored = JSON.parse(localStorage.getItem(TAB_STORAGE_KEY))
+      expect(stored).toHaveLength(1)
+      expect(stored[0]).toMatchObject({
+        id: 1,
+        isSaved: true,
+        canSave: false,
+        isModelerVisible: false,
+        sessionId: null,
+      })
     })
 
     it('returns composable with save method', () => {
@@ -97,17 +103,6 @@ describe('useTabManager', () => {
       const composable = useTabManager(modelerRef)
       
       expect(typeof composable._saveTabNavSavedLocalStorage).toBe('function')
-    })
-
-    it('filters tabs by isSaved property', () => {
-      const tabs = [
-        { id: 1, isSaved: true },
-        { id: 2, isSaved: false },
-        { id: 3, isSaved: true }
-      ]
-      
-      const filtered = tabs.filter(el => el.isSaved === true)
-      expect(filtered).toHaveLength(2)
     })
   })
 
@@ -139,7 +134,7 @@ describe('useTabManager', () => {
       composable.tabNavList.value = [{ id: 1, name: 'Tab 1', keyOfTabNav: 'key1' }]
       composable._loadTabNavList()
       
-      expect(composable.tabNavListXml.value).toBeDefined()
+      expect(composable.tabNavListXml.value).toHaveLength(1)
     })
 
     it('generates unique keys if missing', () => {
@@ -149,7 +144,7 @@ describe('useTabManager', () => {
       composable.tabNavList.value = [{ id: 1, name: 'Tab 1' }]
       composable._loadTabNavList()
       
-      expect(composable.tabNavList.value).toBeDefined()
+      expect(composable.tabNavList.value[0].keyOfTabNav).toEqual(expect.any(String))
     })
   })
 

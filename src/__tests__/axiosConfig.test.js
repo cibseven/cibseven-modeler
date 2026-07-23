@@ -14,11 +14,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-if (globalThis.DragEvent === undefined) {
-  globalThis.DragEvent = class DragEvent extends Event {
-    constructor(type, init = {}) {
-      super(type, init)
-      this.dataTransfer = init.dataTransfer ?? null
-    }
-  }
-}
+import { describe, it, expect, vi } from 'vitest'
+import axiosLib from 'axios'
+import { setAxiosInstance, getAxios, axios } from '../axiosConfig.js'
+
+describe('axiosConfig', () => {
+    it('returns default axios instance', () => {
+        expect(getAxios()).toBe(axiosLib)
+        expect(axios).toBe(axiosLib)
+    })
+
+    it('allows host app to replace axios instance', () => {
+        const custom = { get: vi.fn(), post: vi.fn() }
+        setAxiosInstance(custom)
+        expect(getAxios()).toBe(custom)
+        setAxiosInstance(axiosLib)
+    })
+})

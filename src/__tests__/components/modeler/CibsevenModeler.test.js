@@ -37,6 +37,8 @@ const storeState = vi.hoisted(() => ({
   },
 }))
 
+const storeDispatch = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
+
 vi.mock('../../../monaco-setup.js', () => ({
   editor: { setTheme: vi.fn(), create: vi.fn() },
 }))
@@ -52,7 +54,7 @@ vi.mock('vuex', () => ({
     getters: {
       'modeler/elementTemplates/allElementTemplateContents': [],
     },
-    dispatch: vi.fn().mockResolvedValue(undefined),
+    dispatch: storeDispatch,
   })),
 }))
 
@@ -250,6 +252,223 @@ describe('CibsevenModeler', () => {
       await flushPromises()
       wrapper.vm.removeSelectedTab(1)
       expect(tabManagerState._closeSelectedTab).toHaveBeenCalledWith(1)
+    })
+
+    it('resolveConflict delegates to useFileImport', async () => {
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      wrapper.vm.resolveConflict('replace', true, { newKey: 'k2' })
+      expect(fileImportMocks.resolveConflict).toHaveBeenCalledWith('replace', true, { newKey: 'k2' })
+    })
+
+    it('openDiagramFromChildAndResolve skips conflict', async () => {
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      wrapper.vm.openDiagramFromChildAndResolve()
+      expect(fileImportMocks.resolveConflict).toHaveBeenCalledWith('skip')
+    })
+
+    it('toggleEnableSave updates tab canSave flag', async () => {
+      tabManagerState.tabNavList.value = [
+        { id: 'p1', key: 'k1', name: 'BPMN', type: 'bpmn-c7', canSave: false },
+      ]
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      wrapper.vm.toggleEnableSave(true, 0)
+      expect(tabManagerState.tabNavList.value[0].canSave).toBe(true)
+    })
+
+    it('updateEditorXML stores xml in editorXML ref', async () => {
+      tabManagerState.tabNavList.value = [
+        { id: 'p1', key: 'k1', name: 'BPMN', type: 'bpmn-c7' },
+      ]
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      wrapper.vm.updateEditorXML('<updated/>', 0)
+      expect(tabManagerState.editorXML.value[0]).toBe('<updated/>')
+    })
+
+    it('hideModalAcceptCancelMessage resets modal show flag', async () => {
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      wrapper.vm.showModalAcceptCancelMessage = { show: true, type: 'bpmn' }
+      wrapper.vm.hideModalAcceptCancelMessage()
+      expect(wrapper.vm.showModalAcceptCancelMessage.show).toBe(false)
+    })
+
+    it('handleRename delegates rename conflict resolution', async () => {
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      wrapper.vm.handleRename('new-key')
+      expect(fileImportMocks.resolveConflict).toHaveBeenCalledWith('rename', false, { newKey: 'new-key' })
+    })
+
+    it('handleApplyAll delegates batch conflict resolution', async () => {
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      wrapper.vm.handleApplyAll('replace')
+      expect(fileImportMocks.resolveConflict).toHaveBeenCalledWith('replace', true)
+    })
+
+    it('validateRenameKey rejects duplicate keys', async () => {
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      wrapper.vm.modalData = { processkey: 'existing-key', diagramType: 'bpmn' }
+      expect(wrapper.vm.validateRenameKey('existing-key')).toBe('modalImportedFile.renameSameKey')
+      expect(wrapper.vm.validateRenameKey('unique-new-key')).toBeNull()
+    })
+
+    it('showDiagram updates withDiagram flag', async () => {
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      wrapper.vm.showDiagram(true)
+      expect(wrapper.vm.withDiagram).toBe(true)
+    })
+
+    it('toggleModal updates modal visibility', async () => {
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      wrapper.vm.toggleModal(true)
+      expect(wrapper.vm.isShowModal).toBe(true)
+    })
+
+    it('isValidated stores validation state keyed by tab key', async () => {
+      tabManagerState.tabNavList.value = [
+        { id: 'p1', key: 'tab-key-1', name: 'BPMN', type: 'bpmn-c7' },
+      ]
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      wrapper.vm.isValidated({ validation: true, text: 'ok' }, 0)
+      expect(wrapper.vm.isXmlValidated['tab-key-1']).toEqual({ validation: true, text: 'ok' })
+    })
+
+    it('updateTabName updates tab label', async () => {
+      tabManagerState.tabNavList.value = [
+        { id: 'p1', key: 'k1', name: 'Old', type: 'bpmn-c7' },
+      ]
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      wrapper.vm.updateTabName('New Name', 0)
+      expect(tabManagerState.tabNavList.value[0].name).toBe('New Name')
+    })
+
+    it('toggleVersionNotSaved updates tab changedVersion', async () => {
+      tabManagerState.tabNavList.value = [
+        { id: 'p1', key: 'k1', name: 'BPMN', type: 'bpmn-c7', changedVersion: false },
+      ]
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      wrapper.vm.toggleVersionNotSaved(true, 0)
+      expect(tabManagerState.tabNavList.value[0].changedVersion).toBe(true)
+    })
+
+    it('addErrorMessageToConsole forwards errors to the active modeler tab', async () => {
+      tabManagerState.tabNavList.value = [
+        { id: 'line-1', key: 'k1', name: 'BPMN', type: 'bpmn-c7' },
+      ]
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      const addLine = vi.fn()
+      wrapper.vm.activeTab = 0
+      wrapper.vm.modeler = [{ addLineWithErrorToConsole: addLine }]
+      wrapper.vm.addErrorMessageToConsole('line-1', 'Something failed')
+      expect(addLine).toHaveBeenCalledWith('Something failed')
+    })
+
+    it('announce sets status message for screen readers', async () => {
+      vi.useFakeTimers()
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      wrapper.vm.announce('Diagram saved')
+      vi.advanceTimersByTime(50)
+      expect(wrapper.vm.statusMessage).toBe('Diagram saved')
+      vi.useRealTimers()
+    })
+
+    it('showPropertyPanel toggles tab panel visibility', async () => {
+      tabManagerState.tabNavList.value = [
+        { id: 'p1', key: 'k1', name: 'BPMN', type: 'bpmn-c7', isPropertyPanelVisible: false },
+      ]
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      wrapper.vm.showPropertyPanel(true, 0)
+      expect(tabManagerState.tabNavList.value[0].isPropertyPanelVisible).toBe(true)
+    })
+
+    it('setTypeOfDiagramForModeler updates tab type', async () => {
+      tabManagerState.tabNavList.value = [
+        { id: 'p1', key: 'k1', name: 'BPMN', type: 'bpmn-c7' },
+      ]
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      wrapper.vm.setTypeOfDiagramForModeler('dmn', 0)
+      expect(tabManagerState.tabNavList.value[0].type).toBe('dmn')
+    })
+
+    it('toggleIsSaved updates tab saved flag', async () => {
+      tabManagerState.tabNavList.value = [
+        { id: 'p1', key: 'k1', name: 'BPMN', type: 'bpmn-c7', isSaved: false },
+      ]
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      wrapper.vm.toggleIsSaved(true, 0)
+      expect(tabManagerState.tabNavList.value[0].isSaved).toBe(true)
+    })
+
+    it('loadMore returns early when no more diagrams', async () => {
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      storeDispatch.mockClear()
+      wrapper.vm.hasMore = false
+      await wrapper.vm.loadMore()
+      expect(storeDispatch).not.toHaveBeenCalled()
+    })
+
+    it('creates new BPMN tab when creation modal is skipped', async () => {
+      localStorage.setItem('cibseven:modeler.skipCreationModal', 'true')
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve(
+          '<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"><bpmn:process id="p"/></bpmn:definitions>',
+        ),
+      })
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      await wrapper.vm.createNewBpmnDiagram('/default.bpmn', 'bpmn-c7')
+      expect(tabManagerState.tabNavList.value.length).toBeGreaterThan(0)
+      localStorage.removeItem('cibseven:modeler.skipCreationModal')
+    })
+
+    it('creates new DMN tab when creation modal is skipped', async () => {
+      localStorage.setItem('cibseven:modeler.skipCreationModal', 'true')
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve(
+          '<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL"><decision id="d"/></definitions>',
+        ),
+      })
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      await wrapper.vm.createNewDmnDiagram('/default.dmn', 'dmn')
+      expect(tabManagerState.tabNavList.value.some(t => t.type === 'dmn')).toBe(true)
+      localStorage.removeItem('cibseven:modeler.skipCreationModal')
+    })
+
+    it('creates new form tab when creation modal is skipped', async () => {
+      localStorage.setItem('cibseven:modeler.skipCreationModal', 'true')
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      await wrapper.vm.createNewFormDiagram({ type: 'default', components: [] }, 'form')
+      expect(tabManagerState.tabNavList.value.some(t => t.type === 'form')).toBe(true)
+      localStorage.removeItem('cibseven:modeler.skipCreationModal')
+    })
+
+    it('handleSearch refreshes stored diagrams', async () => {
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      wrapper.vm.startPage = { _toggleIsLoading: vi.fn() }
+      await wrapper.vm.handleSearch({ keyword: 'test', diagramType: 'bpmn' })
+      expect(wrapper.vm.currentKeyword).toBe('test')
     })
   })
 })

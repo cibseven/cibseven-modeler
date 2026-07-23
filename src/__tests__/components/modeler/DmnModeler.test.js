@@ -183,6 +183,23 @@ describe('DmnModeler', () => {
         expect(dmnInstance.minimap.toggle).toHaveBeenCalled()
       }
     })
+
+    it('zoomOut decreases canvas zoom', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      dmnInstance.canvas.zoom.mockImplementation((val) => (val === undefined ? 1 : val))
+      dmnInstance.canvas.zoom.mockClear()
+      await wrapper.findAll('button')[1].trigger('click')
+      expect(dmnInstance.canvas.zoom).toHaveBeenCalledWith(0.8)
+    })
+
+    it('resetViewport fits canvas to viewport', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      dmnInstance.canvas.zoom.mockClear()
+      await wrapper.findAll('button')[2].trigger('click')
+      expect(dmnInstance.canvas.zoom).toHaveBeenCalledWith('fit-viewport')
+    })
   })
 
   describe('lifecycle', () => {
@@ -205,6 +222,34 @@ describe('DmnModeler', () => {
       const wrapper = mountDmnModeler()
       await flushPromises()
       expect(wrapper.vm.togglePropertiesPanel).toBeDefined()
+    })
+
+    it('calls validate through exposed _validate', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      await wrapper.vm._validate('<definitions/>')
+      expect(modelerMocks.validate).toHaveBeenCalled()
+    })
+
+    it('calls saveDecisionTable through exposed _saveDiagram', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      await wrapper.vm._saveDiagram()
+      expect(modelerMocks.saveDecisionTable).toHaveBeenCalled()
+    })
+
+    it('forwards saveXmlAfterUpdate to useModeler', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      wrapper.vm._saveXmlAfterUpdate(false, '<definitions/>', 0)
+      expect(modelerMocks.saveXmlAfterUpdate).toHaveBeenCalled()
+    })
+
+    it('delegates console toggle to useModeler', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      wrapper.vm.toggleConsole(true)
+      expect(modelerMocks.toggleConsole).toHaveBeenCalledWith(true)
     })
   })
 })

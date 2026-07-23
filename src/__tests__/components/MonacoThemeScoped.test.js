@@ -56,17 +56,17 @@ vi.mock('monaco-editor/esm/vs/platform/theme/common/colorRegistry', () => ({
 
 import MonacoThemeScoped from '../../components/layout/MonacoThemeScoped.vue'
 
+function mountTheme(props = {}, slots = {}) {
+  return mount(MonacoThemeScoped, {
+    props: { overrideTheme: 'vs-dark', ...props },
+    slots: { default: '<div class="slot-content">Child</div>', ...slots },
+  })
+}
+
 describe('MonacoThemeScoped', () => {
   beforeEach(() => {
     document.head.innerHTML = ''
   })
-
-  function mountTheme(props = {}, slots = {}) {
-    return mount(MonacoThemeScoped, {
-      props: { overrideTheme: 'vs-dark', ...props },
-      slots: { default: '<div class="slot-content">Child</div>', ...slots },
-    })
-  }
 
   describe('rendering', () => {
     it('renders container with theme class', async () => {

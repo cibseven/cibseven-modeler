@@ -129,7 +129,7 @@ describe('FormModeler', () => {
     })
 
     it('registers resize listeners on mount', async () => {
-      const addSpy = vi.spyOn(window, 'addEventListener')
+      const addSpy = vi.spyOn(globalThis, 'addEventListener')
       mountFormModeler()
       await flushPromises()
       expect(addSpy).toHaveBeenCalledWith('resize', panelMocks.updateParentWidth, true)

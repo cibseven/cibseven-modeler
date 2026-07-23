@@ -283,7 +283,7 @@ describe('ActionButtonsList', () => {
         it('clicking undo does not throw when modeler lacks _undo', async () => {
             const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.FORM), { modeler: {} })
 
-            await expect(undoButton(wrapper).trigger('click')).resolves.toBeUndefined()
+            return expect(undoButton(wrapper).trigger('click')).resolves.toBeUndefined()
         })
 
         it('clicking redo does not throw when modeler lacks _redo', async () => {
@@ -291,7 +291,7 @@ describe('ActionButtonsList', () => {
                 modeler: { _undo: vi.fn() },
             })
 
-            await expect(redoButton(wrapper).trigger('click')).resolves.toBeUndefined()
+            return expect(redoButton(wrapper).trigger('click')).resolves.toBeUndefined()
         })
     })
 
@@ -318,6 +318,35 @@ describe('ActionButtonsList', () => {
             expect(mockEvent.preventDefault).toHaveBeenCalled()
             expect(wrapper.emitted('showToastMessage')).toHaveLength(1)
             expect(wrapper.emitted('showToastMessage')[0][0].isSuccess).toBe(false)
+        })
+    })
+
+    describe('editor and console actions', () => {
+        it('toggles editor visibility through emit', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7))
+            wrapper.vm.toggleVisibilityEditor()
+            expect(wrapper.emitted('toggleEditor')).toHaveLength(1)
+        })
+
+        it('opens outdated template modal', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7))
+            wrapper.vm.toggleVisibilityOutdatedTemplates()
+            expect(wrapper.emitted('toggleOutdatedTemplateModal')).toEqual([[true]])
+        })
+
+        it('opens console via parent emit', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), {
+                tabElementIndex: 2,
+            })
+            wrapper.vm.openConsole()
+            expect(wrapper.emitted('toggleConsole')).toEqual([[2, true]])
+        })
+
+        it('updates download link via exposed helper', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7))
+            wrapper.vm._updateDownloadFile('blob:url', 'diagram.bpmn')
+            expect(wrapper.vm.downloadLink).toBe('blob:url')
+            expect(wrapper.vm.downloadName).toBe('diagram.bpmn')
         })
     })
 })

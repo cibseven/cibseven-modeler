@@ -14,7 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
     wildcardCleanupRegex,
     cleanupTemplateCriteria,
@@ -28,6 +28,19 @@ import {
     checkJSON,
     getFormRefsFromBpmn,
     resolveTabIndexById,
+    decodeBase64ToUtf8,
+    compareXML,
+    setTagValueOfXml,
+    checkCamundaVersion,
+    loadFromPublic,
+    applyTheme,
+    getTheme,
+    getBearerToken,
+    formatDate,
+    formatFileSize,
+    addHtmlErrorsToConsole,
+    parseXml,
+    base64Decode,
 } from '../../utils.js'
 
 describe('Utils', () => {
@@ -95,10 +108,16 @@ describe('Utils', () => {
 
         it('Undefined or invalid config', () => {
             expect(filterTemplates([], undefined)).toEqual([])
+            expect(filterTemplates([], null)).toEqual([])
             expect(filterTemplates([], {})).toEqual([])
             expect(filterTemplates([], { excludeTemplates: undefined })).toEqual([])
             expect(filterTemplates([], { excludeTemplates: [] })).toEqual([])
             expect(filterTemplates([], { excludeTemplates: {} })).toEqual([])
+        })
+
+        it('returns templates unchanged when config is null', () => {
+            const templates = [{ id: 'template1', name: 'Example' }]
+            expect(filterTemplates(templates, null)).toEqual(templates)
         })
 
         it('Valid templates with no exclusions', () => {
@@ -530,6 +549,185 @@ describe('Utils', () => {
 
         it('returns empty array for invalid XML', () => {
             expect(getFormRefsFromBpmn('not xml <<>>')).toEqual([])
+        })
+    })
+
+    describe('decodeBase64ToUtf8', () => {
+        it('decodes UTF-8 base64 strings', () => {
+            const encoded = btoa('Hello')
+            expect(decodeBase64ToUtf8(encoded)).toBe('Hello')
+        })
+
+        it('base64Decode is an alias', () => {
+            const encoded = btoa('test')
+            expect(base64Decode(encoded)).toBe('test')
+        })
+    })
+
+    describe('compareXML', () => {
+        it('returns true for equivalent XML documents', () => {
+            const xml = '<root><child id="1"/></root>'
+            expect(compareXML(xml, xml)).toBe(true)
+        })
+
+        it('returns false for different XML documents', () => {
+            expect(compareXML('<root><a/></root>', '<root><b/></root>')).toBe(false)
+        })
+    })
+
+    describe('setTagValueOfXml', () => {
+        it('sets attribute on namespaced tag using local name', () => {
+            const xml = '<?xml version="1.0"?><bpmn:process xmlns:bpmn="http://example" id="old"/>'
+            const updated = setTagValueOfXml(xml, 'bpmn:process', 'id', 'new-id')
+            expect(updated).toContain('id="new-id"')
+        })
+    })
+
+    describe('checkCamundaVersion', () => {
+        it('returns bpmn-c7 when modeler execution platform version is present', () => {
+            const xml = '<?xml version="1.0"?><definitions modeler:executionPlatformVersion="8.0"/>'
+            expect(checkCamundaVersion(xml)).toBe('bpmn-c7')
+        })
+
+        it('returns bpmn-c7 when camunda namespace attribute is present', () => {
+            const xml = '<?xml version="1.0"?><definitions xmlns:camunda="http://camunda.org/schema/1.0/bpmn"/>'
+            expect(checkCamundaVersion(xml)).toBe('bpmn-c7')
+        })
+    })
+
+    describe('loadFromPublic', () => {
+        it('returns JSON when fetch succeeds', async () => {
+            globalThis.fetch = vi.fn().mockResolvedValue({
+                ok: true,
+                json: () => Promise.resolve({ ok: true }),
+            })
+
+            return expect(loadFromPublic('folder', 'file.json')).resolves.toEqual({ ok: true })
+        })
+
+        it('returns null when fetch fails', async () => {
+            const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+            globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 404 })
+
+            await expect(loadFromPublic('folder', 'missing.json')).resolves.toBeNull()
+            warnSpy.mockRestore()
+        })
+
+        it('returns null when fetch throws', async () => {
+            const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+            globalThis.fetch = vi.fn().mockRejectedValue(new Error('network'))
+
+            await expect(loadFromPublic('folder', 'file.json')).resolves.toBeNull()
+            warnSpy.mockRestore()
+        })
+    })
+
+    describe('applyTheme / getTheme', () => {
+        beforeEach(() => {
+            vi.stubGlobal('localStorage', {
+                getItem: vi.fn(() => null),
+                setItem: vi.fn(),
+            })
+        })
+
+        afterEach(() => {
+            vi.unstubAllGlobals()
+        })
+
+        it('applyTheme sets document attribute and stores preference', () => {
+            applyTheme('dark')
+            expect(document.documentElement.getAttribute('data-bs-theme')).toBe('dark')
+            expect(localStorage.setItem).toHaveBeenCalledWith('theme', 'dark')
+        })
+
+        it('getTheme returns stored theme or light by default', () => {
+            localStorage.getItem.mockReturnValue('dark')
+            expect(getTheme()).toBe('dark')
+            localStorage.getItem.mockReturnValue(null)
+            expect(getTheme()).toBe('light')
+        })
+    })
+
+    describe('getBearerToken', () => {
+        beforeEach(() => {
+            vi.stubGlobal('localStorage', {
+                getItem: vi.fn(),
+            })
+        })
+
+        afterEach(() => {
+            vi.unstubAllGlobals()
+        })
+
+        it('returns token part after Bearer prefix', () => {
+            localStorage.getItem.mockReturnValue('Bearer abc123')
+            expect(getBearerToken()).toBe('abc123')
+        })
+
+        it('returns null when token is missing', () => {
+            localStorage.getItem.mockReturnValue(null)
+            expect(getBearerToken()).toBeNull()
+        })
+    })
+
+    describe('formatDate', () => {
+        beforeEach(() => {
+            vi.stubGlobal('localStorage', {
+                getItem: vi.fn(() => null),
+            })
+        })
+
+        afterEach(() => {
+            vi.unstubAllGlobals()
+        })
+
+        it('returns empty string for falsy input', () => {
+            expect(formatDate(null)).toBe('')
+        })
+
+        it('formats ISO date strings', () => {
+            expect(formatDate('2024-01-15T10:30:00Z', 'YYYY-MM-DD')).toBe('2024-01-15')
+        })
+
+        it('formats Java LocalDateTime arrays', () => {
+            expect(formatDate([2024, 1, 15, 10, 30, 0, 0], 'YYYY-MM-DD')).toBe('2024-01-15')
+        })
+    })
+
+    describe('formatFileSize', () => {
+        it('formats bytes, kilobytes, and megabytes', () => {
+            expect(formatFileSize(512)).toBe('512 B')
+            expect(formatFileSize(2048)).toBe('2.0 KB')
+            expect(formatFileSize(2 * 1024 * 1024)).toBe('2.0 MB')
+        })
+    })
+
+    describe('parseXml', () => {
+        it('parses XML into a document', () => {
+            const doc = parseXml('<root><child/></root>')
+            expect(doc.documentElement.tagName.toLowerCase()).toBe('root')
+        })
+    })
+
+    describe('filterTemplates error handling', () => {
+        it('returns original templates when filtering throws', () => {
+            const templates = [{ id: 't1', name: 'Name' }]
+            const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+            const badConfig = {
+                get excludeTemplates() {
+                    throw new Error('bad config')
+                },
+            }
+
+            expect(filterTemplates(templates, badConfig)).toEqual(templates)
+            errorSpy.mockRestore()
+        })
+    })
+
+    describe('addHtmlErrorsToConsole', () => {
+        it('returns the error unchanged', () => {
+            const err = new Error('validation failed')
+            expect(addHtmlErrorsToConsole(err)).toBe(err)
         })
     })
 })

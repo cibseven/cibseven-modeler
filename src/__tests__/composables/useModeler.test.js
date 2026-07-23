@@ -152,5 +152,108 @@ describe('useModeler', () => {
       addLineWithErrorToConsole('Error line')
       expect(monacoEditorConsole.value.addLineWithError).toHaveBeenCalledWith('Error line')
     })
+
+    it('copyLine and cleanConsole delegate to monaco console', () => {
+      const { copyLine, cleanConsole, monacoEditorConsole } = withSetup()
+      copyLine()
+      cleanConsole()
+      expect(monacoEditorConsole.value.copyLine).toHaveBeenCalled()
+      expect(monacoEditorConsole.value.cleanConsole).toHaveBeenCalled()
+    })
+
+    it('isConsolePanelShowing delegates to console panel', () => {
+      const { isConsolePanelShowing, consolePanel } = withSetup()
+      isConsolePanelShowing()
+      expect(consolePanel.value.isOpen).toHaveBeenCalled()
+    })
+  })
+
+  describe('getProcessInformation fallback', () => {
+    it('uses active viewer when canvas service is unavailable', () => {
+      const { getProcessInformation } = withSetup()
+      const canvas = {
+        getRootElement: () => ({ businessObject: { id: 'Process_2', name: 'Fallback' } }),
+      }
+      const modeler = {
+        get: vi.fn(() => { throw new Error('no canvas') }),
+        getActiveViewer: vi.fn(() => ({ get: vi.fn(() => canvas) })),
+      }
+
+      const info = getProcessInformation(modeler)
+      expect(info.id).toBe('Process_2')
+    })
+  })
+
+  describe('saveXmlAfterUpdate', () => {
+    it('emits download link for BPMN xml', async () => {
+      const { saveXmlAfterUpdate, emitted } = withSetup()
+      const modeler = createMockModeler()
+      saveXmlAfterUpdate(true, '<bpmn:definitions/>', 0, modeler)
+      expect(emitted.some(e => e.event === 'updateDownloadLink')).toBe(true)
+    })
+
+    it('emits download link for DMN xml', async () => {
+      const { saveXmlAfterUpdate, emitted } = withSetup()
+      const modeler = createMockModeler()
+      saveXmlAfterUpdate(false, '<definitions/>', 0, modeler)
+      expect(emitted.some(e => e.event === 'updateDownloadLink')).toBe(true)
+    })
+  })
+
+  describe('history and selector', () => {
+    it('loads process history via fetchSnapshotsHook', async () => {
+      const fetchSnapshotsHook = vi.fn().mockResolvedValue([{ version: 3 }, { version: 2 }])
+      const { getProcessHistoryList, activeVersion } = withSetup({ fetchSnapshotsHook })
+      const history = await getProcessHistoryList()
+      expect(history).toHaveLength(2)
+      expect(activeVersion.value).toBe(3)
+    })
+
+    it('changeActiveVersion updates activeVersion ref', () => {
+      const { changeActiveVersion, activeVersion } = withSetup()
+      changeActiveVersion(5)
+      expect(activeVersion.value).toBe(5)
+    })
+
+    it('listDataForSelector returns templates when type is templates', async () => {
+      const { listDataForSelector, templatesList, typeOfSelector } = withSetup()
+      templatesList.value = [{ id: 't1' }]
+      typeOfSelector.value = 'templates'
+      expect(listDataForSelector.value).toEqual([{ id: 't1' }])
+    })
+  })
+
+  describe('session hooks', () => {
+    it('blocks saveProcess when checkSessionHook returns forceSave false', async () => {
+      const checkSessionHook = vi.fn().mockResolvedValue({ forceSave: false })
+      const { saveProcess } = withSetup({ checkSessionHook })
+      const modeler = createMockModeler()
+      await saveProcess(modeler, 'bpmn-c7', null, null)
+      expect(modeler.saveXML).not.toHaveBeenCalled()
+    })
+
+    it('blocks saveDecisionTable when no views are available', async () => {
+      const { saveDecisionTable } = withSetup()
+      const modeler = createMockModeler()
+      modeler.getViews.mockReturnValue([])
+      await saveDecisionTable(modeler, 'dmn')
+      expect(modeler.saveXML).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('saveXmlAfterUpdate and toggles', () => {
+    it('emits updateDownloadLink for DMN diagrams', async () => {
+      const { saveXmlAfterUpdate, emitted } = withSetup()
+      await saveXmlAfterUpdate(false, '<definitions/>', 0, createMockModeler())
+      expect(emitted.some(e => e.event === 'updateDownloadLink')).toBe(true)
+    })
+
+    it('forwards toggleEnableSave and toggleVersionNotSaved to parent', () => {
+      const { toggleEnableSave, toggleVersionNotSaved, emitted } = withSetup()
+      toggleEnableSave(true, 0)
+      toggleVersionNotSaved(true, 1)
+      expect(emitted.some(e => e.event === 'toggleEnableSave' && e.args[0] === true)).toBe(true)
+      expect(emitted.some(e => e.event === 'toggleVersionNotSaved' && e.args[0] === true)).toBe(true)
+    })
   })
 })

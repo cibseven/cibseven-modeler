@@ -23,7 +23,7 @@ const m = vi.hoisted(() => ({
     delete: vi.fn(),
 }))
 
-vi.mock('../../axiosConfig', () => ({ getAxios: () => ({ get: m.get, post: m.post, put: m.put, delete: m.delete }) }))
+vi.mock('../../axiosConfig', () => ({ getAxios: () => m }))
 vi.mock('../../services/servicesConfig', () => ({ getModelerServicePath: () => '/api/modeler' }))
 
 import {
@@ -86,12 +86,7 @@ describe('formService', () => {
         it('handles API errors', async () => {
             m.get.mockRejectedValue(new Error('API Error'))
 
-            try {
-                await fetchForms(0, 10)
-                expect(true).toBe(false)
-            } catch (error) {
-                expect(error).toBeDefined()
-            }
+            return expect(fetchForms(0, 10)).rejects.toThrow('API Error')
         })
     })
 
@@ -109,12 +104,7 @@ describe('formService', () => {
         it('handles non-existent form', async () => {
             m.get.mockRejectedValue(new Error('Not found'))
 
-            try {
-                await fetchFormById('nonexistent')
-                expect(true).toBe(false)
-            } catch (error) {
-                expect(error).toBeDefined()
-            }
+            return expect(fetchFormById('nonexistent')).rejects.toThrow('Not found')
         })
     })
 
@@ -134,12 +124,7 @@ describe('formService', () => {
         it('handles non-existent formId', async () => {
             m.get.mockRejectedValue(new Error('404 Not found'))
 
-            try {
-                await fetchFormByFormId('nonexistent-formid')
-                expect(true).toBe(false)
-            } catch (error) {
-                expect(error).toBeDefined()
-            }
+            return expect(fetchFormByFormId('nonexistent-formid')).rejects.toThrow('404 Not found')
         })
     })
 
@@ -168,12 +153,7 @@ describe('formService', () => {
         it('handles save errors', async () => {
             m.post.mockRejectedValue(new Error('Save failed'))
 
-            try {
-                await saveForm('f1', { fields: [] })
-                expect(true).toBe(false)
-            } catch (error) {
-                expect(error).toBeDefined()
-            }
+            return expect(saveForm('f1', { fields: [] })).rejects.toThrow('Save failed')
         })
 
         it('saves complex form schemas', async () => {
@@ -215,12 +195,7 @@ describe('formService', () => {
         it('handles update errors', async () => {
             m.post.mockRejectedValue(new Error('Update failed'))
 
-            try {
-                await updateForm('f1', 'myform', { fields: [] })
-                expect(true).toBe(false)
-            } catch (error) {
-                expect(error).toBeDefined()
-            }
+            return expect(updateForm('f1', 'myform', { fields: [] })).rejects.toThrow('Update failed')
         })
 
         it('updates form with new schema', async () => {
@@ -247,23 +222,13 @@ describe('formService', () => {
         it('handles deletion of non-existent form', async () => {
             m.delete.mockRejectedValue(new Error('Not found'))
 
-            try {
-                await deleteFormById('nonexistent')
-                expect(true).toBe(false)
-            } catch (error) {
-                expect(error).toBeDefined()
-            }
+            return expect(deleteFormById('nonexistent')).rejects.toThrow('Not found')
         })
 
         it('handles deletion errors', async () => {
             m.delete.mockRejectedValue(new Error('Server error'))
 
-            try {
-                await deleteFormById('f1')
-                expect(true).toBe(false)
-            } catch (error) {
-                expect(error.message).toContain('Server error')
-            }
+            return expect(deleteFormById('f1')).rejects.toThrow('Server error')
         })
     })
 

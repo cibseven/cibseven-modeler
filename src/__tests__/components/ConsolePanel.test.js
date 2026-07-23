@@ -92,6 +92,27 @@ describe('ConsolePanel', () => {
       const wrapper = mountConsolePanel()
       expect(wrapper.vm.toggleConsole).toBeDefined()
     })
+
+    it('toggleConsole opens panel and emits showConsoleNotification', () => {
+      const wrapper = mountConsolePanel()
+      expect(wrapper.vm.toggleConsole(true)).toBe(true)
+      expect(wrapper.vm.isOpen()).toBe(true)
+      expect(wrapper.emitted('showConsoleNotification')).toEqual([['proc-1']])
+    })
+
+    it('toggleConsole closes panel and resets height', () => {
+      const wrapper = mountConsolePanel()
+      wrapper.vm.toggleConsole(true)
+      wrapper.vm.toggleConsole(false)
+      expect(wrapper.vm.isOpen()).toBe(false)
+    })
+
+    it('_resetPropertiesPanelHeight clears panel height', () => {
+      const wrapper = mountConsolePanel()
+      wrapper.vm.toggleConsole(true)
+      wrapper.vm._resetPropertiesPanelHeight()
+      expect(wrapper.vm.isOpen()).toBe(true)
+    })
   })
 
   describe('emits', () => {

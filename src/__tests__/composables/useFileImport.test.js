@@ -302,5 +302,100 @@ describe('useFileImport', () => {
                 expect.objectContaining({ isSuccess: false, toastText: 'toastLoadErrorFileExtension' })
             )
         })
+
+        it('rejects malformed BPMN without definitions', async () => {
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+            await handleFile(fileEvent([{ name: 'bad.bpmn', content: '<not-definitions/>' }]))
+
+            expect(m.saveDiagramProcess).not.toHaveBeenCalled()
+            expect(deps.showToastMessage).toHaveBeenCalledWith(
+                expect.objectContaining({ isSuccess: false })
+            )
+        })
+    })
+
+    describe('form rename import', () => {
+        it('saves under renamed key when rename is chosen', async () => {
+            const deps = makeDeps()
+            deps.forms.value = [{ id: 'fdb', formId: 'formA' }]
+            deps.store.state.modeler.forms.formSelected = form('formA', [{ type: 'textfield' }])
+            const { handleFile, resolveConflict } = useFileImport(deps)
+
+            const p = handleFile(fileEvent([{ name: 'f.form', content: form('formA', [{ type: 'number' }]) }]))
+            await waitForModal(deps)
+            resolveConflict('rename', false, { newKey: 'formRenamed' })
+            await p
+
+            expect(m.saveForm).toHaveBeenCalledOnce()
+            const [, savedJson] = m.saveForm.mock.calls[0]
+            expect(savedJson.id).toBe('formRenamed')
+        })
+    })
+
+    describe('drag and drop', () => {
+        it('accepts files from dataTransfer', async () => {
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+            const file = new File([bpmn('dragProc')], 'drag.bpmn', { type: 'text/plain' })
+            await handleFile({ dataTransfer: { files: [file] } })
+            expect(m.saveDiagramProcess).toHaveBeenCalledOnce()
+        })
+    })
+
+    describe('unsaved open tab', () => {
+        it('switches to unchanged unsaved tab when imported XML matches editor content', async () => {
+            const xml = bpmn('procNew')
+            const deps = makeDeps({
+                tabNavList: ref([{ key: 'procNew', type: 'bpmn-c7', canSave: true }]),
+                tabNavListXml: ref([xml]),
+                editorXML: ref([xml]),
+            })
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'procNew.bpmn', content: xml }]))
+
+            expect(deps.modelerTabNav.value.selectTab).toHaveBeenCalledWith(0)
+            expect(deps.showModalAcceptCancelMessage.value.show).toBe(false)
+        })
+
+        it('replaces unsaved tab content when process is not yet saved to DB', async () => {
+            const oldXml = bpmn('procNew')
+            const imported = oldXml.replace(
+                '</bpmn:process>',
+                '<bpmn:endEvent id="End_1"/></bpmn:process>',
+            )
+            const deps = makeDeps({
+                tabNavList: ref([{ key: 'procNew', type: 'bpmn-c7', canSave: true }]),
+                tabNavListXml: ref([oldXml]),
+                editorXML: ref([oldXml]),
+            })
+            const { handleFile, resolveConflict } = useFileImport(deps)
+
+            const p = handleFile(fileEvent([{ name: 'procNew.bpmn', content: imported }]))
+            await waitForModal(deps)
+            resolveConflict('replace')
+            await p
+
+            expect(deps.updateDiagramXml).toHaveBeenCalledWith(imported, 0, null, expect.anything())
+        })
+    })
+
+    describe('rename BPMN import', () => {
+        it('creates renamed process when rename is chosen for existing DB process', async () => {
+            const deps = makeDeps({
+                processes: ref([{ id: '1', name: 'A', processkey: 'procA' }]),
+                tabNavList: ref([]),
+            })
+            deps.store.state.modeler.processes.processSelected = bpmn('procA')
+            const { handleFile, resolveConflict } = useFileImport(deps)
+
+            const p = handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') + '<!-- diff -->' }]))
+            await waitForModal(deps)
+            resolveConflict('rename', false, { newKey: 'procRenamed' })
+            await p
+
+            expect(m.saveDiagramProcess).toHaveBeenCalled()
+        })
     })
 })

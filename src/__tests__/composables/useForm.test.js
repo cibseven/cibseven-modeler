@@ -44,15 +44,17 @@ vi.mock('vuex', () => ({
   }),
 }))
 
+const mockSharedSave = vi.hoisted(() => vi.fn().mockResolvedValue(true))
+
 vi.mock('../../composables/useDiagramSave.js', () => ({
   default: () => ({
-    save: vi.fn().mockResolvedValue(true),
+    save: mockSharedSave,
   }),
 }))
 
 import useForm from '../../composables/useForm.js'
 
-function withSetup(propsOverrides = {}) {
+function withSetup(propsOverrides = {}, provideOverrides = {}) {
   let composableResult
   const emitted = []
   const emit = (event, ...args) => emitted.push({ event, args })
@@ -72,7 +74,11 @@ function withSetup(propsOverrides = {}) {
       composableResult = useForm(props, emit, canvas, propertyPanel)
       return () => null
     },
-  }))
+  }), {
+    global: {
+      provide: provideOverrides,
+    },
+  })
 
   return { ...composableResult, emitted }
 }
@@ -86,10 +92,10 @@ describe('useForm', () => {
   describe('initialization', () => {
     it('returns required methods', () => {
       const composable = withSetup()
-      expect(composable.initializeFormEditor).toBeDefined()
-      expect(composable.importJson).toBeDefined()
-      expect(composable.save).toBeDefined()
-      expect(composable.destroyFormJs).toBeDefined()
+      expect(typeof composable.initializeFormEditor).toBe('function')
+      expect(typeof composable.importJson).toBe('function')
+      expect(typeof composable.save).toBe('function')
+      expect(typeof composable.destroyFormJs).toBe('function')
     })
   })
 
@@ -132,6 +138,76 @@ describe('useForm', () => {
       await initializeFormEditor()
       saveXmlAfterUpdate('{"id":"form1","name":"Updated"}')
       expect(mockFormEditor.instance.importSchema).toHaveBeenCalled()
+    })
+
+    it('emits updateDownloadLink after update', async () => {
+      const { initializeFormEditor, saveXmlAfterUpdate, emitted } = withSetup()
+      await initializeFormEditor()
+      saveXmlAfterUpdate('{"id":"form1","name":"Updated"}')
+      expect(emitted.some(e => e.event === 'updateDownloadLink')).toBe(true)
+    })
+  })
+
+  describe('initializeFormEditor', () => {
+    it('creates editor, imports schema, and wires changed handler', async () => {
+      const { initializeFormEditor, emitted } = withSetup()
+      await initializeFormEditor()
+
+      expect(mockFormEditor.FormEditor).toHaveBeenCalled()
+      expect(mockFormEditor.instance.importSchema).toHaveBeenCalled()
+      expect(emitted.some(e => e.event === 'updateEditorXML')).toBe(true)
+      expect(emitted.some(e => e.event === 'updateIsButtonDisabled')).toBe(true)
+      expect(mockFormEditor.instance.on).toHaveBeenCalledWith('changed', expect.any(Function))
+    })
+  })
+
+  describe('restartFormJs', () => {
+    it('destroys editor when deactivated', async () => {
+      const { initializeFormEditor, restartFormJs } = withSetup()
+      await initializeFormEditor()
+      await restartFormJs(false)
+      expect(mockFormEditor.instance.destroy).toHaveBeenCalled()
+    })
+
+    it('re-initializes editor when activated and container is empty', async () => {
+      const { restartFormJs, formEditor } = withSetup()
+      await restartFormJs(true)
+      expect(mockFormEditor.FormEditor).toHaveBeenCalled()
+      expect(formEditor.value).toBeTruthy()
+    })
+  })
+
+  describe('getFormId', () => {
+    it('returns schema id from editor', async () => {
+      const { initializeFormEditor, getFormId } = withSetup()
+      await initializeFormEditor()
+      return expect(getFormId()).resolves.toBe('form1')
+    })
+  })
+
+  describe('save success path', () => {
+    it('delegates to shared save when form id is present', async () => {
+      const { initializeFormEditor, save } = withSetup()
+      await initializeFormEditor()
+      await save()
+      expect(mockSharedSave).toHaveBeenCalled()
+    })
+
+    it('aborts save when session hook returns forceSave false', async () => {
+      const checkSessionHook = vi.fn().mockResolvedValue({ forceSave: false })
+      const { initializeFormEditor, save } = withSetup({}, { checkFormSessionHook: checkSessionHook })
+      await initializeFormEditor()
+      await save()
+      expect(checkSessionHook).toHaveBeenCalled()
+      expect(mockSharedSave).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('importJson edge cases', () => {
+    it('returns early for falsy json', async () => {
+      const { importJson } = withSetup()
+      await importJson(null)
+      expect(mockFormEditor.instance.importSchema).not.toHaveBeenCalled()
     })
   })
 })

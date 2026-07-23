@@ -21,6 +21,8 @@ const m = vi.hoisted(() => ({
     fetchForms: vi.fn(),
     fetchFormById: vi.fn(),
     modalShow: vi.fn(),
+    deployProcess: vi.fn(),
+    startProcess: vi.fn(),
 }))
 
 vi.mock('bootstrap', () => ({
@@ -29,8 +31,8 @@ vi.mock('bootstrap', () => ({
 }))
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: k => k }) }))
 vi.mock('../../services/deployService', () => ({
-    deployProcess: vi.fn(),
-    startProcess: vi.fn(),
+    deployProcess: m.deployProcess,
+    startProcess: m.startProcess,
 }))
 vi.mock('../../services/formService', () => ({
     fetchForms: m.fetchForms,
@@ -234,5 +236,82 @@ describe('ModalDeploy — form picker', () => {
             await openModal(wrapper)
             expect(wrapper.findAll('[title="invoice-form.form"]')).toHaveLength(1)
         })
+    })
+})
+
+describe('ModalDeploy — deploy actions', () => {
+    beforeEach(() => {
+        vi.clearAllMocks()
+        localStorage.setItem('token', 'test-token')
+        m.deployProcess.mockResolvedValue({ id: 'dep-1' })
+        m.startProcess.mockResolvedValue({ id: 'inst-1' })
+    })
+
+    it('deploys BPMN and emits success toast', async () => {
+        const wrapper = mountModal()
+        await openModal(wrapper)
+        wrapper.vm.deploymentName = 'my-process'
+        wrapper.vm.closeButton = { click: vi.fn() }
+
+        await wrapper.vm.deploy()
+
+        expect(m.deployProcess).toHaveBeenCalled()
+        expect(wrapper.emitted('showToastMessage')?.[0]?.[0]?.isSuccess).toBe(true)
+    })
+
+    it('emits error toast when deploy fails', async () => {
+        m.deployProcess.mockRejectedValue(new Error('deploy failed'))
+        const wrapper = mountModal()
+        await openModal(wrapper)
+        wrapper.vm.deploymentName = 'my-process'
+
+        await wrapper.vm.deploy()
+
+        expect(wrapper.emitted('showToastMessage')?.[0]?.[0]?.isSuccess).toBe(false)
+    })
+
+    it('deployAndStart starts process after successful deploy', async () => {
+        const wrapper = mountModal()
+        await openModal(wrapper)
+        wrapper.vm.deploymentName = 'my-process'
+        wrapper.vm.closeButton = { click: vi.fn() }
+
+        await wrapper.vm.deployAndStart()
+
+        expect(m.startProcess).toHaveBeenCalled()
+    })
+
+    it('deploy surfaces nested API error messages in console emit', async () => {
+        m.deployProcess.mockResolvedValue({
+            response: { data: { params: ['Failed {"type":"error","message":"Nested failure"}'] } },
+        })
+        const wrapper = mountModal()
+        await openModal(wrapper)
+        wrapper.vm.deploymentName = 'my-process'
+
+        await wrapper.vm.deploy()
+
+        expect(wrapper.emitted('addErrorMessageToConsole')).toBeTruthy()
+    })
+
+    it('rejects duplicate additional resource names', async () => {
+        const wrapper = mountModal()
+        await openModal(wrapper)
+        wrapper.vm.deploymentName = 'my-process'
+        wrapper.vm.additionalDeploymentResources = [{ resourceName: 'my-process.bpmn', blob: new Blob(['<x/>']) }]
+
+        await wrapper.vm.deploy()
+
+        expect(m.deployProcess).not.toHaveBeenCalled()
+    })
+
+    it('adds and removes additional deployment files', async () => {
+        const wrapper = mountModal()
+        await openModal(wrapper)
+        const file = new File(['extra'], 'extra.bpmn', { type: 'text/xml' })
+        wrapper.vm.onAdditionalFilesSelected({ target: { files: [file], value: '' } })
+        expect(wrapper.vm.additionalDeploymentResources).toHaveLength(1)
+        wrapper.vm.removeAdditionalResource(0)
+        expect(wrapper.vm.additionalDeploymentResources).toHaveLength(0)
     })
 })

@@ -56,7 +56,7 @@ describe('DropZone', () => {
 
   describe('event listeners', () => {
     it('registers drag event listeners on mount', () => {
-      const addEventListenerSpy = vi.spyOn(window, 'addEventListener')
+      const addEventListenerSpy = vi.spyOn(globalThis, 'addEventListener')
       mountDropZone()
       
       expect(addEventListenerSpy).toHaveBeenCalledWith('dragenter', expect.any(Function))
@@ -68,7 +68,7 @@ describe('DropZone', () => {
     })
 
     it('removes drag event listeners on unmount', () => {
-      const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener')
+      const removeEventListenerSpy = vi.spyOn(globalThis, 'removeEventListener')
       const wrapper = mountDropZone()
       wrapper.unmount()
       
@@ -113,7 +113,7 @@ describe('DropZone', () => {
         dataTransfer: { types: ['Files'] },
         target: dropZone,
       })
-      window.dispatchEvent(event)
+      globalThis.dispatchEvent(event)
       await wrapper.vm.$nextTick()
       expect(wrapper.find('.drop-zone--visible').exists()).toBe(true)
     })
@@ -123,7 +123,7 @@ describe('DropZone', () => {
       const event = createDragEvent('dragenter', {
         dataTransfer: { types: ['text/plain'] },
       })
-      window.dispatchEvent(event)
+      globalThis.dispatchEvent(event)
       await wrapper.vm.$nextTick()
       expect(wrapper.find('.drop-zone--visible').exists()).toBe(false)
     })
@@ -131,12 +131,12 @@ describe('DropZone', () => {
     it('hides visible class on dragleave from target', async () => {
       const wrapper = mountDropZone()
       const dropZone = wrapper.find('.drop-zone').element
-      window.dispatchEvent(createDragEvent('dragenter', {
+      globalThis.dispatchEvent(createDragEvent('dragenter', {
         dataTransfer: { types: ['Files'] },
         target: dropZone,
       }))
       await wrapper.vm.$nextTick()
-      window.dispatchEvent(createDragEvent('dragleave', { target: dropZone }))
+      globalThis.dispatchEvent(createDragEvent('dragleave', { target: dropZone }))
       await wrapper.vm.$nextTick()
       expect(wrapper.find('.drop-zone--visible').exists()).toBe(false)
     })
@@ -146,21 +146,21 @@ describe('DropZone', () => {
       const preventDefault = vi.fn()
       const event = createDragEvent('dragover')
       event.preventDefault = preventDefault
-      window.dispatchEvent(event)
+      globalThis.dispatchEvent(event)
       expect(preventDefault).toHaveBeenCalled()
     })
 
     it('emits handleDropFile on drop when visible', async () => {
       const wrapper = mountDropZone()
       const dropZone = wrapper.find('.drop-zone').element
-      window.dispatchEvent(createDragEvent('dragenter', {
+      globalThis.dispatchEvent(createDragEvent('dragenter', {
         dataTransfer: { types: ['Files'] },
         target: dropZone,
       }))
       await wrapper.vm.$nextTick()
       const dropEvent = createDragEvent('drop')
       dropEvent.preventDefault = vi.fn()
-      window.dispatchEvent(dropEvent)
+      globalThis.dispatchEvent(dropEvent)
       expect(wrapper.emitted('handleDropFile')).toBeTruthy()
     })
 
@@ -168,7 +168,7 @@ describe('DropZone', () => {
       const wrapper = mountDropZone()
       const dropEvent = createDragEvent('drop')
       dropEvent.preventDefault = vi.fn()
-      window.dispatchEvent(dropEvent)
+      globalThis.dispatchEvent(dropEvent)
       expect(wrapper.emitted('handleDropFile')).toBeFalsy()
     })
   })
