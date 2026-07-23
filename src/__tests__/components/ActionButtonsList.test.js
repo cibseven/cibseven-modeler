@@ -283,7 +283,7 @@ describe('ActionButtonsList', () => {
         it('clicking undo does not throw when modeler lacks _undo', async () => {
             const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.FORM), { modeler: {} })
 
-            await expect(undoButton(wrapper).trigger('click')).resolves.toBeUndefined()
+            return expect(undoButton(wrapper).trigger('click')).resolves.toBeUndefined()
         })
 
         it('clicking redo does not throw when modeler lacks _redo', async () => {
@@ -291,7 +291,7 @@ describe('ActionButtonsList', () => {
                 modeler: { _undo: vi.fn() },
             })
 
-            await expect(redoButton(wrapper).trigger('click')).resolves.toBeUndefined()
+            return expect(redoButton(wrapper).trigger('click')).resolves.toBeUndefined()
         })
     })
 

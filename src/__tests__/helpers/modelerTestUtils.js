@@ -44,7 +44,7 @@ export function createDragEvent(type, init = {}) {
 }
 
 export function installDragEventPolyfill() {
-  if (typeof globalThis.DragEvent === 'undefined') {
+  if (globalThis.DragEvent === undefined) {
     globalThis.DragEvent = class DragEvent extends Event {
       constructor(type, init = {}) {
         super(type, init)
@@ -69,82 +69,9 @@ export function mountWithI18n(component, options = {}) {
   })
 }
 
-/**
- * Factory for a mock bpmn-js / dmn-js Modeler instance.
- */
-export function createMockDiagramModeler() {
-  const canvas = {
-    zoom: vi.fn(),
-    getRootElement: vi.fn(() => ({ businessObject: { id: 'Process_1', name: 'Process' } })),
-  }
-  const minimap = { toggle: vi.fn() }
-  const commandStack = { undo: vi.fn(), redo: vi.fn() }
-  const elementRegistry = {
-    _elements: {
-      a: { element: { type: 'bpmn:Process', id: 'Process_1' } },
-    },
-  }
-
-  const instance = {
-    importXML: vi.fn().mockResolvedValue(undefined),
-    saveXML: vi.fn().mockResolvedValue({ xml: '<xml/>' }),
-    getViews: vi.fn(() => [{ id: 'dmn1', name: 'Decision' }]),
-    on: vi.fn(),
-    destroy: vi.fn(),
-    get: vi.fn((name) => {
-      const map = {
-        canvas,
-        minimap,
-        commandStack,
-        elementRegistry,
-        propertiesPanel: { attachTo: vi.fn(), detach: vi.fn() },
-      }
-      return map[name]
-    }),
-    getActiveViewer: vi.fn(() => ({
-      get: vi.fn((name) => (name === 'canvas' ? canvas : name === 'minimap' ? minimap : null)),
-    })),
-  }
-  return { instance, canvas, minimap, commandStack }
-}
-
-export function mockBpmnModelerClass() {
-  const { instance } = createMockDiagramModeler()
-  const Modeler = vi.fn(function () {
-    return instance
-  })
-  return { Modeler, instance }
-}
-
-export function mockDmnModelerClass() {
-  const { instance } = createMockDiagramModeler()
-  const Modeler = vi.fn(function () {
-    return instance
-  })
-  return { Modeler, instance }
-}
-
-/**
- * Register vi.mock calls for MonacoThemeScoped dependencies.
- * Call from test file with vi.hoisted + vi.mock before component import.
- */
-export function getMonacoThemeMockFactories() {
-  const mockTheme = {
-    getColor: vi.fn(() => ({ toString: () => '#ffffff' })),
-  }
-  const knownThemes = new Map([['vs', mockTheme], ['vs-dark', mockTheme], ['consoleTheme', mockTheme]])
-
-  return {
-    IStandaloneThemeService: Symbol('IStandaloneThemeService'),
-    StandaloneServices: {
-      get: vi.fn(() => ({ _knownThemes: knownThemes })),
-    },
-    Registry: {
-      as: vi.fn(() => ({
-        getColors: vi.fn(() => [{ id: 'editor.background' }]),
-      })),
-    },
-    asCssVariableName: (name) => `--${name}`,
-    Extensions: { ColorContribution: 'colorContribution' },
-  }
+/** Returns a mock fn that resolves after `ms` (for loading-state tests). */
+export function delayedResolveMock(value, ms = 50) {
+  return vi.fn(() => new Promise(resolve => {
+    setTimeout(() => resolve(value), ms)
+  }))
 }

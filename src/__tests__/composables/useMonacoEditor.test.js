@@ -48,13 +48,11 @@ function createMockMonaco() {
       create: vi.fn(() => editor),
       defineTheme: vi.fn(),
     },
-    Range: class Range {
-      constructor(sL, sC, eL, eC) {
-        this.startLine = sL
-        this.startCol = sC
-        this.endLine = eL
-        this.endCol = eC
-      }
+    Range: function MockRange(sL, sC, eL, eC) {
+      this.startLineNumber = sL
+      this.startColumn = sC
+      this.endLineNumber = eL
+      this.endColumn = eC
     },
     _editor: editor,
     _model: model,

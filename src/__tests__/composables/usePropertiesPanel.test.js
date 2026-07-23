@@ -45,25 +45,16 @@ describe('usePropertiesPanel', () => {
   })
 
   describe('initialization', () => {
-    it('initializes with valid refs', () => {
+    it('initializes with required methods', () => {
       const props = createMockProps()
       const emit = createMockEmit()
       const { containerModeler, resizableDiv, propertiesPanelComponent, propertyPanel } = createMockRefs()
 
       const composable = usePropertiesPanel(props, emit, containerModeler.value, resizableDiv, propertiesPanelComponent, propertyPanel)
-      expect(composable).toBeDefined()
-    })
-
-    it('returns required methods', () => {
-      const props = createMockProps()
-      const emit = createMockEmit()
-      const { containerModeler, resizableDiv, propertiesPanelComponent, propertyPanel } = createMockRefs()
-
-      const composable = usePropertiesPanel(props, emit, containerModeler.value, resizableDiv, propertiesPanelComponent, propertyPanel)
-      expect(composable.updateParentHeight).toBeDefined()
-      expect(composable.updateParentWidth).toBeDefined()
-      expect(composable.changeWidth).toBeDefined()
-      expect(composable.togglePropertiesPanel).toBeDefined()
+      expect(typeof composable.updateParentHeight).toBe('function')
+      expect(typeof composable.updateParentWidth).toBe('function')
+      expect(typeof composable.changeWidth).toBe('function')
+      expect(typeof composable.togglePropertiesPanel).toBe('function')
     })
 
     it('initializes reactive properties', () => {

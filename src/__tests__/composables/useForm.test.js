@@ -92,10 +92,10 @@ describe('useForm', () => {
   describe('initialization', () => {
     it('returns required methods', () => {
       const composable = withSetup()
-      expect(composable.initializeFormEditor).toBeDefined()
-      expect(composable.importJson).toBeDefined()
-      expect(composable.save).toBeDefined()
-      expect(composable.destroyFormJs).toBeDefined()
+      expect(typeof composable.initializeFormEditor).toBe('function')
+      expect(typeof composable.importJson).toBe('function')
+      expect(typeof composable.save).toBe('function')
+      expect(typeof composable.destroyFormJs).toBe('function')
     })
   })
 
@@ -181,7 +181,7 @@ describe('useForm', () => {
     it('returns schema id from editor', async () => {
       const { initializeFormEditor, getFormId } = withSetup()
       await initializeFormEditor()
-      await expect(getFormId()).resolves.toBe('form1')
+      return expect(getFormId()).resolves.toBe('form1')
     })
   })
 

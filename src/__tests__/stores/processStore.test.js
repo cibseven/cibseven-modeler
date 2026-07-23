@@ -16,6 +16,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createStore } from 'vuex'
+import { delayedResolveMock } from '../helpers/modelerTestUtils.js'
 
 const m = vi.hoisted(() => ({
     fetchProcesses: vi.fn().mockResolvedValue([]),
@@ -171,9 +172,7 @@ describe('processStore', () => {
         })
 
         it('fetchUnifiedDiagrams sets loading during fetch', async () => {
-            m.getUnifiedDiagrams.mockImplementation(() =>
-                new Promise(resolve => setTimeout(() => resolve([]), 50))
-            )
+            m.getUnifiedDiagrams.mockImplementation(delayedResolveMock([], 50))
             const store = makeStore()
             const promise = store.dispatch('processes/fetchUnifiedDiagrams', {
                 firstResult: 0,
@@ -192,7 +191,7 @@ describe('processStore', () => {
                 firstResult: 0,
                 maxResults: 10,
             })
-            expect(store.state.processes.error).toBeDefined()
+            expect(store.state.processes.error).toEqual(error)
             expect(store.state.processes.isLoading).toBe(false)
         })
 
@@ -217,10 +216,11 @@ describe('processStore', () => {
         })
 
         it('fetchProcessByName stores error on failure', async () => {
-            m.fetchProcessByName.mockRejectedValue(new Error('Not found'))
+            const error = new Error('Not found')
+            m.fetchProcessByName.mockRejectedValue(error)
             const store = makeStore()
             await store.dispatch('processes/fetchProcessByName', 'Missing')
-            expect(store.state.processes.error).toBeDefined()
+            expect(store.state.processes.error).toEqual(error)
             expect(store.state.processes.isLoading).toBe(false)
         })
 
@@ -240,10 +240,11 @@ describe('processStore', () => {
         })
 
         it('fetchProcessById stores error on failure', async () => {
-            m.fetchProcessById.mockRejectedValue(new Error('missing'))
+            const error = new Error('missing')
+            m.fetchProcessById.mockRejectedValue(error)
             const store = makeStore()
             await store.dispatch('processes/fetchProcessById', 'missing')
-            expect(store.state.processes.error).toBeDefined()
+            expect(store.state.processes.error).toEqual(error)
             expect(store.state.processes.isLoading).toBe(false)
         })
     })
@@ -260,7 +261,7 @@ describe('processStore', () => {
             const store = makeStore()
             const diagrams = [{ id: 'p1' }, { id: 'f1' }]
             store.commit('processes/setUnifiedDiagrams', diagrams)
-            expect(store.getters['processes/processHistoryList']).toBeDefined()
+            expect(store.state.processes.unifiedDiagrams).toEqual(diagrams)
         })
 
         it('returns current process via getter', () => {

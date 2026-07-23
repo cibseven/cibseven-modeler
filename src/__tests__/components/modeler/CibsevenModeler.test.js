@@ -37,6 +37,8 @@ const storeState = vi.hoisted(() => ({
   },
 }))
 
+const storeDispatch = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
+
 vi.mock('../../../monaco-setup.js', () => ({
   editor: { setTheme: vi.fn(), create: vi.fn() },
 }))
@@ -52,7 +54,7 @@ vi.mock('vuex', () => ({
     getters: {
       'modeler/elementTemplates/allElementTemplateContents': [],
     },
-    dispatch: vi.fn().mockResolvedValue(undefined),
+    dispatch: storeDispatch,
   })),
 }))
 
@@ -416,9 +418,10 @@ describe('CibsevenModeler', () => {
     it('loadMore returns early when no more diagrams', async () => {
       const wrapper = mountCibsevenModeler()
       await flushPromises()
+      storeDispatch.mockClear()
       wrapper.vm.hasMore = false
       await wrapper.vm.loadMore()
-      expect(storeState.modeler.processes.unifiedDiagrams).toBeDefined()
+      expect(storeDispatch).not.toHaveBeenCalled()
     })
 
     it('creates new BPMN tab when creation modal is skipped', async () => {

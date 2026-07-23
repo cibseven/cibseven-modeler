@@ -602,14 +602,14 @@ describe('Utils', () => {
                 json: () => Promise.resolve({ ok: true }),
             })
 
-            await expect(loadFromPublic('folder', 'file.json')).resolves.toEqual({ ok: true })
+            return expect(loadFromPublic('folder', 'file.json')).resolves.toEqual({ ok: true })
         })
 
         it('returns null when fetch fails', async () => {
             const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
             globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 404 })
 
-            await expect(loadFromPublic('folder', 'missing.json')).resolves.toBeNull()
+            return expect(loadFromPublic('folder', 'missing.json')).resolves.toBeNull()
             warnSpy.mockRestore()
         })
 
@@ -617,7 +617,7 @@ describe('Utils', () => {
             const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
             globalThis.fetch = vi.fn().mockRejectedValue(new Error('network'))
 
-            await expect(loadFromPublic('folder', 'file.json')).resolves.toBeNull()
+            return expect(loadFromPublic('folder', 'file.json')).resolves.toBeNull()
             warnSpy.mockRestore()
         })
     })

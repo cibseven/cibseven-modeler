@@ -14,11 +14,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-if (globalThis.DragEvent === undefined) {
-  globalThis.DragEvent = class DragEvent extends Event {
-    constructor(type, init = {}) {
-      super(type, init)
-      this.dataTransfer = init.dataTransfer ?? null
-    }
-  }
-}
+
+/**
+ * Standard axios mock method keys for service tests.
+ * Vitest requires vi.hoisted() in each test file, so mocks stay inline there;
+ * import these constants to keep method lists in sync across service test files.
+ */
+export const STANDARD_AXIOS_MOCK_METHODS = ['get', 'post', 'put', 'delete']
+
+export const ELEMENT_TEMPLATE_AXIOS_MOCK_METHODS = [...STANDARD_AXIOS_MOCK_METHODS, 'patch']

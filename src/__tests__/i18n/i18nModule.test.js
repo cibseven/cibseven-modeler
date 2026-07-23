@@ -17,8 +17,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 describe('i18n module', () => {
-    const originalLocation = window.location
-    const originalLocalStorage = window.localStorage
+    const originalLocation = globalThis.location
+    const originalLocalStorage = globalThis.localStorage
 
     beforeEach(() => {
         vi.resetModules()
@@ -30,17 +30,17 @@ describe('i18n module', () => {
 
     afterEach(() => {
         vi.unstubAllGlobals()
-        Object.defineProperty(window, 'location', { value: originalLocation, writable: true, configurable: true })
-        Object.defineProperty(window, 'localStorage', { value: originalLocalStorage, writable: true, configurable: true })
+        Object.defineProperty(globalThis, 'location', { value: originalLocation, writable: true, configurable: true })
+        Object.defineProperty(globalThis, 'localStorage', { value: originalLocalStorage, writable: true, configurable: true })
     })
 
     async function loadI18nModule(search = '', storedLang = null) {
-        Object.defineProperty(window, 'location', {
+        Object.defineProperty(globalThis, 'location', {
             value: { search },
             writable: true,
             configurable: true,
         })
-        window.localStorage.getItem = vi.fn((key) => (key === 'language' ? storedLang : null))
+        globalThis.localStorage.getItem = vi.fn((key) => (key === 'language' ? storedLang : null))
         return import('../../i18n.js')
     }
 

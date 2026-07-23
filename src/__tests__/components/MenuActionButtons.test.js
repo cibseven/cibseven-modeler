@@ -98,7 +98,7 @@ describe('MenuActionButtons', () => {
     it('right buttons section has correct alignment', () => {
       const wrapper = mountMenuActionButtons()
       const sections = wrapper.findAll('div')
-      const rightSection = sections[sections.length - 1]
+      const rightSection = sections.at(-1)
       expect(rightSection.classes()).toContain('d-flex')
       expect(rightSection.classes()).toContain('align-items-center')
       expect(rightSection.classes()).toContain('px-2')

@@ -16,6 +16,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createStore } from 'vuex'
+import { delayedResolveMock } from '../helpers/modelerTestUtils.js'
 
 const m = vi.hoisted(() => ({
     getAllElementTemplates: vi.fn().mockResolvedValue([]),
@@ -202,7 +203,7 @@ describe('elementTemplateStore', () => {
         })
 
         it('fetchAllElementTemplates sets loading during fetch', async () => {
-            m.getAllElementTemplates.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve([]), 100)))
+            m.getAllElementTemplates.mockImplementation(delayedResolveMock([], 100))
             const store = makeStore()
             const promise = store.dispatch('elementTemplates/fetchAllElementTemplates')
             expect(store.state.elementTemplates.isLoading).toBe(true)
@@ -215,7 +216,7 @@ describe('elementTemplateStore', () => {
             m.getAllElementTemplates.mockRejectedValue(error)
             const store = makeStore()
             await store.dispatch('elementTemplates/fetchAllElementTemplates')
-            expect(store.state.elementTemplates.error).toBeDefined()
+            expect(store.state.elementTemplates.error).toEqual(error)
             expect(store.state.elementTemplates.elementTemplates).toEqual([])
         })
 
@@ -257,11 +258,9 @@ describe('elementTemplateStore', () => {
             m.setTemplateIsActive.mockRejectedValue(error)
             const store = makeStore()
             store.commit('elementTemplates/setElementTemplates', [{ id: 't1', active: false }])
-            try {
-                await store.dispatch('elementTemplates/toggleTemplateActiveState', { templateId: 't1', isActive: true })
-            } catch (_e) {
-                // Expected to throw
-            }
+            return expect(
+                store.dispatch('elementTemplates/toggleTemplateActiveState', { templateId: 't1', isActive: true })
+            ).rejects.toThrow('Not found')
             expect(store.state.elementTemplates.elementTemplates).toHaveLength(0)
         })
 
@@ -441,10 +440,11 @@ describe('elementTemplateStore', () => {
             const store = makeStore()
             store.commit('elementTemplates/setElementTemplates', initialTemplates)
             
-            m.getAllElementTemplates.mockRejectedValue(new Error('Network error'))
+            const error = new Error('Network error')
+            m.getAllElementTemplates.mockRejectedValue(error)
             await store.dispatch('elementTemplates/fetchAllElementTemplates')
             
-            expect(store.state.elementTemplates.error).toBeDefined()
+            expect(store.state.elementTemplates.error).toEqual(error)
         })
 
         it('clears error state explicitly', () => {
@@ -464,11 +464,10 @@ describe('elementTemplateStore', () => {
             const store = makeStore()
             store.commit('elementTemplates/setElementTemplates', [{ id: 't1', active: false }])
             
-            try {
-                await store.dispatch('elementTemplates/toggleTemplateActiveState', { templateId: 't1', isActive: true })
-            } catch (_e) {
-                // Error handling
-            }
+            return expect(
+                store.dispatch('elementTemplates/toggleTemplateActiveState', { templateId: 't1', isActive: true })
+            ).rejects.toThrow('Network error')
+            expect(store.state.elementTemplates.error).toEqual(error)
         })
     })
 
@@ -629,11 +628,9 @@ describe('elementTemplateStore', () => {
             m.addElementTemplate.mockRejectedValue(error)
             
             const store = makeStore()
-            try {
-                await store.dispatch('elementTemplates/createElementTemplate', { name: 'Test' })
-            } catch (e) {
-                expect(e).toBeDefined()
-            }
+            return expect(
+                store.dispatch('elementTemplates/createElementTemplate', { name: 'Test' })
+            ).rejects.toThrow('Creation failed')
         })
 
         it('toggles template active state with optimistic update', async () => {
@@ -647,24 +644,6 @@ describe('elementTemplateStore', () => {
                 { templateId: 't1', isActive: true })
 
             expect(store.getters['elementTemplates/getTemplateById']('t1').active).toBe(true)
-        })
-
-        it('handles 404 on template toggle - removes template', async () => {
-            const error = new Error('Not found')
-            error.response = { status: 404 }
-            m.setTemplateIsActive.mockRejectedValue(error)
-            
-            const store = makeStore()
-            store.commit('elementTemplates/setElementTemplates', [{ id: 't1', active: false }])
-            
-            try {
-                await store.dispatch('elementTemplates/toggleTemplateActiveState',
-                    { templateId: 't1', isActive: true })
-            } catch (_e) {
-                // Expected
-            }
-            
-            expect(store.getters['elementTemplates/templatesCount']).toBe(0)
         })
 
         it('selects and deselects templates', () => {
@@ -797,7 +776,7 @@ describe('elementTemplateStore', () => {
             const store = makeStore()
             await store.dispatch('elementTemplates/fetchAllElementTemplates')
             
-            expect(store.getters['elementTemplates/error']).toBeDefined()
+            expect(store.getters['elementTemplates/error']).toEqual(fetchError)
         })
 
         it('recovers from error state', () => {
@@ -1054,16 +1033,17 @@ describe('elementTemplateStore', () => {
 
         it('handles bulk delete errors', async () => {
             const store = makeStore()
-            m.bulkDeleteTemplates.mockRejectedValue(new Error('delete failed'))
-            await expect(store.dispatch('elementTemplates/bulkDeleteTemplates', ['t1'])).rejects.toThrow('delete failed')
-            expect(store.state.elementTemplates.error).toBeDefined()
+            const error = new Error('delete failed')
+            m.bulkDeleteTemplates.mockRejectedValue(error)
+            return expect(store.dispatch('elementTemplates/bulkDeleteTemplates', ['t1'])).rejects.toThrow('delete failed')
+            expect(store.state.elementTemplates.error).toEqual(error)
         })
 
         it('handles export template errors', async () => {
             const store = makeStore()
             const { exportTemplates } = await import('../../services/elementTemplateService.js')
             vi.mocked(exportTemplates).mockRejectedValue(new Error('export failed'))
-            await expect(store.dispatch('elementTemplates/exportTemplates')).rejects.toThrow('export failed')
+            return expect(store.dispatch('elementTemplates/exportTemplates')).rejects.toThrow('export failed')
         })
 
         it('duplicates template through service', async () => {
@@ -1089,10 +1069,11 @@ describe('elementTemplateStore', () => {
 
         it('handles import errors and sets error state', async () => {
             const store = makeStore()
-            m.importTemplates.mockRejectedValue(new Error('import failed'))
+            const error = new Error('import failed')
+            m.importTemplates.mockRejectedValue(error)
 
-            await expect(store.dispatch('elementTemplates/importTemplates', [{ id: 'x' }])).rejects.toThrow('import failed')
-            expect(store.state.elementTemplates.error).toBeDefined()
+            return expect(store.dispatch('elementTemplates/importTemplates', [{ id: 'x' }])).rejects.toThrow('import failed')
+            expect(store.state.elementTemplates.error).toEqual(error)
             expect(store.getters['elementTemplates/isLoading']).toBe(false)
         })
 

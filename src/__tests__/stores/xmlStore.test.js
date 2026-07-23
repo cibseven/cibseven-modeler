@@ -16,6 +16,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createStore } from 'vuex'
+import { delayedResolveMock } from '../helpers/modelerTestUtils.js'
 
 const m = vi.hoisted(() => ({
     fetchDiagram: vi.fn().mockResolvedValue('<bpmn />'),
@@ -129,9 +130,7 @@ describe('xmlStore', () => {
         })
 
         it('fetchDiagram sets loading during fetch', async () => {
-            m.fetchDiagram.mockImplementation(() =>
-                new Promise(resolve => setTimeout(() => resolve('<bpmn />'), 50))
-            )
+            m.fetchDiagram.mockImplementation(delayedResolveMock('<bpmn />', 50))
             const store = makeStore()
             const promise = store.dispatch('xml/fetchDiagram', 'proc-1')
             expect(store.state.xml.isLoading).toBe(true)
@@ -144,7 +143,7 @@ describe('xmlStore', () => {
             m.fetchDiagram.mockRejectedValue(error)
             const store = makeStore()
             await store.dispatch('xml/fetchDiagram', 'proc-1')
-            expect(store.state.xml.error).toBeDefined()
+            expect(store.state.xml.error).toEqual(error)
             expect(store.state.xml.isLoading).toBe(false)
         })
 
@@ -157,9 +156,7 @@ describe('xmlStore', () => {
         })
 
         it('fetchDecisionDiagram sets loading during fetch', async () => {
-            m.fetchDecisionDiagram.mockImplementation(() =>
-                new Promise(resolve => setTimeout(() => resolve('<dmn />'), 50))
-            )
+            m.fetchDecisionDiagram.mockImplementation(delayedResolveMock('<dmn />', 50))
             const store = makeStore()
             const promise = store.dispatch('xml/fetchDecisionDiagram', 'dec-1')
             expect(store.state.xml.isLoading).toBe(true)
@@ -301,7 +298,7 @@ describe('xmlStore', () => {
             
             await store.dispatch('xml/fetchDecisionDiagram', 'dec-1')
             
-            expect(store.state.xml.error).toBeDefined()
+            expect(store.state.xml.error).toEqual(error)
             expect(store.state.xml.isLoading).toBe(false)
         })
 
@@ -444,7 +441,7 @@ describe('xmlStore', () => {
             m.fetchDiagram.mockRejectedValue(testError)
             
             await store.dispatch('xml/fetchDiagram', 'proc-1')
-            expect(store.state.xml.error).toBeDefined()
+            expect(store.state.xml.error).toEqual(testError)
         })
 
         it('clears error on subsequent successful fetch', async () => {
