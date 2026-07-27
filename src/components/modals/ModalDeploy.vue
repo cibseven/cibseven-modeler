@@ -480,7 +480,9 @@ const deploy = async (silent = false) => {
 		// Parse nested JSON error if present
 		if (errorMessage.includes('{"type":')) {
 			try {
-				const jsonMatch = errorMessage.match(/\{.*\}$/s)
+				const s = errorMessage.indexOf('{'), e = errorMessage.lastIndexOf('}')
+				// Extract the {...} span with plain string ops (no backtracking regex)
+				const jsonMatch = s !== -1 && e > s ? [errorMessage.slice(s, e + 1)] : null
 				const parsedError = jsonMatch && JSON.parse(jsonMatch[0])
 				if (parsedError?.message) errorMessage = parsedError.message
 			} catch { /* ignore JSON parse error, keep original message */ }
