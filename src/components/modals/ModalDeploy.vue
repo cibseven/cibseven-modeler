@@ -1,4 +1,4 @@
-﻿<!--
+<!--
   Copyright CIB software GmbH and/or licensed to CIB software GmbH
   under one or more contributor license agreements. See the NOTICE file
   distributed with this work for additional information regarding copyright
@@ -598,7 +598,7 @@ const _autoAddReferencedForms = async () => {
 			const content = await fetchFormById(match.id)
 			const blob = new Blob([JSON.stringify(content)], { type: 'application/json' })
 			additionalDeploymentResources.value.push({ resourceName: `${match.formId}.form`, blob })
-		} catch { /* silently skip â€” form may not exist in the modeler */ }
+		} catch { /* silently skip — form may not exist in the modeler */ }
 	}
 }
 
