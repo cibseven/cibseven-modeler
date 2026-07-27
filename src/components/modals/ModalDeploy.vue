@@ -1,4 +1,4 @@
-<!--
+﻿<!--
   Copyright CIB software GmbH and/or licensed to CIB software GmbH
   under one or more contributor license agreements. See the NOTICE file
   distributed with this work for additional information regarding copyright
@@ -480,7 +480,9 @@ const deploy = async (silent = false) => {
 		// Parse nested JSON error if present
 		if (errorMessage.includes('{"type":')) {
 			try {
-				const jsonMatch = errorMessage.match(/\{.*\}$/s)
+				const s = errorMessage.indexOf('{'), e = errorMessage.lastIndexOf('}')
+				// Extract the {...} span with plain string ops (no backtracking regex)
+				const jsonMatch = s !== -1 && e > s ? [errorMessage.slice(s, e + 1)] : null
 				const parsedError = jsonMatch && JSON.parse(jsonMatch[0])
 				if (parsedError?.message) errorMessage = parsedError.message
 			} catch { /* ignore JSON parse error, keep original message */ }
@@ -596,7 +598,7 @@ const _autoAddReferencedForms = async () => {
 			const content = await fetchFormById(match.id)
 			const blob = new Blob([JSON.stringify(content)], { type: 'application/json' })
 			additionalDeploymentResources.value.push({ resourceName: `${match.formId}.form`, blob })
-		} catch { /* silently skip — form may not exist in the modeler */ }
+		} catch { /* silently skip â€” form may not exist in the modeler */ }
 	}
 }
 
