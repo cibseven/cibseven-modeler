@@ -138,6 +138,7 @@
     "searchTemplates": "Поиск шаблонов",
     "console": "Консоль",
     "close": "Закрыть",
+    "closeTab": "Закрыть {name}",
     "continue": "Продолжить",
     "delete": "Удалить",
     "copy": "Копировать",
