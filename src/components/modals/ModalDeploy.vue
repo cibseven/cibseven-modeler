@@ -470,7 +470,6 @@ const deploy = async (silent = false) => {
 		return res
 	}).catch((error) => {
 		console.warn('Error deploying process:', error)
-		emit('showToastMessage', { isSuccess: false, toastText: 'toastDeployErrorDeploy', bodyTextAlt: '' })
 		hasErrors = true
 		return error
 	})
@@ -487,6 +486,8 @@ const deploy = async (silent = false) => {
 				if (parsedError?.message) errorMessage = parsedError.message
 			} catch { /* ignore JSON parse error, keep original message */ }
 		}
+		// the reason travels with the toast, so the webclient does not have to report it a second time in a dialog
+		emit('showToastMessage', { isSuccess: false, toastText: 'toastDeployErrorDeploy', bodyTextAlt: errorMessage })
 		emit('addErrorMessageToConsole', deployingTabId.value ?? props.tabNavList.id, `${errorMessage}\n`)
 		return errorMessage
 	}
