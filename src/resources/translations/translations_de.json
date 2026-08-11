@@ -138,6 +138,7 @@
     "searchTemplates": "Vorlagen templates",
     "console": "Konsole",
     "close": "Schließen",
+    "closeTab": "{name} schließen",
     "continue": "Weiter",
     "delete": "Löschen",
     "copy": "Kopieren",

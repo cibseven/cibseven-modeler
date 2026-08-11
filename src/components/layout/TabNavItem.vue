@@ -80,14 +80,19 @@ const tabTitle = computed(() => {
         : `${props.processkey}.${props.tabNavList.type.startsWith('bpmn') ? 'bpmn' : props.tabNavList.type}`
 })
 
-const checkIfProcessIsSaved = e => {
-    e.stopPropagation()
+// Also called from TabNav for tabs sitting in the overflow dropdown.
+const closeTab = () => {
     if (props.tabNavList.canSave && props.index > -1) // the process has unsaved changes
     {
         emit('showModalMessage', props.index)
         return
     }
     removeSelectedTab() // if the process has been saved it will close the tab without displaying the modal
+}
+
+const checkIfProcessIsSaved = e => {
+    e.stopPropagation()
+    closeTab()
 }
 
 const selectBySimulateClick = () => {
@@ -115,7 +120,8 @@ const selectTab = (e) => {
 }
 
 defineExpose({
-    selectBySimulateClick
+    selectBySimulateClick,
+    closeTab
 })
 </script>
 

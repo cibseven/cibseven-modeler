@@ -138,6 +138,7 @@
     "searchTemplates": "Пошук шаблонів",
     "console": "Консоль",
     "close": "Закрити",
+    "closeTab": "Закрити {name}",
     "continue": "Продовжити",
     "delete": "Видалити",
     "copy": "Копіювати",

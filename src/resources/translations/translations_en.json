@@ -138,6 +138,7 @@
 		"searchTemplates": "Search templates",
 		"console": "Console",
 		"close": "Close",
+		"closeTab": "Close {name}",
 		"continue": "Continue",
 		"delete": "Delete",
 		"copy": "Copy",

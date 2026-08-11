@@ -17,7 +17,8 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 
-vi.mock('bootstrap', () => ({ Modal: vi.fn(() => ({ show: vi.fn(), hide: vi.fn() })), Tooltip: vi.fn() }))
+const { modalInstance } = vi.hoisted(() => ({ modalInstance: { show: vi.fn(), hide: vi.fn() } }))
+vi.mock('bootstrap', () => ({ Modal: vi.fn(() => modalInstance), Tooltip: vi.fn() }))
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: k => k }) }))
 
 import TabNav from '../../components/layout/TabNav.vue'
@@ -175,5 +176,52 @@ describe('TabNav edge cases', () => {
         expect(w1.find('ul[role="tablist"]').exists()).toBe(true)
         const w2 = await mountNav([tabCannotSave])
         expect(w2.find('ul[role="tablist"]').exists()).toBe(true)
+    })
+})
+
+describe('TabNav overflow dropdown closing', () => {
+    // In jsdom every tab reports a zero width, so the whole list ends up in the dropdown.
+    const THREE = [
+        { keyOfTabNav: 'k0', key: 'k0', id: 'id0', name: 'p0', type: 'bpmn-c7', canSave: false },
+        { keyOfTabNav: 'k1', key: 'k1', id: 'id1', name: 'p1', type: 'bpmn-c7', canSave: false },
+        { keyOfTabNav: 'k2', key: 'k2', id: 'id2', name: 'p2', type: 'bpmn-c7', canSave: false }
+    ]
+
+    it('gives every hidden tab a labelled close control', async () => {
+        const w = await mountNav(THREE, { editorXML: ['', '', ''] })
+        const closers = w.findAll('.dropdown-menu button[aria-label="buttons.closeTab"]')
+        expect(closers).toHaveLength(3)
+        expect(closers[0].attributes('title')).toBe('buttons.close')
+    })
+
+    it('closes the tab the control belongs to, not another one', async () => {
+        const w = await mountNav(THREE, { editorXML: ['', '', ''] })
+        await w.findAll('.dropdown-menu button')[1].trigger('click')
+        await flushPromises()
+        expect(w.emitted('removeSelectedTab')).toEqual([[1]])
+    })
+
+    it('closes a hidden tab on middle click', async () => {
+        const w = await mountNav(THREE, { editorXML: ['', '', ''] })
+        await w.findAll('.dropdown-menu .dropdown-item')[2].trigger('auxclick', { button: 1 })
+        await flushPromises()
+        expect(w.emitted('removeSelectedTab')).toEqual([[2]])
+    })
+
+    it('does not select the tab when the close control is used', async () => {
+        const w = await mountNav(THREE, { editorXML: ['', '', ''] })
+        await w.findAll('.dropdown-menu button')[0].trigger('click')
+        await flushPromises()
+        expect(w.emitted('orderTabNavListHiddenTab')).toBeUndefined()
+    })
+
+    it('asks for confirmation instead of closing a hidden tab with unsaved changes', async () => {
+        const unsaved = [{ ...THREE[0], canSave: true }, THREE[1]]
+        const w = await mountNav(unsaved, { editorXML: ['', ''] })
+        modalInstance.show.mockClear()
+        await w.findAll('.dropdown-menu button')[0].trigger('click')
+        await flushPromises()
+        expect(w.emitted('removeSelectedTab')).toBeUndefined()
+        expect(modalInstance.show).toHaveBeenCalled()
     })
 })
