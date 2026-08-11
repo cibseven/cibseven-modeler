@@ -90,6 +90,7 @@
                             <div class="d-flex justify-content-start gap-2">
                                 <button @click="handleOpenFileInput" :title="$t('buttons.importFile')" type="button"
                                 class="btn border border-dark btn-light"><i class="mdi mdi-import me-1"></i>{{ $t('buttons.importFile') }}</button>
+                                <component v-if="startPageTool" :is="startPageTool"></component>
                             </div>
                             <input ref="fileInput" type="file" accept=".bpmn,.dmn,.form" multiple :aria-label="$t('buttons.importFile')" style="display: none;"
                                 @change="handleFileChange" />
@@ -141,6 +142,9 @@ import DiagramListItem from './DiagramListItem.vue'
 import ConfirmModal from '../modals/ConfirmModal.vue'
 import formJson from '../../resources/formSchema.json'
 import { DIAGRAM_TYPE } from '../../constants/diagramTypes.js'
+import { getPlugin } from '../../plugins/pluginsConfig.js'
+
+const startPageTool = getPlugin('start-page-tools')
 import modelerSvg from '../../assets/images/start/modeler.svg'
 const functionAfterAccepting = ref(null)
 const { t } = useI18n()
