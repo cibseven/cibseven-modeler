@@ -258,7 +258,6 @@
   "Execution listeners": "Слухачі виконання",
   "Extension properties": "Властивості розширення",
   "<empty>": "<порожньо>",
-  "Name": "Ім'я",
   "Value": "Значення",
   "Start: Java class": "Запуск: Java-клас",
   "Field injections": "Впровадження полів",
@@ -502,8 +501,6 @@
     "ariaSortAsc": "Сортування за зростанням",
     "ariaSortDes": "Сортування за спаданням"
   },
-  "Created by": "Створено",
-  "Actions": "Дії",
   "cib-header": {
     "productName": "CIB seven Modeler"
   }

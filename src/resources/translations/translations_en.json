@@ -258,7 +258,6 @@
 	"Execution listeners": "Execution listeners",
 	"Extension properties": "Extension properties",
 	"<empty>": "<empty>",
-	"Name": "Name",
 	"Value": "Value",
 	"Start: Java class": "Start: Java class",
 	"Field injections": "Field injections",
@@ -502,8 +501,6 @@
 		"ariaSortAsc": "Sorted ascending",
 		"ariaSortDes": "Sorted descending"
 	},
-	"Created by": "Created by",
-	"Actions": "Actions",
 	"cib-header": {
 		"productName": "CIB seven Modeler"
 	}
