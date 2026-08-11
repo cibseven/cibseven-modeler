@@ -45,6 +45,7 @@ vi.mock('@cib/common-frontend', () => ({
 import StartPage from '../../../components/modeler/StartPage.vue'
 import { fetchProcessById } from '../../../services/processService.js'
 import { fetchFormById } from '../../../services/formService.js'
+import { registerPlugin } from '../../../plugins/pluginsConfig.js'
 
 const SAMPLE_DIAGRAMS = [
   { id: 'p1', name: 'Process One', type: DIAGRAM_TYPE.BPMN_C7 },
@@ -311,5 +312,23 @@ describe('StartPage', () => {
       wrapper.vm.hideModal()
       expect(wrapper.vm.showModalAcceptCancelMessage).toBe(false)
     })
+  })
+})
+
+describe('StartPage host actions slot', () => {
+  it('renders nothing extra when no host action is registered', () => {
+    const w = mountStartPage()
+    expect(w.find('.host-action-stub').exists()).toBe(false)
+  })
+
+  it('renders a component registered in the start-page-tools slot', async () => {
+    registerPlugin('start-page-tools', {
+      name: 'HostAction',
+      template: '<button class="host-action-stub">manage</button>'
+    })
+    const w = mountStartPage()
+    await flushPromises()
+    expect(w.find('.host-action-stub').exists()).toBe(true)
+    registerPlugin('start-page-tools', null)
   })
 })
