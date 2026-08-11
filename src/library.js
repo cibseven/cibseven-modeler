@@ -49,8 +49,6 @@ export { default as DiagramListItem } from './components/modeler/DiagramListItem
 export { default as StartPage } from './components/modeler/StartPage.vue'
 export { default as MonacoConsole } from './components/monaco/MonacoConsole.vue'
 export { default as MonacoEditor } from './components/monaco/MonacoEditor.vue'
-// Template management moved to cibseven-modeler-ee; the shared helpers stay here
-// because the element-templates picker and the store use them.
 export { categorizeTemplates, applicableTaskTypes } from './components/templates/elementTemplateUtils.js'
 
 export { default as store, createModelerStore } from './store.js'

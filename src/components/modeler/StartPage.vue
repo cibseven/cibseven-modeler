@@ -90,7 +90,6 @@
                             <div class="d-flex justify-content-start gap-2">
                                 <button @click="handleOpenFileInput" :title="$t('buttons.importFile')" type="button"
                                 class="btn border border-dark btn-light"><i class="mdi mdi-import me-1"></i>{{ $t('buttons.importFile') }}</button>
-                                <!-- Slot for host-registered actions, e.g. the enterprise template management -->
                                 <component v-if="startPageTool" :is="startPageTool"></component>
                             </div>
                             <input ref="fileInput" type="file" accept=".bpmn,.dmn,.form" multiple :aria-label="$t('buttons.importFile')" style="display: none;"
