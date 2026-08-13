@@ -133,11 +133,10 @@ export default {
     },
     sortedItems() {
       if (!this.sortKey) return this.items
-      return [...this.items].sort((a, b) => {
-        if (a[this.sortKey] < b[this.sortKey]) return -1 * this.sortOrder
-        if (a[this.sortKey] > b[this.sortKey]) return 1 * this.sortOrder
-        return 0
-      })
+      // Coalesce: comparing null with a string is false both ways, leaving such columns unsorted.
+      const value = item => String(item[this.sortKey] ?? '')
+      return [...this.items].sort((a, b) =>
+        value(a).localeCompare(value(b), undefined, { numeric: true, sensitivity: 'base' }) * this.sortOrder)
     },
     resizeHandleStyle() {
       return {

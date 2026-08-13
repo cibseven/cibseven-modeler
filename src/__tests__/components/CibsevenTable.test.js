@@ -392,3 +392,49 @@ describe('CibsevenTable', () => {
     })
   })
 })
+
+describe('CibsevenTable sorting with missing values', () => {
+  // Comparing null with a string is false both ways, so a column of mostly empty
+  // cells (e.g. "created by" for system rows) used to stay in its original order.
+  const mountUsers = () => mount(CibsevenTable, {
+    props: {
+      items: [
+        { id: 1, user: 'zoe' },
+        { id: 2, user: null },
+        { id: 3, user: 'Anna' },
+        { id: 4, user: undefined },
+        { id: 5, user: 'demo' }
+      ],
+      fields: [{ key: 'user', label: 'User', sortable: true }]
+    },
+    global: { mocks: { $t: k => k } }
+  })
+
+  const order = wrapper => wrapper.vm.sortedItems.map(item => item.id)
+
+  it('sorts the filled cells and keeps the empty ones together', async () => {
+    const wrapper = mountUsers()
+    wrapper.vm.sortColumn({ key: 'user' })
+    await wrapper.vm.$nextTick()
+
+    expect(order(wrapper).slice(0, 2)).toEqual([2, 4])
+    expect(order(wrapper).slice(2)).toEqual([3, 5, 1])
+  })
+
+  it('reverses the order on a second click', async () => {
+    const wrapper = mountUsers()
+    wrapper.vm.sortColumn({ key: 'user' })
+    wrapper.vm.sortColumn({ key: 'user' })
+    await wrapper.vm.$nextTick()
+
+    expect(order(wrapper).slice(0, 3)).toEqual([1, 5, 3])
+  })
+
+  it('ignores case so names are not split into two blocks', async () => {
+    const wrapper = mountUsers()
+    wrapper.vm.sortColumn({ key: 'user' })
+    await wrapper.vm.$nextTick()
+
+    expect(order(wrapper).indexOf(3)).toBeLessThan(order(wrapper).indexOf(5))
+  })
+})
