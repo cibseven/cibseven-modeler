@@ -21,21 +21,21 @@
 				<div v-show="!props.isModelerVisible" class="position-relative" :style="styleCanvas">
 					<div class="canvas h-100 w-100" ref="canvas" tabindex="0"></div>
 					<div class="position-absolute top-0 end-0 d-flex flex-column gap-1 m-2" style="z-index: 10;">
-						<button @click="zoomIn" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomIn')">
-							<span class="mdi mdi-18px mdi-magnify-plus-outline"></span>
+						<button @click="zoomIn" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomIn')" :aria-label="$t('buttons.zoomIn')">
+							<span class="mdi mdi-18px mdi-magnify-plus-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="zoomOut" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomOut')">
-							<span class="mdi mdi-18px mdi-magnify-minus-outline"></span>
+						<button @click="zoomOut" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomOut')" :aria-label="$t('buttons.zoomOut')">
+							<span class="mdi mdi-18px mdi-magnify-minus-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="resetViewport" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.resetViewport')">
-							<span class="mdi mdi-18px mdi-fit-to-screen-outline"></span>
+						<button @click="resetViewport" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.resetViewport')" :aria-label="$t('buttons.resetViewport')">
+							<span class="mdi mdi-18px mdi-fit-to-screen-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="toggleMinimap" :title="$t('buttons.minimap')"
+						<button @click="toggleMinimap" :title="$t('buttons.minimap')" :aria-label="$t('buttons.minimap')" :aria-pressed="isMinimapOpen"
 							:class="['btn btn-sm border text-secondary', isMinimapOpen ? 'btn-secondary' : 'btn-light']">
-							<span class="mdi mdi-18px mdi-map-outline"></span>
+							<span class="mdi mdi-18px mdi-map-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="toggleFullscreen" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.fullscreen')">
-							<span :class="['mdi', 'mdi-18px', isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen']"></span>
+						<button @click="toggleFullscreen" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.fullscreen')" :aria-label="$t('buttons.fullscreen')" :aria-pressed="isFullscreen">
+							<span :class="['mdi', 'mdi-18px', isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen']" aria-hidden="true"></span>
 						</button>
 					</div>
 				</div>
@@ -185,7 +185,7 @@ import ScriptEditorModal from '../modals/ScriptEditorModal.vue'
 // Specific imports
 import { getHeadersForSelector } from './SelectorHeaders'
 
-import { onMounted, onBeforeUnmount, inject, provide, ref, onUpdated, watch, computed, nextTick, watchEffect } from 'vue'
+import { onMounted, onBeforeUnmount, onUnmounted, inject, provide, ref, onUpdated, watch, computed, nextTick, watchEffect } from 'vue'
 import { getPlugin } from '../../plugins/pluginsConfig'
 //composables
 import useModeler from '../../composables/useModeler.js'
@@ -196,6 +196,7 @@ import useMonacoEditor from '../../composables/useMonacoEditor.js'
 
 //utils
 import { checkJSON } from '../../utils.js'
+import { waitForElement } from '../../utils/domUtils.js'
 
 const bpmnTool = getPlugin('bpmn-tools')
 
@@ -362,7 +363,15 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
 	autosave.cancel()
+	window.removeEventListener('resize', updateParentWidth, true)
+	window.removeEventListener('resize', updateParentHeight, true)
 	document.removeEventListener('fullscreenchange', onFullscreenChange)
+})
+
+// Destroy after children unmount so they detach their listeners first (avoids null.off).
+onUnmounted(() => {
+	bpmnModeler?.destroy()
+	bpmnModeler = null
 })
 
 onUpdated(() => {
@@ -584,6 +593,7 @@ const _setupTTLMonitoring = () => {
 				currentInput = input
 				input.oninput = null
 				input.oninput = () => {
+					// Defer so bpmn-js's own input handler updates the model first, then validate.
 					setTimeout(() => {
 						validateTTLInput(input)
 					}, 10)
@@ -733,18 +743,21 @@ const handleListSelection = (item) => {
 const _setMonacoEditorToDiv = (e, divId) => {
 	getProcessInformation(bpmnModeler)
 
-	setTimeout(() => { // needed to load the component in the propertypanel
-		const element = e.context?.element ?? e.element // if it is called in different commandStacks it will take the right route
-		// alternative with another events e.element.type
+	const element = e.context?.element ?? e.element // if it is called in different commandStacks it will take the right route
 
-		if (element.type !== 'bpmn:ScriptTask') {// continues only if a script task has being loaded
-			currentScriptBpmnElement = null
-			return
-		}
-		// to get the value of the selected script task
+	if (element.type !== 'bpmn:ScriptTask') {// continues only if a script task has being loaded
+		currentScriptBpmnElement = null
+		return
+	}
 
+	// NOTE: a MutationObserver can't be used here. The script field reuses a fixed id
+	// (divScriptTaskID) across all script tasks and _createMonacoEditor only HIDES the
+	// previous textarea (display:none) instead of removing it — so an observer would
+	// resolve on the stale, hidden field of the previously selected task before the panel
+	// re-renders, and the subsequent render would clobber the freshly mounted editor.
+	// A short settle delay lets the panel finish rendering the field for the new selection.
+	setTimeout(() => {
 		const textAreaScriptTask = propertyPanel.value.querySelector(`#${divId}`)
-
 		if (!textAreaScriptTask) { // if the textarea is not loaded or created it will not continue
 			return
 		}
@@ -769,7 +782,7 @@ const _setMonacoEditorToDiv = (e, divId) => {
 			textAreaScriptTask.value = monacoEditor.getValue()
 			isScriptTaskUpdate = true
 
-			// to update the content of the script of the monaco editor in script task 	
+			// to update the content of the script of the monaco editor in script task
 			if (element.moddleElement && element.moddleElement.script !== undefined) {
 				element.moddleElement.script = textAreaScriptTask.value
 			}
@@ -779,9 +792,8 @@ const _setMonacoEditorToDiv = (e, divId) => {
 
 			// calling function of ModelerCanvas
 			_setupDiagramFunctions()
-			emit('toggleEnableSave', true, props.tabElementIndex) //enables save button		
+			emit('toggleEnableSave', true, props.tabElementIndex) //enables save button
 		})
-
 	}, 15)
 }
 
@@ -839,18 +851,14 @@ const _addingFormFieldToStartEvent = (element) => {
 	}
 }
 
-//to open the call element options and gives one retry if it doesnt find the class
+//to open the call element options once the properties panel has rendered the group
 const _openCalledElementWhenCalActivity = async e => {
-	await nextTick()
-	if (e && e.element?.type === 'bpmn:CallActivity') {
-		//finds the id with that id and adds the open class to its children to uncollapse it
-		const targetDiv = _simulateClickOnDiv('div[data-group-id="group-CamundaPlatform__CallActivity"]', '.bio-properties-panel-group-header')	
-		if (!targetDiv) {
-			setTimeout(() => {
-				_simulateClickOnDiv('div[data-group-id="group-CamundaPlatform__CallActivity', '.bio-properties-panel-group-header')
-			}, 200)
-		}
-	}
+	if (!(e && e.element?.type === 'bpmn:CallActivity')) return
+	// The CallActivity group is rendered by the bpmn-js properties panel (Preact);
+	// wait for it, then uncollapse it.
+	const group = await waitForElement(containerModeler.value, 'div[data-group-id="group-CamundaPlatform__CallActivity"]')
+	if (!group) return
+	_simulateClickOnDiv('div[data-group-id="group-CamundaPlatform__CallActivity"]', '.bio-properties-panel-group-header')
 }
 
 //simulate a click on a div to uncollapse it
@@ -866,27 +874,25 @@ const _simulateClickOnDiv = async (parentDivId, divToClick) => {
 	return foundDivToClick
 }
 
-const _addInstructionsToNotFoundTemplate = id => {
-	setTimeout(() => {
-		
-		if (!templatesList.value) return
+const _addInstructionsToNotFoundTemplate = async id => {
+	if (!templatesList.value) return
 
-		const found = templatesList.value.find(el => el.id === id)
+	const found = templatesList.value.find(el => el.id === id)
+	if (!found) return
 
-		if (!found) return
-		const divExists = containerModeler.value.querySelector(`#template-not-found-${id}`)
-		if (divExists) return
+	// The ElementTemplates group is rendered by the bpmn-js properties panel (Preact);
+	// wait for it before injecting the "not found" notice.
+	const divElementTemplateNotFound = await waitForElement(containerModeler.value, `[data-group-id="group-ElementTemplates__Template"]`)
+	if (!divElementTemplateNotFound) return
+	if (containerModeler.value.querySelector(`#template-not-found-${id}`)) return // already added
 
-		const divElementTemplateNotFound = containerModeler.value.querySelector(`[data-group-id="group-ElementTemplates__Template"]`)
-		const templateInfo = document.createElement('h3')
-		templateInfo.id = `template-not-found-${id}`
-		templateInfo.classList.add('d-flex', 'fw-bold')
-		templateInfo.style.paddingLeft = "12px" // same margin left as the Template's title
-		const textOfInfoOutdatedTemplate = translateValue('notFound')
-		templateInfo.textContent = `${textOfInfoOutdatedTemplate} : ${found.nameOfTemplate.value}`
-		divElementTemplateNotFound.append(templateInfo)
-
-	}, 50)
+	const templateInfo = document.createElement('h3')
+	templateInfo.id = `template-not-found-${id}`
+	templateInfo.classList.add('d-flex', 'fw-bold')
+	templateInfo.style.paddingLeft = "12px" // same margin left as the Template's title
+	const textOfInfoOutdatedTemplate = translateValue('notFound')
+	templateInfo.textContent = `${textOfInfoOutdatedTemplate} : ${found.nameOfTemplate.value}`
+	divElementTemplateNotFound.append(templateInfo)
 }
 
 const _detectListenerFromUserTask = async (e, listenerName) => {
@@ -925,25 +931,23 @@ const _replaceTaskListenerScriptWithMonacoEditor = (bpmnElement, listenerName) =
 }
 
 const _replaceDivWithMonacoEditor = async (scriptDivId, element) => {
-	setTimeout(() => {
-		// to get the value of the selected script task
-		const textAreaScriptTask = propertyPanel.value.querySelector(`#${scriptDivId}`)
+	// The listener's script entry is rendered by the bpmn-js properties panel (Preact);
+	// wait for its textarea to exist before mounting Monaco.
+	const textAreaScriptTask = await waitForElement(propertyPanel.value, `#${scriptDivId}`)
+	if (!textAreaScriptTask) { // if the textarea is not loaded or created it will not continue
+		return
+	}
 
-		if (!textAreaScriptTask) { // if the textarea is not loaded or created it will not continue
-			return
-		}
-
-		const scriptFormat = element.script?.scriptFormat
-		const monacoEditor = _createMonacoEditor(`monaco-editor-${scriptDivId}`, textAreaScriptTask, scriptFormat)
-		//captures changes in monaco editor
-		monacoEditor.getModel().onDidChangeContent(() => {
-			textAreaScriptTask.value = monacoEditor.getValue()
-			isScriptTaskUpdate = true
-			element.script.value = textAreaScriptTask.value
-			_setupDiagramFunctions()
-			emit('toggleEnableSave', true, props.tabElementIndex)
-		})
-	}, 50)
+	const scriptFormat = element.script?.scriptFormat
+	const monacoEditor = _createMonacoEditor(`monaco-editor-${scriptDivId}`, textAreaScriptTask, scriptFormat)
+	//captures changes in monaco editor
+	monacoEditor.getModel().onDidChangeContent(() => {
+		textAreaScriptTask.value = monacoEditor.getValue()
+		isScriptTaskUpdate = true
+		element.script.value = textAreaScriptTask.value
+		_setupDiagramFunctions()
+		emit('toggleEnableSave', true, props.tabElementIndex)
+	})
 
 }
 
@@ -1003,6 +1007,34 @@ svg {
 
 .bio-properties-panel-scroll-container {
 	width: 100%;
+}
+
+/* The template-state notices (not-found / outdated / deprecated / incompatible)
+   render their message inside a DropdownButton popup anchored to the narrow
+   header button and capped at max-width: 240px, so the message ends up in a tiny
+   box. Make the button position: static so the popup anchors to the full-width,
+   sticky group header instead (its existing min-width then spans the panel),
+   lift the width cap, and let the text fill the popup (it was pinned at 216px). */
+.bio-properties-panel-dropdown-button.bio-properties-panel-template-not-found,
+.bio-properties-panel-dropdown-button.bio-properties-panel-template-update-available,
+.bio-properties-panel-dropdown-button.bio-properties-panel-deprecated-template,
+.bio-properties-panel-dropdown-button.bio-properties-panel-template-incompatible {
+	position: static;
+}
+
+.bio-properties-panel-template-not-found .bio-properties-panel-dropdown-button__menu,
+.bio-properties-panel-template-update-available .bio-properties-panel-dropdown-button__menu,
+.bio-properties-panel-deprecated-template .bio-properties-panel-dropdown-button__menu,
+.bio-properties-panel-template-incompatible .bio-properties-panel-dropdown-button__menu {
+	left: 5px;
+	max-width: none;
+}
+
+.bio-properties-panel-template-not-found-text,
+.bio-properties-panel-template-update-available-text,
+.bio-properties-panel-deprecated-template-text,
+.bio-properties-panel-template-incompatible-text {
+	width: 100% !important;
 }
 
 input[name="historyTimeToLive"].is-invalid {

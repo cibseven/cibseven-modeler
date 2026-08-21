@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 <template>
-	<div class="modal fade" ref="modalDeploy" tabindex="-1" aria-hidden="true">
+	<div class="modal fade" ref="modalDeploy" tabindex="-1" aria-hidden="true" aria-labelledby="deployModalLabel">
 		<div class="modal-dialog" id="modal">
 			<div class="modal-content">
 				<div class="modal-header align-items-center">
@@ -262,7 +262,7 @@ import * as bootstrap from 'bootstrap'
 import { deployProcess, startProcess } from '../../services/deployService'
 import { fetchForms, fetchFormById } from '../../services/formService'
 import { debounce } from 'min-dash'
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getProcessKeyFromBpmn, getTagValueFromXml, formatFileSize, getFormRefsFromBpmn } from '../../utils.js'
 import { isHttpOrHttpsUrl } from '../../utils/regexUtils'
@@ -282,6 +282,7 @@ const emit = defineEmits([
 ])
 
 const { t } = useI18n()
+const announce = inject('announce', () => {})
 
 // Deployment info
 const deploymentName = ref('')
@@ -319,6 +320,7 @@ let modalBootstrap = null
 const modalDeploy = ref(null)
 const disableDeployButton = ref(false)
 const isExecutable = ref(null)
+const deployingTabId = ref(null) // snapshotted at open time; prevents wrong-tab attribution on tab-switch
 
 const isBpmn = computed(() => props.tabNavList?.type?.startsWith('bpmn'))
 
@@ -426,6 +428,7 @@ const _validateAdditionalDeploymentResources = mainResourceName => {
 
 const deploy = async (silent = false) => {
 	disableDeployButton.value = true
+	announce(t('a11y.deploying'))
 
 	let type = 'dmn'
 	if (props.tabNavList.type.startsWith('bpmn')) {
@@ -467,7 +470,6 @@ const deploy = async (silent = false) => {
 		return res
 	}).catch((error) => {
 		console.warn('Error deploying process:', error)
-		emit('showToastMessage', { isSuccess: false, toastText: 'toastDeployErrorDeploy', bodyTextAlt: '' })
 		hasErrors = true
 		return error
 	})
@@ -477,12 +479,16 @@ const deploy = async (silent = false) => {
 		// Parse nested JSON error if present
 		if (errorMessage.includes('{"type":')) {
 			try {
-				const jsonMatch = errorMessage.match(/\{.*\}$/s)
+				const s = errorMessage.indexOf('{'), e = errorMessage.lastIndexOf('}')
+				// Extract the {...} span with plain string ops (no backtracking regex)
+				const jsonMatch = s !== -1 && e > s ? [errorMessage.slice(s, e + 1)] : null
 				const parsedError = jsonMatch && JSON.parse(jsonMatch[0])
 				if (parsedError?.message) errorMessage = parsedError.message
 			} catch { /* ignore JSON parse error, keep original message */ }
 		}
-		emit('addErrorMessageToConsole', props.tabNavList.id, `${errorMessage}\n`)
+		// the reason travels with the toast, so the webclient does not have to report it a second time in a dialog
+		emit('showToastMessage', { isSuccess: false, toastText: 'toastDeployErrorDeploy', bodyTextAlt: errorMessage })
+		emit('addErrorMessageToConsole', deployingTabId.value ?? props.tabNavList.id, `${errorMessage}\n`)
 		return errorMessage
 	}
 	return errors
@@ -598,6 +604,7 @@ const _autoAddReferencedForms = async () => {
 }
 
 const _showModalComp = () => {
+	deployingTabId.value = props.tabNavList.id // capture before the user can switch tabs
 	deploymentName.value = _getProcessKeyForDeployName() // set the name of the deploy
 	additionalDeploymentResources.value = []
 	formPickerList.value = []

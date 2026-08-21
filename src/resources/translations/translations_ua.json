@@ -60,6 +60,7 @@
   },
   "importSummary": {
     "imported": "{count} імпортовано",
+    "replaced": "{count} замінено",
     "upToDate": "{count} вже актуальні",
     "skipped": "{count} пропущено",
     "failed": "{count} не вдалося"
@@ -88,6 +89,10 @@
     "title": "ID процесу вже існує",
     "body": "Змініть ID процесу на унікальний"
   },
+  "toastSaveErrorMissingId": {
+    "title": "Відсутній ID форми",
+    "body": "Вкажіть ID форми перед збереженням."
+  },
   "toastUpdateSuccessful": {
     "title": "Успішно оновлено",
     "body": "Процес успішно оновлено."
@@ -95,6 +100,10 @@
   "toastSomethingWentWrong": {
     "title": "Помилка",
     "body": "Упс, щось пішло не так"
+  },
+  "toastSessionLockFailed": {
+    "title": "Блокування редагування не отримано",
+    "body": "Діаграму збережено, але не вдалося створити блокування редагування. Інші можуть редагувати її одночасно."
   },
   "ttlFieldRequired": "Це поле є обов'язковим для розгортання",
   "buttons": {
@@ -112,6 +121,9 @@
     "newDmn": "DMN",
     "newForm": "Форма",
     "newBpmnc7": "BPMN 7",
+    "createBpmn": "Створити BPMN",
+    "createDmn": "Створити DMN",
+    "createForm": "Створити форму",
     "importFile": "Імпортувати локальний файл",
     "edit": "Редагувати",
     "delDiagram": "Видалити",
@@ -126,6 +138,7 @@
     "searchTemplates": "Пошук шаблонів",
     "console": "Консоль",
     "close": "Закрити",
+    "closeTab": "Закрити {name}",
     "continue": "Продовжити",
     "delete": "Видалити",
     "copy": "Копіювати",
@@ -143,7 +156,14 @@
     "skipAll": "Пропустити все",
     "undo": "Скасувати",
     "redo": "Повторити",
-    "closeAllTabs": "Закрити всі вкладки"
+    "closeAllTabs": "Закрити всі вкладки",
+    "viewXml": "Показати XML",
+    "viewDiagram": "Показати діаграму",
+    "outdatedTemplates": "Застарілі шаблони"
+  },
+  "a11y": {
+    "deploying": "Розгортання…",
+    "saving": "Збереження…"
   },
   "scriptEditorModal": {
     "title": "Редагувати скрипт"
@@ -238,7 +258,6 @@
   "Execution listeners": "Слухачі виконання",
   "Extension properties": "Властивості розширення",
   "<empty>": "<порожньо>",
-  "Name": "Ім'я",
   "Value": "Значення",
   "Start: Java class": "Запуск: Java-клас",
   "Field injections": "Впровадження полів",
@@ -458,111 +477,6 @@
     "internalTemplatesTip": "Відображає шаблони, що виконуються безпосередньо всередині рушія CIB seven. Це реалізації на Java, що виконуються синхронно в тому ж додатку. Підходить для легких випадків.",
     "externalTemplatesTip": "Відображає шаблони, що обробляються зовнішніми воркерами. Ці завдання відокремлені від рушія та обробляються асинхронно віддаленими службами. Перевагу надають для важких операцій."
   },
-  "templatesManagement": {
-    "title": "Управління шаблонами",
-    "addTemplate": "Додати шаблон",
-    "editTemplateDialog": {
-      "title": "Редагувати шаблон елемента",
-      "updateSuccess": "Шаблон '{name}' успішно оновлено!",
-      "updateError": "Не вдалося оновити шаблон. Будь ласка, спробуйте ще раз."
-    },
-    "addTemplateDialog": {
-      "title": "Створити шаблон елемента",
-      "templateId": "ID шаблона",
-      "name": "Назва",
-      "description": "Опис",
-      "content": "Вміст (JSON)",
-      "active": "Активний",
-      "importFile": "Імпортувати файл",
-      "selectFile": "Вибрати файл",
-      "or": "або",
-      "cancel": "Скасувати",
-      "save": "Зберегти",
-      "saving": "Збереження...",
-      "invalidJsonError": "Вміст повинен бути дійсним JSON!",
-      "manualEntry": "Ручне введення",
-      "fileImport": "Імпорт файлу",
-      "templateDetails": "Деталі шаблону",
-      "templateIdPlaceholder": "напр., my-custom-task-template:1",
-      "namePlaceholder": "напр., Мій власний шаблон завдання",
-      "descriptionPlaceholder": "Короткий опис шаблону...",
-      "contentPlaceholder": "Введіть JSON шаблону елемента тут...",
-      "descriptionHelp": "Необовязковий опис, що допомагає користувачам зрозуміти призначення шаблону",
-      "contentHelp": "Коректний JSON з визначенням шаблону елемента",
-      "activeHelp": "При увімкненні цей шаблон буде доступний у моделері",
-      "formatJson": "Форматувати JSON",
-      "validJson": "Коректний формат JSON",
-      "templateIdRequired": "ID шаблону є обовязковим",
-      "templateIdInvalid": "ID шаблону може містити лише букви, цифри, дефіси, підкреслення, крапки та двокрапки",
-      "nameRequired": "Назва шаблону є обовязковою",
-      "contentRequired": "Вміст шаблону є обовязковим",
-      "validationErrors": "Будь ласка, виправте помилки валідації перед збереженням",
-      "createSuccess": "Шаблон '{name}' успішно створено!",
-      "createError": "Не вдалося створити шаблон. Будь ласка, спробуйте ще раз.",
-      "importFromFile": "Імпортувати з файлу",
-      "dragDropFiles": "Перетягніть файли сюди",
-      "supportedFormats": "Підтримувані формати: JSON, TXT",
-      "browseFiles": "Огляд файлів",
-      "fileSelected": "Файл вибрано",
-      "useThisFile": "Використати цей файл",
-      "processing": "Обробка...",
-      "removeFile": "Видалити файл",
-      "unsupportedFileType": "Непідтримуваний тип файлу. Виберіть JSON або TXT.",
-      "fileProcessed": "Файл успішно оброблено! Перегляньте отримані дані нижче.",
-      "fileProcessingError": "Помилка обробки файлу. Переконайтеся, що він містить коректний JSON.",
-      "fileTooLarge": "Файл занадто великий. Максимальний розмір файлу  10 МБ.",
-      "missingRequiredFields": "Відсутні обовязкові поля: {fields}. Шаблони елементів повинні містити принаймні id та name.",
-      "invalidAppliesTo": "Некоректне поле appliesTo. Воно має бути масивом типів елементів BPMN.",
-      "invalidJsonFile": "Некоректний JSON файл. Перевірте формат файлу та спробуйте знову.",
-      "fileReadError": "Помилка читання файлу. Спробуйте з іншим файлом.",
-      "extractedData": "Отримані дані",
-      "noDescription": "Опис відсутній",
-      "formHelp": "Заповніть деталі шаблону вручну або використайте опцію імпорту файлу",
-      "uploadHelp": "Завантажте JSON файл з визначенням шаблону елемента",
-      "importMode": "Режим імпорту",
-      "singleTemplate": "Один шаблон",
-      "multipleFiles": "Кілька файлів",
-      "batchFile": "Пакетний файл",
-      "selectMultipleFiles": "Вибрати кілька файлів",
-      "selectBatchFile": "Вибрати пакетний файл",
-      "selectedFiles": "Вибрані файли",
-      "importAll": "Імпортувати все",
-      "singleFileHelp": "Завантажте один JSON-файл, що містить один шаблон елемента",
-      "multipleFilesHelp": "Завантажте кілька JSON-файлів, кожен з яких містить один шаблон елемента",
-      "batchFileHelp": "Завантажте один JSON-файл, що містить масив кількох шаблонів елементів",
-      "templatesImported": "{count} шаблонів успішно імпортовано!",
-      "batchImported": "{count} шаблонів успішно імпортовано з пакетного файлу!",
-      "noValidTemplates": "Дійсні шаблони у вибраних файлах не знайдено",
-      "batchFileNotArray": "Пакетний файл повинен містити масив шаблонів",
-      "batchFileEmpty": "Пакетний файл порожній або не містить шаблонів",
-      "invalidTemplateInBatch": "Недійсний шаблон на позиції {index}: відсутні обовязкові поля {fields}"
-    },
-    "exportAll": "Експортувати все",
-    "back": "Назад",
-    "tableView": "Табличний вигляд",
-    "cardView": "Картковий вигляд",
-    "categorizedView": "Категоризований вигляд",
-    "listView": "Список",
-    "compactListView": "Компактний список",
-    "duplicate": "Дублювати",
-    "edit": "Редагувати",
-    "delete": "Видалити",
-    "export": "Експорт",
-    "available": "Доступний",
-    "hidden": "Прихований",
-    "visible": "Видимий",
-    "disabledInConfig": "Вимкнено в `config.json`",
-    "system": "Система",
-    "templatesCount": "шаблонів",
-    "hideGroup": "Приховати групу",
-    "showGroup": "Показати групу",
-    "others": "Інші",
-    "loadingMoreTemplates": "Завантаження додаткових шаблонів...",
-    "allTemplatesLoaded": "Усі шаблони завантажено",
-    "deleteConfirmTitle": "Видалити шаблон",
-    "deleteConfirmMessage": "Ви впевнені, що хочете видалити шаблон \"{templateName}\"?\n\nЦю дію неможливо скасувати.",
-    "deleteErrorMessage": "Помилка видалення шаблону \"{templateName}\". Будь ласка, спробуйте ще раз."
-  },
   "items": {
     "process": "процес",
     "bpmn-c7": "процес",
@@ -587,8 +501,6 @@
     "ariaSortAsc": "Сортування за зростанням",
     "ariaSortDes": "Сортування за спаданням"
   },
-  "Created by": "Створено",
-  "Actions": "Дії",
   "cib-header": {
     "productName": "CIB seven Modeler"
   }

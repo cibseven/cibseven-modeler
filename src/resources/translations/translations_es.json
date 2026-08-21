@@ -60,6 +60,7 @@
   },
   "importSummary": {
     "imported": "{count} importados",
+    "replaced": "{count} reemplazados",
     "upToDate": "{count} ya actualizados",
     "skipped": "{count} omitidos",
     "failed": "{count} fallidos"
@@ -88,6 +89,10 @@
     "title": "ID de proceso ya existe",
     "body": "Modifique la ID del proceso a una única"
   },
+  "toastSaveErrorMissingId": {
+    "title": "Falta el ID del formulario",
+    "body": "Asigna un ID al formulario antes de guardar."
+  },
   "toastUpdateSuccessful": {
     "title": "Actualizado con éxito",
     "body": "El proceso ha sido actualizado correctamente."
@@ -95,6 +100,10 @@
   "toastSomethingWentWrong": {
     "title": "Error",
     "body": "Ups, algo ha salido mal"
+  },
+  "toastSessionLockFailed": {
+    "title": "Bloqueo de edición no adquirido",
+    "body": "El diagrama se guardó, pero no se pudo crear el bloqueo de edición. Otros pueden editarlo al mismo tiempo."
   },
   "ttlFieldRequired": "Este campo es obligatorio para el despliegue",
   "buttons": {
@@ -112,6 +121,9 @@
     "newDmn": "DMN",
     "newForm": "Form",
     "newBpmnc7": "BPMN 7",
+    "createBpmn": "Crear BPMN",
+    "createDmn": "Crear DMN",
+    "createForm": "Crear formulario",
     "importFile": "Importar archivo local",
     "edit": "Editar",
     "delDiagram": "Eliminar",
@@ -126,6 +138,7 @@
     "searchTemplates": "Buscar templates",
     "console": "Consola",
     "close": "Cerrar",
+    "closeTab": "Cerrar {name}",
     "continue": "Continuar",
     "delete": "Eliminar",
     "copy": "Copiar",
@@ -143,7 +156,14 @@
     "skipAll": "Omitir todo",
     "undo": "Deshacer",
     "redo": "Rehacer",
-    "closeAllTabs": "Cerrar todas las pestañas"
+    "closeAllTabs": "Cerrar todas las pestañas",
+    "viewXml": "Ver XML",
+    "viewDiagram": "Ver diagrama",
+    "outdatedTemplates": "Plantillas obsoletas"
+  },
+  "a11y": {
+    "deploying": "Desplegando…",
+    "saving": "Guardando…"
   },
   "scriptEditorModal": {
     "title": "Editar script"
@@ -238,7 +258,6 @@
   "Execution listeners": "Escuchadores de ejecución",
   "Extension properties": "Propiedades de extensión",
   "<empty>": "<vacío>",
-  "Name": "Nombre",
   "Value": "Valor",
   "Start: Java class": "Inicio: Clase Java",
   "Field injections": "Inyecciones de campo",
@@ -458,111 +477,6 @@
     "internalTemplatesTip": "Muestra las plantillas que se ejecutan directamente dentro del motor de CIB seven. Son implementaciones basadas en Java que se ejecutan de manera síncrona dentro de la misma aplicación. Adecuadas para casos livianos.",
     "externalTemplatesTip": "Muestra las plantillas gestionadas por servicios externos. Estas tareas están desacopladas del motor y se procesan de forma asíncrona por servicios remotos. Preferidas para operaciones pesadas."
   },
-  "templatesManagement": {
-    "title": "Gestión de plantillas",
-    "addTemplate": "Añadir plantilla",
-    "editTemplateDialog": {
-      "title": "Editar Plantilla de Elemento",
-      "updateSuccess": "¡Plantilla '{name}' actualizada exitosamente!",
-      "updateError": "Error al actualizar la plantilla. Por favor, inténtelo de nuevo."
-    },
-    "addTemplateDialog": {
-      "title": "Crear plantilla de elemento",
-      "templateId": "ID de plantilla",
-      "name": "Nombre",
-      "description": "Descripción",
-      "content": "Contenido (JSON)",
-      "active": "Activo",
-      "importFile": "Importar archivo",
-      "selectFile": "Seleccionar Archivo",
-      "or": "o",
-      "cancel": "Cancelar",
-      "save": "Guardar",
-      "saving": "Guardando...",
-      "invalidJsonError": "¡El contenido debe ser JSON válido!",
-      "manualEntry": "Entrada Manual",
-      "fileImport": "Importar Archivo",
-      "templateDetails": "Detalles de la Plantilla",
-      "templateIdPlaceholder": "ej., mi-tarea-personalizada:1",
-      "namePlaceholder": "ej., Mi Plantilla de Tarea Personalizada",
-      "descriptionPlaceholder": "Breve descripción de lo que hace esta plantilla...",
-      "contentPlaceholder": "Ingresa aquí tu JSON de plantilla de elemento...",
-      "descriptionHelp": "Descripción opcional para ayudar a los usuarios a entender el propósito de esta plantilla",
-      "contentHelp": "JSON válido que contiene la definición de la plantilla de elemento",
-      "activeHelp": "Cuando está habilitado, esta plantilla estará disponible en el modelador",
-      "formatJson": "Formatear JSON",
-      "validJson": "Formato JSON válido",
-      "templateIdRequired": "El ID de plantilla es obligatorio",
-      "templateIdInvalid": "El ID de plantilla solo puede contener letras, números, guiones, guiones bajos, puntos y dos puntos",
-      "nameRequired": "El nombre de la plantilla es obligatorio",
-      "contentRequired": "El contenido de la plantilla es obligatorio",
-      "validationErrors": "Por favor, corrija los errores de validación antes de guardar",
-      "createSuccess": "¡Plantilla '{name}' creada exitosamente!",
-      "createError": "Error al crear la plantilla. Por favor, inténtelo de nuevo.",
-      "importFromFile": "Importar desde Archivo",
-      "dragDropFiles": "Arrastra y suelta archivos aquí",
-      "supportedFormats": "Formatos soportados: JSON, TXT",
-      "browseFiles": "Examinar Archivos",
-      "fileSelected": "Archivo Seleccionado",
-      "useThisFile": "Usar Este Archivo",
-      "processing": "Procesando...",
-      "removeFile": "Eliminar Archivo",
-      "unsupportedFileType": "Tipo de archivo no soportado. Por favor, selecciona un archivo JSON o TXT.",
-      "fileProcessed": "¡Archivo procesado exitosamente! Revisa los datos extraídos a continuación.",
-      "fileProcessingError": "Error al procesar el archivo. Por favor, asegúrate de que contenga JSON válido.",
-      "fileTooLarge": "El archivo es demasiado grande. El tamaño máximo de archivo es 10MB.",
-      "missingRequiredFields": "Faltan campos obligatorios: {fields}. Las plantillas de elemento deben tener al menos las propiedades 'id' y 'name'.",
-      "invalidAppliesTo": "Campo 'appliesTo' inválido. Debe ser un array de tipos de elementos BPMN.",
-      "invalidJsonFile": "Archivo JSON inválido. Por favor, verifica el formato del archivo e inténtalo de nuevo.",
-      "fileReadError": "Error al leer el archivo. Por favor, intenta de nuevo con un archivo diferente.",
-      "extractedData": "Datos Extraídos",
-      "noDescription": "Sin descripción disponible",
-      "formHelp": "Completa los detalles de la plantilla manualmente o usa la opción de importar archivo",
-      "uploadHelp": "Sube un archivo JSON que contenga la definición de la plantilla de elemento",
-      "importMode": "Modo de importación",
-      "singleTemplate": "Plantilla única",
-      "multipleFiles": "Múltiples archivos",
-      "batchFile": "Archivo por lotes",
-      "selectMultipleFiles": "Seleccionar múltiples archivos",
-      "selectBatchFile": "Seleccionar archivo por lotes",
-      "selectedFiles": "Archivos seleccionados",
-      "importAll": "Importar todo",
-      "singleFileHelp": "Sube un único archivo JSON que contenga una plantilla de elemento",
-      "multipleFilesHelp": "Sube múltiples archivos JSON, cada uno con una plantilla de elemento",
-      "batchFileHelp": "Sube un único archivo JSON que contenga un array de múltiples plantillas de elemento",
-      "templatesImported": "¡{count} plantillas importadas con éxito!",
-      "batchImported": "¡{count} plantillas importadas del archivo por lotes con éxito!",
-      "noValidTemplates": "No se encontraron plantillas válidas en los archivos seleccionados",
-      "batchFileNotArray": "El archivo por lotes debe contener un array de plantillas",
-      "batchFileEmpty": "El archivo por lotes está vacío o no contiene plantillas",
-      "invalidTemplateInBatch": "Plantilla inválida en la posición {index}: faltan campos requeridos {fields}"
-    },
-    "exportAll": "Exportar todo",
-    "back": "Atrás",
-    "tableView": "Vista de tabla",
-    "cardView": "Vista de tarjetas",
-    "categorizedView": "Vista categorizada",
-    "listView": "Vista de lista",
-    "compactListView": "Vista de lista compacta",
-    "duplicate": "Duplicar",
-    "edit": "Editar",
-    "delete": "Eliminar",
-    "export": "Exportar",
-    "available": "Disponible",
-    "hidden": "Oculto",
-    "visible": "Visible",
-    "disabledInConfig": "Deshabilitado en `config.json`",
-    "system": "Sistema",
-    "templatesCount": "plantillas",
-    "hideGroup": "Ocultar grupo",
-    "showGroup": "Mostrar grupo",
-    "others": "Otros",
-    "loadingMoreTemplates": "Cargando más plantillas...",
-    "allTemplatesLoaded": "Todas las plantillas cargadas",
-    "deleteConfirmTitle": "Eliminar plantilla",
-    "deleteConfirmMessage": "¿Está seguro de que desea eliminar la plantilla \"{templateName}\"?\n\nEsta acción no se puede deshacer.",
-    "deleteErrorMessage": "Error al eliminar la plantilla \"{templateName}\". Por favor, inténtelo de nuevo."
-  },
   "items": {
     "process": "proceso",
     "bpmn-c7": "processo",
@@ -577,9 +491,9 @@
     "form": "Formulario"
   },
   "filterElements": {
-    "dmn": "Dmn",
+    "dmn": "DMN",
     "form": "Formularios",
-    "bpmn": "Bpmn",
+    "bpmn": "BPMN",
     "all": "Todo"
   },
   "bcomponents": {
@@ -587,8 +501,6 @@
     "ariaSortAsc": "Ordenado ascendente",
     "ariaSortDes": "Ordenado descendente"
   },
-  "Created by": "Creado por",
-  "Actions": "Acciones",
   "cib-header": {
     "productName": "CIB seven Modeler"
   }

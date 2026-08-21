@@ -40,7 +40,9 @@ export default function useCustomizedTemplateModal() {
     modalButton.classList.add('btn', 'border-0', 'shadow-0')
     spanButton.textContent = translateValue('Select')
     modalButton.onclick = () => {
-      elementTemplatesModal.value.show(e)
+      // Pass the modeler's actually-loaded template ids so the picker can only offer
+      // templates that applyTemplate can resolve (config.excludeTemplates strips some).
+      elementTemplatesModal.value.show(e, modeler.get('elementTemplates').getAll().map(t => t.id))
     }
     button.replaceWith(modalButton)
   }
@@ -51,6 +53,13 @@ export default function useCustomizedTemplateModal() {
     const element = elementRegistry.get(e.element.id)
     const elementTemplates = modeler.get('elementTemplates')
     const specificTemplate = elementTemplates.getAll().find((t) => t.id === selectedTemplateId)
+    // Guard: the element may be stale/removed, or the template may not be loaded in the
+    // modeler. applyTemplate() with an undefined arg throws and leaves the command stack
+    // mid-transaction, so skip instead of crashing.
+    if (!element || !specificTemplate) {
+      console.warn(`applyTemplateToTask: skipped, element or template not available (id: ${selectedTemplateId})`)
+      return
+    }
     elementTemplates.applyTemplate(element, specificTemplate)
   }
 

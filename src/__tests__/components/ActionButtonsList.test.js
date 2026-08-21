@@ -16,6 +16,9 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
+
+vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: k => k }) }))
+
 import ActionButtonsList from '../../components/ActionButtonsList.vue'
 import { DIAGRAM_TYPE, DIAGRAM_FILE_EXT } from '../../constants/diagramTypes.js'
 

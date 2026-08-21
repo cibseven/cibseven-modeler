@@ -155,7 +155,7 @@
 	</div>
 </div>
 
-	<ModalNewDiagram ref="modalNewDiagram" :showModal="isShowModalNewDiagram">
+	<ModalNewDiagram ref="modalNewDiagram" :showModal="isShowModalNewDiagram" :check-duplicate-id="checkDuplicateId">
 	</ModalNewDiagram>
 	<modal-deploy :diagram="editorXML[activeTab]" v-if="activeTab > -1" :showModal="isShowModal"
 		:tabNavList="tabNavList[activeTab]" @toggleModal="toggleModal" @showToastMessage="showToastMessage"
@@ -177,6 +177,9 @@
 		@modalClosed="() => resolveConflict('skip')"
 		@modalHidden="onConflictModalHidden">
 	</ImportConflictModal>
+	<!-- Polite live region: announces transient async states (loading, deploying, saving)
+	     to assistive tech. Success/error completion is announced by the toast (role="alert"). -->
+	<div class="visually-hidden" role="status" aria-live="polite" aria-atomic="true">{{ statusMessage }}</div>
 	</div>
 </template>
 
@@ -187,7 +190,7 @@ import * as monaco from '../../monaco-setup.js'
 import { useStore } from 'vuex'
 import { useRoute, useRouter } from 'vue-router'
 
-import { compareXML, getTimeStamp, getTagValueFromXml, checkCamundaVersion, generateUniqueId, setTagValueOfXml, filterTemplates } from '../../utils.js'
+import { compareXML, getTimeStamp, getTagValueFromXml, checkCamundaVersion, generateUniqueId, setTagValueOfXml, filterTemplates, resolveTabIndexById } from '../../utils.js'
 import Clipboard from 'diagram-js/lib/features/clipboard/Clipboard'
 import { ref, onMounted, onUnmounted, nextTick, watch, computed, inject, provide } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -209,11 +212,24 @@ import DropZone from '../DropZone.vue'
 import useTabManager from '../../composables/useTabManager.js'
 import useFileImport from '../../composables/useFileImport.js'
 import { DIAGRAM_TYPE, SKIP_CREATION_MODAL_KEY } from '../../constants/diagramTypes.js'
+import { keyExistsRemote } from '../../services/processService.js'
 
 // Provide monaco for child components (MonacoEditor, MonacoConsole)
 // This is necessary when used as a library since the host app doesn't provide monaco
 monaco.editor.setTheme('vs')
 provide('monaco', monaco)
+
+// Polite live-region announcer for transient async states. Children call the
+// injected `announce(message)`; clearing first guarantees re-announcement when
+// the same message is sent twice in a row.
+const statusMessage = ref('')
+let _announceTimer = null
+const announce = message => {
+	statusMessage.value = ''
+	if (_announceTimer) clearTimeout(_announceTimer)
+	_announceTimer = setTimeout(() => { statusMessage.value = message }, 50)
+}
+provide('announce', announce)
 
 const store = useStore()
 const route = useRoute()
@@ -291,6 +307,7 @@ onMounted(async () => {
 onUnmounted(() => {
 	window.removeEventListener('resize', resizeTabWindow)
 	window.removeEventListener('keydown', _handleGlobalKeydown)
+	if (_announceTimer) clearTimeout(_announceTimer)
 })
 
 watch(() => activeTab.value, async newValue => { // when the tab is selected it will resize the tabnav
@@ -309,6 +326,16 @@ const validateRenameKey = newKey => {
 		: processes.value.find(p => p.processkey === newKey)
 	if (exists) return t('toastSaveErrorDuplicateKey.body')
 	return null
+}
+
+// Used by the new-diagram modal for a live, type-aware duplicate-id check: instant against
+// the loaded list, then an authoritative backend lookup for ids on not-yet-loaded pages.
+const checkDuplicateId = async (id, type) => {
+	const inLoaded = type === 'form'
+		? forms.value?.some(f => f.formId === id)
+		: processes.value?.some(p => p.processkey === id)
+	if (inLoaded) return true
+	return keyExistsRemote(id, type)
 }
 
 const _loadElementTemplatesByConfig = async () => {
@@ -333,7 +360,7 @@ watch(() => store.getters['modeler/elementTemplates/allElementTemplateContents']
 //emit calls an exposed function from StartPage
 const createNewBpmnDiagram = async (diagramXML, type) => {
 	const callback = async (nameUpdated, idUpdated) => {
-		const uniqueId = idUpdated ? idUpdated.trim() : _assignUniqueId('Process', generateUniqueId())
+		const uniqueId = idUpdated ? idUpdated.trim() : _assignUniqueId('Process')
 		const name = nameUpdated ? nameUpdated.trim() : uniqueId
 		let finalXml = setTagValueOfXml(await _fetchDefaultDiagramXML(diagramXML), 'bpmn:process', 'id', uniqueId)
 
@@ -350,7 +377,7 @@ const createNewBpmnDiagram = async (diagramXML, type) => {
 
 const createNewDmnDiagram = async (dmnXML, type) => {
 	const callback = async (nameUpdated, idUpdated) => {
-		const uniqueId = idUpdated ? idUpdated.trim() : _assignUniqueId('Dmn', generateUniqueId())
+		const uniqueId = idUpdated ? idUpdated.trim() : _assignUniqueId('Dmn')
 		const name = nameUpdated ? nameUpdated.trim() : uniqueId
 		let finalXml = setTagValueOfXml(await _fetchDefaultDiagramXML(dmnXML), 'definitions', 'id', uniqueId)
 
@@ -367,7 +394,7 @@ const createNewDmnDiagram = async (dmnXML, type) => {
 
 const createNewFormDiagram = async(formJson, type) => {
 	const callback = async (nameUpdated, idUpdated) => {
-		const uniqueId = idUpdated ? idUpdated.trim() : _assignUniqueId('Form', generateUniqueId())
+		const uniqueId = idUpdated ? idUpdated.trim() : _assignUniqueId('Form')
 		formJson.id = uniqueId
 		tabNavList.value.push({ version: 0, type: type, name: uniqueId, navId: uniqueId, id: uniqueId, key: uniqueId, keyOfTabNav: uniqueId, canSave: true, isSaved: false, isModelerVisible: false, isPropertyPanelVisible: false, isEditorVisible: false, isBpmn: false })
 		tabNavListXml.value[tabNavList.value.length - 1] = JSON.stringify(formJson, null, 2)
@@ -469,7 +496,7 @@ const toggleOutdatedTemplateBtn = (comp, tabElementIndex) => actionButton.value[
 // shows or hide warning button of outdated templates
 const toggleOutdatedTemplateModal = comp => modeler.value[activeTab.value]._toggleModalListSelectorFromActionButton(comp, 'templates')
 
-const toggleConsole = (tabElementIndex, isVisible) => modeler.value[tabElementIndex].toggleConsole(isVisible)
+const toggleConsole = (tabElementIndex, isVisible) => modeler.value[tabElementIndex]?.toggleConsole?.(isVisible)
 
 const toggleModal = isShowing => isShowModal.value = isShowing
 
@@ -614,9 +641,11 @@ const openDiagram = (valueFromChild, processId, processName, processKey, typeOfD
 	if (foundElIndex < 0) {
 		const keyOfTabNav = generateUniqueId()
 		tabNavList.value.push({ type: typeOfDiagram, name: processName, navId: processName, id: processId, key: processKey, keyOfTabNav: keyOfTabNav, isSaved: isSaved, canSave: canSave, isModelerVisible: false, isPropertyPanelVisible: false, isEditorVisible: false, replaceXml: canReplaceXml })
-		tabNavListXml.value.push(valueFromChild) //adds xml		
+		tabNavListXml.value.push(valueFromChild) //adds xml
 		_saveTabNavSavedLocalStorage()
-		switchTabFromTabNav(tabNavListXml.value.length - 1)
+		const newIndex = tabNavListXml.value.length - 1
+		switchTabFromTabNav(newIndex)
+		return newIndex // return the new tab's index, not the -1 from the initial lookup
 	}
 	return foundElIndex
 }
@@ -670,7 +699,8 @@ const resizeTabWindow = () => { //to be called from the listener and not be pass
 
 const addErrorMessageToConsole = (id, error) => {
 	const correctTabIndex = checkCorrectTab(id)
-	modeler.value[correctTabIndex].addLineWithErrorToConsole(error)
+	if (correctTabIndex < 0) return // the tab is gone (closed / on dashboard) — no console to write to
+	modeler.value[correctTabIndex]?.addLineWithErrorToConsole?.(error)
 	showConsoleNotification(id)
 }
 
@@ -685,16 +715,22 @@ const _initializeTabSize = () => {
 	tabNavWidth.value = modelerTabPanes.value.clientWidth
 }
 
-const _assignUniqueId = (name, id) => {
-	if (!processes.value) return
-	const foundProcess = processes.value.find(el => el.id === id)
-
-	if (!foundProcess) { // check until process not found
-		return `${name}_${generateUniqueId()}`
-	}
-	else {
-		_assignUniqueId(`${name}_${generateUniqueId()}`)
-	}
+// Always returns a unique `${name}_<random>` id. It must never return
+// undefined/empty: a form/diagram created with an empty id then fails to save
+// (formId is unique & not-null in the backend). The previous version returned
+// undefined when the processes list hadn't loaded yet and didn't return on the
+// collision branch — both produced empty ids. This no longer depends on the
+// list being loaded and checks against saved processes and open tabs.
+const _assignUniqueId = name => {
+	const taken = new Set([
+		...(processes.value ?? []).map(el => el.id),
+		...tabNavList.value.map(tab => tab.id),
+	])
+	let candidate
+	do {
+		candidate = `${name}_${generateUniqueId()}`
+	} while (taken.has(candidate))
+	return candidate
 }
 
 const onBatchComplete = async () => {
@@ -782,19 +818,16 @@ const _checkExistingProcessFromExternalReturn = async (decodedProcessId, externa
 	}
 }
 
-const checkCorrectTab = id => {
-	let foundIndex = activeTab.value
-	// in case the tabs has been closed or the order of tabs changed
-	if (tabNavList.value[foundIndex].id !== id) foundIndex = tabNavList.value.findIndex(el => el.id === id)
-	return foundIndex
-}
+// Resolves the tab for a console message; -1 when none (dashboard / closed tab).
+const checkCorrectTab = id => resolveTabIndexById(activeTab.value, tabNavList.value, id)
 
 //checks if the console is closed to show the notification
 const showConsoleNotification = id => {
 	const correctTabIndex = checkCorrectTab(id)
+	if (correctTabIndex < 0) return // dashboard or the tab was closed — nothing to notify
+	if (!modeler.value[correctTabIndex]?.toggleConsole) return // form tabs have no console
 	//check that the panel is not open to show the notification
-
-	if (!modeler.value[correctTabIndex].isConsolePanelShowing()) actionButton.value[correctTabIndex].showConsoleNotification(true)
+	if (!modeler.value[correctTabIndex]?.isConsolePanelShowing?.()) actionButton.value[correctTabIndex]?.showConsoleNotification?.(true)
 }
 
 // method to handle file selection when a file is dropped onto the component
@@ -814,7 +847,7 @@ const _checkExternalReturn = async () => {
 		}
 	} else if (route.params.diagramId || url.href.includes('diagramId=')) {
 		const diagramId = route.params.diagramId || route.query.diagramId
-		const diagram = diagrams.value?.find(d => d.id === diagramId)
+		const diagram = await store.dispatch('modeler/processes/fetchUnifiedDiagramById', diagramId)
 		if (diagram) {
 			if (diagram.type === 'form') {
 				await store.dispatch('modeler/forms/fetchFormById', diagramId)

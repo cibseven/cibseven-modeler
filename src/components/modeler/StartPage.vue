@@ -90,29 +90,20 @@
                             <div class="d-flex justify-content-start gap-2">
                                 <button @click="handleOpenFileInput" :title="$t('buttons.importFile')" type="button"
                                 class="btn border border-dark btn-light"><i class="mdi mdi-import me-1"></i>{{ $t('buttons.importFile') }}</button>
+                                <component v-if="startPageTool" :is="startPageTool"></component>
                             </div>
                             <input ref="fileInput" type="file" accept=".bpmn,.dmn,.form" multiple :aria-label="$t('buttons.importFile')" style="display: none;"
                                 @change="handleFileChange" />
-                            <div class="dropdown">
-                                <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                                    aria-expanded="false">
-                                    {{ $t('buttons.createDiagram') }}
+                            <div class="d-flex gap-2">
+                                <button :title="$t('buttons.createBpmn')" type="button" class="btn btn-secondary" @click="handleClickCreateBpmnc7Diagram">
+                                    {{ $t('buttons.createBpmn') }}
                                 </button>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li> <button :title="$t('buttons.newBpmnc7')" type="button" class="dropdown-item" @click="handleClickCreateBpmnc7Diagram">
-                                            {{ $t('buttons.newBpmnc7') }}
-                                        </button>
-                                    </li>
-                                    <li> <button :title="$t('buttons.newDmn')" type="button" class="dropdown-item" @click="handleClickCreateDmnDiagram">
-                                            {{ $t('buttons.newDmn') }}
-                                        </button>
-                                    </li>
-                                    <li> <button :title="$t('buttons.newForm')" type="button" class="dropdown-item" @click="handleClickCreateFormDiagram">
-                                            {{ $t('buttons.newForm') }}
-                                        </button>
-                                    </li>
-
-                                </ul>
+                                <button :title="$t('buttons.createDmn')" type="button" class="btn btn-secondary" @click="handleClickCreateDmnDiagram">
+                                    {{ $t('buttons.createDmn') }}
+                                </button>
+                                <button :title="$t('buttons.createForm')" type="button" class="btn btn-secondary" @click="handleClickCreateFormDiagram">
+                                    {{ $t('buttons.createForm') }}
+                                </button>
                             </div>
                         </div>
 
@@ -151,6 +142,9 @@ import DiagramListItem from './DiagramListItem.vue'
 import ConfirmModal from '../modals/ConfirmModal.vue'
 import formJson from '../../resources/formSchema.json'
 import { DIAGRAM_TYPE } from '../../constants/diagramTypes.js'
+import { getPlugin } from '../../plugins/pluginsConfig.js'
+
+const startPageTool = getPlugin('start-page-tools')
 import modelerSvg from '../../assets/images/start/modeler.svg'
 const functionAfterAccepting = ref(null)
 const { t } = useI18n()

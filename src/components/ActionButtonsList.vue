@@ -23,7 +23,7 @@
                 :title="$t('buttons.downloadDiagram')" :aria-label="$t('buttons.downloadDiagram')"
                 class="btn btn-outline-light border-0 btn-sm"
                 :class="{ disabled: props.isButtonDisabled }">
-                <span class="mdi mdi-24px mdi-download"></span>
+                <span class="mdi mdi-24px mdi-download" aria-hidden="true"></span>
             </a>
         </div>
         <template v-if="extraDownloadLinks?.[props.tabElementIndex]">
@@ -36,7 +36,7 @@
                     :aria-label="$t(link.titleKey)"
                     class="btn btn-outline-light border-0 btn-sm"
                     :class="{ disabled: props.isButtonDisabled || link.disabled }">
-                    <span :class="`mdi mdi-24px ${link.icon}`"></span>
+                    <span :class="`mdi mdi-24px ${link.icon}`" aria-hidden="true"></span>
                 </a>
             </div>
         </template>
@@ -44,16 +44,18 @@
             <button type="button"
                 class="btn btn-outline-light border-0 btn-sm"
                 @click="canDeploy" aria-haspopup="true"
-                aria-expanded="false" :title="$t('buttons.deploy')">
-                <span class="mdi mdi-24px mdi-rocket"></span>
+                aria-expanded="false" :title="$t('buttons.deploy')" :aria-label="$t('buttons.deploy')">
+                <span class="mdi mdi-24px mdi-rocket" aria-hidden="true"></span>
             </button>
         </div>
         <div class="btn-menu d-flex align-items-center mx-1" v-show="!isButtonDisabled">
             <button type="button"
                 class="btn btn-outline-light border-0 btn-sm"
                 :title="$t('buttons.saveDiagram')"
+                :aria-label="$t('buttons.saveDiagram')"
+                :aria-busy="isSaving"
                 :disabled="(!props.canSave && !props.tabElement.changedVersion) || isSaving" @click="_saveDiagram">
-                <span class="mdi mdi-24px" :class="isSaving ? 'mdi-loading mdi-spin' : 'mdi-content-save-outline'"></span>
+                <span class="mdi mdi-24px" :class="isSaving ? 'mdi-loading mdi-spin' : 'mdi-content-save-outline'" aria-hidden="true"></span>
             </button>
         </div>
         <div v-if="AutosaveToggleComponent" v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
@@ -74,16 +76,18 @@
             <button type="button"
                 class="btn btn-outline-light border-0 btn-sm"
                 :title="`${$t('buttons.redo')} (Ctrl+Y)`"
+                :aria-label="`${$t('buttons.redo')} (Ctrl+Y)`"
                 @click="performRedo">
-                <span class="mdi mdi-24px mdi-redo-variant"></span>
+                <span class="mdi mdi-24px mdi-redo-variant" aria-hidden="true"></span>
             </button>
         </div>
         <div class="btn-menu d-flex align-items-center mx-1" v-show="!props.isButtonDisabled">
             <button type="button"
                 class="btn btn-outline-light border-0 btn-sm"
                 :title="`${$t('buttons.undo')} (Ctrl+Z)`"
+                :aria-label="`${$t('buttons.undo')} (Ctrl+Z)`"
                 @click="performUndo">
-                <span class="mdi mdi-24px mdi-undo-variant"></span>
+                <span class="mdi mdi-24px mdi-undo-variant" aria-hidden="true"></span>
             </button>
         </div>
 
@@ -113,18 +117,22 @@
                 class="btn btn-outline-light border-0 btn-sm"
                 :class="{ active: props.tabElement.isEditorVisible }"
                 :disabled="props.isButtonDisabled"
+                :title="props.tabElement.isEditorVisible ? $t('buttons.viewDiagram') : $t('buttons.viewXml')"
+                :aria-label="props.tabElement.isEditorVisible ? $t('buttons.viewDiagram') : $t('buttons.viewXml')"
+                :aria-pressed="props.tabElement.isEditorVisible"
                 @click="toggleVisibilityEditor">
                 <span class="mdi mdi-24px"
-                    :class="{ 'mdi-xml': !tabElement.isEditorVisible, 'mdi-map': props.tabElement.isEditorVisible }"></span>
+                    :class="{ 'mdi-xml': !tabElement.isEditorVisible, 'mdi-map': props.tabElement.isEditorVisible }" aria-hidden="true"></span>
             </button>
         </div>
-        <div class="btn-menu d-flex align-items-center mx-1" v-show="modelProperties[props.tabElement.type].canOpenConsole">
+        <div class="btn-menu d-flex align-items-center mx-1" v-if="modelProperties[props.tabElement.type].canOpenConsole">
             <button type="button"
                 class="btn btn-outline-light border-0 btn-sm position-relative"
                 :class="{ active: props.consoleOpen }"
                 :title="$t('buttons.console')"
+                :aria-label="$t('buttons.console')"
                 :disabled="props.tabElement.isEditorVisible" :aria-expanded="consoleOpen" @click="openConsole">
-                <span class="mdi mdi-24px mdi-console"></span>
+                <span class="mdi mdi-24px mdi-console" aria-hidden="true"></span>
                 <span
                     v-if="hasConsoleNotification"
                     class="position-absolute end-0 bottom-0 m-1 bg-danger rounded-circle"
@@ -135,16 +143,18 @@
         <div class="btn-menu d-flex align-items-center mx-1" v-if="props.tabElement.id && haslinkToProject">
             <button type="button"
                 class="btn btn-outline-light border-0 btn-sm position-relative"
-                :title="$t('buttons.linkToProject')" @click="linkToProject">
-                <span class="mdi mdi-24px mdi-vector-link"></span>
+                :title="$t('buttons.linkToProject')" :aria-label="$t('buttons.linkToProject')" @click="linkToProject">
+                <span class="mdi mdi-24px mdi-vector-link" aria-hidden="true"></span>
             </button>
         </div>
         <div v-if="isOutdatedTemplateWarning" class="btn-menu d-flex align-items-center mx-1">
             <button type="button"
                 class="btn btn-outline-light border-0 btn-sm opacity-100"
                 @click="toggleVisibilityOutdatedTemplates"
+                :title="$t('buttons.outdatedTemplates')"
+                :aria-label="$t('buttons.outdatedTemplates')"
                 :disabled="props.tabElement.isEditorVisible">
-                <span class="mdi mdi-24px mdi-exclamation"></span>
+                <span class="mdi mdi-24px mdi-exclamation" aria-hidden="true"></span>
             </button>
         </div>
     </div>
@@ -153,7 +163,10 @@
 <script setup>
 
 import { ref, inject, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { DIAGRAM_TYPE, DIAGRAM_FILE_EXT } from '../constants/diagramTypes.js'
+
+const { t } = useI18n()
 
 const props = defineProps({ 
     tabElementIndex: Number, 
@@ -172,6 +185,7 @@ const extraDownloadLinks = inject('extraDownloadLinks', null)
 const BpmnFilterButtonComponent = inject('bpmnFilterButtonComponent', null)
 const AutosaveToggleComponent = inject('autosaveToggleComponent', null)
 const config = inject('config', {})
+const announce = inject('announce', () => {})
 const isBpmnTab = computed(() => props.tabElement.type.startsWith('bpmn'))
 const emit = defineEmits([
     'toggleOutdatedTemplateModal', 
@@ -290,6 +304,7 @@ const _saveDiagram = async () => {
     }
     //only is the xml is validated
     isSaving.value = true
+    announce(t('a11y.saving'))
     try {
         await props.modeler._saveDiagram()
     } finally {

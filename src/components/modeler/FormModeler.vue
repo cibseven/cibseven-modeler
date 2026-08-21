@@ -29,7 +29,7 @@
 				:tabElement="props.tabElement" :isActiveTab="props.isActiveTab" :activePropertiesTab="props.activePropertiesTab"
 				:chat-token="props.chatToken" :chat-user="props.chatUser" :chat-context="props.chatContext" :chat-transport="props.chatTransport"
 				:chat-unread="props.chatUnread" :chat-on-tab-change="props.chatOnTabChange" :chat-on-message="props.chatOnMessage" />
-			<MenuActionButtons :width="canvasWidth">
+			<MenuActionButtons :width="canvasWidth + 24">
 				<template #leftButtons>
 					<slot name="menu" />
 				</template>
@@ -59,7 +59,7 @@ import PropertiesPanel from '../layout/PropertiesPanel.vue'
 import usePropertiesPanel from '../../composables/usePropertiesPanel'
 import useForm from '../../composables/useForm'
 
-import { ref, onMounted, computed, onUpdated, watch, nextTick, inject } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, onUpdated, watch, nextTick, inject } from 'vue'
 import { getPlugin } from '../../plugins/pluginsConfig'
 
 const formTool = getPlugin('form-tools')
@@ -116,6 +116,11 @@ onMounted(async() => {
 	window.addEventListener('resize', updateParentHeight, true)
 	await nextTick()
 	emit('resizeTabNav', canvasWidth.value)
+})
+
+onBeforeUnmount(() => {
+	window.removeEventListener('resize', updateParentWidth, true)
+	window.removeEventListener('resize', updateParentHeight, true)
 })
 
 onUpdated(() => {

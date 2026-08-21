@@ -48,11 +48,19 @@ export const checkBeforeAction = (
 	return toastErrorMessage
 }
 
-// if returns true it cannot be created or updated because there is already one in the database
+// if returns truthy it cannot be created or updated because there is already one with that key.
+// `storedList` is the items array (processes or forms); `property` is the key field to match.
 const checkIfProcessExists = (storedList, property, value) => {
-	return storedList?.processes?.find((process) => {
-		return process[property] === value
+	return storedList?.find((item) => {
+		return item[property] === value
 	})
+}
+
+// Index of the tab whose id matches, preferring the active tab; -1 if none
+// (e.g. on the dashboard where activeIndex is -1, or the tab was closed).
+export const resolveTabIndexById = (activeIndex, tabs, id) => {
+	if (activeIndex >= 0 && tabs?.[activeIndex]?.id === id) return activeIndex
+	return tabs?.findIndex(t => t.id === id) ?? -1
 }
 
 export function decodeBase64ToUtf8(base64) {
@@ -120,9 +128,12 @@ export const checkJSON = (xml, template) => {
 		const modelerTemplate = element.getAttributeNS(camundaNamespace, 'modelerTemplate')
 		if (modelerTemplate) {
 			const tagName = element.nodeName.replace(/\d+/g, '') // clean tag name
+			const id = element.getAttribute('id')
 			nodesArray.push({
-				id: element.getAttribute('id'),
-				name: element.getAttribute('name'),
+				id,
+				// Fall back to the element id so name-less elements still show a
+				// meaningful, searchable label instead of an empty row.
+				name: element.getAttribute('name') || id,
 				typeOfTask: tagName,
 				nameOfTemplate: modelerTemplate,
 			})

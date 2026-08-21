@@ -15,11 +15,11 @@
    limitations under the License.
 -->
 <template>
-    <div class="modal fade" ref="modalListTemplate" tabindex="-1" aria-hidden="true" >
+    <div class="modal fade" ref="modalListTemplate" tabindex="-1" aria-hidden="true" :aria-labelledby="titleId" >
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header align-items-center">
-                    <h5 class="modal-title fs-6" v-if="props.typeOfSelector">
+                    <h5 class="modal-title fs-6" v-if="props.typeOfSelector" :id="titleId">
                         {{ $t(`modalListSelector${props.typeOfSelector}.title`) }}
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
@@ -68,11 +68,12 @@
 
 <script setup>
 
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch, useId } from 'vue'
 import * as bootstrap from 'bootstrap'
 import { debounce } from 'min-dash'
 import CibsevenTable from '../CibsevenTable.vue'
 
+const titleId = useId()
 const modalListTemplate = ref(null)
 const emit = defineEmits([
     'toggleModalListSelector',
@@ -154,16 +155,22 @@ const _onModalHidden = () => {
     handleSearchInFormList() // Updates the list of items
 }
 
+// Null-safe contains: rowTemplate entries can have a null/undefined name or id
+// (e.g. not-found template elements with no `name` attribute), and version is a
+// number — coerce to string before comparing so the filter never throws.
+const _matches = (value, term) => (value ?? '').toString().toLowerCase().includes(term)
+
 const handleSearchInFormList = debounce(async () => {
+    const term = inputValue.value.toLowerCase()
     if (props.typeOfSelector === 'templates') {
-        filteredData.value = props.rowTemplate.filter(form => form.name.toLowerCase().includes(inputValue.value.toLowerCase()) || form.id.toLowerCase().includes(inputValue.value.toLowerCase()))
+        filteredData.value = props.rowTemplate.filter(form => _matches(form.name, term) || _matches(form.id, term))
         return
     }
     else if (props.typeOfSelector === 'changeVersion') { // searching by version number
-        filteredData.value = props.rowTemplate.filter(form => form.name.toLowerCase().includes(inputValue.value.toLowerCase()) || form.version.toString().toLowerCase().includes(inputValue.value.toString().toLowerCase()))
+        filteredData.value = props.rowTemplate.filter(form => _matches(form.name, term) || _matches(form.version, term))
         return
     }
-    filteredData.value = props.rowTemplate.filter(form => form.name.toLowerCase().includes(inputValue.value.toLowerCase()))
+    filteredData.value = props.rowTemplate.filter(form => _matches(form.name, term))
 }, 100)
 
 const _hideModal = () => modalBootstrap.value.hide()

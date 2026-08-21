@@ -17,20 +17,22 @@
 <template>
     <div class="m-0 p-0">
         <div v-if="props.isDashboard" class="nav-item bg-light dashboard" role="none" @keyup.enter.stop="selectTab" @click.stop="selectTab">
-            <div ref="tabItem" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard-tab-pane"
+            <div ref="tabItem" id="dashboard-tab"
                 style="height: 41px;" :class="{ 'active': props.activeTab === props.index }" role="tab"
                 class="nav-link dashboard nav-icon d-flex align-items-center" aria-labelledby="dashboard-tab" aria-controls="dashboard-tab-pane"
-                tabindex="0" aria-selected="true">
-                    <span :class="props.spanIconClass"></span>
+                tabindex="0" :aria-selected="props.activeTab === props.index">
+                    <span :class="props.spanIconClass" aria-hidden="true"></span>
             </div>
 
         </div>
         <div v-if="!props.isDashboard && props.isVisible" class="nav-item d-inline-flex align-items-center">
             <div class="nav-link nav-icon d-inline-flex p-0 calculated-tab"
-                :class="{ 'active': props.activeTab === props.index }">
-                <div ref="tabItem" :id="`process${props.keyOfTabNav}-tab`" data-bs-toggle="tab" @keyup.enter.stop="selectTab" @click.stop="selectTab" :title="tabTitle"
+                :class="{ 'active': props.activeTab === props.index }"
+                @mousedown.middle.prevent
+                @auxclick.middle="checkIfProcessIsSaved">
+                <div ref="tabItem" :id="`process${props.keyOfTabNav}-tab`" @keyup.enter.stop="selectTab" @click.stop="selectTab" :title="tabTitle"
                     class="ps-4" :style="{ maxWidth: props.maxTabItemWidth + 'px' }" style="vertical-align: middle;line-height: 38px; height: 39px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;"
-                    :data-bs-target="`#process${props.keyOfTabNav}-tab-pane`" role="tab"
+                    role="tab"
                     :aria-labelledby="`process${props.keyOfTabNav}-tab`"
                     :aria-controls="`process${props.keyOfTabNav}-tab-pane`" tabindex="0"
                     :aria-selected="props.activeTab === props.index">
@@ -78,14 +80,19 @@ const tabTitle = computed(() => {
         : `${props.processkey}.${props.tabNavList.type.startsWith('bpmn') ? 'bpmn' : props.tabNavList.type}`
 })
 
-const checkIfProcessIsSaved = e => {
-    e.stopPropagation()
+// Also called from TabNav for tabs sitting in the overflow dropdown.
+const closeTab = () => {
     if (props.tabNavList.canSave && props.index > -1) // the process has unsaved changes
     {
         emit('showModalMessage', props.index)
         return
     }
     removeSelectedTab() // if the process has been saved it will close the tab without displaying the modal
+}
+
+const checkIfProcessIsSaved = e => {
+    e.stopPropagation()
+    closeTab()
 }
 
 const selectBySimulateClick = () => {
@@ -113,7 +120,8 @@ const selectTab = (e) => {
 }
 
 defineExpose({
-    selectBySimulateClick
+    selectBySimulateClick,
+    closeTab
 })
 </script>
 

@@ -60,6 +60,7 @@
   },
   "importSummary": {
     "imported": "{count} importiert",
+    "replaced": "{count} ersetzt",
     "upToDate": "{count} bereits aktuell",
     "skipped": "{count} übersprungen",
     "failed": "{count} fehlgeschlagen"
@@ -88,6 +89,10 @@
     "title": "Die Prozess-ID existiert bereits.",
     "body": "Geben Sie eine eindeutige Prozess-ID ein."
   },
+  "toastSaveErrorMissingId": {
+    "title": "Fehlende Formular-ID",
+    "body": "Geben Sie dem Formular eine ID, bevor Sie speichern."
+  },
   "toastUpdateSuccessful": {
     "title": "Erfolgreich aktualisiert",
     "body": "Der Prozess wurde erfolgreich aktualisiert."
@@ -95,6 +100,10 @@
   "toastSomethingWentWrong": {
     "title": "Fehler",
     "body": "Hoppla, etwas ist schief gelaufen."
+  },
+  "toastSessionLockFailed": {
+    "title": "Bearbeitungssperre nicht gesetzt",
+    "body": "Das Diagramm wurde gespeichert, aber die Bearbeitungssperre konnte nicht erstellt werden. Andere können es gleichzeitig bearbeiten."
   },
   "ttlFieldRequired": "Dieses Feld ist für die Bereitstellung erforderlich",
   "buttons": {
@@ -112,6 +121,9 @@
     "newDmn": "DMN",
     "newForm": "Form",
     "newBpmnc7": "BPMN 7",
+    "createBpmn": "BPMN erstellen",
+    "createDmn": "DMN erstellen",
+    "createForm": "Formular erstellen",
     "importFile": "Lokale Datei importieren",
     "edit": "Bearbeiten",
     "delDiagram": "Löschen",
@@ -126,6 +138,7 @@
     "searchTemplates": "Vorlagen templates",
     "console": "Konsole",
     "close": "Schließen",
+    "closeTab": "{name} schließen",
     "continue": "Weiter",
     "delete": "Löschen",
     "copy": "Kopieren",
@@ -143,7 +156,14 @@
     "skipAll": "Alle überspringen",
     "undo": "Rückgängig",
     "redo": "Wiederholen",
-    "closeAllTabs": "Alle Tabs schließen"
+    "closeAllTabs": "Alle Tabs schließen",
+    "viewXml": "XML anzeigen",
+    "viewDiagram": "Diagramm anzeigen",
+    "outdatedTemplates": "Veraltete Vorlagen"
+  },
+  "a11y": {
+    "deploying": "Wird bereitgestellt…",
+    "saving": "Wird gespeichert…"
   },
   "scriptEditorModal": {
     "title": "Skript bearbeiten"
@@ -238,7 +258,6 @@
   "Execution listeners": "Ausführungs-Listener",
   "Extension properties": "Erweiterungseigenschaften",
   "<empty>": "<leer>",
-  "Name": "Name",
   "Value": "Wert",
   "Start: Java class": "Starten: Java-Klasse",
   "Field injections": "Feldinjektionen",
@@ -458,111 +477,6 @@
     "internalTemplatesTip": "Zeigt Vorlagen an, die direkt in der CIB seven-Engine ausgeführt werden. Diese sind Java-basierte Implementierungen, die synchron innerhalb derselben Anwendung laufen. Geeignet für leichte Anwendungsfälle.",
     "externalTemplatesTip": "Zeigt Vorlagen an, die von externen Workern verarbeitet werden. Diese Aufgaben sind von der Engine entkoppelt und werden asynchron von entfernten Diensten bearbeitet. Bevorzugt für aufwendige Operationen."
   },
-  "templatesManagement": {
-    "title": "Vorlagenverwaltung",
-    "addTemplate": "Vorlage hinzufügen",
-    "editTemplateDialog": {
-      "title": "Element-Template bearbeiten",
-      "updateSuccess": "Template '{name}' erfolgreich aktualisiert!",
-      "updateError": "Template konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut."
-    },
-    "addTemplateDialog": {
-      "title": "Element-Vorlage erstellen",
-      "templateId": "Vorlagen-ID",
-      "name": "Name",
-      "description": "Beschreibung",
-      "content": "Inhalt (JSON)",
-      "active": "Aktiv",
-      "importFile": "Datei importieren",
-      "selectFile": "Datei auswählen",
-      "or": "oder",
-      "cancel": "Abbrechen",
-      "save": "Speichern",
-      "saving": "Speichern...",
-      "invalidJsonError": "Inhalt muss gültiges JSON sein!",
-      "manualEntry": "Manuelle Eingabe",
-      "fileImport": "Datei importieren",
-      "templateDetails": "Vorlagen-Details",
-      "templateIdPlaceholder": "z.B. meine-eigene-aufgabe-vorlage:1",
-      "namePlaceholder": "z.B. Meine eigene Aufgaben-Vorlage",
-      "descriptionPlaceholder": "Kurze Beschreibung, was diese Vorlage macht...",
-      "contentPlaceholder": "Geben Sie hier Ihr Element-Vorlagen-JSON ein...",
-      "descriptionHelp": "Optionale Beschreibung, um Benutzern den Zweck dieser Vorlage zu verdeutlichen",
-      "contentHelp": "Gültiges JSON mit der Element-Vorlagen-Definition",
-      "activeHelp": "Wenn aktiviert, ist diese Vorlage im Modellierer verfügbar",
-      "formatJson": "JSON formatieren",
-      "validJson": "Gültiges JSON-Format",
-      "templateIdRequired": "Vorlagen-ID ist erforderlich",
-      "templateIdInvalid": "Vorlagen-ID darf nur Buchstaben, Zahlen, Bindestriche, Unterstriche, Punkte und Doppelpunkte enthalten",
-      "nameRequired": "Vorlagen-Name ist erforderlich",
-      "contentRequired": "Vorlagen-Inhalt ist erforderlich",
-      "validationErrors": "Bitte beheben Sie die Validierungsfehler vor dem Speichern",
-      "createSuccess": "Vorlage '{name}' erfolgreich erstellt!",
-      "createError": "Fehler beim Erstellen der Vorlage. Bitte versuchen Sie es erneut.",
-      "importFromFile": "Aus Datei importieren",
-      "dragDropFiles": "Dateien hier hineinziehen",
-      "supportedFormats": "Unterstützte Formate: JSON, TXT",
-      "browseFiles": "Dateien durchsuchen",
-      "fileSelected": "Datei ausgewählt",
-      "useThisFile": "Diese Datei verwenden",
-      "processing": "Verarbeitung...",
-      "removeFile": "Datei entfernen",
-      "unsupportedFileType": "Nicht unterstützter Dateityp. Bitte wählen Sie eine JSON- oder TXT-Datei.",
-      "fileProcessed": "Datei erfolgreich verarbeitet! Überprüfen Sie die extrahierten Daten unten.",
-      "fileProcessingError": "Fehler beim Verarbeiten der Datei. Stellen Sie sicher, dass sie gültiges JSON enthält.",
-      "fileTooLarge": "Datei ist zu groß. Maximale Dateigröße ist 10MB.",
-      "missingRequiredFields": "Fehlende Pflichtfelder: {fields}. Element-Vorlagen müssen mindestens die Eigenschaften 'id' und 'name' haben.",
-      "invalidAppliesTo": "Ungültiges 'appliesTo'-Feld. Es muss ein Array von BPMN-Elementtypen sein.",
-      "invalidJsonFile": "Ungültige JSON-Datei. Bitte überprüfen Sie das Dateiformat und versuchen Sie es erneut.",
-      "fileReadError": "Fehler beim Lesen der Datei. Bitte versuchen Sie es mit einer anderen Datei erneut.",
-      "extractedData": "Extrahierte Daten",
-      "noDescription": "Keine Beschreibung verfügbar",
-      "formHelp": "Füllen Sie die Vorlagen-Details manuell aus oder verwenden Sie die Datei-Import-Option",
-      "uploadHelp": "Laden Sie eine JSON-Datei mit einer Element-Vorlagen-Definition hoch",
-      "importMode": "Importmodus",
-      "singleTemplate": "Einzelne Vorlage",
-      "multipleFiles": "Mehrere Dateien",
-      "batchFile": "Batch-Datei",
-      "selectMultipleFiles": "Mehrere Dateien auswählen",
-      "selectBatchFile": "Batch-Datei auswählen",
-      "selectedFiles": "Ausgewählte Dateien",
-      "importAll": "Alle importieren",
-      "singleFileHelp": "Laden Sie eine einzelne JSON-Datei hoch, die ein Element-Template enthält",
-      "multipleFilesHelp": "Laden Sie mehrere JSON-Dateien hoch, die jeweils ein Element-Template enthalten",
-      "batchFileHelp": "Laden Sie eine einzelne JSON-Datei hoch, die ein Array mehrerer Element-Templates enthält",
-      "templatesImported": "{count} Templates erfolgreich importiert!",
-      "batchImported": "{count} Templates erfolgreich aus der Batch-Datei importiert!",
-      "noValidTemplates": "Keine gültigen Templates in den ausgewählten Dateien gefunden",
-      "batchFileNotArray": "Batch-Datei muss ein Array von Templates enthalten",
-      "batchFileEmpty": "Batch-Datei ist leer oder enthält keine Templates",
-      "invalidTemplateInBatch": "Ungültiges Template an Position {index}: fehlende Pflichtfelder {fields}"
-    },
-    "exportAll": "Alle exportieren",
-    "back": "Zurück",
-    "tableView": "Tabellenansicht",
-    "cardView": "Kartenansicht",
-    "categorizedView": "Kategorisierte Ansicht",
-    "listView": "Listenansicht",
-    "compactListView": "Kompakte Listenansicht",
-    "duplicate": "Duplizieren",
-    "edit": "Bearbeiten",
-    "delete": "Löschen",
-    "export": "Exportieren",
-    "available": "Verfügbar",
-    "hidden": "Ausgeblendet",
-    "visible": "Sichtbar",
-    "disabledInConfig": "In `config.json` deaktiviert",
-    "system": "System",
-    "templatesCount": "Vorlagen",
-    "hideGroup": "Gruppe ausblenden",
-    "showGroup": "Gruppe anzeigen",
-    "others": "Sonstiges",
-    "loadingMoreTemplates": "Weitere Vorlagen werden geladen...",
-    "allTemplatesLoaded": "Alle Vorlagen geladen",
-    "deleteConfirmTitle": "Vorlage löschen",
-    "deleteConfirmMessage": "Sind Sie sicher, dass Sie die Vorlage \"{templateName}\" löschen möchten?\n\nDiese Aktion kann nicht rückgängig gemacht werden.",
-    "deleteErrorMessage": "Fehler beim Löschen der Vorlage \"{templateName}\". Bitte versuchen Sie es erneut."
-  },
   "items": {
     "process": "Prozess",
     "bpmn-c7": "Prozess",
@@ -587,8 +501,6 @@
     "ariaSortAsc": "Aufsteigend sortiert",
     "ariaSortDes": "Absteigend sortiert"
   },
-  "Created by": "Erstellt von",
-  "Actions": "Aktionen",
   "cib-header": {
     "productName": "CIB seven Modeler"
   }

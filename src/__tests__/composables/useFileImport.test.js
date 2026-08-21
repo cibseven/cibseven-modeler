@@ -40,6 +40,16 @@ vi.mock('../../services/formService.js', () => ({
 import useFileImport from '../../composables/useFileImport.js'
 
 // --- fixtures ---
+const dmn = id => {
+    const idAttr = id ? ` id="${id}"` : ''
+    return (
+        `<?xml version="1.0" encoding="UTF-8"?>` +
+        `<definitions${idAttr} xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" namespace="http://camunda.org/schema/1.0/dmn">` +
+        `<decision id="Decision_1" name="D"><decisionTable id="dt1"><output id="o1" typeRef="string"/></decisionTable></decision>` +
+        `</definitions>`
+    )
+}
+
 const bpmn = id =>
     `<?xml version="1.0" encoding="UTF-8"?>` +
     `<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL">` +
@@ -176,6 +186,28 @@ describe('useFileImport', () => {
 
             expect(m.getUnifiedDiagrams).toHaveBeenCalled()
             expect(m.updateDiagramProcess).toHaveBeenCalledOnce()
+        })
+    })
+
+    describe('dmn import', () => {
+        it('uses the definitions id as the process key when present', async () => {
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+            await handleFile(fileEvent([{ name: 'my-decision.dmn', content: dmn('myDmnId') }]))
+
+            expect(m.saveDiagramProcess).toHaveBeenCalledOnce()
+            const [key] = m.saveDiagramProcess.mock.calls[0]
+            expect(key).toBe('myDmnId')
+        })
+
+        it('falls back to the file name when definitions has no id', async () => {
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+            await handleFile(fileEvent([{ name: 'my-decision.dmn', content: dmn(null) }]))
+
+            expect(m.saveDiagramProcess).toHaveBeenCalledOnce()
+            const [key] = m.saveDiagramProcess.mock.calls[0]
+            expect(key).toBe('my-decision')
         })
     })
 

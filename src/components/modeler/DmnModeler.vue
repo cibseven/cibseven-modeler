@@ -21,21 +21,21 @@
 				<div v-show="!props.isModelerVisible" class="position-relative" :style="styleCanvas">
 					<div class="canvas h-100 w-100" ref="canvas" tabindex="0"></div>
 					<div class="position-absolute top-0 end-0 d-flex flex-column gap-1 m-2" style="z-index: 10;">
-						<button @click="zoomIn" class="btn btn-sm btn-light border" :title="$t('buttons.zoomIn')">
-							<span class="mdi mdi-18px mdi-magnify-plus-outline"></span>
+						<button @click="zoomIn" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomIn')" :aria-label="$t('buttons.zoomIn')">
+							<span class="mdi mdi-18px mdi-magnify-plus-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="zoomOut" class="btn btn-sm btn-light border" :title="$t('buttons.zoomOut')">
-							<span class="mdi mdi-18px mdi-magnify-minus-outline"></span>
+						<button @click="zoomOut" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomOut')" :aria-label="$t('buttons.zoomOut')">
+							<span class="mdi mdi-18px mdi-magnify-minus-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="resetViewport" class="btn btn-sm btn-light border" :title="$t('buttons.resetViewport')">
-							<span class="mdi mdi-18px mdi-fit-to-screen-outline"></span>
+						<button @click="resetViewport" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.resetViewport')" :aria-label="$t('buttons.resetViewport')">
+							<span class="mdi mdi-18px mdi-fit-to-screen-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="toggleMinimap" :title="$t('buttons.minimap')"
-							:class="['btn btn-sm border', isMinimapOpen ? 'btn-secondary' : 'btn-light']">
-							<span class="mdi mdi-18px mdi-map-outline"></span>
+						<button @click="toggleMinimap" :title="$t('buttons.minimap')" :aria-label="$t('buttons.minimap')" :aria-pressed="isMinimapOpen"
+							:class="['btn btn-sm border text-secondary', isMinimapOpen ? 'btn-secondary' : 'btn-light']">
+							<span class="mdi mdi-18px mdi-map-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="toggleFullscreen" class="btn btn-sm btn-light border" :title="$t('buttons.fullscreen')">
-							<span :class="['mdi', 'mdi-18px', isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen']"></span>
+						<button @click="toggleFullscreen" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.fullscreen')" :aria-label="$t('buttons.fullscreen')" :aria-pressed="isFullscreen">
+							<span :class="['mdi', 'mdi-18px', isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen']" aria-hidden="true"></span>
 						</button>
 					</div>
 				</div>
@@ -61,7 +61,7 @@
 						</MonacoConsole>
 					</MonacoThemeScope>
 				</ConsolePanel>
-				<MenuActionButtons :width="canvasWidth">
+				<MenuActionButtons :width="canvasWidth + 24">
 					<template #leftButtons>
 						<slot name="menu" />
 					</template>
@@ -84,7 +84,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUpdated, onBeforeUnmount, watch, nextTick, inject, provide } from 'vue'
+import { ref, computed, onMounted, onUpdated, onBeforeUnmount, onUnmounted, watch, nextTick, inject, provide } from 'vue'
 import DmnJS from 'dmn-js/lib/Modeler'
 import { debounce } from 'min-dash'
 import { migrateDiagram } from '@bpmn-io/dmn-migrate'
@@ -250,20 +250,6 @@ onMounted(async () => {
 
 	const activeEditor = dmnModeler.getActiveViewer()
 
-	activeEditor.on('propertiesPanel.detach', async () => {
-		isDrdShowing.value = false
-		if (!props.isModelerVisible) togglePropertiesPanel(false)
-		await nextTick()
-		const decisionTableRef = containerModeler.value?.querySelector('.dmn-decision-table-container')
-		if (decisionTableRef) observerDecisionTables = createObserver(decisionTableRef)
-	})
-
-	activeEditor.on('propertiesPanel.attach', () => {
-		isDrdShowing.value = true
-		if (!props.isModelerVisible) togglePropertiesPanel(true)
-		observerDecisionTables?.disconnect()
-	})
-
 	activeEditor.on('element.changed', () => {
 		_setupDiagramFunctions()
 		updateParentWidth()
@@ -284,7 +270,38 @@ onMounted(async () => {
 	}
 	subscribeCommandStackToViewer(activeEditor)
 
-	propertiesPanelComponent.value = dmnModeler.getActiveViewer().get('propertiesPanel')
+	// propertiesPanel is only registered on the DRD viewer. A DMN without DMNDI layout
+	// causes importXML to leave the decision-table view active, so the initial
+	// getActiveViewer() may not be the DRD viewer. Retrieve it safely here and also
+	// register the attach/detach listeners lazily via views.changed (same pattern as
+	// drdSelectionListenerRegistered below).
+	let drdListenersRegistered = false
+	const _registerDrdListeners = (viewer) => {
+		if (drdListenersRegistered || !viewer) return false
+		try { propertiesPanelComponent.value = viewer.get('propertiesPanel') } catch { return false }
+		viewer.on('propertiesPanel.detach', async () => {
+			isDrdShowing.value = false
+			if (!props.isModelerVisible) togglePropertiesPanel(false)
+			await nextTick()
+			const decisionTableRef = containerModeler.value?.querySelector('.dmn-decision-table-container')
+			if (decisionTableRef) observerDecisionTables = createObserver(decisionTableRef)
+		})
+		viewer.on('propertiesPanel.attach', () => {
+			isDrdShowing.value = true
+			if (!props.isModelerVisible) togglePropertiesPanel(true)
+			observerDecisionTables?.disconnect()
+		})
+		drdListenersRegistered = true
+		return true
+	}
+	// If the initial active view is a decision table (DMN with no DMNDI layout),
+	// the DRD viewer isn't available yet — hide the properties panel immediately
+	// so it doesn't render as an empty pane. Listeners are registered lazily
+	// in views.changed when the user first navigates to the DRD view.
+	if (!_registerDrdListeners(activeEditor)) {
+		isDrdShowing.value = false
+		togglePropertiesPanel(false)
+	}
 
 	// Track view changes to update XML and download links
 	let drdSelectionListenerRegistered = false
@@ -294,10 +311,18 @@ onMounted(async () => {
 			selectedElement.value = { id: el.id, name: el.name || el.id, type: el.$type }
 		} else {
 			selectedElement.value = null
+			const viewer = dmnModeler.getActiveViewer()
+			// Register DRD-specific listeners lazily — only once the DRD viewer is first active.
+			// propertiesPanel.attach fires during the same views.changed emit, before our listener
+			// is in place, so show the panel eagerly on first registration instead of waiting.
+			const justRegistered = _registerDrdListeners(viewer)
+			if (justRegistered && !props.isModelerVisible) {
+				isDrdShowing.value = true
+				togglePropertiesPanel(true)
+			}
 			// Register selection.changed on the DRD viewer once it is available.
 			// dmnModeler.get() is not available at the manager level; use getActiveViewer() here.
 			if (!drdSelectionListenerRegistered) {
-				const viewer = dmnModeler.getActiveViewer()
 				if (viewer) {
 					viewer.get('eventBus').on('selection.changed', ({ newSelection }) => {
 						const el = newSelection?.length === 1 ? newSelection[0] : null
@@ -338,6 +363,12 @@ onBeforeUnmount(() => {
 		canvas.value.removeEventListener('focus', canvasFocusHandler)
 	}
 	if (observerDecisionTables) observerDecisionTables.disconnect()
+})
+
+// Destroy after children unmount so they detach their listeners first (avoids null.off).
+onUnmounted(() => {
+	dmnModeler?.destroy()
+	dmnModeler = null
 })
 
 onUpdated(() => {

@@ -17,13 +17,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { defineComponent, ref } from 'vue'
+
+vi.mock('../../services/processService.js', () => ({ keyExistsRemote: vi.fn().mockResolvedValue(false) }))
+import { keyExistsRemote } from '../../services/processService.js'
 import useDiagramSave from '../../composables/useDiagramSave.js'
 
 /**
  * Mount a minimal wrapper to exercise useDiagramSave.
  * Returns { save, emitted } via expose.
  */
-function withSetup({ tabElement, tabElementIndex = 0, createSessionHook = null } = {}) {
+function withSetup({ tabElement, tabElementIndex = 0, createSessionHook = null, autosaveHook = null } = {}) {
     let composableResult
     const wrapper = mount(defineComponent({
         name: 'TestWrapper',
@@ -35,7 +38,7 @@ function withSetup({ tabElement, tabElementIndex = 0, createSessionHook = null }
             composableResult = { ...useDiagramSave(props, emit, sessionHooks), emitted }
         },
         template: '<div />',
-    }))
+    }), autosaveHook ? { global: { provide: { autosaveHook } } } : undefined)
     return { ...composableResult, wrapper }
 }
 
@@ -50,7 +53,7 @@ function makeSaveOpts(overrides = {}) {
         storedKey: '',
         xml: '<xml/>',
         blob: {},
-        storeStateSlice: { processes: [] },
+        storeStateSlice: [],
         itemKeyField: 'processkey',
         createFn: vi.fn().mockResolvedValue({ id: 'new-id', name: 'My Diagram', processkey: 'my-key' }),
         updateFn: vi.fn().mockResolvedValue({ id: 'upd-id', name: 'My Diagram', processkey: 'my-key' }),
@@ -197,9 +200,7 @@ describe('useDiagramSave', () => {
 
     describe('duplicate key validation', () => {
         it('returns false and emits duplicate key toast when key already exists', async () => {
-            const storeStateSlice = {
-                processes: [{ processkey: 'existing-key' }],
-            }
+            const storeStateSlice = [{ processkey: 'existing-key' }]
             const { save, emitted } = withSetup({ tabElement: makeTabElement() })
             const result = await save(makeSaveOpts({ newKey: 'existing-key', storedKey: '', storeStateSlice, itemKeyField: 'processkey' }))
 
@@ -209,13 +210,21 @@ describe('useDiagramSave', () => {
         })
 
         it('allows save when key matches the currently stored key (update same key)', async () => {
-            const storeStateSlice = {
-                processes: [{ processkey: 'same-key' }],
-            }
+            const storeStateSlice = [{ processkey: 'same-key' }]
             const { save } = withSetup({ tabElement: makeTabElement({ isSaved: true }) })
             const result = await save(makeSaveOpts({ newKey: 'same-key', storedKey: 'same-key', storeStateSlice, itemKeyField: 'processkey' }))
 
             expect(result).toBe(true)
+        })
+
+        it('emits duplicate toast when the key exists on the backend but not in the loaded list', async () => {
+            keyExistsRemote.mockResolvedValueOnce(true)
+            const { save, emitted } = withSetup({ tabElement: makeTabElement() })
+            const result = await save(makeSaveOpts({ newKey: 'remote-dup', storedKey: '', storeStateSlice: [], itemKeyField: 'processkey' }))
+
+            expect(keyExistsRemote).toHaveBeenCalledWith('remote-dup', 'process')
+            expect(result).toBe(false)
+            expect(emitted.find(e => e.event === 'showToastMessage').args[0].toastText).toBe('toastSaveErrorDuplicateKey')
         })
     })
 
@@ -237,6 +246,121 @@ describe('useDiagramSave', () => {
             }))
 
             expect(functionToExecute).not.toHaveBeenCalled()
+        })
+    })
+
+    describe('falsy response and session-hook failure (regression)', () => {
+        it('returns false and warns when createFn resolves falsy', async () => {
+            const { save, emitted } = withSetup({ tabElement: makeTabElement() })
+            const result = await save(makeSaveOpts({ createFn: vi.fn().mockResolvedValue(null) }))
+
+            expect(result).toBe(false)
+            const toast = emitted.find(e => e.event === 'showToastMessage')
+            expect(toast.args[0].isSuccess).toBe(false)
+            expect(toast.args[0].toastText).toBe('toastSomethingWentWrong')
+        })
+
+        it('returns false when updateFn resolves falsy', async () => {
+            const { save, emitted } = withSetup({ tabElement: makeTabElement({ isSaved: true }) })
+            const result = await save(makeSaveOpts({ updateFn: vi.fn().mockResolvedValue(undefined) }))
+
+            expect(result).toBe(false)
+            expect(emitted.find(e => e.event === 'showToastMessage').args[0].toastText).toBe('toastSomethingWentWrong')
+        })
+
+        it('still succeeds but warns when the session hook fails', async () => {
+            const createSessionHook = vi.fn().mockRejectedValue(new Error('session POST failed'))
+            const { save, emitted } = withSetup({ tabElement: makeTabElement(), createSessionHook })
+            const result = await save(makeSaveOpts({ sessionResponse: { message: 'NO_SESSION' } }))
+
+            expect(result).toBe(true) // the diagram save itself succeeded
+            expect(createSessionHook).toHaveBeenCalledOnce()
+            const toasts = emitted.filter(e => e.event === 'showToastMessage').map(t => t.args[0].toastText)
+            expect(toasts).toContain('toastSaveSuccessful')
+            expect(toasts).toContain('toastSessionLockFailed')
+        })
+
+        it('does not warn when the session hook succeeds', async () => {
+            const createSessionHook = vi.fn().mockResolvedValue({ sessionId: 's1' })
+            const { save, emitted } = withSetup({ tabElement: makeTabElement(), createSessionHook })
+            const result = await save(makeSaveOpts({ sessionResponse: { message: 'NO_SESSION' } }))
+
+            expect(result).toBe(true)
+            const toasts = emitted.filter(e => e.event === 'showToastMessage').map(t => t.args[0].toastText)
+            expect(toasts).not.toContain('toastSessionLockFailed')
+        })
+    })
+
+    /**
+     * An autosave the user did not ask for reports through the status the indicator reads,
+     * not through toasts. A silent failure is not acceptable either: the indicator would
+     * keep showing the last successful time and the work would look saved.
+     */
+    describe('autosave', () => {
+        const savedTab = () => makeTabElement({ isSaved: true })
+
+        it('reports a failed autosave through the hook and raises no toast', async () => {
+            const autosaveHook = vi.fn()
+            const { save, emitted } = withSetup({ tabElement: savedTab(), autosaveHook })
+            const result = await save(makeSaveOpts({
+                updateFn: vi.fn().mockRejectedValue(new Error('boom')),
+                isAutosave: true,
+            }))
+
+            expect(result).toBe(false)
+            expect(autosaveHook).toHaveBeenCalledWith(expect.anything(), { state: 'failed' })
+            expect(emitted.filter(e => e.event === 'showToastMessage')).toHaveLength(0)
+        })
+
+        it('reports a failure when the update yields no response', async () => {
+            const autosaveHook = vi.fn()
+            const { save, emitted } = withSetup({ tabElement: savedTab(), autosaveHook })
+            const result = await save(makeSaveOpts({
+                updateFn: vi.fn().mockResolvedValue(null),
+                isAutosave: true,
+            }))
+
+            expect(result).toBe(false)
+            expect(autosaveHook).toHaveBeenCalledWith(expect.anything(), { state: 'failed' })
+            expect(emitted.filter(e => e.event === 'showToastMessage')).toHaveLength(0)
+        })
+
+        it('still toasts a failed manual save', async () => {
+            const autosaveHook = vi.fn()
+            const { save, emitted } = withSetup({ tabElement: savedTab(), autosaveHook })
+            const result = await save(makeSaveOpts({ updateFn: vi.fn().mockRejectedValue(new Error('boom')) }))
+
+            expect(result).toBe(false)
+            const toasts = emitted.filter(e => e.event === 'showToastMessage').map(t => t.args[0].toastText)
+            expect(toasts).toContain('toastSomethingWentWrong')
+            expect(autosaveHook).not.toHaveBeenCalledWith(expect.anything(), { state: 'failed' })
+        })
+
+        it('keeps a failing session lock quiet during autosave', async () => {
+            const createSessionHook = vi.fn().mockRejectedValue(new Error('nope'))
+            const autosaveHook = vi.fn()
+            const { save, emitted } = withSetup({ tabElement: savedTab(), createSessionHook, autosaveHook })
+            const result = await save(makeSaveOpts({
+                sessionResponse: { message: 'NO_SESSION' },
+                isAutosave: true,
+            }))
+
+            expect(result).toBe(true)
+            expect(createSessionHook).toHaveBeenCalledOnce()
+            const toasts = emitted.filter(e => e.event === 'showToastMessage').map(t => t.args[0].toastText)
+            expect(toasts).not.toContain('toastSessionLockFailed')
+            expect(autosaveHook).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ state: 'saved' }))
+        })
+
+        it('reports the saved state and no success toast on a successful autosave', async () => {
+            const autosaveHook = vi.fn()
+            const { save, emitted } = withSetup({ tabElement: savedTab(), autosaveHook })
+            const result = await save(makeSaveOpts({ isAutosave: true }))
+
+            expect(result).toBe(true)
+            const toasts = emitted.filter(e => e.event === 'showToastMessage').map(t => t.args[0].toastText)
+            expect(toasts).not.toContain('toastUpdateSuccessful')
+            expect(autosaveHook).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ state: 'saved' }))
         })
     })
 })

@@ -27,6 +27,7 @@ import {
     generateUniqueId,
     checkJSON,
     getFormRefsFromBpmn,
+    resolveTabIndexById,
 } from '../../utils.js'
 
 describe('Utils', () => {
@@ -296,27 +297,56 @@ describe('Utils', () => {
     })
 
     describe('checkBeforeAction', () => {
-        const storeList = {
-            processes: [
-                { key: 'process-a' },
-                { key: 'process-b' },
-            ]
-        }
+        // The 3rd arg is now the items array (processes or forms), not the module state.
+        const processList = [{ processkey: 'process-a' }, { processkey: 'process-b' }]
+        const formList = [{ formId: 'form-a' }, { formId: 'form-b' }]
 
         it('Returns empty string when key is unique', () => {
-            expect(checkBeforeAction('process-new', 'process-new', storeList, 'key')).toBe('')
+            expect(checkBeforeAction('process-new', 'process-new', processList, 'processkey')).toBe('')
         })
 
         it('Returns empty string when new key matches the stored selected key', () => {
-            expect(checkBeforeAction('process-a', 'process-a', storeList, 'key')).toBe('')
+            expect(checkBeforeAction('process-a', 'process-a', processList, 'processkey')).toBe('')
         })
 
-        it('Returns error key when a duplicate exists and key changed', () => {
-            expect(checkBeforeAction('process-a', 'process-old', storeList, 'key')).toBe('toastSaveErrorDuplicateKey')
+        it('Returns error key when a duplicate process exists and key changed', () => {
+            expect(checkBeforeAction('process-a', 'process-old', processList, 'processkey')).toBe('toastSaveErrorDuplicateKey')
         })
 
-        it('Returns empty string when storeList is empty', () => {
-            expect(checkBeforeAction('process-a', 'process-old', { processes: [] }, 'key')).toBe('')
+        it('Detects duplicate forms by formId (the path that was broken)', () => {
+            expect(checkBeforeAction('form-a', 'form-old', formList, 'formId')).toBe('toastSaveErrorDuplicateKey')
+            expect(checkBeforeAction('form-new', 'form-old', formList, 'formId')).toBe('')
+        })
+
+        it('Returns empty string when the list is empty or missing', () => {
+            expect(checkBeforeAction('process-a', 'process-old', [], 'processkey')).toBe('')
+            expect(checkBeforeAction('process-a', 'process-old', undefined, 'processkey')).toBe('')
+        })
+    })
+
+    describe('resolveTabIndexById', () => {
+        const tabs = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
+
+        it('returns the active index when it already matches the id', () => {
+            expect(resolveTabIndexById(1, tabs, 'b')).toBe(1)
+        })
+
+        it('falls back to findIndex when the active tab is a different one', () => {
+            expect(resolveTabIndexById(0, tabs, 'c')).toBe(2)
+        })
+
+        it('does not read tabs[-1] on the dashboard (activeIndex -1) and finds the open tab', () => {
+            expect(resolveTabIndexById(-1, tabs, 'b')).toBe(1)
+        })
+
+        it('returns -1 when the id is not open (closed tab)', () => {
+            expect(resolveTabIndexById(0, tabs, 'gone')).toBe(-1)
+            expect(resolveTabIndexById(-1, tabs, 'gone')).toBe(-1)
+        })
+
+        it('returns -1 for an empty or missing tab list', () => {
+            expect(resolveTabIndexById(-1, [], 'a')).toBe(-1)
+            expect(resolveTabIndexById(0, undefined, 'a')).toBe(-1)
         })
     })
 
@@ -427,6 +457,30 @@ describe('Utils', () => {
             const result = checkJSON(xml, templates)
             expect(result.length).toBe(1)
             expect(result[0].nameOfTemplate).toBe('unknown-template')
+        })
+
+        it('uses the element name when present', () => {
+            const xml = `<?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                    xmlns:camunda="http://camunda.org/schema/1.0/bpmn">
+                    <process id="proc">
+                        <serviceTask id="t1" name="My Task" camunda:modelerTemplate="unknown-template" />
+                    </process>
+                </definitions>`
+            const result = checkJSON(xml, templates)
+            expect(result[0].name).toBe('My Task')
+        })
+
+        it('falls back to the element id when the name attribute is missing', () => {
+            const xml = `<?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                    xmlns:camunda="http://camunda.org/schema/1.0/bpmn">
+                    <process id="proc">
+                        <serviceTask id="t1" camunda:modelerTemplate="unknown-template" />
+                    </process>
+                </definitions>`
+            const result = checkJSON(xml, templates)
+            expect(result[0].name).toBe('t1')
         })
     })
 
