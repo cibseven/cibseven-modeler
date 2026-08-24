@@ -14,6 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+import { inject } from 'vue'
 import { checkBeforeAction } from '../utils.js'
 import { keyExistsRemote } from '../services/processService.js'
 
@@ -26,19 +27,35 @@ import { keyExistsRemote } from '../services/processService.js'
  */
 export default function useDiagramSave(props, emit, sessionHooks = {}) {
   const { createSessionHook = null } = sessionHooks
+  // EE-only: notified after a successful autosave so it can surface a "saved at" indicator. No-op in OSS.
+  const autosaveHook = inject('autosaveHook', null)
 
   /**
    * Create the edit-lock session after a successful save. The diagram is already
    * persisted at this point, so a session-creation failure must NOT fail the save:
    * it is awaited (no unhandled rejection) and surfaced as its own warning toast.
    */
-  const _createSessionSafely = async (response, blob, sessionResponse) => {
+  /**
+   * A failed save is reported through the toast the user expects for a manual save, and
+   * through the autosave status otherwise: a silent failure would leave the indicator on
+   * the last successful time and let the user believe the work is saved.
+   */
+  const _reportFailure = (isAutosave) => {
+    if (isAutosave) {
+      if (autosaveHook) autosaveHook(props.tabElement, { state: 'failed' })
+    } else {
+      emit('showToastMessage', { isSuccess: false, toastText: 'toastSomethingWentWrong' })
+    }
+  }
+
+  const _createSessionSafely = async (response, blob, sessionResponse, isAutosave = false) => {
     if (createSessionHook && sessionResponse?.message === 'NO_SESSION') {
       try {
         await createSessionHook(response, blob, props.tabElementIndex, props.tabElement)
       } catch (error) {
         console.error('Failed to create edit-lock session after save', error)
-        emit('showToastMessage', { isSuccess: false, toastText: 'toastSessionLockFailed' })
+        // An autosave the user did not ask for must not raise a toast at them
+        if (!isAutosave) emit('showToastMessage', { isSuccess: false, toastText: 'toastSessionLockFailed' })
       }
     }
   }
@@ -77,6 +94,7 @@ export default function useDiagramSave(props, emit, sessionHooks = {}) {
     sessionResponse,
     afterSave = null,
     functionToExecute = null,
+    isAutosave = false,
   }) => {
     const keyToCompare = props.tabElement.isSaved ? storedKey : ''
     // Instant check against the loaded list…
@@ -96,19 +114,21 @@ export default function useDiagramSave(props, emit, sessionHooks = {}) {
       try {
         const response = await updateFn()
         if (!response) {
-          emit('showToastMessage', { isSuccess: false, toastText: 'toastSomethingWentWrong' })
+          _reportFailure(isAutosave)
           return false
         }
         emit('updateStoredLocalStorageTabNavList', toTabPayload(response), props.tabElementIndex, xml)
-        emit('showToastMessage', { isSuccess: true, toastText: 'toastUpdateSuccessful', bodyTextAlt: '' })
+        if (!isAutosave) emit('showToastMessage', { isSuccess: true, toastText: 'toastUpdateSuccessful', bodyTextAlt: '' })
         emit('toggleEnableSave', false, props.tabElementIndex)
         emit('toggleVersionNotSaved', false, props.tabElementIndex)
         if (afterSave) await afterSave(response)
-        await _createSessionSafely(response, blob, sessionResponse)
+        await _createSessionSafely(response, blob, sessionResponse, isAutosave)
+        // Report autosave status (saved); a manual save clears any stale "skipped" state.
+        if (autosaveHook) autosaveHook(props.tabElement, isAutosave ? { state: 'saved', at: Date.now() } : null)
         if (functionToExecute) functionToExecute(xml)
         return true
       } catch (error) {
-        emit('showToastMessage', { isSuccess: false, toastText: 'toastSomethingWentWrong' })
+        _reportFailure(isAutosave)
         console.error(error)
         return false
       }

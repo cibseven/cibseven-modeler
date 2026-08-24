@@ -33,6 +33,9 @@
 				<template #leftButtons>
 					<slot name="menu" />
 				</template>
+				<template v-if="AutosaveIndicatorComponent" #centerContent>
+					<component :is="AutosaveIndicatorComponent" :tab-element="props.tabElement" />
+				</template>
 			</MenuActionButtons>
 		</div>
 		<!-- Extension point for plugins -->
@@ -56,10 +59,11 @@ import PropertiesPanel from '../layout/PropertiesPanel.vue'
 import usePropertiesPanel from '../../composables/usePropertiesPanel'
 import useForm from '../../composables/useForm'
 
-import { ref, onMounted, onBeforeUnmount, computed, onUpdated, watch, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, onUpdated, watch, nextTick, inject } from 'vue'
 import { getPlugin } from '../../plugins/pluginsConfig'
 
 const formTool = getPlugin('form-tools')
+const AutosaveIndicatorComponent = inject('autosaveIndicatorComponent', null)
 
 const resizableDiv = ref(null)
 const formContainer = ref(null)

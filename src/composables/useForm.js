@@ -19,6 +19,7 @@ import { useStore } from 'vuex'
 import { FormEditor } from '@bpmn-io/form-js'
 import { saveForm, updateForm } from'../services/formService.js'
 import useDiagramSave from './useDiagramSave.js'
+import useAutosave from './useAutosave.js'
 
 export default function useForm(props, emit, canvas, propertyPanel) {
     const store = useStore()
@@ -28,6 +29,9 @@ export default function useForm(props, emit, canvas, propertyPanel) {
     const checkSessionHook = inject('checkFormSessionHook', null)
     const createSessionHook = inject('createFormSessionHook', null)
     const closeSessionHook = inject('closeFormSessionHook', null)
+    const autosaveOptions = inject('autosaveOptions', null)
+    const autosaveHook = inject('autosaveHook', null)
+    const autosave = useAutosave(() => save(true), autosaveOptions)
 
     let json = null
     if (!props.json) return
@@ -37,6 +41,7 @@ export default function useForm(props, emit, canvas, propertyPanel) {
     })
 
     onBeforeUnmount(async()=> {
+      autosave.cancel()
       if (closeSessionHook) await closeSessionHook(props.tabElement.sessionId, props.tabElement.type)
     })
 
@@ -70,8 +75,8 @@ export default function useForm(props, emit, canvas, propertyPanel) {
             json = formEditor.value?.getSchema()
             emit('updateEditorXML', JSON.stringify(json, null, 2),  props.tabElementIndex)
             validateJson(json)
-            emit('toggleEnableSave', true, props.tabElementIndex) //enables save button		
-
+            emit('toggleEnableSave', true, props.tabElementIndex) //enables save button
+            if (autosaveOptions?.enabled && props.tabElement.isSaved) autosave.schedule()
         })
     }
 
@@ -95,7 +100,7 @@ export default function useForm(props, emit, canvas, propertyPanel) {
 
     const { save: _sharedSave } = useDiagramSave(props, emit, { checkSessionHook, createSessionHook })
 
-    const save = async () => {
+    const save = async (isAutosave = false) => {
       // The form id is the backend key (unique & not-null). Never save without one,
       // otherwise the request fails with a confusing constraint error.
       const newFormId = json?.id
@@ -106,8 +111,11 @@ export default function useForm(props, emit, canvas, propertyPanel) {
 
       let sessionResponse = null
       if (checkSessionHook) {
-        const result = await checkSessionHook(props.tabElement, props.tabElementIndex, true)
-        if (!result.forceSave) return false
+        const result = await checkSessionHook(props.tabElement, props.tabElementIndex, !isAutosave, { silent: isAutosave })
+        if (!result.forceSave) {
+          if (isAutosave && autosaveHook) autosaveHook(props.tabElement, { state: 'skipped', reason: 'locked' })
+          return false
+        }
         sessionResponse = result.sessionResponse
       }
 
@@ -126,6 +134,7 @@ export default function useForm(props, emit, canvas, propertyPanel) {
         updateFn: () => updateForm(props.tabElement.id, newFormId, json),
         toTabPayload: response => ({ processId: response.id, processName: response.formId, processKey: response.formId, type: 'form' }),
         sessionResponse,
+        isAutosave,
       })
     }
 
