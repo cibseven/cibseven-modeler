@@ -358,7 +358,7 @@ describe('Utils', () => {
             const mockEl = { getAttribute: vi.fn((attr) => attr === 'id' ? 'my-process' : null) }
             const mockDoc = { querySelector: vi.fn(() => mockEl) }
             const OriginalDOMParser = globalThis.DOMParser
-            globalThis.DOMParser = vi.fn(() => ({ parseFromString: () => mockDoc }))
+            globalThis.DOMParser = vi.fn(function () { return { parseFromString: () => mockDoc } })
 
             expect(getTagValueFromXml('<xml/>', 'process', 'id')).toBe('my-process')
 
@@ -368,7 +368,7 @@ describe('Utils', () => {
         it('Returns null when tag does not exist', () => {
             const mockDoc = { querySelector: vi.fn(() => null) }
             const OriginalDOMParser = globalThis.DOMParser
-            globalThis.DOMParser = vi.fn(() => ({ parseFromString: () => mockDoc }))
+            globalThis.DOMParser = vi.fn(function () { return { parseFromString: () => mockDoc } })
 
             expect(getTagValueFromXml('<xml/>', 'collaboration', 'id')).toBeNull()
 
@@ -381,7 +381,7 @@ describe('Utils', () => {
             const mockEl = { getAttribute: vi.fn(() => 'collab-id') }
             const mockDoc = { querySelector: vi.fn(() => mockEl) }
             const OriginalDOMParser = globalThis.DOMParser
-            globalThis.DOMParser = vi.fn(() => ({ parseFromString: () => mockDoc }))
+            globalThis.DOMParser = vi.fn(function () { return { parseFromString: () => mockDoc } })
 
             expect(getProcessKeyFromBpmn('<xml/>')).toBe('collab-id')
 
@@ -392,7 +392,7 @@ describe('Utils', () => {
             const mockProcess = { getAttribute: vi.fn(() => 'process-id') }
             const mockDoc = { querySelector: vi.fn((sel) => sel.includes('collaboration') ? null : mockProcess) }
             const OriginalDOMParser = globalThis.DOMParser
-            globalThis.DOMParser = vi.fn(() => ({ parseFromString: () => mockDoc }))
+            globalThis.DOMParser = vi.fn(function () { return { parseFromString: () => mockDoc } })
 
             expect(getProcessKeyFromBpmn('<xml/>')).toBe('process-id')
 
@@ -402,7 +402,7 @@ describe('Utils', () => {
         it('Returns null when neither tag is present', () => {
             const mockDoc = { querySelector: vi.fn(() => null) }
             const OriginalDOMParser = globalThis.DOMParser
-            globalThis.DOMParser = vi.fn(() => ({ parseFromString: () => mockDoc }))
+            globalThis.DOMParser = vi.fn(function () { return { parseFromString: () => mockDoc } })
 
             expect(getProcessKeyFromBpmn('<xml/>')).toBeNull()
 
