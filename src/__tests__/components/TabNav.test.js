@@ -18,7 +18,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 
 const { modalInstance } = vi.hoisted(() => ({ modalInstance: { show: vi.fn(), hide: vi.fn() } }))
-vi.mock('bootstrap', () => ({ Modal: vi.fn(() => modalInstance), Tooltip: vi.fn() }))
+vi.mock('bootstrap', () => ({ Modal: vi.fn(function () { return modalInstance }), Tooltip: vi.fn() }))
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: k => k }) }))
 
 import TabNav from '../../components/layout/TabNav.vue'

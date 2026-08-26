@@ -43,6 +43,7 @@ export default mergeConfig(
         provider: 'istanbul',
         reporter: ['text', 'lcov', 'cobertura'],
         reportsDirectory: './target/coverage',
+        include: ['src/**'],
         exclude: [
           'dist/**',
           'target/**',
@@ -61,7 +62,7 @@ export default mergeConfig(
           'linterConfig.js',
 
           // Exclude Vite internals
-          '**/\0**', // Exclude Vite virtual modules
+          '\0*', // Exclude Vite virtual modules
         ],
         excludeNodeModules: true,
       },

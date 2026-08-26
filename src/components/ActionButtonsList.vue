@@ -237,7 +237,7 @@ onMounted(() => {
 
 //prevents or allows the download of the bpmn file
 const canBeDownloaded = async e => {
-    let fileNameFromProcessId = null
+    let fileNameFromProcessId
     if (props.tabElement.type === DIAGRAM_TYPE.DMN) {
         fileNameFromProcessId = await _getTagValueFromXml('definitions', 'id')
     }
@@ -321,10 +321,8 @@ const _toggleOutDatedTemplateBtn = comp => isOutdatedTemplateWarning.value = com
 const _getTagValueFromXml = (mainTag, valueTag) => props.modeler._getTagValueFromXml(mainTag, valueTag)
 
 const _downloadFileWithProcessId = type => {
-    let foundProcessId = null
     try {
-        foundProcessId = props.modeler._getElementRegistryFromModeler(type) // same method name in bpmnmodeler and dmnmodeler
-        return foundProcessId
+        return props.modeler._getElementRegistryFromModeler(type) // same method name in bpmnmodeler and dmnmodeler
     } catch (error) {
 
         emit('showToastMessage', { isSuccess: false, toastText: 'toastLoadErrorFile' })

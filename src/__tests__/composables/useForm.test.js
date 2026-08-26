@@ -26,7 +26,7 @@ const mockFormEditor = vi.hoisted(() => {
     destroy: vi.fn(),
     on: vi.fn(),
   }
-  return { instance, FormEditor: vi.fn(() => instance) }
+  return { instance, FormEditor: vi.fn(function () { return instance }) }
 })
 
 vi.mock('@bpmn-io/form-js', () => ({

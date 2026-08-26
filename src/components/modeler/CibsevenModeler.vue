@@ -537,7 +537,7 @@ const switchTabFromTabNav = async selectedTabIndex => {
 	}
 	// Fetch XML if not already loaded for saved tabs
 	if (selectedTabIndex > -1 && tab?.isSaved && tab?.id && !editorXML.value[selectedTabIndex] && !tabNavListXml.value[selectedTabIndex]) {
-		let selectedProcess = null
+		let selectedProcess
 		if (tabNavList.value[selectedTabIndex].type !== 'form') {
 			await store.dispatch('modeler/processes/fetchProcessById', tabNavList.value[selectedTabIndex].id)
 			selectedProcess = store.state.modeler.processes.processSelected
@@ -759,7 +759,7 @@ const { handleFile, _addNewBpmnFromLoadedXml, resolveConflict } = useFileImport(
 
 const _openProcessFromExternalXml = async (xml, resExistingProcess, externalProcessKey, _decodedProcessId) => {
 	const resXmlExternalUrl = xml
-	let diagramType = null
+	let diagramType
 	let foundExternalProcessKey = getTagValueFromXml(resXmlExternalUrl, 'process', 'id')
 
 	if (foundExternalProcessKey) {

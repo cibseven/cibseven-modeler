@@ -18,7 +18,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 
 vi.mock('bootstrap', () => ({
-    Modal: vi.fn(() => ({ show: vi.fn(), hide: vi.fn() })),
+    Modal: vi.fn(function () { return { show: vi.fn(), hide: vi.fn() } }),
     Tooltip: vi.fn(),
 }))
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: k => k }) }))
