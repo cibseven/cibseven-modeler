@@ -50,7 +50,7 @@
   },
   "devDependencies": {
     "@bpmn-io/form-js": "1.21.3",
-    "@cib/common-frontend": "1.0.4",
+    "@cib/common-frontend": "1.0.5-dev.2",
     "@eslint/js": "10.0.1",
     "@vitejs/plugin-vue": "6.0.6",
     "@vitest/coverage-istanbul": "4.1.11",
