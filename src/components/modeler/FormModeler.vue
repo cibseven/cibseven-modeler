@@ -36,6 +36,13 @@
 				<template v-if="AutosaveIndicatorComponent" #centerContent>
 					<component :is="AutosaveIndicatorComponent" :tab-element="props.tabElement" />
 				</template>
+				<template #rightButtons>
+					<div class="d-flex align-items-center">
+						<component v-if="VersionButtonComponent && formHistoryListComp?.length > 0"
+							:is="VersionButtonComponent" :history-list="formHistoryListComp"
+							:active-version="activeVersion" content-field="formSchema" />
+					</div>
+				</template>
 			</MenuActionButtons>
 		</div>
 		<!-- Extension point for plugins -->
@@ -59,11 +66,12 @@ import PropertiesPanel from '../layout/PropertiesPanel.vue'
 import usePropertiesPanel from '../../composables/usePropertiesPanel'
 import useForm from '../../composables/useForm'
 
-import { ref, onMounted, onBeforeUnmount, computed, onUpdated, watch, nextTick, inject } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, onUpdated, watch, nextTick, inject, provide } from 'vue'
 import { getPlugin } from '../../plugins/pluginsConfig'
 
 const formTool = getPlugin('form-tools')
 const AutosaveIndicatorComponent = inject('autosaveIndicatorComponent', null)
+const VersionButtonComponent = inject('versionButtonComponent', null)
 
 const resizableDiv = ref(null)
 const formContainer = ref(null)
@@ -107,7 +115,16 @@ const emit = defineEmits([
 	'updateIsButtonDisabled',
 	'updateStoredLocalStorageTabNavList',
 ])
-const { initializeFormEditor, save, importJson, propertiesPanelComponent, saveXmlAfterUpdate, restartFormJs, destroyFormJs, getFormId, formEditor } = useForm(props, emit, canvas, propertyPanel)
+const { initializeFormEditor, save, importJson, propertiesPanelComponent, saveXmlAfterUpdate, restartFormJs, destroyFormJs, getFormId, formEditor,
+	formHistoryListComp, activeVersion, changeActiveVersion } = useForm(props, emit, canvas, propertyPanel)
+
+// Restoring loads the snapshot into the editor; it becomes the newest version on the next save
+provide('loadVersionHook', async (schema, version) => {
+	await importJson(schema)
+	emit('toggleVersionNotSaved', true, props.tabElementIndex)
+	emit('toggleEnableSave', true, props.tabElementIndex)
+	changeActiveVersion(version)
+})
 const { updateParentHeight, updateParentWidth,  parentWidth, changeWidth, canvasWidth, isVisiblePropertyPanel, togglePropertiesPanel } = usePropertiesPanel(props, emit, formContainer, resizableDiv, propertiesPanelComponent, propertyPanel)
 
 onMounted(async() => {

@@ -15,7 +15,7 @@
  *  limitations under the License.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent } from 'vue'
 
 const mockFormEditor = vi.hoisted(() => {
@@ -52,7 +52,7 @@ vi.mock('../../composables/useDiagramSave.js', () => ({
 
 import useForm from '../../composables/useForm.js'
 
-function withSetup(propsOverrides = {}) {
+function withSetup(propsOverrides = {}, provide = {}) {
   let composableResult
   const emitted = []
   const emit = (event, ...args) => emitted.push({ event, args })
@@ -72,7 +72,7 @@ function withSetup(propsOverrides = {}) {
       composableResult = useForm(props, emit, canvas, propertyPanel)
       return () => null
     },
-  }))
+  }), { global: { provide } })
 
   return { ...composableResult, emitted }
 }
@@ -90,6 +90,49 @@ describe('useForm', () => {
       expect(composable.importJson).toBeDefined()
       expect(composable.save).toBeDefined()
       expect(composable.destroyFormJs).toBeDefined()
+    })
+  })
+
+  describe('history', () => {
+    /** Only the enterprise edition provides the hook, so the community edition has no history. */
+    it('has no history without the hook', async () => {
+      const { formHistoryListComp, activeVersion } = withSetup()
+      await flushPromises()
+
+      expect(formHistoryListComp.value).toBeNull()
+      expect(activeVersion.value).toBe(-1)
+    })
+
+    it('loads the history of the open form and selects its newest version', async () => {
+      const history = [{ version: 3 }, { version: 2 }]
+      const fetchFormSnapshotsHook = vi.fn().mockResolvedValue(history)
+
+      const { formHistoryListComp, activeVersion } = withSetup({}, { fetchFormSnapshotsHook })
+      await flushPromises()
+
+      expect(fetchFormSnapshotsHook).toHaveBeenCalledWith('tab1')
+      expect(formHistoryListComp.value).toEqual(history)
+      expect(activeVersion.value).toBe(3)
+    })
+
+    it('leaves the version unset for a form saved for the first time', async () => {
+      const fetchFormSnapshotsHook = vi.fn().mockResolvedValue([])
+
+      const { activeVersion } = withSetup({}, { fetchFormSnapshotsHook })
+      await flushPromises()
+
+      expect(activeVersion.value).toBe(-1)
+    })
+
+    /** Restoring a snapshot makes it the version the toolbar reports. */
+    it('follows the version that was restored', async () => {
+      const fetchFormSnapshotsHook = vi.fn().mockResolvedValue([{ version: 3 }, { version: 2 }])
+
+      const { activeVersion, changeActiveVersion } = withSetup({}, { fetchFormSnapshotsHook })
+      await flushPromises()
+      changeActiveVersion(2)
+
+      expect(activeVersion.value).toBe(2)
     })
   })
 

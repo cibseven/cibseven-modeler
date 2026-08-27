@@ -29,14 +29,18 @@ export default function useForm(props, emit, canvas, propertyPanel) {
     const checkSessionHook = inject('checkFormSessionHook', null)
     const createSessionHook = inject('createFormSessionHook', null)
     const closeSessionHook = inject('closeFormSessionHook', null)
+    const fetchSnapshotsHook = inject('fetchFormSnapshotsHook', null)
     const autosaveOptions = inject('autosaveOptions', null)
     const autosaveHook = inject('autosaveHook', null)
     const autosave = useAutosave(() => save(true), autosaveOptions)
+    const formHistoryListComp = ref(null)
+    const activeVersion = ref(-1) // the actual selected version of the form
 
     let json = null
     if (!props.json) return
 
     onMounted(async()=> {
+      formHistoryListComp.value = await getFormHistoryList()
       if (checkSessionHook) await checkSessionHook(props.tabElement, props.tabElementIndex, false)
     })
 
@@ -138,6 +142,16 @@ export default function useForm(props, emit, canvas, propertyPanel) {
       })
     }
 
+    // Only the enterprise edition keeps a history, so without the hook there is none
+    const getFormHistoryList = async () => {
+      if (!fetchSnapshotsHook) return null
+      formHistoryListComp.value = await fetchSnapshotsHook(props.tabElement.id)
+      activeVersion.value = formHistoryListComp.value?.[0]?.version ?? -1
+      return formHistoryListComp.value
+    }
+
+    const changeActiveVersion = version => { activeVersion.value = version }
+
     const destroyFormJs = () => {
       if (formEditor.value) formEditor.value.destroy()
     }
@@ -185,7 +199,7 @@ export default function useForm(props, emit, canvas, propertyPanel) {
       return json?.id
     }
 
-      return { 
+      return {
         initializeFormEditor,
         importJson,
         saveXmlAfterUpdate,
@@ -193,6 +207,10 @@ export default function useForm(props, emit, canvas, propertyPanel) {
         restartFormJs,
         destroyFormJs,
         getFormId,
+        getFormHistoryList,
+        changeActiveVersion,
+        formHistoryListComp,
+        activeVersion,
         formEditor,
         propertiesPanelComponent,
     }

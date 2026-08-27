@@ -16,6 +16,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+import { ref } from 'vue'
 
 const formMocks = vi.hoisted(() => {
   const formEditor = {
@@ -32,6 +33,10 @@ const formMocks = vi.hoisted(() => {
     restartFormJs: vi.fn().mockResolvedValue(undefined),
     destroyFormJs: vi.fn(),
     getFormId: vi.fn().mockResolvedValue('form1'),
+    getFormHistoryList: vi.fn().mockResolvedValue(null),
+    changeActiveVersion: vi.fn(),
+    formHistoryListComp: { value: null },
+    activeVersion: { value: -1 },
     formEditor,
     propertiesPanelComponent: { value: null },
   }
@@ -93,6 +98,66 @@ describe('FormModeler', () => {
 
   afterEach(() => {
     vi.restoreAllMocks()
+  })
+
+  describe('history', () => {
+    const menuWithRightButtons = {
+      template: '<div class="menu-stub"><slot name="leftButtons" /><slot name="rightButtons" /></div>',
+    }
+
+    function mountWithHistory(historyList) {
+      formMocks.formHistoryListComp = ref(historyList)
+      formMocks.activeVersion = ref(historyList?.[0]?.version ?? -1)
+      return mount(FormModeler, {
+        props: {
+          json: '{"id":"form1"}',
+          isModelerVisible: false,
+          isActiveTab: true,
+          tabElementIndex: 0,
+          tabElement: defaultTabElement,
+          activePropertiesTab: 'properties',
+        },
+        global: {
+          provide: {
+            versionButtonComponent: {
+              name: 'VersionButtonStub',
+              props: ['historyList', 'activeVersion', 'contentField'],
+              template: '<button class="version-stub">{{ contentField }}-{{ activeVersion }}</button>',
+            },
+          },
+          stubs: {
+            PropertiesPanel: { template: '<div class="properties-panel-stub" />' },
+            MenuActionButtons: menuWithRightButtons,
+          },
+        },
+      })
+    }
+
+    /** The community edition provides no version button, so the toolbar stays as it was. */
+    it('shows no version button without one provided', async () => {
+      formMocks.formHistoryListComp = ref([{ version: 1 }])
+      const wrapper = mountFormModeler({}, {})
+      await flushPromises()
+
+      expect(wrapper.find('.version-stub').exists()).toBe(false)
+    })
+
+    it('shows the provided version button once the form has a history', async () => {
+      const wrapper = mountWithHistory([{ version: 2 }, { version: 1 }])
+      await flushPromises()
+
+      const button = wrapper.find('.version-stub')
+      expect(button.exists()).toBe(true)
+      // A form snapshot carries its schema where a diagram carries XML
+      expect(button.text()).toBe('formSchema-2')
+    })
+
+    it('shows no version button for a form without a history', async () => {
+      const wrapper = mountWithHistory([])
+      await flushPromises()
+
+      expect(wrapper.find('.version-stub').exists()).toBe(false)
+    })
   })
 
   describe('rendering', () => {
