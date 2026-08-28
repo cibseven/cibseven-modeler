@@ -39,6 +39,8 @@ export default function useForm(props, emit, canvas, propertyPanel) {
     const formEntityId = ref(props.tabElement.id)
 
     let json = null
+    // Set while a schema is loaded into the editor, see the 'changed' handler
+    let importing = false
     if (!props.json) return
 
     onMounted(async()=> {
@@ -81,6 +83,9 @@ export default function useForm(props, emit, canvas, propertyPanel) {
             json = formEditor.value?.getSchema()
             emit('updateEditorXML', JSON.stringify(json, null, 2),  props.tabElementIndex)
             validateJson(json)
+            // form-js reports an import as a change, unlike bpmn-js: loading a schema is
+            // not the user editing, so it must not turn the save button on by itself
+            if (importing) return
             emit('toggleEnableSave', true, props.tabElementIndex) //enables save button
             if (autosaveOptions?.enabled && props.tabElement.isSaved) autosave.schedule()
         })
@@ -169,7 +174,13 @@ export default function useForm(props, emit, canvas, propertyPanel) {
       // Update the closure schema so a later destroy/re-init (restartFormJs on tab
       // switch) reloads THIS content instead of the stale snapshot captured at setup.
       json = parsed
-      if (formEditor.value) await formEditor.value.importSchema(parsed)
+      importing = true
+      try {
+        if (formEditor.value) await formEditor.value.importSchema(parsed)
+      } finally {
+        await nextTick()
+        importing = false
+      }
       validateJson(parsed)
     }
 

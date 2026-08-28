@@ -118,11 +118,12 @@ const emit = defineEmits([
 const { initializeFormEditor, save, importJson, propertiesPanelComponent, saveXmlAfterUpdate, restartFormJs, destroyFormJs, getFormId, formEditor,
 	formHistoryListComp, activeVersion, changeActiveVersion } = useForm(props, emit, canvas, propertyPanel)
 
-// Restoring loads the snapshot into the editor; it becomes the newest version on the next save
+// Restoring loads the snapshot into the editor and becomes the newest version once it is
+// saved, so saving waits for an edit, as it does after loading a diagram version
 provide('loadVersionHook', async (schema, version) => {
 	await importJson(schema)
 	emit('toggleVersionNotSaved', true, props.tabElementIndex)
-	emit('toggleEnableSave', true, props.tabElementIndex)
+	emit('toggleEnableSave', false, props.tabElementIndex)
 	changeActiveVersion(version)
 })
 const { updateParentHeight, updateParentWidth,  parentWidth, changeWidth, canvasWidth, isVisiblePropertyPanel, togglePropertiesPanel } = usePropertiesPanel(props, emit, formContainer, resizableDiv, propertiesPanelComponent, propertyPanel)

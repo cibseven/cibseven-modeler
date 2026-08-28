@@ -193,6 +193,32 @@ describe('useForm', () => {
   })
 
   describe('importJson', () => {
+    /**
+     * form-js reports an import as a change, unlike bpmn-js. Restoring a snapshot would
+     * otherwise look like an edit and offer to save content nobody touched.
+     */
+    it('does not enable saving for a schema it loaded itself', async () => {
+      const { initializeFormEditor, importJson, emitted } = withSetup()
+      await initializeFormEditor()
+      const changed = mockFormEditor.instance.on.mock.calls.find(([event]) => event === 'changed')[1]
+
+      const importing = importJson({ id: 'form1', components: [] })
+      await changed()
+      await importing
+
+      expect(emitted.some(e => e.event === 'toggleEnableSave')).toBe(false)
+    })
+
+    it('enables saving when the user edits the form', async () => {
+      const { initializeFormEditor, emitted } = withSetup()
+      await initializeFormEditor()
+      const changed = mockFormEditor.instance.on.mock.calls.find(([event]) => event === 'changed')[1]
+
+      await changed()
+
+      expect(emitted.some(e => e.event === 'toggleEnableSave' && e.args[0] === true)).toBe(true)
+    })
+
     it('imports schema into form editor', async () => {
       const { initializeFormEditor, importJson } = withSetup()
       await initializeFormEditor()
