@@ -35,6 +35,8 @@ export default function useForm(props, emit, canvas, propertyPanel) {
     const autosave = useAutosave(() => save(true), autosaveOptions)
     const formHistoryListComp = ref(null)
     const activeVersion = ref(-1) // the actual selected version of the form
+    // The id of the stored form: a tab created in this session only gets one when it is saved
+    const formEntityId = ref(props.tabElement.id)
 
     let json = null
     if (!props.json) return
@@ -138,15 +140,19 @@ export default function useForm(props, emit, canvas, propertyPanel) {
         updateFn: () => updateForm(props.tabElement.id, newFormId, json),
         toTabPayload: response => ({ processId: response.id, processName: response.formId, processKey: response.formId, type: 'form' }),
         sessionResponse,
-        afterSave: async () => { await getFormHistoryList() },
+        afterSave: async response => {
+          // A form saved for the first time is only now a stored form with a history
+          if (response?.id) formEntityId.value = response.id
+          await getFormHistoryList()
+        },
         isAutosave,
       })
     }
 
     // Only the enterprise edition keeps a history, so without the hook there is none
     const getFormHistoryList = async () => {
-      if (!fetchSnapshotsHook) return null
-      formHistoryListComp.value = await fetchSnapshotsHook(props.tabElement.id)
+      if (!fetchSnapshotsHook || !formEntityId.value) return null
+      formHistoryListComp.value = await fetchSnapshotsHook(formEntityId.value)
       activeVersion.value = formHistoryListComp.value?.[0]?.version ?? -1
       return formHistoryListComp.value
     }

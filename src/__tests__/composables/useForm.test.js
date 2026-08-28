@@ -124,6 +124,34 @@ describe('useForm', () => {
       expect(activeVersion.value).toBe(-1)
     })
 
+    /** A tab created in this session has no stored form yet, so there is nothing to ask for. */
+    it('asks for no history before the form has been saved once', async () => {
+      const fetchFormSnapshotsHook = vi.fn().mockResolvedValue([])
+
+      withSetup({ tabElement: { id: null, key: 'form1', sessionId: null, type: 'form' } },
+        { fetchFormSnapshotsHook })
+      await flushPromises()
+
+      expect(fetchFormSnapshotsHook).not.toHaveBeenCalled()
+    })
+
+    /** Saving it the first time is what turns it into a form with a history. */
+    it('reads the history of a form saved for the first time under its new id', async () => {
+      const fetchFormSnapshotsHook = vi.fn().mockResolvedValue([{ version: 0 }])
+
+      const { initializeFormEditor, save, formHistoryListComp, activeVersion } = withSetup(
+        { tabElement: { id: null, key: 'form1', sessionId: null, type: 'form' } },
+        { fetchFormSnapshotsHook })
+      await flushPromises()
+      await initializeFormEditor()
+      await save()
+      await saveMock.mock.calls.at(-1)[0].afterSave({ id: 'stored-id' })
+
+      expect(fetchFormSnapshotsHook).toHaveBeenCalledWith('stored-id')
+      expect(formHistoryListComp.value).toHaveLength(1)
+      expect(activeVersion.value).toBe(0)
+    })
+
     /** A save adds a version, so the list the toolbar reads has to be fetched again. */
     it('reloads the history after a save', async () => {
       const fetchFormSnapshotsHook = vi.fn()
