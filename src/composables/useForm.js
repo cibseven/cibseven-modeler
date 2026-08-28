@@ -138,6 +138,7 @@ export default function useForm(props, emit, canvas, propertyPanel) {
         updateFn: () => updateForm(props.tabElement.id, newFormId, json),
         toTabPayload: response => ({ processId: response.id, processName: response.formId, processKey: response.formId, type: 'form' }),
         sessionResponse,
+        afterSave: async () => { await getFormHistoryList() },
         isAutosave,
       })
     }

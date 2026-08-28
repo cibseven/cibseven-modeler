@@ -44,10 +44,10 @@ vi.mock('vuex', () => ({
   }),
 }))
 
+const saveMock = vi.hoisted(() => vi.fn().mockResolvedValue(true))
+
 vi.mock('../../composables/useDiagramSave.js', () => ({
-  default: () => ({
-    save: vi.fn().mockResolvedValue(true),
-  }),
+  default: () => ({ save: saveMock }),
 }))
 
 import useForm from '../../composables/useForm.js'
@@ -122,6 +122,25 @@ describe('useForm', () => {
       await flushPromises()
 
       expect(activeVersion.value).toBe(-1)
+    })
+
+    /** A save adds a version, so the list the toolbar reads has to be fetched again. */
+    it('reloads the history after a save', async () => {
+      const fetchFormSnapshotsHook = vi.fn()
+        .mockResolvedValueOnce([{ version: 1 }])
+        .mockResolvedValueOnce([{ version: 2 }, { version: 1 }])
+
+      const { initializeFormEditor, save, formHistoryListComp, activeVersion } =
+        withSetup({}, { fetchFormSnapshotsHook })
+      await flushPromises()
+      await initializeFormEditor()
+      await save()
+      // The shared save calls it back once the form is stored
+      await saveMock.mock.calls.at(-1)[0].afterSave()
+
+      expect(fetchFormSnapshotsHook).toHaveBeenCalledTimes(2)
+      expect(formHistoryListComp.value).toHaveLength(2)
+      expect(activeVersion.value).toBe(2)
     })
 
     /** Restoring a snapshot makes it the version the toolbar reports. */
