@@ -29,14 +29,22 @@ export default function useForm(props, emit, canvas, propertyPanel) {
     const checkSessionHook = inject('checkFormSessionHook', null)
     const createSessionHook = inject('createFormSessionHook', null)
     const closeSessionHook = inject('closeFormSessionHook', null)
+    const fetchSnapshotsHook = inject('fetchFormSnapshotsHook', null)
     const autosaveOptions = inject('autosaveOptions', null)
     const autosaveHook = inject('autosaveHook', null)
     const autosave = useAutosave(() => save(true), autosaveOptions)
+    const formHistoryListComp = ref(null)
+    const activeVersion = ref(-1) // the actual selected version of the form
+    // The id of the stored form: a tab created in this session only gets one when it is saved
+    const formEntityId = ref(props.tabElement.id)
 
     let json = null
+    // Set while a schema is loaded into the editor, see the 'changed' handler
+    let importing = false
     if (!props.json) return
 
     onMounted(async()=> {
+      formHistoryListComp.value = await getFormHistoryList()
       if (checkSessionHook) await checkSessionHook(props.tabElement, props.tabElementIndex, false)
     })
 
@@ -75,6 +83,9 @@ export default function useForm(props, emit, canvas, propertyPanel) {
             json = formEditor.value?.getSchema()
             emit('updateEditorXML', JSON.stringify(json, null, 2),  props.tabElementIndex)
             validateJson(json)
+            // form-js reports an import as a change, unlike bpmn-js: loading a schema is
+            // not the user editing, so it must not turn the save button on by itself
+            if (importing) return
             emit('toggleEnableSave', true, props.tabElementIndex) //enables save button
             if (autosaveOptions?.enabled && props.tabElement.isSaved) autosave.schedule()
         })
@@ -134,9 +145,24 @@ export default function useForm(props, emit, canvas, propertyPanel) {
         updateFn: () => updateForm(props.tabElement.id, newFormId, json),
         toTabPayload: response => ({ processId: response.id, processName: response.formId, processKey: response.formId, type: 'form' }),
         sessionResponse,
+        afterSave: async response => {
+          // A form saved for the first time is only now a stored form with a history
+          if (response?.id) formEntityId.value = response.id
+          await getFormHistoryList()
+        },
         isAutosave,
       })
     }
+
+    // Only the enterprise edition keeps a history, so without the hook there is none
+    const getFormHistoryList = async () => {
+      if (!fetchSnapshotsHook || !formEntityId.value) return null
+      formHistoryListComp.value = await fetchSnapshotsHook(formEntityId.value)
+      activeVersion.value = formHistoryListComp.value?.[0]?.version ?? -1
+      return formHistoryListComp.value
+    }
+
+    const changeActiveVersion = version => { activeVersion.value = version }
 
     const destroyFormJs = () => {
       if (formEditor.value) formEditor.value.destroy()
@@ -148,7 +174,13 @@ export default function useForm(props, emit, canvas, propertyPanel) {
       // Update the closure schema so a later destroy/re-init (restartFormJs on tab
       // switch) reloads THIS content instead of the stale snapshot captured at setup.
       json = parsed
-      if (formEditor.value) await formEditor.value.importSchema(parsed)
+      importing = true
+      try {
+        if (formEditor.value) await formEditor.value.importSchema(parsed)
+      } finally {
+        await nextTick()
+        importing = false
+      }
       validateJson(parsed)
     }
 
@@ -185,7 +217,7 @@ export default function useForm(props, emit, canvas, propertyPanel) {
       return json?.id
     }
 
-      return { 
+      return {
         initializeFormEditor,
         importJson,
         saveXmlAfterUpdate,
@@ -193,6 +225,10 @@ export default function useForm(props, emit, canvas, propertyPanel) {
         restartFormJs,
         destroyFormJs,
         getFormId,
+        getFormHistoryList,
+        changeActiveVersion,
+        formHistoryListComp,
+        activeVersion,
         formEditor,
         propertiesPanelComponent,
     }
