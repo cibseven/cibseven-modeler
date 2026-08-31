@@ -16,7 +16,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
-import { ref } from 'vue'
+import { ref, inject } from 'vue'
 
 const formMocks = vi.hoisted(() => {
   const formEditor = {
@@ -132,6 +132,48 @@ describe('FormModeler', () => {
         },
       })
     }
+
+    /**
+     * The version button lives in the enterprise package and restores through this hook,
+     * so it is the contract between the two.
+     */
+    it('loads a selected snapshot without turning it into an unsaved edit', async () => {
+      let loadVersion = null
+      const wrapper = mount(FormModeler, {
+        props: {
+          json: '{"id":"form1"}',
+          isModelerVisible: true,
+          isActiveTab: true,
+          tabElementIndex: 0,
+          tabElement: defaultTabElement,
+          activePropertiesTab: 'properties',
+        },
+        slots: {
+          default: {
+            name: 'HistoryConsumer',
+            setup() {
+              loadVersion = inject('loadVersionHook', null)
+              return () => null
+            },
+          },
+        },
+        global: {
+          stubs: {
+            PropertiesPanel: { template: '<div class="properties-panel-stub" />' },
+            MenuActionButtons: menuWithRightButtons,
+          },
+        },
+      })
+      await flushPromises()
+
+      await loadVersion({ id: 'form1', components: [] }, 2)
+
+      expect(formMocks.importJson).toHaveBeenCalledWith({ id: 'form1', components: [] })
+      expect(formMocks.changeActiveVersion).toHaveBeenCalledWith(2)
+      expect(wrapper.emitted('toggleVersionNotSaved')?.at(-1)).toEqual([true, 0])
+      // Saving waits for a real edit, as it does after loading a diagram version
+      expect(wrapper.emitted('toggleEnableSave')?.at(-1)).toEqual([false, 0])
+    })
 
     /** The community edition provides no version button, so the toolbar stays as it was. */
     it('shows no version button without one provided', async () => {
