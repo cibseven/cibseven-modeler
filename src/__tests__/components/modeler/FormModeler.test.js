@@ -105,7 +105,7 @@ describe('FormModeler', () => {
       template: '<div class="menu-stub"><slot name="leftButtons" /><slot name="rightButtons" /></div>',
     }
 
-    function mountWithHistory(historyList) {
+    function mountWithHistory(historyList, extraProvides = {}) {
       formMocks.formHistoryListComp = ref(historyList)
       formMocks.activeVersion = ref(historyList?.[0]?.version ?? -1)
       return mount(FormModeler, {
@@ -119,6 +119,7 @@ describe('FormModeler', () => {
         },
         global: {
           provide: {
+            ...extraProvides,
             versionButtonComponent: {
               name: 'VersionButtonStub',
               props: ['historyList', 'activeVersion', 'contentField'],
@@ -173,6 +174,23 @@ describe('FormModeler', () => {
       expect(wrapper.emitted('toggleVersionNotSaved')?.at(-1)).toEqual([true, 0])
       // Saving waits for a real edit, as it does after loading a diagram version
       expect(wrapper.emitted('toggleEnableSave')?.at(-1)).toEqual([false, 0])
+    })
+
+    /** Comparing needs two states to compare, as it does for diagrams. */
+    it('offers the comparison once a form has more than one snapshot', async () => {
+      const compare = {
+        name: 'CompareButtonStub',
+        props: ['historyList', 'type'],
+        template: '<button class="compare-stub">{{ type }}-{{ historyList.length }}</button>'
+      }
+
+      const withTwo = mountWithHistory([{ version: 2 }, { version: 1 }], { compareButtonComponent: compare })
+      await flushPromises()
+      expect(withTwo.find('.compare-stub').text()).toBe('form-2')
+
+      const withOne = mountWithHistory([{ version: 1 }], { compareButtonComponent: compare })
+      await flushPromises()
+      expect(withOne.find('.compare-stub').exists()).toBe(false)
     })
 
     /** The community edition provides no version button, so the toolbar stays as it was. */
