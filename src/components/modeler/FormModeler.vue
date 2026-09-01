@@ -41,6 +41,8 @@
 						<component v-if="VersionButtonComponent && formHistoryListComp?.length > 0"
 							:is="VersionButtonComponent" :history-list="formHistoryListComp"
 							:active-version="activeVersion" content-field="formSchema" />
+						<component v-if="CompareButtonComponent && formHistoryListComp?.length > 1"
+							:is="CompareButtonComponent" :history-list="formHistoryListComp" type="form" />
 					</div>
 				</template>
 			</MenuActionButtons>
@@ -72,6 +74,7 @@ import { getPlugin } from '../../plugins/pluginsConfig'
 const formTool = getPlugin('form-tools')
 const AutosaveIndicatorComponent = inject('autosaveIndicatorComponent', null)
 const VersionButtonComponent = inject('versionButtonComponent', null)
+const CompareButtonComponent = inject('compareButtonComponent', null)
 
 const resizableDiv = ref(null)
 const formContainer = ref(null)
