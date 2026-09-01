@@ -21,20 +21,22 @@
 				<div v-show="!props.isModelerVisible" class="position-relative" :style="styleCanvas">
 					<div class="canvas h-100 w-100" ref="canvas" tabindex="0"></div>
 					<div class="position-absolute top-0 end-0 d-flex flex-column gap-1 m-2" style="z-index: 10;">
-						<button @click="zoomIn" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomIn')" :aria-label="$t('buttons.zoomIn')">
+						<button @click="zoomIn" :class="CANVAS_CONTROL_BTN_CLASS" :title="$t('buttons.zoomIn')" :aria-label="$t('buttons.zoomIn')">
 							<span class="mdi mdi-18px mdi-magnify-plus-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="zoomOut" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomOut')" :aria-label="$t('buttons.zoomOut')">
+						<button @click="zoomOut" :class="CANVAS_CONTROL_BTN_CLASS" :title="$t('buttons.zoomOut')" :aria-label="$t('buttons.zoomOut')">
 							<span class="mdi mdi-18px mdi-magnify-minus-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="resetViewport" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.resetViewport')" :aria-label="$t('buttons.resetViewport')">
+						<button @click="resetViewport" :class="CANVAS_CONTROL_BTN_CLASS" :title="$t('buttons.resetViewport')" :aria-label="$t('buttons.resetViewport')">
 							<span class="mdi mdi-18px mdi-fit-to-screen-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="toggleMinimap" :title="$t('buttons.minimap')" :aria-label="$t('buttons.minimap')" :aria-pressed="isMinimapOpen"
-							:class="['btn btn-sm border text-secondary', isMinimapOpen ? 'btn-secondary' : 'btn-light']">
+						<button @click="toggleMinimap" :class="CANVAS_CONTROL_BTN_CLASS" :title="$t('buttons.minimap')" :aria-label="$t('buttons.minimap')" :aria-pressed="isMinimapOpen">
 							<span class="mdi mdi-18px mdi-map-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="toggleFullscreen" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.fullscreen')" :aria-label="$t('buttons.fullscreen')" :aria-pressed="isFullscreen">
+						<button @click="toggleFullscreen" :class="CANVAS_CONTROL_BTN_CLASS"
+							:title="isFullscreen ? $t('buttons.exitFullscreen') : $t('buttons.fullscreen')"
+							:aria-label="isFullscreen ? $t('buttons.exitFullscreen') : $t('buttons.fullscreen')"
+							:aria-pressed="isFullscreen">
 							<span :class="['mdi', 'mdi-18px', isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen']" aria-hidden="true"></span>
 						</button>
 					</div>
@@ -218,6 +220,7 @@ const consolePanel = ref(null)
 //variables for the list selector component
 const listSelector = ref(null)
 const TYPEC7 = 'bpmn-c7'
+const CANVAS_CONTROL_BTN_CLASS = 'btn btn-sm bg-white text-secondary border border-secondary shadow-sm canvas-control-btn d-inline-flex align-items-center justify-content-center p-1'
 const propertiesPanelComponent = ref(null)
 const isVisiblePropertyPanel = ref(true)
 const resizableDiv = ref(null)
@@ -661,7 +664,7 @@ const _createMonacoEditor = (scriptDivId, textArea, scriptFormat = null) => {
 	divMonaco.style.overflow = 'hidden'
 
 	const expandBtn = document.createElement('button')
-	expandBtn.className = 'btn btn-sm btn-light border position-absolute'
+	expandBtn.className = `${CANVAS_CONTROL_BTN_CLASS} position-absolute`
 	expandBtn.style.bottom = '4px'
 	expandBtn.style.right = '4px'
 	expandBtn.style.zIndex = '10'
@@ -1063,30 +1066,173 @@ input[name="historyTimeToLive"].is-invalid {
 	margin-bottom: 50px;
 }
 
-.container.modeler .bts-toggle-mode:hover {
-	background-color: var(--bs-primary);
+.container.modeler .bts-toggle-mode {
+	background-color: transparent;
+	color: var(--bs-dark);
+	border: var(--bs-border-width, 1px) solid transparent;
+	border-radius: 0.375rem;
 }
 
 .container.modeler .bjs-container.simulation .bts-toggle-mode {
-	background-color: var(--bs-primary);
+	background-color: #4395ff;
+	color: #fff;
+	border-color: #4395ff;
+}
+
+.container.modeler .bts-toggle-mode:hover {
+	background-color: transparent;
+	border-color: var(--bs-dark);
+	color: var(--bs-dark);
+}
+
+.container.modeler .bjs-container.simulation .bts-toggle-mode:hover {
+	background-color: #2b78e8;
+	color: #fff;
 }
 
 .container.modeler .bjs-container.simulation .djs-container {
-	box-shadow: inset 0px 0px 0px 4px var(--bs-primary);
+	box-shadow: inset 0px 0px 0px 4px #4395ff; /* border colour around*/
 }
 
-.container.modeler .bts-context-pad:not(.disabled):hover {
-	background-color: var(--bs-primary);
+.container.modeler .bjs-container.simulation.paused .djs-container {
+	box-shadow: inset 0px 0px 0px 4px #4395ff;
 }
 
-.container.modeler .bts-set-animation-speed .bts-animation-speed-button.active,
-.container.modeler .bts-set-animation-speed .bts-animation-speed-button:hover {
-	background-color: var(--bs-primary);
+.container.modeler .bts-context-pad {
+	background-color: var(--bs-secondary);
+	border: var(--bs-border-width, 1px) solid var(--bs-secondary);
+	border-radius: var(--bs-border-radius, 0.25rem);
+	color: #fff;
 }
 
-.container.modeler .bts-palette .bts-entry.active,
+.container.modeler .bts-context-pad:not(.disabled):hover,
+.container.modeler .bts-context-pad:not(.disabled):focus-visible {
+	background-color: var(--bs-secondary);
+	border-color: var(--bs-secondary);
+	color: #fff;
+	filter: brightness(0.92);
+	opacity: 1;
+}
+
+.container.modeler .bts-context-pad.disabled {
+	background-color: var(--bs-secondary);
+	border-color: var(--bs-secondary);
+	color: #fff;
+	opacity: 0.65;
+}
+
+.container.modeler .bts-set-animation-speed {
+	background-color: transparent;
+	overflow: visible;
+	padding: 0.25rem;
+	gap: 0.5rem;
+}
+
+.container.modeler .bts-set-animation-speed > .bts-icon {
+	color: var(--bs-secondary);
+}
+
+.container.modeler .bts-set-animation-speed .bts-animation-speed-buttons {
+	gap: 0.5rem;
+	margin-left: 0.5rem;
+}
+
+.container.modeler .bts-set-animation-speed .bts-animation-speed-button {
+	background-color: transparent;
+	color: var(--bs-secondary);
+	border: none;
+	border-radius: 50%;
+	width: 1.75rem;
+	height: 1.75rem;
+	padding: 0;
+	align-items: center;
+}
+
+.container.modeler .bts-set-animation-speed .bts-animation-speed-button.active {
+	background-color: var(--bs-secondary);
+	border: none;
+	color: #fff;
+}
+
+.container.modeler .bts-set-animation-speed .bts-animation-speed-button:not(.active):hover {
+	background-color: transparent;
+	border: none;
+	color: var(--bs-secondary);
+}
+
+/* Canvas controls use Bootstrap classes; custom rules cover sizing and interaction states. */
+.canvas-control-btn {
+	width: 2.25rem;
+	height: 2.25rem;
+	line-height: 1;
+}
+
+/* Token simulation palette buttons are rendered by bpmn-js-token-simulation (no Bootstrap classes). */
+.container.modeler .bts-palette .bts-entry {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.125rem;
+	height: 2.125rem;
+	margin-bottom: 0.375rem;
+	padding: 0.25rem;
+	background-color: var(--bs-white);
+	color: var(--bs-secondary);
+	border: var(--bs-border-width) solid var(--bs-gray-600);
+	border-radius: var(--bs-border-radius);
+	box-shadow: var(--bs-box-shadow-sm);
+	line-height: 1;
+	box-sizing: border-box;
+	cursor: pointer;
+}
+
+.container.modeler .bts-palette .bts-entry:last-child {
+	margin-bottom: 0;
+}
+
+.container.modeler .bts-palette .bts-entry:first-child {
+	margin-top: 0.25rem;
+}
+
+.canvas-control-btn:hover:not(:disabled):not(.disabled),
 .container.modeler .bts-palette .bts-entry:not(.disabled):hover {
-	background-color: var(--bs-primary);
+	background-color: var(--bs-gray-200) !important;
+	border-color: var(--bs-gray-600) !important;
+	color: var(--bs-secondary) !important;
+}
+
+.canvas-control-btn:focus-visible:not(:disabled):not(.disabled),
+.container.modeler .bts-palette .bts-entry:not(.disabled):focus-visible {
+	background-color: var(--bs-gray-200) !important;
+	border-color: var(--bs-gray-600) !important;
+	color: var(--bs-secondary) !important;
+	outline: 2px solid var(--bs-dark);
+	outline-offset: 2px;
+	box-shadow: 0 0 0 1px var(--bs-white), var(--bs-box-shadow-sm) !important;
+}
+
+.canvas-control-btn:active:not(:disabled):not(.disabled),
+.container.modeler .bts-palette .bts-entry:not(.disabled):active {
+	background-color: var(--bs-gray-200) !important;
+	border-color: var(--bs-gray-600) !important;
+	color: var(--bs-secondary) !important;
+	box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.12) !important;
+}
+
+.canvas-control-btn:disabled,
+.canvas-control-btn.disabled,
+.container.modeler .bts-palette .bts-entry.disabled {
+	background-color: var(--bs-white) !important;
+	border-color: var(--bs-gray-500) !important;
+	color: var(--bs-gray-600) !important;
+	cursor: not-allowed;
+	opacity: 1;
+}
+
+.container.modeler .bts-palette .bts-entry.active {
+	background-color: var(--bs-white);
+	border-color: var(--bs-gray-600);
+	color: var(--bs-secondary);
 }
 
 /* Force palette to always display 2 columns */
@@ -1097,7 +1243,40 @@ input[name="historyTimeToLive"].is-invalid {
 }
 
 .container.modeler .bts-log .bts-header {
-	background-color: var(--bs-primary);
+	background-color: #fff;
+	color: #000;
+	border-bottom: var(--bs-border-width, 1px) solid var(--bs-border-color);
+	height: auto;
+	padding: 0.6rem;
+	font-weight: 700;
+	align-items: center;
+}
+
+.container.modeler .bts-log .bts-header .bts-icon {
+	color: var(--bs-secondary);
+}
+
+.container.modeler .bts-log .bts-close {
+	color: var(--bs-secondary);
+}
+
+.container.modeler .bts-log .bts-entry:not(.placeholder) {
+	background-color: var(--bs-gray-400);
+	border: var(--bs-border-width, 1px) solid var(--bs-border-color);
+	border-radius: var(--bs-border-radius, 0.25rem);
+	color: #000;
+}
+
+.container.modeler .bts-log .bts-entry:not(.placeholder) .bts-icon,
+.container.modeler .bts-log .bts-entry:not(.placeholder) .bts-icon [class^="bpmn-icon-"]:before,
+.container.modeler .bts-log .bts-entry:not(.placeholder) .bts-icon [class*=" bpmn-icon-"]:before {
+	color: var(--bs-secondary);
+}
+
+.container.modeler .bts-log .bts-entry.success,
+.container.modeler .bts-log .bts-entry.warning {
+	background-color: var(--bs-gray-400);
+	color: #000;
 }
 
 .bjs-container .bjsl-button-warning {
