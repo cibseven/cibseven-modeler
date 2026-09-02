@@ -215,3 +215,13 @@ defineExpose({
 })
 
 </script>
+<style scoped>
+/* form-js sizes its properties panel to a fixed 300px (plus its own 1px border),
+   which is wider than the host area — the panel width minus the 24px collapse
+   strip and the border — and left the panel with a horizontal scrollbar. Let it
+   fill whatever width it is given instead. */
+:deep(.fjs-properties-container) {
+	box-sizing: border-box;
+	width: 100%;
+}
+</style>
