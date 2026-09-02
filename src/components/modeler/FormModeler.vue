@@ -47,12 +47,17 @@
 				</template>
 			</MenuActionButtons>
 		</div>
-		<!-- Extension point for plugins -->
+		<!-- Extension point for plugins
+		     Available props for plugin components:
+		       apply-schema       — (schema) => void        Imports a schema object into the editor and enables Save.
+		       get-current-schema — () => String|null       The editor's current schema as JSON; its `id` is the form id.
+		       tab-element        — Object                  Current tab descriptor: { id, key, name, type, version, isSaved, ... } -->
 		<component
-			v-if="formTool"
+			v-if="formTool && props.isActiveTab"
 			:is="formTool"
 			:apply-schema="applySchema"
 			:get-current-schema="getCurrentSchemaJson"
+			:tab-element="props.tabElement"
 		/>
 	</div>
 </template>

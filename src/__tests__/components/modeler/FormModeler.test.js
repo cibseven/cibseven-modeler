@@ -65,6 +65,7 @@ vi.mock('../../../plugins/pluginsConfig', () => ({
 }))
 
 import FormModeler from '../../../components/modeler/FormModeler.vue'
+import { getPlugin } from '../../../plugins/pluginsConfig'
 import { defaultTabElement } from '../../helpers/modelerTestUtils.js'
 
 function mountFormModeler(props = {}, slots = {}) {
@@ -334,6 +335,40 @@ describe('FormModeler', () => {
       await flushPromises()
       wrapper.vm._saveDiagram()
       expect(formMocks.save).toHaveBeenCalled()
+    })
+  })
+
+  describe('form-tools slot', () => {
+    const FormToolStub = {
+      name: 'FormToolStub',
+      props: ['applySchema', 'getCurrentSchema', 'tabElement'],
+      template: '<div class="form-tool-stub" />',
+    }
+
+    afterEach(() => {
+      getPlugin.mockReturnValue(null)
+    })
+
+    it('hands the plugin the editor callbacks and the tab', async () => {
+      getPlugin.mockReturnValue(FormToolStub)
+      const wrapper = mountFormModeler()
+      await flushPromises()
+
+      const tool = wrapper.findComponent(FormToolStub)
+      expect(tool.exists()).toBe(true)
+      expect(tool.props('tabElement')).toStrictEqual(defaultTabElement)
+      // The callbacks must be the component's own, so a plugin editing the form
+      // goes through the same import + enable-save path as the user.
+      expect(tool.props('applySchema')).toBe(wrapper.vm.applySchema)
+      expect(tool.props('getCurrentSchema')).toBe(wrapper.vm.getCurrentSchemaJson)
+    })
+
+    it('is not rendered while the tab is inactive', async () => {
+      getPlugin.mockReturnValue(FormToolStub)
+      const wrapper = mountFormModeler({ isActiveTab: false })
+      await flushPromises()
+
+      expect(wrapper.findComponent(FormToolStub).exists()).toBe(false)
     })
   })
 })
