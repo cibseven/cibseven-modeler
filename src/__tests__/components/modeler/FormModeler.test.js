@@ -33,6 +33,7 @@ const formMocks = vi.hoisted(() => {
     restartFormJs: vi.fn().mockResolvedValue(undefined),
     destroyFormJs: vi.fn(),
     getFormId: vi.fn().mockResolvedValue('form1'),
+    scheduleAutosave: vi.fn(),
     getFormHistoryList: vi.fn().mockResolvedValue(null),
     changeActiveVersion: vi.fn(),
     formHistoryListComp: { value: null },
@@ -276,9 +277,16 @@ describe('FormModeler', () => {
     it('applySchema imports json and enables save', async () => {
       const wrapper = mountFormModeler()
       await flushPromises()
-      wrapper.vm.applySchema({ id: 'new' })
+      await wrapper.vm.applySchema({ id: 'new' })
       expect(formMocks.importJson).toHaveBeenCalled()
       expect(wrapper.emitted('toggleEnableSave')).toBeTruthy()
+    })
+
+    it('applySchema schedules the autosave the import suppressed', async () => {
+      const wrapper = mountFormModeler()
+      await flushPromises()
+      await wrapper.vm.applySchema({ id: 'new' })
+      expect(formMocks.scheduleAutosave).toHaveBeenCalled()
     })
 
     it('getCurrentSchemaJson returns stringified schema', async () => {

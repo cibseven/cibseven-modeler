@@ -124,7 +124,7 @@ const emit = defineEmits([
 	'updateStoredLocalStorageTabNavList',
 ])
 const { initializeFormEditor, save, importJson, propertiesPanelComponent, saveXmlAfterUpdate, restartFormJs, destroyFormJs, getFormId, formEditor,
-	formHistoryListComp, activeVersion, changeActiveVersion } = useForm(props, emit, canvas, propertyPanel)
+	formHistoryListComp, activeVersion, changeActiveVersion, scheduleAutosave } = useForm(props, emit, canvas, propertyPanel)
 
 // Restoring loads the snapshot into the editor and becomes the newest version once it is
 // saved, so saving waits for an edit, as it does after loading a diagram version
@@ -178,9 +178,10 @@ const _validate = async json => {
  * Applies a schema object to the form editor.
  * Can be used by plugins via the tools slot.
  */
-const applySchema = (schema) => {
-	importJson(JSON.stringify(schema, null, 2))
+const applySchema = async (schema) => {
+	await importJson(JSON.stringify(schema, null, 2))
 	emit('toggleEnableSave', true, props.tabElementIndex)
+	scheduleAutosave()
 }
 
 /**

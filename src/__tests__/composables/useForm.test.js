@@ -14,7 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent } from 'vue'
 
@@ -76,6 +76,57 @@ function withSetup(propsOverrides = {}, provide = {}) {
 
   return { ...composableResult, emitted }
 }
+
+describe('useForm scheduleAutosave', () => {
+  // The tools slot applies a schema through a programmatic import, which the
+  // change handler ignores on purpose — so the autosave has to be asked for.
+  const autosaveOptions = { enabled: true, delayMs: 10 }
+
+  beforeEach(() => {
+    vi.useFakeTimers()
+    saveMock.mockClear()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('saves a form that was saved before', async () => {
+    const { scheduleAutosave, initializeFormEditor } = withSetup(
+      { tabElement: { id: 'tab1', key: 'form1', sessionId: null, type: 'form', isSaved: true } },
+      { autosaveOptions })
+
+    await initializeFormEditor()
+    scheduleAutosave()
+    await vi.advanceTimersByTimeAsync(20)
+
+    expect(saveMock).toHaveBeenCalled()
+  })
+
+  it('leaves a form that was never saved alone', async () => {
+    const { scheduleAutosave, initializeFormEditor } = withSetup(
+      { tabElement: { id: 'tab1', key: 'form1', sessionId: null, type: 'form', isSaved: false } },
+      { autosaveOptions })
+
+    await initializeFormEditor()
+    scheduleAutosave()
+    await vi.advanceTimersByTimeAsync(20)
+
+    expect(saveMock).not.toHaveBeenCalled()
+  })
+
+  it('does nothing while autosave is off', async () => {
+    const { scheduleAutosave, initializeFormEditor } = withSetup(
+      { tabElement: { id: 'tab1', key: 'form1', sessionId: null, type: 'form', isSaved: true } },
+      { autosaveOptions: { enabled: false, delayMs: 10 } })
+
+    await initializeFormEditor()
+    scheduleAutosave()
+    await vi.advanceTimersByTimeAsync(20)
+
+    expect(saveMock).not.toHaveBeenCalled()
+  })
+})
 
 describe('useForm', () => {
   beforeEach(() => {
