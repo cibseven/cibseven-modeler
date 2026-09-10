@@ -217,6 +217,13 @@ export default function useForm(props, emit, canvas, propertyPanel) {
       return json?.id
     }
 
+    // A schema applied through the tools slot is an edit like any other, but the
+    // import that carries it is suppressed as programmatic (see `importing`), so
+    // the caller has to ask for the autosave the change handler skipped.
+    const scheduleAutosave = () => {
+      if (autosaveOptions?.enabled && props.tabElement.isSaved) autosave.schedule()
+    }
+
       return {
         initializeFormEditor,
         importJson,
@@ -225,6 +232,7 @@ export default function useForm(props, emit, canvas, propertyPanel) {
         restartFormJs,
         destroyFormJs,
         getFormId,
+        scheduleAutosave,
         getFormHistoryList,
         changeActiveVersion,
         formHistoryListComp,

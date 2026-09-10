@@ -47,12 +47,17 @@
 				</template>
 			</MenuActionButtons>
 		</div>
-		<!-- Extension point for plugins -->
+		<!-- Extension point for plugins
+		     Available props for plugin components:
+		       apply-schema       — (schema) => void        Imports a schema object into the editor and enables Save.
+		       get-current-schema — () => String|null       The editor's current schema as JSON; its `id` is the form id.
+		       tab-element        — Object                  Current tab descriptor: { id, key, name, type, version, isSaved, ... } -->
 		<component
-			v-if="formTool"
+			v-if="formTool && props.isActiveTab"
 			:is="formTool"
 			:apply-schema="applySchema"
 			:get-current-schema="getCurrentSchemaJson"
+			:tab-element="props.tabElement"
 		/>
 	</div>
 </template>
@@ -119,7 +124,7 @@ const emit = defineEmits([
 	'updateStoredLocalStorageTabNavList',
 ])
 const { initializeFormEditor, save, importJson, propertiesPanelComponent, saveXmlAfterUpdate, restartFormJs, destroyFormJs, getFormId, formEditor,
-	formHistoryListComp, activeVersion, changeActiveVersion } = useForm(props, emit, canvas, propertyPanel)
+	formHistoryListComp, activeVersion, changeActiveVersion, scheduleAutosave } = useForm(props, emit, canvas, propertyPanel)
 
 // Restoring loads the snapshot into the editor and becomes the newest version once it is
 // saved, so saving waits for an edit, as it does after loading a diagram version
@@ -173,9 +178,10 @@ const _validate = async json => {
  * Applies a schema object to the form editor.
  * Can be used by plugins via the tools slot.
  */
-const applySchema = (schema) => {
-	importJson(JSON.stringify(schema, null, 2))
+const applySchema = async (schema) => {
+	await importJson(JSON.stringify(schema, null, 2))
 	emit('toggleEnableSave', true, props.tabElementIndex)
+	scheduleAutosave()
 }
 
 /**
@@ -210,3 +216,13 @@ defineExpose({
 })
 
 </script>
+<style scoped>
+/* form-js sizes its properties panel to a fixed 300px (plus its own 1px border),
+   which is wider than the host area — the panel width minus the 24px collapse
+   strip and the border — and left the panel with a horizontal scrollbar. Let it
+   fill whatever width it is given instead. */
+:deep(.fjs-properties-container) {
+	box-sizing: border-box;
+	width: 100%;
+}
+</style>
