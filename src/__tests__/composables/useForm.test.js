@@ -302,3 +302,27 @@ describe('useForm', () => {
     })
   })
 })
+
+describe('useForm change listener', () => {
+  beforeEach(() => {
+    mockFormEditor.instance.on.mockClear()
+  })
+
+  const changeListener = () =>
+    mockFormEditor.instance.on.mock.calls.find(([event]) => event === 'changed')?.[1]
+
+  /**
+   * The event bus stops propagating an event as soon as a listener returns a value, and the
+   * properties panel subscribes after this one, so returning anything - a promise from an
+   * async listener included - leaves the panel without the change and it stops refreshing.
+   */
+  it('returns nothing, so the event reaches the listeners behind it', async () => {
+    const { initializeFormEditor } = withSetup()
+
+    await initializeFormEditor()
+
+    expect(changeListener()).toBeTypeOf('function')
+    expect(changeListener()()).toBeUndefined()
+  })
+
+})

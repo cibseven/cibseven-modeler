@@ -78,7 +78,9 @@ export default function useForm(props, emit, canvas, propertyPanel) {
         emit('updateIsButtonDisabled', false, props.tabElementIndex)
         propertiesPanelComponent.value = formEditor.value.get('propertiesPanel')
 
-        formEditor.value.on("changed", async () => {
+        // Returns nothing, not even a promise: the event bus stops propagating on a return
+        // value, and the properties panel subscribes behind this listener.
+        formEditor.value.on("changed", () => {
             if (!formEditor.value) return
             json = formEditor.value?.getSchema()
             emit('updateEditorXML', JSON.stringify(json, null, 2),  props.tabElementIndex)
