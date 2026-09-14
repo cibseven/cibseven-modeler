@@ -211,7 +211,7 @@ describe('DiagramListItem', () => {
         it('emits toggleModal with item details when delete clicked', async () => {
             const wrapper = mountItem(PROCESS_ITEM, { isHovered: true, index: 3 })
 
-            const deleteBtn = wrapper.findAll('button')[2] // third button is delete
+            const deleteBtn = wrapper.find('button.mdi-delete-outline')
             await deleteBtn.trigger('click')
 
             expect(wrapper.emitted('toggleModal')).toHaveLength(1)

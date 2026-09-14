@@ -43,7 +43,7 @@
 		@openDiagram="openDiagramFromChild" @openSelectedFile="handleFile" @showToastMessage="showToastMessage"
 		@createNewBpmnc7Diagram="createNewBpmnDiagram"
 		@createNewDmnDiagram="createNewDmnDiagram" @getStoredDiagrams="getStoredDiagrams"
-		@loadMore="loadMore" @search="handleSearch"
+		@loadMore="loadMore" @search="handleSearch" @navigateFolder="handleNavigateFolder"
 		@createNewFormDiagram="createNewFormDiagram"
 		@closeRemovedProcessesOpenInTab="closeRemovedProcessesOpenInTab">
 	</StartPage>
@@ -254,6 +254,7 @@ const diagramOffset = ref(0)
 const hasMore = ref(true)
 const PAGE_SIZE = 20
 const currentKeyword = ref('')
+const currentFolderId = ref(null)
 const currentDiagramType = ref('')
 // Tab state is owned by useTabManager — initialized after modeler ref
 const { tabNavList, tabNavListXml, editorXML, _copyArray, _saveTabNavSavedLocalStorage, _loadTabNavList, _closeSelectedTab, orderTabNavListHiddenTab: _orderTabNavListHiddenTab } = useTabManager(modeler)
@@ -366,7 +367,7 @@ const createNewBpmnDiagram = async (diagramXML, type) => {
 
 		if (nameUpdated) finalXml = setTagValueOfXml(finalXml, 'bpmn:process', 'name', name)
 
-		tabNavList.value.push({ version: 0, type: type, name: name, navId: uniqueId, id: uniqueId, key: name, keyOfTabNav: name, canSave: true, isSaved: false, isModelerVisible: false, isPropertyPanelVisible: false, isEditorVisible: false })
+		tabNavList.value.push({ version: 0, type: type, name: name, navId: uniqueId, id: uniqueId, key: name, keyOfTabNav: name, canSave: true, isSaved: false, isModelerVisible: false, isPropertyPanelVisible: false, isEditorVisible: false, folderId: currentFolderId.value })
 		tabNavListXml.value[tabNavList.value.length - 1] = finalXml
 		editorXML.value[tabNavList.value.length - 1] = finalXml
 		switchTabFromTabNav(tabNavList.value.length - 1)
@@ -383,7 +384,7 @@ const createNewDmnDiagram = async (dmnXML, type) => {
 
 		if (nameUpdated) finalXml = setTagValueOfXml(finalXml, 'definitions', 'name', name)
 
-		tabNavList.value.push({ version: 0, type: type, name: name, navId: uniqueId, id: uniqueId, key: name, keyOfTabNav: name, canSave: true, isSaved: false, isModelerVisible: false, isPropertyPanelVisible: false, isEditorVisible: false })
+		tabNavList.value.push({ version: 0, type: type, name: name, navId: uniqueId, id: uniqueId, key: name, keyOfTabNav: name, canSave: true, isSaved: false, isModelerVisible: false, isPropertyPanelVisible: false, isEditorVisible: false, folderId: currentFolderId.value })
 		tabNavListXml.value[tabNavList.value.length - 1] = finalXml
 		editorXML.value[tabNavList.value.length - 1] = finalXml
 		switchTabFromTabNav(tabNavList.value.length - 1)
@@ -396,7 +397,7 @@ const createNewFormDiagram = async(formJson, type) => {
 	const callback = async (nameUpdated, idUpdated) => {
 		const uniqueId = idUpdated ? idUpdated.trim() : _assignUniqueId('Form')
 		formJson.id = uniqueId
-		tabNavList.value.push({ version: 0, type: type, name: uniqueId, navId: uniqueId, id: uniqueId, key: uniqueId, keyOfTabNav: uniqueId, canSave: true, isSaved: false, isModelerVisible: false, isPropertyPanelVisible: false, isEditorVisible: false, isBpmn: false })
+		tabNavList.value.push({ version: 0, type: type, name: uniqueId, navId: uniqueId, id: uniqueId, key: uniqueId, keyOfTabNav: uniqueId, canSave: true, isSaved: false, isModelerVisible: false, isPropertyPanelVisible: false, isEditorVisible: false, folderId: currentFolderId.value, isBpmn: false })
 		tabNavListXml.value[tabNavList.value.length - 1] = JSON.stringify(formJson, null, 2)
 		editorXML.value[tabNavList.value.length - 1] = JSON.stringify(formJson, null, 2)
 		switchTabFromTabNav(tabNavList.value.length - 1)
@@ -443,13 +444,30 @@ const updateStoredLocalStorageTabNavList = async ({ processId, processName, proc
 	switchTabFromTabNav(tabElementIndex)
 }
 
+// Searching looks through the whole tree; browsing stays in the folder that is open
+const _folderToFetch = () => currentKeyword.value ? null : currentFolderId.value
+
 const getStoredDiagrams = async functionAfterExecution => {
 	diagramOffset.value = 0
-	await store.dispatch('modeler/processes/fetchUnifiedDiagrams', { firstResult: 0, maxResults: PAGE_SIZE, keyword: currentKeyword.value, type: currentDiagramType.value })
+	// The top level holds folders only, so there is nothing to ask the server for
+	if (!currentKeyword.value && !currentFolderId.value) {
+		diagrams.value = []
+		hasMore.value = false
+		functionAfterExecution && functionAfterExecution()
+		return
+	}
+	await store.dispatch('modeler/processes/fetchUnifiedDiagrams', { firstResult: 0, maxResults: PAGE_SIZE, keyword: currentKeyword.value, type: currentDiagramType.value, folderId: _folderToFetch() })
 	const fetched = store.state.modeler.processes.unifiedDiagrams ?? []
 	diagrams.value = fetched
 	hasMore.value = fetched.length === PAGE_SIZE
 	functionAfterExecution && functionAfterExecution()
+}
+
+const handleNavigateFolder = async folderId => {
+	currentFolderId.value = folderId ?? null
+	if (startPage.value) startPage.value._toggleIsLoading(true)
+	await getStoredDiagrams()
+	if (startPage.value) startPage.value._toggleIsLoading(false)
 }
 
 const handleSearch = async ({ keyword, diagramType }) => {
@@ -463,7 +481,7 @@ const handleSearch = async ({ keyword, diagramType }) => {
 const loadMore = async () => {
 	if (!hasMore.value) return
 	diagramOffset.value += PAGE_SIZE
-	await store.dispatch('modeler/processes/fetchUnifiedDiagrams', { firstResult: diagramOffset.value, maxResults: PAGE_SIZE, keyword: currentKeyword.value, type: currentDiagramType.value })
+	await store.dispatch('modeler/processes/fetchUnifiedDiagrams', { firstResult: diagramOffset.value, maxResults: PAGE_SIZE, keyword: currentKeyword.value, type: currentDiagramType.value, folderId: _folderToFetch() })
 	const fetched = store.state.modeler.processes.unifiedDiagrams ?? []
 	diagrams.value = [...(diagrams.value ?? []), ...fetched]
 	hasMore.value = fetched.length === PAGE_SIZE
@@ -755,6 +773,7 @@ const { handleFile, _addNewBpmnFromLoadedXml, resolveConflict } = useFileImport(
 	onBatchComplete,
 	nextModalHiddenPromise,
 	updateDiagramXml,
+	currentFolderId,
 })
 
 const _openProcessFromExternalXml = async (xml, resExistingProcess, externalProcessKey, _decodedProcessId) => {

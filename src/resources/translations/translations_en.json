@@ -503,5 +503,35 @@
 	},
 	"cib-header": {
 		"productName": "CIB seven Modeler"
-	}
+	},
+	"folders": {
+		"breadcrumb": "Folder path",
+		"home": "Home",
+		"create": "New folder",
+		"createTitle": "New folder",
+		"renameTitle": "Rename folder",
+		"name": "Folder name",
+		"nameRequired": "A folder needs a name.",
+		"saveFailed": "The folder could not be saved.",
+		"rename": "Rename",
+		"move": "Move",
+		"copy": "Copy",
+		"delete": "Delete",
+		"deleteTitle": "Delete folder",
+		"deleteBody": "Delete \"{name}\" with everything in it? This removes {folders} folder(s) and {models} model(s) for good. Existing deployments are not affected.",
+		"moveTitle": "Move \"{name}\"",
+		"moveModelTitle": "Move \"{name}\" to a folder",
+		"copyModelTitle": "Copy \"{name}\" to a folder",
+		"copyKey": "Process key of the copy",
+		"copyKeyRequired": "A copy needs a process key of its own.",
+		"destination": "Destination",
+		"empty": "This folder is empty.",
+		"openFolderFirst": "Open a folder first: a model is always stored in one.",
+		"searchAcrossFolders": "Showing matches from every folder."
+	},
+	"toastFolderLoadFail": { "title": "Folders", "body": "The folders could not be loaded" },
+	"toastFolderDeleteSuccess": { "title": "Folder deleted", "body": "The folder and everything in it have been removed" },
+	"toastFolderDeleteFail": { "title": "Folder", "body": "The folder could not be deleted" },
+	"toastFolderMoveSuccess": { "title": "Moved", "body": "The model is now in the folder you chose" },
+	"toastFolderCopySuccess": { "title": "Copied", "body": "The copy is now in the folder you chose" }
 }

@@ -59,11 +59,11 @@ const mutations = {
 }
 
 const actions = {
-  async fetchUnifiedDiagrams({ commit }, { firstResult, maxResults, keyword, type }) {
+  async fetchUnifiedDiagrams({ commit }, { firstResult, maxResults, keyword, type, folderId }) {
     commit('setLoading', true)
     commit('clearError')
     try {
-      const diagrams = await getUnifiedDiagrams(firstResult, maxResults, keyword, type)
+      const diagrams = await getUnifiedDiagrams(firstResult, maxResults, keyword, type, folderId)
       commit('setUnifiedDiagrams', diagrams)
       commit('setProcesses', diagrams.filter(d => d.type !== 'form'))
       commit('modeler/forms/setForms', diagrams.filter(d => d.type === 'form'), { root: true })

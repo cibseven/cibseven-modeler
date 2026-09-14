@@ -101,7 +101,7 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
       blob,
       storeStateSlice: store.state.modeler?.processes?.processes,
       itemKeyField: 'processkey',
-      createFn: () => saveDiagramProcess(newProcessName, newProcessKey, blob, typeOfDiagram),
+      createFn: () => saveDiagramProcess(newProcessName, newProcessKey, blob, typeOfDiagram, props.tabElement.folderId),
       updateFn: () => updateDiagramProcess(storedProcessSelectedId, newProcessName, newProcessKey, blob, typeOfDiagram),
       toTabPayload: response => ({ processId: response.id, processName: response.name, processKey: response.processkey, type: typeOfDiagram }),
       sessionResponse,

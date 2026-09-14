@@ -63,6 +63,8 @@ export default function useFileImport({
   onBatchComplete,
   nextModalHiddenPromise,
   updateDiagramXml,
+  // Read at save time, not captured: a batch can outlive the folder the user started in
+  currentFolderId,
 }) {
   const { t } = useI18n()
 
@@ -175,7 +177,7 @@ export default function useFileImport({
   const _autoSaveProcess = async (xml, processKey, diagramType) => {
     try {
       const blob = new Blob([xml], { type: 'text/xml' })
-      const response = await saveDiagramProcess(processKey, processKey, blob, diagramType)
+      const response = await saveDiagramProcess(processKey, processKey, blob, diagramType, currentFolderId?.value)
       if (response?.id) {
         const idx = tabNavList.value.findIndex(
           t => t.key === processKey && !t.isSaved && t.type !== DIAGRAM_TYPE.FORM
@@ -192,7 +194,7 @@ export default function useFileImport({
   /** Save a newly imported Form file to the database and mark its tab as saved. */
   const _autoSaveForm = async (jsonString, formId) => {
     try {
-      const response = await saveForm(formId, JSON.parse(jsonString))
+      const response = await saveForm(formId, JSON.parse(jsonString), currentFolderId?.value)
       if (response?.id) {
         const idx = tabNavList.value.findIndex(
           t => t.key === formId && !t.isSaved && t.type === DIAGRAM_TYPE.FORM

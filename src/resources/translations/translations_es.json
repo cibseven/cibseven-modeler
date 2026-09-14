@@ -503,5 +503,35 @@
   },
   "cib-header": {
     "productName": "CIB seven Modeler"
-  }
+  },
+	"folders": {
+		"breadcrumb": "Ruta de carpetas",
+		"home": "Inicio",
+		"create": "Nueva carpeta",
+		"createTitle": "Nueva carpeta",
+		"renameTitle": "Renombrar carpeta",
+		"name": "Nombre de la carpeta",
+		"nameRequired": "La carpeta necesita un nombre.",
+		"saveFailed": "No se ha podido guardar la carpeta.",
+		"rename": "Renombrar",
+		"move": "Mover",
+		"copy": "Copiar",
+		"delete": "Eliminar",
+		"deleteTitle": "Eliminar carpeta",
+		"deleteBody": "¿Eliminar «{name}» con todo su contenido? Se eliminarán definitivamente {folders} carpeta(s) y {models} modelo(s). Los despliegues existentes no se ven afectados.",
+		"moveTitle": "Mover «{name}»",
+		"moveModelTitle": "Mover «{name}» a una carpeta",
+		"copyModelTitle": "Copiar «{name}» en una carpeta",
+		"copyKey": "Clave de proceso de la copia",
+		"copyKeyRequired": "La copia necesita una clave de proceso propia.",
+		"destination": "Destino",
+		"empty": "Esta carpeta está vacía.",
+		"openFolderFirst": "Abra primero una carpeta: los modelos siempre se guardan en una.",
+		"searchAcrossFolders": "Mostrando resultados de todas las carpetas."
+	},
+	"toastFolderLoadFail": { "title": "Carpetas", "body": "No se han podido cargar las carpetas" },
+	"toastFolderDeleteSuccess": { "title": "Carpeta eliminada", "body": "La carpeta y todo su contenido se han eliminado" },
+	"toastFolderDeleteFail": { "title": "Carpeta", "body": "No se ha podido eliminar la carpeta" },
+	"toastFolderMoveSuccess": { "title": "Movido", "body": "El modelo está ahora en la carpeta elegida" },
+	"toastFolderCopySuccess": { "title": "Copiado", "body": "La copia está ahora en la carpeta elegida" }
 }

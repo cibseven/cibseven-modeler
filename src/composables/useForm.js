@@ -143,7 +143,7 @@ export default function useForm(props, emit, canvas, propertyPanel) {
         blob: json,
         storeStateSlice: store.state.modeler?.forms?.forms,
         itemKeyField: 'formId',
-        createFn: () => saveForm(newFormId, json),
+        createFn: () => saveForm(newFormId, json, props.tabElement.folderId),
         updateFn: () => updateForm(props.tabElement.id, newFormId, json),
         toTabPayload: response => ({ processId: response.id, processName: response.formId, processKey: response.formId, type: 'form' }),
         sessionResponse,

@@ -60,7 +60,26 @@
                         </div>
                     </div>
                 <div>
-                    <h6 class="mt-4">{{ $t("titles.recent") }}</h6>
+                    <nav class="mt-4 d-flex align-items-center justify-content-between gap-2"
+                        :aria-label="$t('folders.breadcrumb')">
+                        <ol class="breadcrumb mb-0 flex-wrap">
+                            <li class="breadcrumb-item" :class="{ active: !breadcrumb.length }">
+                                <button type="button" class="btn btn-link btn-sm p-0 border-0 align-baseline"
+                                    @click="navigateTo(null)">{{ $t('folders.home') }}</button>
+                            </li>
+                            <li v-for="(folder, level) in breadcrumb" :key="folder.id" class="breadcrumb-item"
+                                :class="{ active: level === breadcrumb.length - 1 }"
+                                :aria-current="level === breadcrumb.length - 1 ? 'page' : null">
+                                <button type="button" class="btn btn-link btn-sm p-0 border-0 align-baseline"
+                                    @click="navigateTo(folder.id)">{{ folder.name }}</button>
+                            </li>
+                        </ol>
+                        <button type="button" class="btn btn-sm btn-outline-secondary text-nowrap"
+                            :title="$t('folders.create')" @click="handleCreateFolder">
+                            <i class="mdi mdi-folder-plus-outline me-1" aria-hidden="true"></i>{{ $t('folders.create') }}
+                        </button>
+                    </nav>
+                    <p v-if="isSearching" class="mt-2 mb-0 small text-muted">{{ $t('folders.searchAcrossFolders') }}</p>
                     <div v-if="filteredDashboardElements !== null">
                         <div ref="listContainer" @scroll="handleListScroll" class="list-group shadow-sm overflow-auto" style="max-height: 50vh">
                             <div class="d-flex align-items-center justify-content-center">
@@ -69,13 +88,27 @@
                                 </div>
                             </div>
                             <div v-if="!isLoading">
+                                <template v-if="!isSearching">
+                                    <div v-for="folder in currentChildren" :key="folder.id">
+                                        <FolderListItem :folder="folder" :isHovered="hoveredFolderId === folder.id"
+                                            @mouseover="hoveredFolderId = folder.id" @mouseleave="hoveredFolderId = null"
+                                            @focusin="hoveredFolderId = folder.id" @focusout="hoveredFolderId = null"
+                                            @open="navigateTo" @rename="handleRenameFolder"
+                                            @move="handleMoveFolder" @remove="handleRemoveFolder">
+                                        </FolderListItem>
+                                    </div>
+                                </template>
+                                <div v-if="isEmptyHere" class="list-group-item border-0 text-muted small">
+                                    {{ $t('folders.empty') }}
+                                </div>
                                 <div v-for="(element, index) in filteredDashboardElements" :key="element.id">
                                     <DiagramListItem
                                         @mouseleave="setHoverElement(index, false)" :index="index"
                                         :ref="el => searchElementsList[index] = el" @mouseover="setHoverElement(index, true)"
                                         @focusin="setHoverElement(index, true)" @focusout="setHoverElement(index, false)"
                                         @openDiagram="openDiagramEmitFromChild" :item="element" @toggleModal="toggleModal"
-                                        @downloadDiagram="handleDownloadDiagram" :isHovered="element.isHovered">
+                                        @downloadDiagram="handleDownloadDiagram" @moveModel="handleMoveModel" @copyModel="handleCopyModel"
+                                        :isHovered="element.isHovered">
                                     </DiagramListItem>
                                 </div>
                                 <div v-if="isLoadingMore" class="d-flex align-items-center justify-content-center py-2">
@@ -88,20 +121,20 @@
                     </div>
                         <div class="mt-4 d-flex justify-content-between">    
                             <div class="d-flex justify-content-start gap-2">
-                                <button @click="handleOpenFileInput" :title="$t('buttons.importFile')" type="button"
+                                <button @click="handleOpenFileInput" :title="hint('buttons.importFile')" :disabled="!currentFolderId" type="button"
                                 class="btn border border-dark btn-light"><i class="mdi mdi-import me-1"></i>{{ $t('buttons.importFile') }}</button>
                                 <component v-if="startPageTool" :is="startPageTool"></component>
                             </div>
                             <input ref="fileInput" type="file" accept=".bpmn,.dmn,.form" multiple :aria-label="$t('buttons.importFile')" style="display: none;"
                                 @change="handleFileChange" />
                             <div class="d-flex gap-2">
-                                <button :title="$t('buttons.createBpmn')" type="button" class="btn btn-secondary" @click="handleClickCreateBpmnc7Diagram">
+                                <button :title="hint('buttons.createBpmn')" :disabled="!currentFolderId" type="button" class="btn btn-secondary" @click="handleClickCreateBpmnc7Diagram">
                                     {{ $t('buttons.createBpmn') }}
                                 </button>
-                                <button :title="$t('buttons.createDmn')" type="button" class="btn btn-secondary" @click="handleClickCreateDmnDiagram">
+                                <button :title="hint('buttons.createDmn')" :disabled="!currentFolderId" type="button" class="btn btn-secondary" @click="handleClickCreateDmnDiagram">
                                     {{ $t('buttons.createDmn') }}
                                 </button>
-                                <button :title="$t('buttons.createForm')" type="button" class="btn btn-secondary" @click="handleClickCreateFormDiagram">
+                                <button :title="hint('buttons.createForm')" :disabled="!currentFolderId" type="button" class="btn btn-secondary" @click="handleClickCreateFormDiagram">
                                     {{ $t('buttons.createForm') }}
                                 </button>
                             </div>
@@ -120,6 +153,8 @@
           :acceptLabel="$t('buttons.delDiagram')"
           @resetVariablesForModalAcceptCancelMessage="resetVariablesForModalAcceptCancelMessage">
       </ConfirmModal>
+      <FolderNameModal ref="folderNameModal" />
+      <FolderPickerModal ref="folderPickerModal" />
       <TaskPopper ref="downloadPopper" />
     </div>
 
@@ -139,6 +174,11 @@ import diagramXMLC7 from '../../resources/camunda7.bpmn'
 import dmnXML from '../../resources/dmn.dmn'
 //components
 import DiagramListItem from './DiagramListItem.vue'
+import FolderListItem from './FolderListItem.vue'
+import FolderNameModal from '../modals/FolderNameModal.vue'
+import FolderPickerModal from '../modals/FolderPickerModal.vue'
+import useFolders from '../../composables/useFolders.js'
+import { copyProcessToFolder, moveFormToFolder, moveProcessToFolder } from '../../services/folderService'
 import ConfirmModal from '../modals/ConfirmModal.vue'
 import formJson from '../../resources/formSchema.json'
 import { DIAGRAM_TYPE } from '../../constants/diagramTypes.js'
@@ -165,7 +205,8 @@ const emit = defineEmits([
     'openDiagram',
     'showToastMessage',
     'loadMore',
-    'search'
+    'search',
+    'navigateFolder'
 ])
 const downloadPopper = ref(null)
 const inputSearchValue = ref('')
@@ -182,7 +223,28 @@ const itemKey = ref('process')
 const filterType = ref('all')
 const dashboardElements = ref([])
 const filteredDashboardElements = ref([])
+const folderNameModal = ref(null)
+const folderPickerModal = ref(null)
+const hoveredFolderId = ref(null)
+const folderDeleteBody = ref('')
+const folderState = useFolders()
+const { breadcrumb, currentChildren, currentFolderId } = folderState
+
+// A keyword looks through the whole tree, so this level's folders are not the subject
+const isSearching = computed(() => inputSearchValue.value.trim().length >= 3)
+const isEmptyHere = computed(() =>
+    !currentChildren.value.length && !(filteredDashboardElements.value?.length))
+
+// A model always lives in a folder, so the top level has nothing to create into
+const hint = key => currentFolderId.value ? t(key) : t('folders.openFolderFirst')
 onMounted(async () => {
+    try {
+        await folderState.load()
+    } catch (error) {
+        // Without the tree there is still a list to show, so say so and carry on
+        console.error(error)
+        emit('showToastMessage', { isSuccess: false, toastText: 'toastFolderLoadFail' })
+    }
     resetDashboardElements()
     _addIsHoveredElement()
     if (props.diagrams != null) {
@@ -200,6 +262,10 @@ const handleListScroll = () => {
 }
 
 const modalTitle = computed(() => {
+      // A folder warns about what goes with it, not about the name of a single model
+      if (itemKey.value === 'folder') {
+        return { title: t('folders.deleteTitle'), body: folderDeleteBody.value }
+      }
       return { title: t('modalDelete.title', {
         item: t(`items.${itemKey.value}`)
       } ), body: t('modalDelete.body', {
@@ -346,6 +412,98 @@ const handleDownloadDiagram = async (item) => {
 //passed from child ProcessDiagramElement to CibsevenModeler
 const openDiagramEmitFromChild = (valueFromChild, processId, processName, processKey, tabElementIndex, typeofDiagram) => {
     emit('openDiagram', valueFromChild, processId, processName, processKey, typeofDiagram, true, false, false)
+}
+
+const navigateTo = folderId => {
+    folderState.open(folderId)
+    hoveredFolderId.value = null
+    emit('navigateFolder', folderId ?? null)
+}
+
+const handleCreateFolder = () => {
+    folderNameModal.value?.show('create', '', async name => {
+        await folderState.create(name)
+    })
+}
+
+const handleRenameFolder = folder => {
+    folderNameModal.value?.show('rename', folder.name, async name => {
+        await folderState.rename(folder.id, name)
+    })
+}
+
+const handleMoveFolder = folder => {
+    folderPickerModal.value?.show({
+        // Leaving out the folder leaves out its subtree, which is where it may not go
+        folders: folderState.flatten(folder.id),
+        title: t('folders.moveTitle', { name: folder.name }),
+        allowTopLevel: true,
+        accept: async parentId => {
+            await folderState.move(folder.id, parentId)
+        }
+    })
+}
+
+const handleRemoveFolder = async folder => {
+    let held = { folders: 0, diagrams: 0, forms: 0 }
+    try {
+        held = await folderState.contents(folder.id)
+    } catch (error) {
+        // The count only informs the warning; losing it must not block the deletion
+        console.error(error)
+    }
+    itemKey.value = 'folder'
+    folderDeleteBody.value = t('folders.deleteBody', {
+        name: folder.name,
+        folders: held.folders ?? 0,
+        models: (held.diagrams ?? 0) + (held.forms ?? 0)
+    })
+    functionAfterAccepting.value = deleteFolderWithId
+    processIdForDelete.value = folder.id
+    searchListIndex.value = null
+    showModalAcceptCancelMessage.value = true
+}
+
+const deleteFolderWithId = async folderId => {
+    try {
+        await folderState.remove(folderId)
+        // Removing the folder underfoot leaves the parent open, so the list has to follow
+        emit('navigateFolder', folderState.currentFolderId.value)
+        emit('showToastMessage', { isSuccess: true, toastText: 'toastFolderDeleteSuccess' })
+    } catch (error) {
+        console.error(error)
+        emit('showToastMessage', { isSuccess: false, toastText: 'toastFolderDeleteFail' })
+    }
+}
+
+const modelName = item => item.type === DIAGRAM_TYPE.FORM ? item.formId : item.name
+
+const handleMoveModel = item => {
+    folderPickerModal.value?.show({
+        folders: folderState.flatten(),
+        title: t('folders.moveModelTitle', { name: modelName(item) }),
+        accept: async folderId => {
+            if (item.type === DIAGRAM_TYPE.FORM) await moveFormToFolder(item.id, folderId)
+            else await moveProcessToFolder(item.id, folderId)
+            emit('getStoredDiagrams')
+            emit('showToastMessage', { isSuccess: true, toastText: 'toastFolderMoveSuccess' })
+        }
+    })
+}
+
+const handleCopyModel = item => {
+    folderPickerModal.value?.show({
+        folders: folderState.flatten(),
+        title: t('folders.copyModelTitle', { name: modelName(item) }),
+        // The engine resolves a process by key, so a copy cannot share the one it came from
+        requireKey: true,
+        defaultKey: `${item.processkey}-copy`,
+        accept: async (folderId, processkey) => {
+            await copyProcessToFolder(item.id, folderId, processkey, item.name)
+            emit('getStoredDiagrams')
+            emit('showToastMessage', { isSuccess: true, toastText: 'toastFolderCopySuccess' })
+        }
+    })
 }
 
 const _toggleIsLoading = comp => isLoading.value = comp

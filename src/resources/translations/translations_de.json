@@ -503,5 +503,35 @@
   },
   "cib-header": {
     "productName": "CIB seven Modeler"
-  }
+  },
+	"folders": {
+		"breadcrumb": "Ordnerpfad",
+		"home": "Start",
+		"create": "Neuer Ordner",
+		"createTitle": "Neuer Ordner",
+		"renameTitle": "Ordner umbenennen",
+		"name": "Ordnername",
+		"nameRequired": "Ein Ordner braucht einen Namen.",
+		"saveFailed": "Der Ordner konnte nicht gespeichert werden.",
+		"rename": "Umbenennen",
+		"move": "Verschieben",
+		"copy": "Kopieren",
+		"delete": "Löschen",
+		"deleteTitle": "Ordner löschen",
+		"deleteBody": "„{name}“ mit dem gesamten Inhalt löschen? Dabei werden {folders} Ordner und {models} Modelle endgültig entfernt. Bestehende Deployments sind nicht betroffen.",
+		"moveTitle": "„{name}“ verschieben",
+		"moveModelTitle": "„{name}“ in einen Ordner verschieben",
+		"copyModelTitle": "„{name}“ in einen Ordner kopieren",
+		"copyKey": "Process Key der Kopie",
+		"copyKeyRequired": "Eine Kopie braucht einen eigenen Process Key.",
+		"destination": "Ziel",
+		"empty": "Dieser Ordner ist leer.",
+		"openFolderFirst": "Zuerst einen Ordner öffnen: Modelle werden immer in einem Ordner gespeichert.",
+		"searchAcrossFolders": "Treffer aus allen Ordnern."
+	},
+	"toastFolderLoadFail": { "title": "Ordner", "body": "Die Ordner konnten nicht geladen werden" },
+	"toastFolderDeleteSuccess": { "title": "Ordner gelöscht", "body": "Der Ordner und sein gesamter Inhalt wurden entfernt" },
+	"toastFolderDeleteFail": { "title": "Ordner", "body": "Der Ordner konnte nicht gelöscht werden" },
+	"toastFolderMoveSuccess": { "title": "Verschoben", "body": "Das Modell liegt jetzt im gewählten Ordner" },
+	"toastFolderCopySuccess": { "title": "Kopiert", "body": "Die Kopie liegt jetzt im gewählten Ordner" }
 }

@@ -29,6 +29,18 @@ vi.mock('../../../services/formService.js', () => ({
   deleteFormById: vi.fn().mockResolvedValue({}),
 }))
 
+vi.mock('../../../services/folderService.js', () => ({
+  fetchFolders: vi.fn().mockResolvedValue({ data: [] }),
+  fetchFolderContents: vi.fn().mockResolvedValue({ data: { folders: 0, diagrams: 0, forms: 0 } }),
+  createFolder: vi.fn().mockResolvedValue({ data: {} }),
+  renameFolder: vi.fn().mockResolvedValue({ data: {} }),
+  moveFolder: vi.fn().mockResolvedValue({ data: {} }),
+  deleteFolder: vi.fn().mockResolvedValue({ data: {} }),
+  moveProcessToFolder: vi.fn().mockResolvedValue({ data: {} }),
+  copyProcessToFolder: vi.fn().mockResolvedValue({ data: {} }),
+  moveFormToFolder: vi.fn().mockResolvedValue({ data: {} }),
+}))
+
 vi.mock('../../../resources/camunda7.bpmn', () => ({ default: '<bpmn-c7/>' }))
 vi.mock('../../../resources/dmn.dmn', () => ({ default: '<dmn/>' }))
 vi.mock('../../../resources/formSchema.json', () => ({ default: { id: 'newForm' } }))
