@@ -144,12 +144,16 @@ describe('StartPage folders', () => {
   })
 
   describe('creating models', () => {
-    /** A model is always stored in a folder, so the top level has nothing to create into. */
+    /**
+     * A model is always stored in a folder, so at the top level the actions are absent rather
+     * than disabled: a disabled button cannot be focused, so its explanation never arrives.
+     */
     it('offers no import or creation at the top level', async () => {
       const wrapper = await mountStartPage()
 
-      const disabled = wrapper.findAll('button').filter(button => button.attributes('disabled') !== undefined)
-      expect(disabled).toHaveLength(4)
+      const labels = wrapper.findAll('button').map(button => button.text())
+      expect(labels).not.toContain('buttons.importFile')
+      expect(labels).not.toContain('buttons.createBpmn')
     })
 
     it('offers them again inside a folder', async () => {
@@ -158,8 +162,11 @@ describe('StartPage folders', () => {
       await wrapper.findComponent({ name: 'FolderListItem' }).vm.$emit('open', 'general')
       await flushPromises()
 
-      const disabled = wrapper.findAll('button').filter(button => button.attributes('disabled') !== undefined)
-      expect(disabled).toHaveLength(0)
+      const labels = wrapper.findAll('button').map(button => button.text())
+      expect(labels).toContain('buttons.importFile')
+      expect(labels).toContain('buttons.createBpmn')
+      expect(labels).toContain('buttons.createDmn')
+      expect(labels).toContain('buttons.createForm')
     })
   })
 

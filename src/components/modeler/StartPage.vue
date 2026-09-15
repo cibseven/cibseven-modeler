@@ -103,7 +103,7 @@
                                 <div v-if="isEmptyHere" class="list-group-item border-0 text-center text-muted py-5">
                                     <span class="mdi mdi-folder-open-outline d-block mb-2 folder-empty-icon"
                                         aria-hidden="true"></span>
-                                    {{ $t('folders.empty') }}
+                                    {{ currentFolderId ? $t('folders.empty') : $t('folders.emptyHome') }}
                                 </div>
                                 <div v-for="(element, index) in filteredDashboardElements" :key="element.id">
                                     <DiagramListItem
@@ -123,26 +123,26 @@
                             </div>
                         </div>
                     </div>
-                        <div class="mt-4 d-flex justify-content-between">    
+                        <div v-if="currentFolderId || startPageTool" class="mt-4 d-flex justify-content-between">    
                             <div class="d-flex justify-content-start gap-2">
-                                <button @click="handleOpenFileInput" :title="hint('buttons.importFile')" :disabled="!currentFolderId" type="button"
+                                <button v-if="currentFolderId" @click="handleOpenFileInput" :title="$t('buttons.importFile')" type="button"
                                 class="btn border border-dark btn-light"><i class="mdi mdi-import me-1"></i>{{ $t('buttons.importFile') }}</button>
                                 <component v-if="startPageTool" :is="startPageTool"></component>
                             </div>
-                            <input ref="fileInput" type="file" accept=".bpmn,.dmn,.form" multiple :aria-label="$t('buttons.importFile')" style="display: none;"
-                                @change="handleFileChange" />
-                            <div class="d-flex gap-2">
-                                <button :title="hint('buttons.createBpmn')" :disabled="!currentFolderId" type="button" class="btn btn-secondary" @click="handleClickCreateBpmnc7Diagram">
+                            <div v-if="currentFolderId" class="d-flex gap-2">
+                                <button :title="$t('buttons.createBpmn')" type="button" class="btn btn-secondary" @click="handleClickCreateBpmnc7Diagram">
                                     {{ $t('buttons.createBpmn') }}
                                 </button>
-                                <button :title="hint('buttons.createDmn')" :disabled="!currentFolderId" type="button" class="btn btn-secondary" @click="handleClickCreateDmnDiagram">
+                                <button :title="$t('buttons.createDmn')" type="button" class="btn btn-secondary" @click="handleClickCreateDmnDiagram">
                                     {{ $t('buttons.createDmn') }}
                                 </button>
-                                <button :title="hint('buttons.createForm')" :disabled="!currentFolderId" type="button" class="btn btn-secondary" @click="handleClickCreateFormDiagram">
+                                <button :title="$t('buttons.createForm')" type="button" class="btn btn-secondary" @click="handleClickCreateFormDiagram">
                                     {{ $t('buttons.createForm') }}
                                 </button>
                             </div>
                         </div>
+                        <input ref="fileInput" type="file" accept=".bpmn,.dmn,.form" multiple :aria-label="$t('buttons.importFile')" style="display: none;"
+                            @change="handleFileChange" />
 
                     </div>
                 </div>
@@ -239,8 +239,6 @@ const isSearching = computed(() => inputSearchValue.value.trim().length >= 3)
 const isEmptyHere = computed(() =>
     !currentChildren.value.length && !(filteredDashboardElements.value?.length))
 
-// A model always lives in a folder, so the top level has nothing to create into
-const hint = key => currentFolderId.value ? t(key) : t('folders.openFolderFirst')
 onMounted(async () => {
     try {
         await folderState.load()

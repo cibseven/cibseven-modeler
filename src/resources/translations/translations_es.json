@@ -526,7 +526,7 @@
 		"copyKeyRequired": "La copia necesita una clave de proceso propia.",
 		"destination": "Destino",
 		"empty": "Esta carpeta está vacía.",
-		"openFolderFirst": "Abra primero una carpeta: los modelos siempre se guardan en una.",
+		"emptyHome": "Todavía no hay carpetas. Cree una para guardar sus modelos.",
 		"searchAcrossFolders": "Mostrando resultados de todas las carpetas."
 	},
 	"toastFolderLoadFail": { "title": "Carpetas", "body": "No se han podido cargar las carpetas" },

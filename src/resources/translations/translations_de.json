@@ -526,7 +526,7 @@
 		"copyKeyRequired": "Eine Kopie braucht einen eigenen Process Key.",
 		"destination": "Ziel",
 		"empty": "Dieser Ordner ist leer.",
-		"openFolderFirst": "Zuerst einen Ordner öffnen: Modelle werden immer in einem Ordner gespeichert.",
+		"emptyHome": "Noch keine Ordner. Legen Sie einen an, um Modelle darin abzulegen.",
 		"searchAcrossFolders": "Treffer aus allen Ordnern."
 	},
 	"toastFolderLoadFail": { "title": "Ordner", "body": "Die Ordner konnten nicht geladen werden" },
