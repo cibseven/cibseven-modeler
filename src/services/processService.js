@@ -131,6 +131,7 @@ export {
   getUnifiedDiagrams,
   getUnifiedDiagramById,
   keyExistsRemote,
+  fetchProcessByKey,
   fetchProcessByName,
   fetchProcessById,
   saveDiagramProcess,
