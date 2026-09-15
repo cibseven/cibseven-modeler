@@ -46,7 +46,7 @@ const TREE = [
 describe('useFolders', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    fetchFolders.mockResolvedValue({ data: TREE })
+    fetchFolders.mockResolvedValue(TREE)
   })
 
   const loaded = async () => {
@@ -71,19 +71,17 @@ describe('useFolders', () => {
     })
 
     it('sorts the folders of a level by name', async () => {
-      fetchFolders.mockResolvedValue({
-        data: [
-          { id: 'b', parentId: null, name: 'Beta' },
-          { id: 'a', parentId: null, name: 'Alpha' }
-        ]
-      })
+      fetchFolders.mockResolvedValue([
+        { id: 'b', parentId: null, name: 'Beta' },
+        { id: 'a', parentId: null, name: 'Alpha' }
+      ])
       const folders = await loaded()
 
       expect(folders.currentChildren.value.map(f => f.name)).toEqual(['Alpha', 'Beta'])
     })
 
     it('answers with an empty tree when the call gives back something else', async () => {
-      fetchFolders.mockResolvedValue({ data: null })
+      fetchFolders.mockResolvedValue(null)
       const folders = await loaded()
 
       expect(folders.folders.value).toEqual([])
@@ -108,12 +106,10 @@ describe('useFolders', () => {
 
     /** A parent that points back at a child would otherwise loop for ever. */
     it('stops instead of looping when the tree points at itself', async () => {
-      fetchFolders.mockResolvedValue({
-        data: [
-          { id: 'one', parentId: 'other', name: 'One' },
-          { id: 'other', parentId: 'one', name: 'Other' }
-        ]
-      })
+      fetchFolders.mockResolvedValue([
+        { id: 'one', parentId: 'other', name: 'One' },
+        { id: 'other', parentId: 'one', name: 'Other' }
+      ])
       const folders = await loaded()
 
       folders.open('one')
@@ -145,7 +141,7 @@ describe('useFolders', () => {
   describe('changing the tree', () => {
     it('creates inside the folder that is open', async () => {
       const folders = await loaded()
-      createFolder.mockResolvedValue({ data: { id: 'new' } })
+      createFolder.mockResolvedValue({ id: 'new' })
       folders.open('general')
 
       await folders.create('Drafts')
@@ -155,7 +151,7 @@ describe('useFolders', () => {
 
     it('creates at the top level when none is open', async () => {
       const folders = await loaded()
-      createFolder.mockResolvedValue({ data: { id: 'new' } })
+      createFolder.mockResolvedValue({ id: 'new' })
 
       await folders.create('Drafts')
 
@@ -164,7 +160,7 @@ describe('useFolders', () => {
 
     it('reads the tree again after a rename, so the list shows the new name', async () => {
       const folders = await loaded()
-      renameFolder.mockResolvedValue({ data: {} })
+      renameFolder.mockResolvedValue({})
 
       await folders.rename('general', 'Common')
 
@@ -174,7 +170,7 @@ describe('useFolders', () => {
 
     it('sends no parent when a folder is moved to the top level', async () => {
       const folders = await loaded()
-      moveFolder.mockResolvedValue({ data: {} })
+      moveFolder.mockResolvedValue({})
 
       await folders.move('invoicing', undefined)
 
@@ -184,8 +180,8 @@ describe('useFolders', () => {
     /** Standing in a folder that was just deleted would show a tree that is no longer there. */
     it('steps up to the parent when the folder that is open is deleted', async () => {
       const folders = await loaded()
-      deleteFolder.mockResolvedValue({ data: { folders: 0, diagrams: 1, forms: 0 } })
-      fetchFolders.mockResolvedValue({ data: TREE.filter(f => f.id !== 'invoicing') })
+      deleteFolder.mockResolvedValue({ folders: 0, diagrams: 1, forms: 0 })
+      fetchFolders.mockResolvedValue(TREE.filter(f => f.id !== 'invoicing'))
       folders.open('invoicing')
 
       await folders.remove('invoicing')
@@ -195,8 +191,8 @@ describe('useFolders', () => {
 
     it('stays where it is when another folder is deleted', async () => {
       const folders = await loaded()
-      deleteFolder.mockResolvedValue({ data: { folders: 0, diagrams: 0, forms: 0 } })
-      fetchFolders.mockResolvedValue({ data: TREE.filter(f => f.id !== 'archive') })
+      deleteFolder.mockResolvedValue({ folders: 0, diagrams: 0, forms: 0 })
+      fetchFolders.mockResolvedValue(TREE.filter(f => f.id !== 'archive'))
       folders.open('general')
 
       await folders.remove('archive')
@@ -208,7 +204,7 @@ describe('useFolders', () => {
     it('returns to the top level when the folder that is open is gone', async () => {
       const folders = await loaded()
       folders.open('invoicing')
-      fetchFolders.mockResolvedValue({ data: [TREE[0], TREE[1]] })
+      fetchFolders.mockResolvedValue([TREE[0], TREE[1]])
 
       await folders.load()
 
@@ -217,7 +213,7 @@ describe('useFolders', () => {
 
     it('reports what a folder holds', async () => {
       const folders = await loaded()
-      fetchFolderContents.mockResolvedValue({ data: { folders: 1, diagrams: 2, forms: 3 } })
+      fetchFolderContents.mockResolvedValue({ folders: 1, diagrams: 2, forms: 3 })
 
       await expect(folders.contents('general')).resolves.toEqual({ folders: 1, diagrams: 2, forms: 3 })
     })

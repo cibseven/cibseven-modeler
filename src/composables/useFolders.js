@@ -59,8 +59,9 @@ export default function useFolders() {
   })
 
   const load = async () => {
-    const { data } = await fetchFolders()
-    folders.value = Array.isArray(data) ? data : []
+    // The host's axios unwraps the response, so this is the list itself, not a response object
+    const loaded = await fetchFolders()
+    folders.value = Array.isArray(loaded) ? loaded : []
     // A folder removed in another tab must not leave the view pointing at nothing
     if (currentFolderId.value && !byId.value.has(currentFolderId.value)) {
       currentFolderId.value = null
@@ -90,36 +91,35 @@ export default function useFolders() {
   }
 
   const create = async name => {
-    const { data } = await createFolder(name, currentFolderId.value)
+    const created = await createFolder(name, currentFolderId.value)
     await load()
-    return data
+    return created
   }
 
   const rename = async (folderId, name) => {
-    const { data } = await renameFolder(folderId, name)
+    const renamed = await renameFolder(folderId, name)
     await load()
-    return data
+    return renamed
   }
 
   const move = async (folderId, parentId) => {
-    const { data } = await moveFolder(folderId, parentId ?? null)
+    const moved = await moveFolder(folderId, parentId ?? null)
     await load()
-    return data
+    return moved
   }
 
   const remove = async folderId => {
-    const { data } = await deleteFolder(folderId)
+    const removed = await deleteFolder(folderId)
     // Standing in a folder that was just removed would show a tree that is no longer there
     if (currentFolderId.value === folderId) {
       currentFolderId.value = byId.value.get(folderId)?.parentId ?? null
     }
     await load()
-    return data
+    return removed
   }
 
   const contents = async folderId => {
-    const { data } = await fetchFolderContents(folderId)
-    return data
+    return fetchFolderContents(folderId)
   }
 
   return {

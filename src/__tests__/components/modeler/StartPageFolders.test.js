@@ -31,14 +31,14 @@ vi.mock('../../../services/formService.js', () => ({
 
 vi.mock('../../../services/folderService.js', () => ({
   fetchFolders: vi.fn(),
-  fetchFolderContents: vi.fn().mockResolvedValue({ data: { folders: 0, diagrams: 0, forms: 0 } }),
-  createFolder: vi.fn().mockResolvedValue({ data: {} }),
-  renameFolder: vi.fn().mockResolvedValue({ data: {} }),
-  moveFolder: vi.fn().mockResolvedValue({ data: {} }),
-  deleteFolder: vi.fn().mockResolvedValue({ data: {} }),
-  moveProcessToFolder: vi.fn().mockResolvedValue({ data: {} }),
-  copyProcessToFolder: vi.fn().mockResolvedValue({ data: {} }),
-  moveFormToFolder: vi.fn().mockResolvedValue({ data: {} }),
+  fetchFolderContents: vi.fn().mockResolvedValue({ folders: 0, diagrams: 0, forms: 0 }),
+  createFolder: vi.fn().mockResolvedValue({}),
+  renameFolder: vi.fn().mockResolvedValue({}),
+  moveFolder: vi.fn().mockResolvedValue({}),
+  deleteFolder: vi.fn().mockResolvedValue({}),
+  moveProcessToFolder: vi.fn().mockResolvedValue({}),
+  copyProcessToFolder: vi.fn().mockResolvedValue({}),
+  moveFormToFolder: vi.fn().mockResolvedValue({}),
 }))
 
 vi.mock('../../../resources/camunda7.bpmn', () => ({ default: '<bpmn-c7/>' }))
@@ -92,7 +92,7 @@ async function mountStartPage(props = {}) {
 describe('StartPage folders', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    fetchFolders.mockResolvedValue({ data: TREE })
+    fetchFolders.mockResolvedValue(TREE)
   })
 
   describe('browsing', () => {
