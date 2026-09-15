@@ -416,6 +416,7 @@
   },
   "modalImportedFile": {
     "title": "Цей {item} \"{name}\" вже існує в моделері",
+    "titleInFolder": "Цей {item} \"{name}\" вже існує в теці \"{folder}\"",
     "body": "Бажаєте продовжити роботу з імпортованим {item}?",
     "newKeyLabel": "Новий ключ процесу (ID)",
     "newKeyLabelForm": "Новий ключ форми (ID)",

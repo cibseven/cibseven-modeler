@@ -19,7 +19,7 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" :id="titleId">{{ $t('modalImportedFile.title', { item: itemLabel, name: modalData?.name ?? '' }) }}</h1>
+                    <h1 class="modal-title fs-5" :id="titleId">{{ title }}</h1>
                     <button type="button" class="btn-close" @click.prevent="dismiss" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -96,7 +96,9 @@ const props = defineProps({
     validateRenameKey: { type: Function, default: null },
 })
 
-const action = ref('replace')
+// Skip is what happens if the dialog is answered without reading it, and skipping is undoable:
+// replace is not, and 'apply to all' would carry it over every remaining conflict in one click
+const action = ref('skip')
 const applyAll = ref(false)
 const renameKey = ref('')
 const renameError = ref('')
@@ -105,6 +107,15 @@ let modalBootstrap = null
 let _closedByButton = false
 
 const itemLabel = computed(() => t(`items.${props.modalData?.diagramType ?? 'process'}`))
+
+/** Which folder holds it matters as soon as there is more than one; without a name, say neither. */
+const title = computed(() => {
+    const name = props.modalData?.name ?? ''
+    const folder = props.modalData?.folderName
+    return folder
+        ? t('modalImportedFile.titleInFolder', { item: itemLabel.value, name, folder })
+        : t('modalImportedFile.title', { item: itemLabel.value, name })
+})
 const newKeyLabel = computed(() =>
     props.modalData?.diagramType === 'form'
         ? t('modalImportedFile.newKeyLabelForm')
@@ -121,7 +132,7 @@ onMounted(() => {
 
 watch(() => props.showModal, shown => {
     if (shown) {
-        action.value = 'replace'
+        action.value = 'skip'
         applyAll.value = false
         renameKey.value = props.modalData?.processkey ?? ''
         renameError.value = ''

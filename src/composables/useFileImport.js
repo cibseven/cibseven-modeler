@@ -25,8 +25,8 @@ import {
   setTagValueOfXml,
 } from '../utils.js'
 import { DIAGRAM_TYPE } from '../constants/diagramTypes.js'
-import { saveDiagramProcess, updateDiagramProcess, getUnifiedDiagrams } from '../services/processService.js'
-import { saveForm, updateForm } from '../services/formService.js'
+import { saveDiagramProcess, updateDiagramProcess, fetchProcessByKey } from '../services/processService.js'
+import { saveForm, updateForm, fetchFormByFormId } from '../services/formService.js'
 
 /**
  * Encapsulates file drag-and-drop / file-input handling and the conflict-resolution
@@ -65,6 +65,8 @@ export default function useFileImport({
   updateDiagramXml,
   // Read at save time, not captured: a batch can outlive the folder the user started in
   currentFolderId,
+  // (folderId) => folder name, so a conflict can say where the model it found lives
+  folderNameFor,
 }) {
   const { t } = useI18n()
 
@@ -225,7 +227,10 @@ export default function useFileImport({
 
   const _openFormFromImportedFile = async (jsonExternal, isBatch = false) => {
     const jsonId = JSON.parse(jsonExternal)?.id
-    const foundForm = forms.value.find(form => form.formId === jsonId)
+    // The loaded list only holds the folder in view, but a form id is unique across all of
+    // them, so a form that is not on screen still collides
+    let foundForm = forms.value.find(form => form.formId === jsonId)
+    if (!foundForm) foundForm = await _findFormRemotely(jsonId)
 
     if (foundForm) {
       let jsonFromEditor = _checkIfFormOpenInTab(jsonId)
@@ -241,6 +246,7 @@ export default function useFileImport({
         xmlFromModeler: jsonFromEditor,
         xmlExternalUrl: jsonExternal,
         diagramType: DIAGRAM_TYPE.FORM,
+        folderName: folderNameFor?.(foundForm.folderId) ?? null,
       }
       const isEqual = _canonicalFormJson(jsonFromEditor) === _canonicalFormJson(jsonExternal)
 
@@ -319,6 +325,27 @@ export default function useFileImport({
     }
   }
 
+  /**
+   * The stored diagram with that key, or null. Asked of the backend by exact key rather than
+   * searched: the key is what the unique constraint is on, so a near match is not a conflict.
+   */
+  const _findProcessRemotely = async key => {
+    try {
+      return await fetchProcessByKey(key)
+    } catch {
+      // Nothing with that key: the import is a new diagram
+      return null
+    }
+  }
+
+  const _findFormRemotely = async formId => {
+    try {
+      return await fetchFormByFormId(formId)
+    } catch {
+      return null
+    }
+  }
+
   // A valid extension is not enough: an empty or malformed file (no <definitions>)
   // would otherwise open as a broken tab that only fails later with a console-only
   // "no definitions loaded" on save. Reject it here so handleFile surfaces a load error.
@@ -343,13 +370,10 @@ export default function useFileImport({
       diagramType = checkCamundaVersion(resXmlExternalUrl)
     }
 
+    // The loaded list only holds the folder in view, but a process key is unique across all of
+    // them, so a diagram that is not on screen still collides
     let foundModelerProcess = processes.value.find(process => process.processkey === foundExternalProcessKey)
-    if (!foundModelerProcess) {
-      try {
-        const results = await getUnifiedDiagrams(0, 1, foundExternalProcessKey, '')
-        foundModelerProcess = results?.find(p => p.processkey === foundExternalProcessKey) ?? null
-      } catch { /* fall through to new-process path */ }
-    }
+    if (!foundModelerProcess) foundModelerProcess = await _findProcessRemotely(foundExternalProcessKey)
 
     if (foundModelerProcess) {
       let xmlFromModeler = _checkIfProcessOpenInTab(foundExternalProcessKey)
@@ -368,6 +392,7 @@ export default function useFileImport({
         xmlFromModeler,
         xmlExternalUrl: resXmlExternalUrl,
         diagramType,
+        folderName: folderNameFor?.(foundModelerProcess.folderId) ?? null,
       }
       const isEqual = compareXML(xmlFromModeler, resXmlExternalUrl)
       if (isEqual) {

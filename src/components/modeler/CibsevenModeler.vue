@@ -774,6 +774,7 @@ const { handleFile, _addNewBpmnFromLoadedXml, resolveConflict } = useFileImport(
 	nextModalHiddenPromise,
 	updateDiagramXml,
 	currentFolderId,
+	folderNameFor: folderId => startPage.value?.folderNameFor?.(folderId) ?? null,
 })
 
 const _openProcessFromExternalXml = async (xml, resExistingProcess, externalProcessKey, _decodedProcessId) => {

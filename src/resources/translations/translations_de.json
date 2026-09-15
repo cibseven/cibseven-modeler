@@ -416,6 +416,7 @@
   },
   "modalImportedFile": {
     "title": "Der {item} \"{name}\" existiert bereits im Modeler",
+    "titleInFolder": "Der {item} \"{name}\" existiert bereits im Ordner \"{folder}\"",
     "body": "Möchten Sie mit dem importierten {item} weiterarbeiten?",
     "newKeyLabel": "Neuer Prozessschlüssel (ID)",
     "newKeyLabelForm": "Neuer Formularschlüssel (ID)",

@@ -514,9 +514,14 @@ const _addIsHoveredElement = () => {
     dashboardElements.value?.map((element) => element.isHovered = false)
 }
 
+// The tree is loaded here, so this is where a folder id can be turned into a name
+const folderNameFor = folderId =>
+    folderState.folders.value.find(folder => folder.id === folderId)?.name ?? null
+
 defineExpose({
     _toggleIsLoading,
-    openDiagramEmitFromChild
+    openDiagramEmitFromChild,
+    folderNameFor
 })
 </script>
 
