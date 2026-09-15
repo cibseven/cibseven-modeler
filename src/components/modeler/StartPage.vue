@@ -60,17 +60,19 @@
                         </div>
                     </div>
                 <div>
-                    <nav class="mt-4 d-flex align-items-center justify-content-between gap-2"
+                    <nav class="mt-4 mb-3 d-flex align-items-center justify-content-between gap-2"
                         :aria-label="$t('folders.breadcrumb')">
-                        <ol class="breadcrumb mb-0 flex-wrap">
+                        <ol class="breadcrumb bg-transparent mb-0 p-0 flex-wrap folder-breadcrumb">
                             <li class="breadcrumb-item" :class="{ active: !breadcrumb.length }">
-                                <button type="button" class="btn btn-link btn-sm p-0 border-0 align-baseline"
+                                <span v-if="!breadcrumb.length" aria-current="page">{{ $t('folders.home') }}</span>
+                                <button v-else type="button" class="btn btn-link btn-sm p-0 border-0 align-baseline"
                                     @click="navigateTo(null)">{{ $t('folders.home') }}</button>
                             </li>
                             <li v-for="(folder, level) in breadcrumb" :key="folder.id" class="breadcrumb-item"
                                 :class="{ active: level === breadcrumb.length - 1 }"
                                 :aria-current="level === breadcrumb.length - 1 ? 'page' : null">
-                                <button type="button" class="btn btn-link btn-sm p-0 border-0 align-baseline"
+                                <span v-if="level === breadcrumb.length - 1">{{ folder.name }}</span>
+                                <button v-else type="button" class="btn btn-link btn-sm p-0 border-0 align-baseline"
                                     @click="navigateTo(folder.id)">{{ folder.name }}</button>
                             </li>
                         </ol>
@@ -98,7 +100,9 @@
                                         </FolderListItem>
                                     </div>
                                 </template>
-                                <div v-if="isEmptyHere" class="list-group-item border-0 text-muted small">
+                                <div v-if="isEmptyHere" class="list-group-item border-0 text-center text-muted py-5">
+                                    <span class="mdi mdi-folder-open-outline d-block mb-2 folder-empty-icon"
+                                        aria-hidden="true"></span>
                                     {{ $t('folders.empty') }}
                                 </div>
                                 <div v-for="(element, index) in filteredDashboardElements" :key="element.id">
@@ -519,6 +523,25 @@ defineExpose({
 </script>
 
 <style scoped>
+/* The breadcrumb sits on the page, not in a panel: whatever the theme gives it, it stays flat. */
+.folder-breadcrumb {
+    background-color: transparent;
+}
+
+.folder-breadcrumb .btn-link {
+    text-decoration: none;
+}
+
+.folder-breadcrumb .btn-link:hover,
+.folder-breadcrumb .btn-link:focus-visible {
+    text-decoration: underline;
+}
+
+.folder-empty-icon {
+    font-size: 2rem;
+    opacity: 0.5;
+}
+
 /* TODO: Unify search box styles across the project (shared component or global styles). */
 .start-page-search .start-page-search-segment:hover,
 .start-page-search .start-page-search-segment:focus-visible {
