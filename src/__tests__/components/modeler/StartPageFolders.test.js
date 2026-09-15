@@ -170,6 +170,56 @@ describe('StartPage folders', () => {
     })
   })
 
+  describe('when there is nothing to show', () => {
+    const emptyText = wrapper => wrapper.find('.list-group-item.text-center').text()
+
+    it('says the top level has no folders yet', async () => {
+      fetchFolders.mockResolvedValue([])
+      const wrapper = await mountStartPage({ diagrams: [] })
+
+      expect(emptyText(wrapper)).toContain('folders.emptyHome')
+    })
+
+    it('says a folder is empty once you are inside one', async () => {
+      const wrapper = await mountStartPage({ diagrams: [] })
+
+      await wrapper.findComponent({ name: 'FolderListItem' }).vm.$emit('open', 'invoicing')
+      await flushPromises()
+
+      expect(emptyText(wrapper)).toContain('folders.empty')
+    })
+
+    /**
+     * A search hides this level's folders, so they must not count as content: otherwise a
+     * search with no hits inside a folder that has subfolders renders nothing at all.
+     */
+    it('says a search found nothing, even in a folder that has subfolders', async () => {
+      const wrapper = await mountStartPage({ diagrams: [] })
+      await wrapper.findComponent({ name: 'FolderListItem' }).vm.$emit('open', 'general')
+      await flushPromises()
+
+      await wrapper.find('input[type="text"]').setValue('invoice')
+
+      expect(emptyText(wrapper)).toContain('folders.noMatches')
+    })
+
+    it('drops the scope line when the search matched nothing', async () => {
+      const wrapper = await mountStartPage({ diagrams: [] })
+
+      await wrapper.find('input[type="text"]').setValue('invoice')
+
+      expect(wrapper.text()).not.toContain('folders.searchAcrossFolders')
+    })
+
+    it('keeps the scope line when the search did match something', async () => {
+      const wrapper = await mountStartPage()
+
+      await wrapper.find('input[type="text"]').setValue('invoice')
+
+      expect(wrapper.text()).toContain('folders.searchAcrossFolders')
+    })
+  })
+
   describe('moving a model', () => {
     it('moves a diagram through the process endpoint', async () => {
       const wrapper = await mountStartPage()

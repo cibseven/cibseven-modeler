@@ -528,6 +528,7 @@
 		"destination": "Destination",
 		"empty": "This folder is empty.",
 		"emptyHome": "No folders yet. Create one to store your models in.",
+		"noMatches": "Nothing matches \"{keyword}\" in any folder.",
 		"searchAcrossFolders": "Showing matches from every folder."
 	},
 	"toastFolderLoadFail": { "title": "Folders", "body": "The folders could not be loaded" },

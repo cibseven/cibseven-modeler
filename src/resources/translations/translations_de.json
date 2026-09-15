@@ -528,6 +528,7 @@
 		"destination": "Ziel",
 		"empty": "Dieser Ordner ist leer.",
 		"emptyHome": "Noch keine Ordner. Legen Sie einen an, um Modelle darin abzulegen.",
+		"noMatches": "Nichts passt zu „{keyword}“, in keinem Ordner.",
 		"searchAcrossFolders": "Treffer aus allen Ordnern."
 	},
 	"toastFolderLoadFail": { "title": "Ordner", "body": "Die Ordner konnten nicht geladen werden" },

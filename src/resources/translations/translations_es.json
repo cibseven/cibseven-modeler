@@ -528,6 +528,7 @@
 		"destination": "Destino",
 		"empty": "Esta carpeta está vacía.",
 		"emptyHome": "Todavía no hay carpetas. Cree una para guardar sus modelos.",
+		"noMatches": "Nada coincide con «{keyword}» en ninguna carpeta.",
 		"searchAcrossFolders": "Mostrando resultados de todas las carpetas."
 	},
 	"toastFolderLoadFail": { "title": "Carpetas", "body": "No se han podido cargar las carpetas" },

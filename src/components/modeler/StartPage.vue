@@ -81,7 +81,7 @@
                             <i class="mdi mdi-folder-plus-outline me-1" aria-hidden="true"></i>{{ $t('folders.create') }}
                         </button>
                     </nav>
-                    <p v-if="isSearching" class="mt-2 mb-0 small text-muted">{{ $t('folders.searchAcrossFolders') }}</p>
+                    <p v-if="isSearching && !isEmptyHere" class="mt-2 mb-0 small text-muted">{{ $t('folders.searchAcrossFolders') }}</p>
                     <div v-if="filteredDashboardElements !== null">
                         <div ref="listContainer" @scroll="handleListScroll" class="list-group shadow-sm overflow-auto" style="max-height: 50vh">
                             <div class="d-flex align-items-center justify-content-center">
@@ -101,9 +101,9 @@
                                     </div>
                                 </template>
                                 <div v-if="isEmptyHere" class="list-group-item border-0 text-center text-muted py-5">
-                                    <span class="mdi mdi-folder-open-outline d-block mb-2 folder-empty-icon"
+                                    <span class="mdi d-block mb-2 folder-empty-icon" :class="emptyState.icon"
                                         aria-hidden="true"></span>
-                                    {{ currentFolderId ? $t('folders.empty') : $t('folders.emptyHome') }}
+                                    {{ emptyState.text }}
                                 </div>
                                 <div v-for="(element, index) in filteredDashboardElements" :key="element.id">
                                     <DiagramListItem
@@ -236,8 +236,25 @@ const { breadcrumb, currentChildren, currentFolderId } = folderState
 
 // A keyword looks through the whole tree, so this level's folders are not the subject
 const isSearching = computed(() => inputSearchValue.value.trim().length >= 3)
-const isEmptyHere = computed(() =>
-    !currentChildren.value.length && !(filteredDashboardElements.value?.length))
+const isEmptyHere = computed(() => {
+    const noModels = !(filteredDashboardElements.value?.length)
+    // A search hides this level's folders, so they are not what there is nothing of
+    return isSearching.value ? noModels : noModels && !currentChildren.value.length
+})
+
+// Three ways to be empty, and they call for three different things to do next
+const emptyState = computed(() => {
+    if (isSearching.value) {
+        return {
+            icon: 'mdi-file-search-outline',
+            text: t('folders.noMatches', { keyword: inputSearchValue.value.trim() })
+        }
+    }
+    return {
+        icon: 'mdi-folder-open-outline',
+        text: currentFolderId.value ? t('folders.empty') : t('folders.emptyHome')
+    }
+})
 
 onMounted(async () => {
     try {
