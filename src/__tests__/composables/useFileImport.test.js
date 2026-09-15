@@ -224,6 +224,17 @@ describe('useFileImport', () => {
             expect(m.saveDiagramProcess).toHaveBeenCalledOnce()
             expect(deps.showModalAcceptCancelMessage.value.show).toBe(false)
         })
+
+        /** An import opens a tab and is stored on save, so the tab has to remember the folder. */
+        it('opens the tab in the folder the import was started from', async () => {
+            const deps = makeDeps()
+            deps.currentFolderId = { value: 'invoicing' }
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
+
+            expect(deps.tabNavList.value.at(-1).folderId).toBe('invoicing')
+        })
     })
 
     describe('dmn import', () => {

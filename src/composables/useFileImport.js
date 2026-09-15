@@ -164,6 +164,9 @@ export default function useFileImport({
       id: foundExternalProcessKey,
       key: foundExternalProcessKey,
       keyOfTabNav,
+      // An import opens a tab first and is stored when it is saved: without this the save
+      // names no folder and the backend files it under the default one
+      folderId: currentFolderId?.value,
       canSave: true,
       isSaved: false,
       isModelerVisible: false,
