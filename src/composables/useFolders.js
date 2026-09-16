@@ -59,7 +59,6 @@ export default function useFolders() {
   })
 
   const load = async () => {
-    // The host's axios unwraps the response, so this is the list itself, not a response object
     const loaded = await fetchFolders()
     folders.value = Array.isArray(loaded) ? loaded : []
     // A folder removed in another tab must not leave the view pointing at nothing
