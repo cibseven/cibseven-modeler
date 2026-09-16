@@ -81,7 +81,7 @@
                             <i class="mdi mdi-folder-plus-outline me-1" aria-hidden="true"></i>{{ $t('folders.create') }}
                         </button>
                     </nav>
-                    <p v-if="isSearching && !isEmptyHere" class="mt-2 mb-0 small text-muted">{{ $t('folders.searchAcrossFolders') }}</p>
+                    <p v-if="isSearching && !isEmptyHere" class="mt-2 mb-2 small text-muted">{{ $t('folders.searchAcrossFolders') }}</p>
                     <div v-if="filteredDashboardElements !== null">
                         <div ref="listContainer" @scroll="handleListScroll" class="list-group shadow-sm overflow-auto" style="max-height: 50vh">
                             <div class="d-flex align-items-center justify-content-center">
@@ -234,8 +234,10 @@ const folderDeleteBody = ref('')
 const folderState = useFolders()
 const { breadcrumb, currentChildren, currentFolderId } = folderState
 
-// A keyword looks through the whole tree, so this level's folders are not the subject
-const isSearching = computed(() => inputSearchValue.value.trim().length >= 3)
+// The keyword the list actually reflects, set when the search is sent rather than typed:
+// while typing, what is on screen is still the folder, and it is described as the folder
+const appliedKeyword = ref('')
+const isSearching = computed(() => appliedKeyword.value.trim().length >= 3)
 const isEmptyHere = computed(() => {
     const noModels = !(filteredDashboardElements.value?.length)
     // A search hides this level's folders, so they are not what there is nothing of
@@ -247,7 +249,7 @@ const emptyState = computed(() => {
     if (isSearching.value) {
         return {
             icon: 'mdi-file-search-outline',
-            text: t('folders.noMatches', { keyword: inputSearchValue.value.trim() })
+            text: t('folders.noMatches', { keyword: appliedKeyword.value.trim() })
         }
     }
     return {
@@ -326,7 +328,13 @@ const filterElements = type => {
     if (filterType.value === type) return
     filterType.value = type
     const keyword = inputSearchValue.value.length >= 3 ? inputSearchValue.value : ''
-    emit('search', { keyword, diagramType: type === 'all' ? '' : type })
+    _applySearch(keyword, type === 'all' ? '' : type)
+}
+
+/** The one place a search leaves for the host, so the applied keyword cannot drift from it. */
+const _applySearch = (keyword, diagramType) => {
+    appliedKeyword.value = keyword
+    emit('search', { keyword, diagramType })
 }
 
 const handleOpenFileInput = () => {
@@ -353,7 +361,7 @@ const handleClickCreateBpmnc7Diagram = debounce(async () => {
 const handleSearch = debounce(() => {
     const len = inputSearchValue.value.length
     if (len >= 3 || len === 0) {
-        emit('search', { keyword: inputSearchValue.value, diagramType: filterType.value === 'all' ? '' : filterType.value })
+        _applySearch(inputSearchValue.value, filterType.value === 'all' ? '' : filterType.value)
     }
 }, 300)
 

@@ -173,6 +173,18 @@ describe('StartPage folders', () => {
   describe('when there is nothing to show', () => {
     const emptyText = wrapper => wrapper.find('.list-group-item.text-center').text()
 
+    /** The search is debounced, so nothing is searched until 300ms after the last keystroke. */
+    const search = async (wrapper, keyword) => {
+      vi.useFakeTimers()
+      try {
+        await wrapper.find('input[type="text"]').setValue(keyword)
+        await vi.advanceTimersByTimeAsync(300)
+      } finally {
+        vi.useRealTimers()
+      }
+      await flushPromises()
+    }
+
     it('says the top level has no folders yet', async () => {
       fetchFolders.mockResolvedValue([])
       const wrapper = await mountStartPage({ diagrams: [] })
@@ -198,15 +210,30 @@ describe('StartPage folders', () => {
       await wrapper.findComponent({ name: 'FolderListItem' }).vm.$emit('open', 'general')
       await flushPromises()
 
-      await wrapper.find('input[type="text"]').setValue('invoice')
+      await search(wrapper, 'invoice')
 
       expect(emptyText(wrapper)).toContain('folders.noMatches')
+    })
+
+    /**
+     * Typing is not searching. The list still holds the folder until the debounce fires, so
+     * saying "nothing matches" before then is a confident answer to a question not yet asked.
+     */
+    it('still describes the folder while a search is only being typed', async () => {
+      const wrapper = await mountStartPage({ diagrams: [] })
+      await wrapper.findComponent({ name: 'FolderListItem' }).vm.$emit('open', 'invoicing')
+      await flushPromises()
+
+      await wrapper.find('input[type="text"]').setValue('invoice')
+
+      expect(emptyText(wrapper)).toContain('folders.empty')
+      expect(emptyText(wrapper)).not.toContain('folders.noMatches')
     })
 
     it('drops the scope line when the search matched nothing', async () => {
       const wrapper = await mountStartPage({ diagrams: [] })
 
-      await wrapper.find('input[type="text"]').setValue('invoice')
+      await search(wrapper, 'invoice')
 
       expect(wrapper.text()).not.toContain('folders.searchAcrossFolders')
     })
@@ -214,7 +241,7 @@ describe('StartPage folders', () => {
     it('keeps the scope line when the search did match something', async () => {
       const wrapper = await mountStartPage()
 
-      await wrapper.find('input[type="text"]').setValue('invoice')
+      await search(wrapper, 'invoice')
 
       expect(wrapper.text()).toContain('folders.searchAcrossFolders')
     })
