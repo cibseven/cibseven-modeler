@@ -17,10 +17,7 @@
 import { describe, it, expect } from 'vitest'
 import { folderErrorMessage } from '../../utils/folderErrors.js'
 
-/**
- * The webclient answers a refused request with a type and the data the exception carried, never
- * with a `message`. Reading one was why every refusal used to show the same generic sentence.
- */
+/** The webclient's error shape: the exception's type and the data it carried. */
 const refusal = (type, ...params) => ({ response: { data: { type, params } } })
 
 describe('folderErrorMessage', () => {

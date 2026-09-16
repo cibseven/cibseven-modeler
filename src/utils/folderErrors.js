@@ -16,18 +16,9 @@
  */
 
 /**
- * What to tell the user about a refused folder or model request.
- *
- * A refusal arrives as the webclient's error shape - a type and the data the exception carried,
- * not a message - so `error.response.data.message` is always undefined:
- *
- *     { "type": "InvalidFolderException", "params": ["name", "a folder with that name ..."] }
- *
- * The reason in `params` is English, written for a developer reading a log, so it is not shown.
- * A type this knows about is answered with a translation key instead; anything else returns null
- * and the caller falls back to its own message.
- *
- * @returns an object with a translation key and its parameters, or null
+ * The translation key for a refused folder or model request, or null to leave it to the caller.
+ * A refusal carries the exception's type and its data, whose English reason is meant for a log:
+ * { "type": "InvalidFolderException", "params": ["name", "a folder with that name ..."] }
  */
 export const folderErrorMessage = error => {
   const data = error?.response?.data
@@ -35,7 +26,6 @@ export const folderErrorMessage = error => {
 
   switch (data?.type) {
     case 'InvalidFolderException':
-      // The field the backend names is what tells the cases apart
       if (params[0] === 'name') return { key: 'folders.nameTaken' }
       if (params[0] === 'parentId') return { key: 'folders.moveRefused' }
       return null
