@@ -62,7 +62,8 @@
   "importErrors": {
   	"empty": "файл пуст",
   	"notXml": "файл не является корректным XML",
-  	"noDefinitions": "в файле нет определений BPMN или DMN"
+  	"noDefinitions": "в файле нет определений BPMN или DMN",
+  	"lookupFailed": "не удалось проверить, занят ли уже этот ключ"
   },
   "importSummary": {
     "imported": "{count} импортировано",

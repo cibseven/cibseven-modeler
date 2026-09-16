@@ -62,7 +62,8 @@
   "importErrors": {
   	"empty": "die Datei ist leer",
   	"notXml": "die Datei ist kein gültiges XML",
-  	"noDefinitions": "die Datei enthält keine BPMN- oder DMN-Definitionen"
+  	"noDefinitions": "die Datei enthält keine BPMN- oder DMN-Definitionen",
+  	"lookupFailed": "es konnte nicht geprüft werden, ob dieser Schlüssel bereits vergeben ist"
   },
   "importSummary": {
     "imported": "{count} importiert",

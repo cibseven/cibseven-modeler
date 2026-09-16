@@ -62,7 +62,8 @@
 	"importErrors": {
 		"empty": "the file is empty",
 		"notXml": "the file is not valid XML",
-		"noDefinitions": "the file holds no BPMN or DMN definitions"
+		"noDefinitions": "the file holds no BPMN or DMN definitions",
+		"lookupFailed": "the modeler could not be asked whether this key is already taken"
 	},
 	"importSummary": {
 		"imported": "{count} imported",

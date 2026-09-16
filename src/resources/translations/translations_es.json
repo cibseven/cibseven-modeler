@@ -62,7 +62,8 @@
   "importErrors": {
   	"empty": "el archivo está vacío",
   	"notXml": "el archivo no es XML válido",
-  	"noDefinitions": "el archivo no contiene definiciones BPMN ni DMN"
+  	"noDefinitions": "el archivo no contiene definiciones BPMN ni DMN",
+  	"lookupFailed": "no se ha podido comprobar si esta clave ya está en uso"
   },
   "importSummary": {
     "imported": "{count} importados",

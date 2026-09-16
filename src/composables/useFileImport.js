@@ -335,17 +335,20 @@ export default function useFileImport({
   const _findProcessRemotely = async key => {
     try {
       return await fetchProcessByKey(key)
-    } catch {
-      // Nothing with that key: the import is a new diagram
-      return null
+    } catch (e) {
+      // Only a 404 answers the question. Reading any other failure as "nothing there" would
+      // import a second diagram under a key the database then refuses
+      if (e?.response?.status === 404) return null
+      throw new Error(t('importErrors.lookupFailed'), { cause: e })
     }
   }
 
   const _findFormRemotely = async formId => {
     try {
       return await fetchFormByFormId(formId)
-    } catch {
-      return null
+    } catch (e) {
+      if (e?.response?.status === 404) return null
+      throw new Error(t('importErrors.lookupFailed'), { cause: e })
     }
   }
 
@@ -486,7 +489,7 @@ export default function useFileImport({
     let replacedCount = 0     // unsaved tab overwritten with imported content (not persisted to DB)
     const invalidNames = []   // wrong extension — not a supported diagram file
     const readErrorNames = [] // valid extension but failed to read/parse/import
-    const readErrorReasons = [] // what was wrong with each of them, for the message
+    let readErrorReason = '' // what was wrong with the file, for a single-file import
 
     for (const file of files) {
       if (isBatch && _batchPolicy.value === 'stop') break
@@ -522,7 +525,7 @@ export default function useFileImport({
         // wrong extension, so it gets the "could not be loaded" message, not "not a BPMN file".
         console.error('Error importing file:', file.name, err)
         readErrorNames.push(file.name)
-        readErrorReasons.push(`${file.name}: ${err?.message ?? ''}`.trim())
+        readErrorReason = `${file.name}: ${err?.message ?? ''}`.trim()
       }
     }
 
@@ -533,7 +536,7 @@ export default function useFileImport({
       if (invalidNames.length) {
         showToastMessage({ isSuccess: false, toastText: 'toastLoadErrorFileExtension' })
       } else if (readErrorNames.length) {
-        showToastMessage({ isSuccess: false, toastText: 'toastLoadErrorFile', bodyTextAlt: readErrorReasons[0] })
+        showToastMessage({ isSuccess: false, toastText: 'toastLoadErrorFile', bodyTextAlt: readErrorReason })
       }
     } else {
       // Batch: compose a summary from all non-zero outcome counts

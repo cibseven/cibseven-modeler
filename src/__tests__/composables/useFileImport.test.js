@@ -87,13 +87,16 @@ function makeDeps(overrides = {}) {
     }
 }
 
+const notFound = () => Object.assign(new Error('Request failed with status code 404'), { response: { status: 404 } })
+
 const waitForModal = deps => vi.waitFor(() => expect(deps.showModalAcceptCancelMessage.value.show).toBe(true))
 
 describe('useFileImport', () => {
     beforeEach(() => {
         vi.clearAllMocks()
-        m.fetchProcessByKey.mockRejectedValue(new Error('404'))
-        m.fetchFormByFormId.mockRejectedValue(new Error('404'))
+        // The backend answers an unknown key with a 404, which is the only 'nothing there'
+        m.fetchProcessByKey.mockRejectedValue(notFound())
+        m.fetchFormByFormId.mockRejectedValue(notFound())
         m.saveDiagramProcess.mockResolvedValue({ id: 'new-id' })
         m.updateDiagramProcess.mockResolvedValue({})
         m.saveForm.mockResolvedValue({ id: 'new-form-id' })
@@ -291,6 +294,26 @@ describe('useFileImport', () => {
             await handleFile(fileEvent([{ name: 'broken.bpmn', content: '' }]))
 
             expect(m.saveDiagramProcess).not.toHaveBeenCalled()
+        })
+
+        /**
+         * Only a 404 says the key is free. Any other answer is unknown, and importing anyway
+         * would write a second diagram under a key the database refuses.
+         */
+        it.each([
+            ['a server error', Object.assign(new Error('boom'), { response: { status: 500 } })],
+            ['a failed request', new Error('Network Error')],
+        ])('imports nothing when the key cannot be looked up: %s', async (_case, failure) => {
+            m.fetchProcessByKey.mockRejectedValue(failure)
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'procA.bpmn', content: bpmn('procA') }]))
+
+            expect(m.saveDiagramProcess).not.toHaveBeenCalled()
+            const toast = deps.showToastMessage.mock.calls.at(-1)[0]
+            expect(toast.isSuccess).toBe(false)
+            expect(toast.bodyTextAlt).toContain('importErrors.lookupFailed')
         })
     })
 
