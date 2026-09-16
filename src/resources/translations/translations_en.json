@@ -50,6 +50,7 @@
 		"title": "Not a bpmn file",
 		"body": "Ooops, this file is not a BPMN 2.0 diagram."
 	},
+	"toastImportNeedsFolder": { "title": "Import", "body": "Open a folder first: a model is always stored in one." },
 	"toastLoadErrorFile": {
 		"title": "Error loading file.",
 		"body": "The file could not be loaded correctly."

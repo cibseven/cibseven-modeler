@@ -232,7 +232,7 @@ export default function useFileImport({
     const jsonId = JSON.parse(jsonExternal)?.id
     // The loaded list only holds the folder in view, but a form id is unique across all of
     // them, so a form that is not on screen still collides
-    let foundForm = forms.value.find(form => form.formId === jsonId)
+    let foundForm = forms.value?.find(form => form.formId === jsonId)
     if (!foundForm) foundForm = await _findFormRemotely(jsonId)
 
     if (foundForm) {
@@ -375,7 +375,7 @@ export default function useFileImport({
 
     // The loaded list only holds the folder in view, but a process key is unique across all of
     // them, so a diagram that is not on screen still collides
-    let foundModelerProcess = processes.value.find(process => process.processkey === foundExternalProcessKey)
+    let foundModelerProcess = processes.value?.find(process => process.processkey === foundExternalProcessKey)
     if (!foundModelerProcess) foundModelerProcess = await _findProcessRemotely(foundExternalProcessKey)
 
     if (foundModelerProcess) {

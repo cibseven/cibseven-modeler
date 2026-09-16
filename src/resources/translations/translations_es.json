@@ -50,6 +50,7 @@
     "title": "No es un archivo BPMN",
     "body": "Este archivo no es un diagrama BPMN 2.0."
   },
+  "toastImportNeedsFolder": { "title": "Importar", "body": "Abra primero una carpeta: los modelos siempre se guardan en una." },
   "toastLoadErrorFile": {
     "title": "Error cargando archivo.",
     "body": "El archivo no se ha podido cargar correctamente."

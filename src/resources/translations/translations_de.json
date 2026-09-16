@@ -50,6 +50,7 @@
     "title": "Keine bpmn-Datei",
     "body": "Hoppla, diese Datei ist kein BPMN 2.0-Diagramm."
   },
+  "toastImportNeedsFolder": { "title": "Import", "body": "Zuerst einen Ordner öffnen: Modelle werden immer in einem Ordner gespeichert." },
   "toastLoadErrorFile": {
     "title": "Fehler beim Laden der Datei",
     "body": "Die Datei konnte nicht korrekt geladen werden."

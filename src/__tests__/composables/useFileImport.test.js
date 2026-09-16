@@ -237,6 +237,34 @@ describe('useFileImport', () => {
         })
     })
 
+    describe('before anything has been loaded', () => {
+        /**
+         * The store starts at null and stays there where nothing was fetched, such as the top
+         * level, which holds folders only. Reading .find off it took the whole import down.
+         */
+        it('imports a process when the loaded list is still null', async () => {
+            const deps = makeDeps()
+            deps.processes.value = null
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
+
+            expect(m.saveDiagramProcess).toHaveBeenCalledOnce()
+            expect(deps.showToastMessage).not.toHaveBeenCalled()
+        })
+
+        it('imports a form when the loaded list is still null', async () => {
+            const deps = makeDeps()
+            deps.forms.value = null
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'f.form', content: form('formA') }]))
+
+            expect(m.saveForm).toHaveBeenCalledOnce()
+            expect(deps.showToastMessage).not.toHaveBeenCalled()
+        })
+    })
+
     describe('a file that cannot be read', () => {
         /** The console had the reason and the toast did not, leaving nothing to act on. */
         it.each([

@@ -16,7 +16,7 @@
 -->
 <template>
 	<div class="h-100">
-		<DropZone @handleDropFile="handleFile">
+		<DropZone @handleDropFile="handleDroppedFile">
 			<div class="custom-content position-relative w-100 h-100 justify-content-center align-items-center"
 				style="display: flex;  background-color: lightgray; font-size: 2em; opacity: 0.3; color: var(--bs-rimary);">
 				{{ $t("dropFileToLoad") }}
@@ -754,6 +754,15 @@ const _assignUniqueId = name => {
 const onBatchComplete = async () => {
 	_saveTabNavSavedLocalStorage()
 	await getStoredDiagrams()
+}
+
+// A dropped file is stored like any other import, so it needs the folder the button demands
+const handleDroppedFile = e => {
+	if (!currentFolderId.value) {
+		showToastMessage({ isSuccess: false, toastText: 'toastImportNeedsFolder', bodyTextAlt: '' })
+		return
+	}
+	return handleFile(e)
 }
 
 // File import is handled by useFileImport (initialized here, after all its dependencies are declared)
