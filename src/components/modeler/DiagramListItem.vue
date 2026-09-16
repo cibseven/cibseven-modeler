@@ -47,7 +47,7 @@
                 :class="{ 'invisible': !props.isHovered }"
                 @click.stop="emit('moveModel', props.item)">
             </button>
-            <button v-if="!isForm" :title="$t('folders.copy')" type="button"
+            <button :title="$t('folders.copy')" type="button"
                 class="btn mdi mdi-18px mdi-content-copy border-0 btn-outline-secondary btn-sm"
                 :class="{ 'invisible': !props.isHovered }"
                 @click.stop="emit('copyModel', props.item)">

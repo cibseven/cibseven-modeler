@@ -38,6 +38,7 @@ vi.mock('../../../services/folderService.js', () => ({
   deleteFolder: vi.fn().mockResolvedValue({}),
   moveProcessToFolder: vi.fn().mockResolvedValue({}),
   copyProcessToFolder: vi.fn().mockResolvedValue({}),
+  copyFormToFolder: vi.fn().mockResolvedValue({}),
   moveFormToFolder: vi.fn().mockResolvedValue({}),
 }))
 

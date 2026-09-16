@@ -531,6 +531,8 @@
 		"copyModelTitle": "„{name}“ in einen Ordner kopieren",
 		"copyKey": "Process Key der Kopie",
 		"copyKeyRequired": "Eine Kopie braucht einen eigenen Process Key.",
+		"copyFormId": "Form-ID der Kopie",
+		"copyFormIdRequired": "Eine Kopie braucht eine eigene Form-ID.",
 		"destination": "Ziel",
 		"empty": "Dieser Ordner ist leer.",
 		"emptyHome": "Noch keine Ordner. Legen Sie einen an, um Modelle darin abzulegen.",

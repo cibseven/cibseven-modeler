@@ -35,6 +35,7 @@ import {
     moveProcessToFolder,
     copyProcessToFolder,
     moveFormToFolder,
+    copyFormToFolder,
 } from '../../services/folderService'
 
 describe('folderService', () => {
@@ -105,6 +106,16 @@ describe('folderService', () => {
             folderId: 'folder-2',
             processkey: 'invoice-copy',
             name: 'Invoice',
+        })
+    })
+
+    /** A form is referenced by its form id, so a copy needs one of its own. */
+    it('copies a form with a form id of its own', () => {
+        copyFormToFolder('f1', 'folder-2', 'invoice-form-copy')
+
+        expect(m.post).toHaveBeenCalledWith('svc/form/f1/copy', {
+            folderId: 'folder-2',
+            formId: 'invoice-form-copy',
         })
     })
 

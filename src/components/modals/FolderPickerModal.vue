@@ -47,7 +47,7 @@
                         </div>
                     </fieldset>
                     <div v-if="requireKey" class="mt-3">
-                        <label class="form-label" :for="keyId">{{ $t('folders.copyKey') }}</label>
+                        <label class="form-label" :for="keyId">{{ $t(keyLabel) }}</label>
                         <input :id="keyId" type="text" class="form-control form-control-sm" v-model="key"
                             @input="error = ''" @keyup.enter="handleAccept">
                     </div>
@@ -83,6 +83,8 @@ const error = ref('')
 const title = ref('')
 const allowTopLevel = ref(false)
 const requireKey = ref(false)
+const keyLabel = ref('folders.copyKey')
+const keyRequired = ref('folders.copyKeyRequired')
 let modalBootstrap = null
 let onAccept = null
 
@@ -97,7 +99,7 @@ onMounted(() => {
 const handleAccept = async () => {
     if (!isChosen.value) return
     if (requireKey.value && !key.value.trim()) {
-        error.value = t('folders.copyKeyRequired')
+        error.value = t(keyRequired.value)
         return
     }
     try {
@@ -115,11 +117,15 @@ const handleAccept = async () => {
  * @param {Function} options.accept receives (folderId, key); throwing keeps the dialog open
  */
 const show = ({ folders, title: dialogTitle, allowTopLevel: topLevel = false,
-        requireKey: needsKey = false, defaultKey = '', accept }) => {
+        requireKey: needsKey = false, defaultKey = '', accept,
+        keyLabel: label = 'folders.copyKey',
+        keyRequired: required = 'folders.copyKeyRequired' }) => {
     options.value = folders ?? []
     title.value = dialogTitle
     allowTopLevel.value = topLevel
     requireKey.value = needsKey
+    keyLabel.value = label
+    keyRequired.value = required
     key.value = defaultKey
     selected.value = null
     error.value = ''

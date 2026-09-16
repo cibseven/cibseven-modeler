@@ -531,6 +531,8 @@
 		"copyModelTitle": "Copy \"{name}\" to a folder",
 		"copyKey": "Process key of the copy",
 		"copyKeyRequired": "A copy needs a process key of its own.",
+		"copyFormId": "Form id of the copy",
+		"copyFormIdRequired": "A copy needs a form id of its own.",
 		"destination": "Destination",
 		"empty": "This folder is empty.",
 		"emptyHome": "No folders yet. Create one to store your models in.",

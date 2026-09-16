@@ -58,6 +58,10 @@ const copyProcessToFolder = (id, folderId, processkey, name) => {
   return getAxios().post(getModelerServicePath() + '/process/' + id + '/copy', { folderId, processkey, name })
 }
 
+const copyFormToFolder = (id, folderId, formId) => {
+  return getAxios().post(getModelerServicePath() + '/form/' + id + '/copy', { folderId, formId })
+}
+
 const moveFormToFolder = (id, folderId) => {
   return getAxios().post(getModelerServicePath() + '/form/' + id + '/move', { folderId })
 }
@@ -72,4 +76,5 @@ export {
   moveProcessToFolder,
   copyProcessToFolder,
   moveFormToFolder,
+  copyFormToFolder,
 }

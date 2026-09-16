@@ -182,7 +182,7 @@ import FolderListItem from './FolderListItem.vue'
 import FolderNameModal from '../modals/FolderNameModal.vue'
 import FolderPickerModal from '../modals/FolderPickerModal.vue'
 import useFolders from '../../composables/useFolders.js'
-import { copyProcessToFolder, moveFormToFolder, moveProcessToFolder } from '../../services/folderService'
+import { copyFormToFolder, copyProcessToFolder, moveFormToFolder, moveProcessToFolder } from '../../services/folderService'
 import ConfirmModal from '../modals/ConfirmModal.vue'
 import formJson from '../../resources/formSchema.json'
 import { DIAGRAM_TYPE } from '../../constants/diagramTypes.js'
@@ -519,14 +519,19 @@ const handleMoveModel = item => {
 }
 
 const handleCopyModel = item => {
+    // A copy is a new model and what identifies it has to be its own: the engine resolves a
+    // process by key, and a form is referenced by its form id
+    const isForm = item.type === DIAGRAM_TYPE.FORM
     folderPickerModal.value?.show({
         folders: folderState.flatten(),
         title: t('folders.copyModelTitle', { name: modelName(item) }),
-        // The engine resolves a process by key, so a copy cannot share the one it came from
         requireKey: true,
-        defaultKey: `${item.processkey}-copy`,
-        accept: async (folderId, processkey) => {
-            await copyProcessToFolder(item.id, folderId, processkey, item.name)
+        keyLabel: isForm ? 'folders.copyFormId' : 'folders.copyKey',
+        keyRequired: isForm ? 'folders.copyFormIdRequired' : 'folders.copyKeyRequired',
+        defaultKey: `${isForm ? item.formId : item.processkey}-copy`,
+        accept: async (folderId, key) => {
+            if (isForm) await copyFormToFolder(item.id, folderId, key)
+            else await copyProcessToFolder(item.id, folderId, key, item.name)
             emit('getStoredDiagrams')
             emit('showToastMessage', { isSuccess: true, toastText: 'toastFolderCopySuccess' })
         }

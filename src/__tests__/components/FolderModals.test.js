@@ -34,7 +34,9 @@ const messages = {
             createTitle: 'New folder', renameTitle: 'Rename folder', name: 'Folder name',
             nameRequired: 'A folder needs a name.', saveFailed: 'The folder could not be saved.',
             home: 'Home', destination: 'Destination', copyKey: 'Process key of the copy',
-            copyKeyRequired: 'A copy needs a process key of its own.'
+            copyKeyRequired: 'A copy needs a process key of its own.',
+            copyFormId: 'Form id of the copy',
+            copyFormIdRequired: 'A copy needs a form id of its own.'
         },
         buttons: { accept: 'Accept', cancel: 'Cancel', close: 'Close' }
     }
@@ -188,6 +190,27 @@ describe('FolderPickerModal', () => {
         await flushPromises()
 
         expect(accept).toHaveBeenCalledWith(null, '')
+    })
+
+    /** The dialog serves both kinds of copy, so it asks for whichever key applies. */
+    it('asks for the form id when a form is being copied', async () => {
+        const wrapper = mountModal(FolderPickerModal)
+
+        await open(wrapper, { requireKey: true, keyLabel: 'folders.copyFormId' })
+
+        expect(wrapper.text()).toContain('Form id of the copy')
+        expect(wrapper.text()).not.toContain('Process key of the copy')
+    })
+
+    it('reports the missing key with the message it was given', async () => {
+        const wrapper = mountModal(FolderPickerModal)
+        await open(wrapper, { requireKey: true, keyRequired: 'folders.copyFormIdRequired' })
+
+        await wrapper.findAll('input[type="radio"]')[0].setValue()
+        await wrapper.find('button.btn-primary').trigger('click')
+        await flushPromises()
+
+        expect(wrapper.find('.invalid-feedback').text()).toBe('A copy needs a form id of its own.')
     })
 
     it('asks for a key when the copy needs one', async () => {

@@ -38,6 +38,7 @@ vi.mock('../../../services/folderService.js', () => ({
   deleteFolder: vi.fn().mockResolvedValue({}),
   moveProcessToFolder: vi.fn().mockResolvedValue({}),
   copyProcessToFolder: vi.fn().mockResolvedValue({}),
+  copyFormToFolder: vi.fn().mockResolvedValue({}),
   moveFormToFolder: vi.fn().mockResolvedValue({}),
 }))
 
@@ -55,7 +56,7 @@ vi.mock('@cib/common-frontend', () => ({
 }))
 
 import StartPage from '../../../components/modeler/StartPage.vue'
-import { fetchFolders, moveFormToFolder, moveProcessToFolder } from '../../../services/folderService.js'
+import { copyFormToFolder, copyProcessToFolder, fetchFolders, moveFormToFolder, moveProcessToFolder } from '../../../services/folderService.js'
 
 const TREE = [
   { id: 'general', parentId: null, name: 'General' },
@@ -167,6 +168,40 @@ describe('StartPage folders', () => {
       expect(labels).toContain('buttons.createBpmn')
       expect(labels).toContain('buttons.createDmn')
       expect(labels).toContain('buttons.createForm')
+    })
+  })
+
+  describe('copying a model', () => {
+    const openPicker = async (wrapper, model) => {
+      const picker = wrapper.findComponent({ name: 'FolderPickerModal' })
+      picker.vm.show = vi.fn()
+      await wrapper.findComponent({ name: 'DiagramListItem' }).vm.$emit('copyModel', model)
+      return picker.vm.show.mock.calls[0][0]
+    }
+
+    it('asks a diagram for a process key of its own', async () => {
+      const wrapper = await mountStartPage()
+
+      const options = await openPicker(wrapper, DIAGRAMS[0])
+
+      expect(options.keyLabel).toBe('folders.copyKey')
+      expect(options.defaultKey).toBe('process-one-copy')
+      await options.accept('invoicing', 'process-one-copy')
+      expect(copyProcessToFolder).toHaveBeenCalledWith('p1', 'invoicing', 'process-one-copy', 'Process One')
+    })
+
+    /** A form is referenced by its form id, so its copy needs one rather than a process key. */
+    it('asks a form for a form id of its own', async () => {
+      const form = { id: 'f1', formId: 'invoice-form', type: DIAGRAM_TYPE.FORM, folderId: 'general' }
+      const wrapper = await mountStartPage({ diagrams: [form] })
+
+      const options = await openPicker(wrapper, form)
+
+      expect(options.keyLabel).toBe('folders.copyFormId')
+      expect(options.defaultKey).toBe('invoice-form-copy')
+      await options.accept('invoicing', 'invoice-form-copy')
+      expect(copyFormToFolder).toHaveBeenCalledWith('f1', 'invoicing', 'invoice-form-copy')
+      expect(copyProcessToFolder).not.toHaveBeenCalled()
     })
   })
 

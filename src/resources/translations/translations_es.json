@@ -531,6 +531,8 @@
 		"copyModelTitle": "Copiar «{name}» en una carpeta",
 		"copyKey": "Clave de proceso de la copia",
 		"copyKeyRequired": "La copia necesita una clave de proceso propia.",
+		"copyFormId": "ID de formulario de la copia",
+		"copyFormIdRequired": "La copia necesita un ID de formulario propio.",
 		"destination": "Destino",
 		"empty": "Esta carpeta está vacía.",
 		"emptyHome": "Todavía no hay carpetas. Cree una para guardar sus modelos.",
