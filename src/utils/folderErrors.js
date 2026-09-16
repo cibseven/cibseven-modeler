@@ -42,6 +42,9 @@ export const folderErrorMessage = error => {
     case 'ExistingProcessKeyException':
     case 'ExistingFormIdException':
       return { key: 'folders.keyTaken', params: { key: params[0] } }
+    // The field is already obvious from the input that was filled in; the limit is not
+    case 'ValueTooLongException':
+      return { key: 'folders.valueTooLong', params: { limit: params[1] } }
     default:
       return null
   }

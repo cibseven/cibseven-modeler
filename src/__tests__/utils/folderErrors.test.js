@@ -42,6 +42,12 @@ describe('folderErrorMessage', () => {
         .toEqual({ key: 'folders.keyTaken', params: { key: 'invoice-copy' } })
     })
 
+  it('reports the limit a value was longer than', () => {
+    const error = refusal('ValueTooLongException', 'processkey', 100)
+
+    expect(folderErrorMessage(error)).toEqual({ key: 'folders.valueTooLong', params: { limit: 100 } })
+  })
+
   /** The reason the backend sends is English and written for a log, so it is never shown. */
   it('answers with nothing for a field it has no message for', () => {
     const error = refusal('InvalidFolderException', 'folderId', 'a model needs the folder it goes into')

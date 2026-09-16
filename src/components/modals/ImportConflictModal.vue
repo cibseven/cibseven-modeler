@@ -42,7 +42,7 @@
                     </div>
                     <div v-if="action === 'rename'" class="mb-2 ms-4">
                         <label for="ic-rename-key" class="form-label small fw-semibold mb-1">{{ newKeyLabel }}</label>
-                        <input id="ic-rename-key" type="text" class="form-control form-control-sm" v-model="renameKey"
+                        <input id="ic-rename-key" type="text" maxlength="100" class="form-control form-control-sm" v-model="renameKey"
                             @keyup.enter="confirm" @input="renameError = ''" />
                         <div v-if="renameError" class="text-danger small mt-1">{{ renameError }}</div>
                     </div>

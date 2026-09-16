@@ -521,6 +521,7 @@
 		"nameRequired": "La carpeta necesita un nombre.",
 		"nameTaken": "Ya hay una carpeta con ese nombre.",
 		"nameTooLong": "El nombre supera los 255 caracteres.",
+		"valueTooLong": "Eso supera los {limit} caracteres.",
 		"moveRefused": "Una carpeta no se puede mover dentro de sí misma.",
 		"keyTaken": "«{key}» ya está en uso.",
 		"saveFailed": "No se ha podido guardar la carpeta.",

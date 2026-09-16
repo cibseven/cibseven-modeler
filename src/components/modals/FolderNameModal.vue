@@ -26,7 +26,7 @@
                 </div>
                 <div class="modal-body">
                     <label class="form-label" :for="nameId">{{ $t('folders.name') }}</label>
-                    <input :id="nameId" ref="nameInput" type="text" class="form-control form-control-sm"
+                    <input :id="nameId" ref="nameInput" type="text" maxlength="255" class="form-control form-control-sm"
                         v-model="name" @input="error = ''" @keyup.enter="handleAccept">
                     <div v-if="error" tabindex="-1" role="alert" aria-live="assertive" aria-atomic="true"
                         class="d-block invalid-feedback">{{ error }}</div>

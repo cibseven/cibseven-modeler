@@ -48,7 +48,7 @@
                     </fieldset>
                     <div v-if="requireKey" class="mt-3">
                         <label class="form-label" :for="keyId">{{ $t(keyLabel) }}</label>
-                        <input :id="keyId" type="text" class="form-control form-control-sm" v-model="key"
+                        <input :id="keyId" type="text" maxlength="100" class="form-control form-control-sm" v-model="key"
                             @input="error = ''" @keyup.enter="handleAccept">
                     </div>
                     <div v-if="error" tabindex="-1" role="alert" aria-live="assertive" aria-atomic="true"

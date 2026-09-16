@@ -521,6 +521,7 @@
 		"nameRequired": "A folder needs a name.",
 		"nameTaken": "A folder with that name is already there.",
 		"nameTooLong": "The name is longer than 255 characters.",
+		"valueTooLong": "That is longer than {limit} characters.",
 		"moveRefused": "A folder cannot be moved into itself.",
 		"keyTaken": "\"{key}\" is already taken.",
 		"saveFailed": "The folder could not be saved.",

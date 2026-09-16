@@ -521,6 +521,7 @@
 		"nameRequired": "Ein Ordner braucht einen Namen.",
 		"nameTaken": "Ein Ordner mit diesem Namen ist bereits vorhanden.",
 		"nameTooLong": "Der Name ist länger als 255 Zeichen.",
+		"valueTooLong": "Das ist länger als {limit} Zeichen.",
 		"moveRefused": "Ein Ordner kann nicht in sich selbst verschoben werden.",
 		"keyTaken": "„{key}“ ist bereits vergeben.",
 		"saveFailed": "Der Ordner konnte nicht gespeichert werden.",
