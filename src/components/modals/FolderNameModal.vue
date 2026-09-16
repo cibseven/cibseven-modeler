@@ -44,6 +44,7 @@
 import * as bootstrap from 'bootstrap'
 import { onMounted, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { folderErrorMessage } from '../../utils/folderErrors.js'
 
 const { t } = useI18n()
 const titleId = useId()
@@ -69,11 +70,17 @@ const handleAccept = async () => {
         error.value = t('folders.nameRequired')
         return
     }
-    // The backend owns the duplicate rule, so its message is what the user sees
+    // The column holds 255, and saying so here is clearer than a refusal from the backend
+    if (trimmed.length > 255) {
+        error.value = t('folders.nameTooLong')
+        return
+    }
+    // The backend owns the duplicate rule; what it refused is told in the user's language
     try {
         await onAccept?.(trimmed)
     } catch (e) {
-        error.value = e?.response?.data?.message || t('folders.saveFailed')
+        const refusal = folderErrorMessage(e)
+        error.value = refusal ? t(refusal.key, refusal.params) : t('folders.saveFailed')
         return
     }
     modalBootstrap?.hide()

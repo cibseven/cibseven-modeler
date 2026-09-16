@@ -36,7 +36,10 @@ const messages = {
             home: 'Home', destination: 'Destination', copyKey: 'Process key of the copy',
             copyKeyRequired: 'A copy needs a process key of its own.',
             copyFormId: 'Form id of the copy',
-            copyFormIdRequired: 'A copy needs a form id of its own.'
+            copyFormIdRequired: 'A copy needs a form id of its own.',
+            nameTaken: 'A folder with that name is already there.',
+            nameTooLong: 'The name is longer than 255 characters.',
+            keyTaken: '"{key}" is already taken.'
         },
         buttons: { accept: 'Accept', cancel: 'Cancel', close: 'Close' }
     }
@@ -88,6 +91,20 @@ describe('FolderNameModal', () => {
         expect(accept).toHaveBeenCalledWith('Drafts')
     })
 
+    it('refuses a name the column cannot hold', async () => {
+        const accept = vi.fn()
+        const wrapper = mountModal(FolderNameModal)
+        wrapper.vm.show('create', '', accept)
+        await flushPromises()
+
+        await wrapper.find('input').setValue('x'.repeat(256))
+        await wrapper.find('button.btn-primary').trigger('click')
+        await flushPromises()
+
+        expect(accept).not.toHaveBeenCalled()
+        expect(wrapper.find('.invalid-feedback').text()).toBe('The name is longer than 255 characters.')
+    })
+
     it('asks for a name instead of sending an empty one', async () => {
         const accept = vi.fn()
         const wrapper = mountModal(FolderNameModal)
@@ -104,7 +121,9 @@ describe('FolderNameModal', () => {
 
     /** The backend owns the duplicate rule, so the dialog stays open showing what it said. */
     it('keeps the dialog open and shows what the backend refused', async () => {
-        const accept = vi.fn().mockRejectedValue({ response: { data: { message: 'a folder with that name is already there' } } })
+        const accept = vi.fn().mockRejectedValue({
+            response: { data: { type: 'InvalidFolderException', params: ['name', 'a folder with that name is already there'] } }
+        })
         const wrapper = mountModal(FolderNameModal)
         wrapper.vm.show('create', '', accept)
         await flushPromises()
@@ -113,7 +132,7 @@ describe('FolderNameModal', () => {
         await wrapper.find('button.btn-primary').trigger('click')
         await flushPromises()
 
-        expect(wrapper.find('.invalid-feedback').text()).toBe('a folder with that name is already there')
+        expect(wrapper.find('.invalid-feedback').text()).toBe('A folder with that name is already there.')
     })
 
     it('falls back to its own message when the failure carries none', async () => {
@@ -239,7 +258,9 @@ describe('FolderPickerModal', () => {
     })
 
     it('keeps the dialog open and shows what the backend refused', async () => {
-        const accept = vi.fn().mockRejectedValue({ response: { data: { message: 'that key is taken' } } })
+        const accept = vi.fn().mockRejectedValue({
+            response: { data: { type: 'ExistingProcessKeyException', params: ['invoice-copy'] } }
+        })
         const wrapper = mountModal(FolderPickerModal)
         await open(wrapper, { accept })
 
@@ -247,6 +268,6 @@ describe('FolderPickerModal', () => {
         await wrapper.find('button.btn-primary').trigger('click')
         await flushPromises()
 
-        expect(wrapper.find('.invalid-feedback').text()).toBe('that key is taken')
+        expect(wrapper.find('.invalid-feedback').text()).toBe('"invoice-copy" is already taken.')
     })
 })

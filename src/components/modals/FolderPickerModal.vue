@@ -69,6 +69,7 @@
 import * as bootstrap from 'bootstrap'
 import { computed, onMounted, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { folderErrorMessage } from '../../utils/folderErrors.js'
 
 const { t } = useI18n()
 const titleId = useId()
@@ -105,7 +106,8 @@ const handleAccept = async () => {
     try {
         await onAccept?.(selected.value === '' ? null : selected.value, key.value.trim())
     } catch (e) {
-        error.value = e?.response?.data?.message || t('folders.saveFailed')
+        const refusal = folderErrorMessage(e)
+        error.value = refusal ? t(refusal.key, refusal.params) : t('folders.saveFailed')
         return
     }
     modalBootstrap?.hide()
