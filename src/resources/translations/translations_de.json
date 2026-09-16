@@ -58,6 +58,11 @@
     "title": "Import abgeschlossen",
     "body": "Import abgeschlossen."
   },
+  "importErrors": {
+  	"empty": "die Datei ist leer",
+  	"notXml": "die Datei ist kein gültiges XML",
+  	"noDefinitions": "die Datei enthält keine BPMN- oder DMN-Definitionen"
+  },
   "importSummary": {
     "imported": "{count} importiert",
     "replaced": "{count} ersetzt",

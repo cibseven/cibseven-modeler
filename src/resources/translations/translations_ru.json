@@ -58,6 +58,11 @@
     "title": "Импорт завершён",
     "body": "Импорт завершён."
   },
+  "importErrors": {
+  	"empty": "файл пуст",
+  	"notXml": "файл не является корректным XML",
+  	"noDefinitions": "в файле нет определений BPMN или DMN"
+  },
   "importSummary": {
     "imported": "{count} импортировано",
     "replaced": "{count} заменено",

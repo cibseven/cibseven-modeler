@@ -352,17 +352,17 @@ export default function useFileImport({
   // A valid extension is not enough: an empty or malformed file (no <definitions>)
   // would otherwise open as a broken tab that only fails later with a console-only
   // "no definitions loaded" on save. Reject it here so handleFile surfaces a load error.
-  const _isParseableDiagram = xml => {
-    if (!xml || !xml.trim()) return false
+  const _diagramProblem = xml => {
+    if (!xml || !xml.trim()) return t('importErrors.empty')
     const doc = new DOMParser().parseFromString(xml, 'application/xml')
-    if (doc.querySelector('parsererror')) return false
-    return !!doc.querySelector('*|definitions')
+    if (doc.querySelector('parsererror')) return t('importErrors.notXml')
+    if (!doc.querySelector('*|definitions')) return t('importErrors.noDefinitions')
+    return null
   }
 
   const _openProcessFromImportedFile = async (resXmlExternalUrl, fileName, fileNameWithExtension, isBatch = false) => {
-    if (!_isParseableDiagram(resXmlExternalUrl)) {
-      throw new Error(`Invalid diagram file (no BPMN/DMN definitions): ${fileNameWithExtension}`)
-    }
+    const problem = _diagramProblem(resXmlExternalUrl)
+    if (problem) throw new Error(problem)
     let foundExternalProcessKey = getProcessKeyFromBpmn(resXmlExternalUrl) ?? fileName
     let diagramType = null
 
@@ -486,6 +486,7 @@ export default function useFileImport({
     let replacedCount = 0     // unsaved tab overwritten with imported content (not persisted to DB)
     const invalidNames = []   // wrong extension — not a supported diagram file
     const readErrorNames = [] // valid extension but failed to read/parse/import
+    const readErrorReasons = [] // what was wrong with each of them, for the message
 
     for (const file of files) {
       if (isBatch && _batchPolicy.value === 'stop') break
@@ -521,6 +522,7 @@ export default function useFileImport({
         // wrong extension, so it gets the "could not be loaded" message, not "not a BPMN file".
         console.error('Error importing file:', file.name, err)
         readErrorNames.push(file.name)
+        readErrorReasons.push(`${file.name}: ${err?.message ?? ''}`.trim())
       }
     }
 
@@ -531,7 +533,7 @@ export default function useFileImport({
       if (invalidNames.length) {
         showToastMessage({ isSuccess: false, toastText: 'toastLoadErrorFileExtension' })
       } else if (readErrorNames.length) {
-        showToastMessage({ isSuccess: false, toastText: 'toastLoadErrorFile' })
+        showToastMessage({ isSuccess: false, toastText: 'toastLoadErrorFile', bodyTextAlt: readErrorReasons[0] })
       }
     } else {
       // Batch: compose a summary from all non-zero outcome counts

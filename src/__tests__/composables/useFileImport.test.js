@@ -237,6 +237,35 @@ describe('useFileImport', () => {
         })
     })
 
+    describe('a file that cannot be read', () => {
+        /** The console had the reason and the toast did not, leaving nothing to act on. */
+        it.each([
+            ['an empty file', '', 'importErrors.empty'],
+            ['a file that is not XML', 'not xml at all', 'importErrors.notXml'],
+            ['XML without definitions', '<?xml version="1.0"?><root/>', 'importErrors.noDefinitions'],
+        ])('names the file and the reason for %s', async (_case, content, reason) => {
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'broken.bpmn', content }]))
+
+            const toast = deps.showToastMessage.mock.calls.at(-1)[0]
+            expect(toast.isSuccess).toBe(false)
+            expect(toast.toastText).toBe('toastLoadErrorFile')
+            expect(toast.bodyTextAlt).toContain('broken.bpmn')
+            expect(toast.bodyTextAlt).toContain(reason)
+        })
+
+        it('stores nothing when the file cannot be read', async () => {
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'broken.bpmn', content: '' }]))
+
+            expect(m.saveDiagramProcess).not.toHaveBeenCalled()
+        })
+    })
+
     describe('dmn import', () => {
         it('uses the definitions id as the process key when present', async () => {
             const deps = makeDeps()
