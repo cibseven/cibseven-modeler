@@ -26,11 +26,11 @@
                 <div class="modal-body">
                     <div class="mb-3" v-if="type !=='form'">
                         <label class="form-label" for="processNameInput">{{ modalNewDiagramText.processName }}</label>
-                        <input id="processNameInput" ref="processNameInputRef" type="text" class="form-control form-control-sm" v-model="nameOfProcess" @keyup.enter="handleClick">
+                        <input id="processNameInput" ref="processNameInputRef" type="text" maxlength="255" class="form-control form-control-sm" v-model="nameOfProcess" @keyup.enter="handleClick">
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="processIdInput">{{ modalNewDiagramText.processId }}</label>
-                        <input id="processIdInput" ref="processIdInputRef" type="text" class="form-control form-control-sm" v-model="idOfProcess" @input="isIdDuplicated = false" @keyup.enter="handleClick">
+                        <input id="processIdInput" ref="processIdInputRef" type="text" maxlength="100" class="form-control form-control-sm" v-model="idOfProcess" @input="isIdDuplicated = false" @keyup.enter="handleClick">
                         <div v-if="!isValidId && idOfProcess !== ''" tabindex="-1" role="alert" aria-live="assertive"
                             aria-atomic="true" class="d-block invalid-feedback">{{
                         $t("modalNewDiagram.qnameError") }}

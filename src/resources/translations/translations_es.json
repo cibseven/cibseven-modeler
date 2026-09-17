@@ -50,6 +50,7 @@
     "title": "No es un archivo BPMN",
     "body": "Este archivo no es un diagrama BPMN 2.0."
   },
+  "toastImportNeedsFolder": { "title": "Importar", "body": "Abra primero una carpeta: los modelos siempre se guardan en una." },
   "toastLoadErrorFile": {
     "title": "Error cargando archivo.",
     "body": "El archivo no se ha podido cargar correctamente."
@@ -57,6 +58,12 @@
   "toastImportBatch": {
     "title": "Importación completada",
     "body": "Importación finalizada."
+  },
+  "importErrors": {
+  	"empty": "el archivo está vacío",
+  	"notXml": "el archivo no es XML válido",
+  	"noDefinitions": "el archivo no contiene definiciones BPMN ni DMN",
+  	"lookupFailed": "no se ha podido comprobar si esta clave ya está en uso"
   },
   "importSummary": {
     "imported": "{count} importados",
@@ -416,6 +423,7 @@
   },
   "modalImportedFile": {
     "title": "El {item} \"{name}\" ya existe en el modeler",
+    "titleInFolder": "El {item} \"{name}\" ya existe en la carpeta \"{folder}\"",
     "body": "¿Quiere continuar con el {item} importado?",
     "newKeyLabel": "Nueva clave de proceso (ID)",
     "newKeyLabelForm": "Nueva clave de formulario (ID)",
@@ -503,5 +511,43 @@
   },
   "cib-header": {
     "productName": "CIB seven Modeler"
-  }
+  },
+	"folders": {
+		"breadcrumb": "Ruta de carpetas",
+		"home": "Inicio",
+		"create": "Nueva carpeta",
+		"createTitle": "Nueva carpeta",
+		"renameTitle": "Renombrar carpeta",
+		"name": "Nombre de la carpeta",
+		"nameRequired": "La carpeta necesita un nombre.",
+		"nameTaken": "Ya hay una carpeta con ese nombre.",
+		"nameTooLong": "El nombre supera los 255 caracteres.",
+		"valueTooLong": "Eso supera los {limit} caracteres.",
+		"moveRefused": "Una carpeta no se puede mover dentro de sí misma.",
+		"keyTaken": "«{key}» ya está en uso.",
+		"saveFailed": "No se ha podido guardar la carpeta.",
+		"rename": "Renombrar",
+		"move": "Mover",
+		"copy": "Copiar",
+		"delete": "Eliminar",
+		"deleteTitle": "Eliminar carpeta",
+		"deleteBody": "¿Eliminar «{name}» con todo su contenido? Se eliminarán definitivamente {folders} carpeta(s) y {models} modelo(s). Los despliegues existentes no se ven afectados.",
+		"moveTitle": "Mover «{name}»",
+		"moveModelTitle": "Mover «{name}» a una carpeta",
+		"copyModelTitle": "Copiar «{name}» en una carpeta",
+		"copyKey": "Clave de proceso de la copia",
+		"copyKeyRequired": "La copia necesita una clave de proceso propia.",
+		"copyFormId": "ID de formulario de la copia",
+		"copyFormIdRequired": "La copia necesita un ID de formulario propio.",
+		"destination": "Destino",
+		"empty": "Esta carpeta está vacía.",
+		"emptyHome": "Todavía no hay carpetas. Cree una para guardar sus modelos.",
+		"noMatches": "Nada coincide con «{keyword}» en ninguna carpeta.",
+		"searchAcrossFolders": "Mostrando resultados de todas las carpetas."
+	},
+	"toastFolderLoadFail": { "title": "Carpetas", "body": "No se han podido cargar las carpetas" },
+	"toastFolderDeleteSuccess": { "title": "Carpeta eliminada", "body": "La carpeta y todo su contenido se han eliminado" },
+	"toastFolderDeleteFail": { "title": "Carpeta", "body": "No se ha podido eliminar la carpeta" },
+	"toastFolderMoveSuccess": { "title": "Movido", "body": "El modelo está ahora en la carpeta elegida" },
+	"toastFolderCopySuccess": { "title": "Copiado", "body": "La copia está ahora en la carpeta elegida" }
 }

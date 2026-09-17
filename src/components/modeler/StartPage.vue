@@ -60,7 +60,28 @@
                         </div>
                     </div>
                 <div>
-                    <h6 class="mt-4">{{ $t("titles.recent") }}</h6>
+                    <nav class="mt-4 mb-3 d-flex align-items-center justify-content-between gap-2"
+                        :aria-label="$t('folders.breadcrumb')">
+                        <ol class="breadcrumb bg-transparent mb-0 p-0 flex-wrap folder-breadcrumb">
+                            <li class="breadcrumb-item" :class="{ active: !breadcrumb.length }">
+                                <span v-if="!breadcrumb.length" aria-current="page">{{ $t('folders.home') }}</span>
+                                <button v-else type="button" class="btn btn-link btn-sm p-0 border-0 align-baseline"
+                                    @click="navigateTo(null)">{{ $t('folders.home') }}</button>
+                            </li>
+                            <li v-for="(folder, level) in breadcrumb" :key="folder.id" class="breadcrumb-item"
+                                :class="{ active: level === breadcrumb.length - 1 }"
+                                :aria-current="level === breadcrumb.length - 1 ? 'page' : null">
+                                <span v-if="level === breadcrumb.length - 1">{{ folder.name }}</span>
+                                <button v-else type="button" class="btn btn-link btn-sm p-0 border-0 align-baseline"
+                                    @click="navigateTo(folder.id)">{{ folder.name }}</button>
+                            </li>
+                        </ol>
+                        <button type="button" class="btn btn-sm btn-outline-secondary text-nowrap"
+                            :title="$t('folders.create')" @click="handleCreateFolder">
+                            <i class="mdi mdi-folder-plus-outline me-1" aria-hidden="true"></i>{{ $t('folders.create') }}
+                        </button>
+                    </nav>
+                    <p v-if="isSearching && !isEmptyHere" class="mt-2 mb-2 small text-muted">{{ $t('folders.searchAcrossFolders') }}</p>
                     <div v-if="filteredDashboardElements !== null">
                         <div ref="listContainer" @scroll="handleListScroll" class="list-group shadow-sm overflow-auto" style="max-height: 50vh">
                             <div class="d-flex align-items-center justify-content-center">
@@ -69,13 +90,29 @@
                                 </div>
                             </div>
                             <div v-if="!isLoading">
+                                <template v-if="!isSearching">
+                                    <div v-for="folder in currentChildren" :key="folder.id">
+                                        <FolderListItem :folder="folder" :isHovered="hoveredFolderId === folder.id"
+                                            @mouseover="hoveredFolderId = folder.id" @mouseleave="hoveredFolderId = null"
+                                            @focusin="hoveredFolderId = folder.id" @focusout="hoveredFolderId = null"
+                                            @open="navigateTo" @rename="handleRenameFolder"
+                                            @move="handleMoveFolder" @remove="handleRemoveFolder">
+                                        </FolderListItem>
+                                    </div>
+                                </template>
+                                <div v-if="isEmptyHere" class="list-group-item border-0 text-center text-muted py-5">
+                                    <span class="mdi d-block mb-2 folder-empty-icon" :class="emptyState.icon"
+                                        aria-hidden="true"></span>
+                                    {{ emptyState.text }}
+                                </div>
                                 <div v-for="(element, index) in filteredDashboardElements" :key="element.id">
                                     <DiagramListItem
                                         @mouseleave="setHoverElement(index, false)" :index="index"
                                         :ref="el => searchElementsList[index] = el" @mouseover="setHoverElement(index, true)"
                                         @focusin="setHoverElement(index, true)" @focusout="setHoverElement(index, false)"
                                         @openDiagram="openDiagramEmitFromChild" :item="element" @toggleModal="toggleModal"
-                                        @downloadDiagram="handleDownloadDiagram" :isHovered="element.isHovered">
+                                        @downloadDiagram="handleDownloadDiagram" @moveModel="handleMoveModel" @copyModel="handleCopyModel"
+                                        :isHovered="element.isHovered">
                                     </DiagramListItem>
                                 </div>
                                 <div v-if="isLoadingMore" class="d-flex align-items-center justify-content-center py-2">
@@ -86,15 +123,13 @@
                             </div>
                         </div>
                     </div>
-                        <div class="mt-4 d-flex justify-content-between">    
+                        <div v-if="currentFolderId || startPageTool" class="mt-4 d-flex justify-content-between">    
                             <div class="d-flex justify-content-start gap-2">
-                                <button @click="handleOpenFileInput" :title="$t('buttons.importFile')" type="button"
+                                <button v-if="currentFolderId" @click="handleOpenFileInput" :title="$t('buttons.importFile')" type="button"
                                 class="btn border border-dark btn-light"><i class="mdi mdi-import me-1"></i>{{ $t('buttons.importFile') }}</button>
                                 <component v-if="startPageTool" :is="startPageTool"></component>
                             </div>
-                            <input ref="fileInput" type="file" accept=".bpmn,.dmn,.form" multiple :aria-label="$t('buttons.importFile')" style="display: none;"
-                                @change="handleFileChange" />
-                            <div class="d-flex gap-2">
+                            <div v-if="currentFolderId" class="d-flex gap-2">
                                 <button :title="$t('buttons.createBpmn')" type="button" class="btn btn-secondary" @click="handleClickCreateBpmnc7Diagram">
                                     {{ $t('buttons.createBpmn') }}
                                 </button>
@@ -106,6 +141,8 @@
                                 </button>
                             </div>
                         </div>
+                        <input ref="fileInput" type="file" accept=".bpmn,.dmn,.form" multiple :aria-label="$t('buttons.importFile')" style="display: none;"
+                            @change="handleFileChange" />
 
                     </div>
                 </div>
@@ -120,6 +157,8 @@
           :acceptLabel="$t('buttons.delDiagram')"
           @resetVariablesForModalAcceptCancelMessage="resetVariablesForModalAcceptCancelMessage">
       </ConfirmModal>
+      <FolderNameModal ref="folderNameModal" />
+      <FolderPickerModal ref="folderPickerModal" />
       <TaskPopper ref="downloadPopper" />
     </div>
 
@@ -139,6 +178,11 @@ import diagramXMLC7 from '../../resources/camunda7.bpmn'
 import dmnXML from '../../resources/dmn.dmn'
 //components
 import DiagramListItem from './DiagramListItem.vue'
+import FolderListItem from './FolderListItem.vue'
+import FolderNameModal from '../modals/FolderNameModal.vue'
+import FolderPickerModal from '../modals/FolderPickerModal.vue'
+import useFolders from '../../composables/useFolders.js'
+import { copyFormToFolder, copyProcessToFolder, moveFormToFolder, moveProcessToFolder } from '../../services/folderService'
 import ConfirmModal from '../modals/ConfirmModal.vue'
 import formJson from '../../resources/formSchema.json'
 import { DIAGRAM_TYPE } from '../../constants/diagramTypes.js'
@@ -165,7 +209,8 @@ const emit = defineEmits([
     'openDiagram',
     'showToastMessage',
     'loadMore',
-    'search'
+    'search',
+    'navigateFolder'
 ])
 const downloadPopper = ref(null)
 const inputSearchValue = ref('')
@@ -182,7 +227,45 @@ const itemKey = ref('process')
 const filterType = ref('all')
 const dashboardElements = ref([])
 const filteredDashboardElements = ref([])
+const folderNameModal = ref(null)
+const folderPickerModal = ref(null)
+const hoveredFolderId = ref(null)
+const folderDeleteBody = ref('')
+const folderState = useFolders()
+const { breadcrumb, currentChildren, currentFolderId } = folderState
+
+// The keyword the list actually reflects, set when the search is sent rather than typed:
+// while typing, what is on screen is still the folder, and it is described as the folder
+const appliedKeyword = ref('')
+const isSearching = computed(() => appliedKeyword.value.trim().length >= 3)
+const isEmptyHere = computed(() => {
+    const noModels = !(filteredDashboardElements.value?.length)
+    // A search hides this level's folders, so they are not what there is nothing of
+    return isSearching.value ? noModels : noModels && !currentChildren.value.length
+})
+
+// Three ways to be empty, and they call for three different things to do next
+const emptyState = computed(() => {
+    if (isSearching.value) {
+        return {
+            icon: 'mdi-file-search-outline',
+            text: t('folders.noMatches', { keyword: appliedKeyword.value.trim() })
+        }
+    }
+    return {
+        icon: 'mdi-folder-open-outline',
+        text: currentFolderId.value ? t('folders.empty') : t('folders.emptyHome')
+    }
+})
+
 onMounted(async () => {
+    try {
+        await folderState.load()
+    } catch (error) {
+        // Without the tree there is still a list to show, so say so and carry on
+        console.error(error)
+        emit('showToastMessage', { isSuccess: false, toastText: 'toastFolderLoadFail' })
+    }
     resetDashboardElements()
     _addIsHoveredElement()
     if (props.diagrams != null) {
@@ -200,6 +283,10 @@ const handleListScroll = () => {
 }
 
 const modalTitle = computed(() => {
+      // A folder warns about what goes with it, not about the name of a single model
+      if (itemKey.value === 'folder') {
+        return { title: t('folders.deleteTitle'), body: folderDeleteBody.value }
+      }
       return { title: t('modalDelete.title', {
         item: t(`items.${itemKey.value}`)
       } ), body: t('modalDelete.body', {
@@ -241,7 +328,13 @@ const filterElements = type => {
     if (filterType.value === type) return
     filterType.value = type
     const keyword = inputSearchValue.value.length >= 3 ? inputSearchValue.value : ''
-    emit('search', { keyword, diagramType: type === 'all' ? '' : type })
+    _applySearch(keyword, type === 'all' ? '' : type)
+}
+
+/** The one place a search leaves for the host, so the applied keyword cannot drift from it. */
+const _applySearch = (keyword, diagramType) => {
+    appliedKeyword.value = keyword
+    emit('search', { keyword, diagramType })
 }
 
 const handleOpenFileInput = () => {
@@ -268,7 +361,7 @@ const handleClickCreateBpmnc7Diagram = debounce(async () => {
 const handleSearch = debounce(() => {
     const len = inputSearchValue.value.length
     if (len >= 3 || len === 0) {
-        emit('search', { keyword: inputSearchValue.value, diagramType: filterType.value === 'all' ? '' : filterType.value })
+        _applySearch(inputSearchValue.value, filterType.value === 'all' ? '' : filterType.value)
     }
 }, 300)
 
@@ -348,19 +441,140 @@ const openDiagramEmitFromChild = (valueFromChild, processId, processName, proces
     emit('openDiagram', valueFromChild, processId, processName, processKey, typeofDiagram, true, false, false)
 }
 
+const navigateTo = folderId => {
+    folderState.open(folderId)
+    hoveredFolderId.value = null
+    emit('navigateFolder', folderId ?? null)
+}
+
+const handleCreateFolder = () => {
+    folderNameModal.value?.show('create', '', async name => {
+        await folderState.create(name)
+    })
+}
+
+const handleRenameFolder = folder => {
+    folderNameModal.value?.show('rename', folder.name, async name => {
+        await folderState.rename(folder.id, name)
+    })
+}
+
+const handleMoveFolder = folder => {
+    folderPickerModal.value?.show({
+        // Leaving out the folder leaves out its subtree, which is where it may not go
+        folders: folderState.flatten(folder.id),
+        title: t('folders.moveTitle', { name: folder.name }),
+        allowTopLevel: true,
+        accept: async parentId => {
+            await folderState.move(folder.id, parentId)
+        }
+    })
+}
+
+const handleRemoveFolder = async folder => {
+    let held = { folders: 0, diagrams: 0, forms: 0 }
+    try {
+        held = await folderState.contents(folder.id)
+    } catch (error) {
+        // The count only informs the warning; losing it must not block the deletion
+        console.error(error)
+    }
+    itemKey.value = 'folder'
+    folderDeleteBody.value = t('folders.deleteBody', {
+        name: folder.name,
+        folders: held.folders ?? 0,
+        models: (held.diagrams ?? 0) + (held.forms ?? 0)
+    })
+    functionAfterAccepting.value = deleteFolderWithId
+    processIdForDelete.value = folder.id
+    searchListIndex.value = null
+    showModalAcceptCancelMessage.value = true
+}
+
+const deleteFolderWithId = async folderId => {
+    try {
+        await folderState.remove(folderId)
+        // Removing the folder underfoot leaves the parent open, so the list has to follow
+        emit('navigateFolder', folderState.currentFolderId.value)
+        emit('showToastMessage', { isSuccess: true, toastText: 'toastFolderDeleteSuccess' })
+    } catch (error) {
+        console.error(error)
+        emit('showToastMessage', { isSuccess: false, toastText: 'toastFolderDeleteFail' })
+    }
+}
+
+const modelName = item => item.type === DIAGRAM_TYPE.FORM ? item.formId : item.name
+
+const handleMoveModel = item => {
+    folderPickerModal.value?.show({
+        folders: folderState.flatten(),
+        title: t('folders.moveModelTitle', { name: modelName(item) }),
+        accept: async folderId => {
+            if (item.type === DIAGRAM_TYPE.FORM) await moveFormToFolder(item.id, folderId)
+            else await moveProcessToFolder(item.id, folderId)
+            emit('getStoredDiagrams')
+            emit('showToastMessage', { isSuccess: true, toastText: 'toastFolderMoveSuccess' })
+        }
+    })
+}
+
+const handleCopyModel = item => {
+    // A copy is a new model and what identifies it has to be its own: the engine resolves a
+    // process by key, and a form is referenced by its form id
+    const isForm = item.type === DIAGRAM_TYPE.FORM
+    folderPickerModal.value?.show({
+        folders: folderState.flatten(),
+        title: t('folders.copyModelTitle', { name: modelName(item) }),
+        requireKey: true,
+        keyLabel: isForm ? 'folders.copyFormId' : 'folders.copyKey',
+        keyRequired: isForm ? 'folders.copyFormIdRequired' : 'folders.copyKeyRequired',
+        defaultKey: `${isForm ? item.formId : item.processkey}-copy`,
+        accept: async (folderId, key) => {
+            if (isForm) await copyFormToFolder(item.id, folderId, key)
+            else await copyProcessToFolder(item.id, folderId, key, item.name)
+            emit('getStoredDiagrams')
+            emit('showToastMessage', { isSuccess: true, toastText: 'toastFolderCopySuccess' })
+        }
+    })
+}
+
 const _toggleIsLoading = comp => isLoading.value = comp
 
 const _addIsHoveredElement = () => {
     dashboardElements.value?.map((element) => element.isHovered = false)
 }
 
+// The tree is loaded here, so this is where a folder id can be turned into a name
+const folderNameFor = folderId =>
+    folderState.folders.value.find(folder => folder.id === folderId)?.name ?? null
+
 defineExpose({
     _toggleIsLoading,
-    openDiagramEmitFromChild
+    openDiagramEmitFromChild,
+    folderNameFor
 })
 </script>
 
 <style scoped>
+/* The breadcrumb sits on the page, not in a panel: whatever the theme gives it, it stays flat. */
+.folder-breadcrumb {
+    background-color: transparent;
+}
+
+.folder-breadcrumb .btn-link {
+    text-decoration: none;
+}
+
+.folder-breadcrumb .btn-link:hover,
+.folder-breadcrumb .btn-link:focus-visible {
+    text-decoration: underline;
+}
+
+.folder-empty-icon {
+    font-size: 2rem;
+    opacity: 0.5;
+}
+
 /* TODO: Unify search box styles across the project (shared component or global styles). */
 .start-page-search .start-page-search-segment:hover,
 .start-page-search .start-page-search-segment:focus-visible {

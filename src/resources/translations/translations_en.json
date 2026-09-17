@@ -50,6 +50,7 @@
 		"title": "Not a bpmn file",
 		"body": "Ooops, this file is not a BPMN 2.0 diagram."
 	},
+	"toastImportNeedsFolder": { "title": "Import", "body": "Open a folder first: a model is always stored in one." },
 	"toastLoadErrorFile": {
 		"title": "Error loading file.",
 		"body": "The file could not be loaded correctly."
@@ -57,6 +58,12 @@
 	"toastImportBatch": {
 		"title": "Import complete",
 		"body": "Import finished."
+	},
+	"importErrors": {
+		"empty": "the file is empty",
+		"notXml": "the file is not valid XML",
+		"noDefinitions": "the file holds no BPMN or DMN definitions",
+		"lookupFailed": "the modeler could not be asked whether this key is already taken"
 	},
 	"importSummary": {
 		"imported": "{count} imported",
@@ -416,6 +423,7 @@
 	},
 	"modalImportedFile": {
 		"title": "The {item} \"{name}\" already exists in the modeler",
+		"titleInFolder": "The {item} \"{name}\" already exists in the folder \"{folder}\"",
 		"body": "Do you want to continue working with the imported {item}?",
 		"newKeyLabel": "New process key (ID)",
 		"newKeyLabelForm": "New form key (ID)",
@@ -503,5 +511,43 @@
 	},
 	"cib-header": {
 		"productName": "CIB seven Modeler"
-	}
+	},
+	"folders": {
+		"breadcrumb": "Folder path",
+		"home": "Home",
+		"create": "New folder",
+		"createTitle": "New folder",
+		"renameTitle": "Rename folder",
+		"name": "Folder name",
+		"nameRequired": "A folder needs a name.",
+		"nameTaken": "A folder with that name is already there.",
+		"nameTooLong": "The name is longer than 255 characters.",
+		"valueTooLong": "That is longer than {limit} characters.",
+		"moveRefused": "A folder cannot be moved into itself.",
+		"keyTaken": "\"{key}\" is already taken.",
+		"saveFailed": "The folder could not be saved.",
+		"rename": "Rename",
+		"move": "Move",
+		"copy": "Copy",
+		"delete": "Delete",
+		"deleteTitle": "Delete folder",
+		"deleteBody": "Delete \"{name}\" with everything in it? This removes {folders} folder(s) and {models} model(s) for good. Existing deployments are not affected.",
+		"moveTitle": "Move \"{name}\"",
+		"moveModelTitle": "Move \"{name}\" to a folder",
+		"copyModelTitle": "Copy \"{name}\" to a folder",
+		"copyKey": "Process key of the copy",
+		"copyKeyRequired": "A copy needs a process key of its own.",
+		"copyFormId": "Form id of the copy",
+		"copyFormIdRequired": "A copy needs a form id of its own.",
+		"destination": "Destination",
+		"empty": "This folder is empty.",
+		"emptyHome": "No folders yet. Create one to store your models in.",
+		"noMatches": "Nothing matches \"{keyword}\" in any folder.",
+		"searchAcrossFolders": "Showing matches from every folder."
+	},
+	"toastFolderLoadFail": { "title": "Folders", "body": "The folders could not be loaded" },
+	"toastFolderDeleteSuccess": { "title": "Folder deleted", "body": "The folder and everything in it have been removed" },
+	"toastFolderDeleteFail": { "title": "Folder", "body": "The folder could not be deleted" },
+	"toastFolderMoveSuccess": { "title": "Moved", "body": "The model is now in the folder you chose" },
+	"toastFolderCopySuccess": { "title": "Copied", "body": "The copy is now in the folder you chose" }
 }

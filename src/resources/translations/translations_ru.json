@@ -50,6 +50,7 @@
     "title": "Не BPMN файл",
     "body": "Упс, этот файл не является диаграммой BPMN 2.0."
   },
+  "toastImportNeedsFolder": { "title": "Импорт", "body": "Сначала откройте папку: модель всегда хранится в папке." },
   "toastLoadErrorFile": {
     "title": "Ошибка загрузки файла",
     "body": "Файл не удалось загрузить корректно."
@@ -57,6 +58,12 @@
   "toastImportBatch": {
     "title": "Импорт завершён",
     "body": "Импорт завершён."
+  },
+  "importErrors": {
+  	"empty": "файл пуст",
+  	"notXml": "файл не является корректным XML",
+  	"noDefinitions": "в файле нет определений BPMN или DMN",
+  	"lookupFailed": "не удалось проверить, занят ли уже этот ключ"
   },
   "importSummary": {
     "imported": "{count} импортировано",
@@ -416,6 +423,7 @@
   },
   "modalImportedFile": {
     "title": "Этот {item} \"{name}\" уже существует в моделере",
+    "titleInFolder": "Этот {item} \"{name}\" уже существует в папке \"{folder}\"",
     "body": "Хотите продолжить работу с импортированным {item}?",
     "newKeyLabel": "Новый ключ процесса (ID)",
     "newKeyLabelForm": "Новый ключ формы (ID)",
@@ -503,5 +511,43 @@
   },
   "cib-header": {
     "productName": "CIB seven Modeler"
-  }
+  },
+	"folders": {
+		"breadcrumb": "Путь по папкам",
+		"home": "Начало",
+		"create": "Новая папка",
+		"createTitle": "Новая папка",
+		"renameTitle": "Переименовать папку",
+		"name": "Имя папки",
+		"nameRequired": "У папки должно быть имя.",
+		"nameTaken": "Папка с таким именем уже существует.",
+		"nameTooLong": "Имя длиннее 255 символов.",
+		"valueTooLong": "Это длиннее {limit} символов.",
+		"moveRefused": "Папку нельзя переместить саму в себя.",
+		"keyTaken": "«{key}» уже занято.",
+		"saveFailed": "Не удалось сохранить папку.",
+		"rename": "Переименовать",
+		"move": "Переместить",
+		"copy": "Копировать",
+		"delete": "Удалить",
+		"deleteTitle": "Удалить папку",
+		"deleteBody": "Удалить «{name}» со всем содержимым? Будет безвозвратно удалено папок: {folders}, моделей: {models}. Существующие развёртывания не затрагиваются.",
+		"moveTitle": "Переместить «{name}»",
+		"moveModelTitle": "Переместить «{name}» в папку",
+		"copyModelTitle": "Копировать «{name}» в папку",
+		"copyKey": "Ключ процесса для копии",
+		"copyKeyRequired": "Копии нужен собственный ключ процесса.",
+		"copyFormId": "Идентификатор формы для копии",
+		"copyFormIdRequired": "Копии нужен собственный идентификатор формы.",
+		"destination": "Назначение",
+		"empty": "Эта папка пуста.",
+		"emptyHome": "Папок пока нет. Создайте одну, чтобы хранить в ней модели.",
+		"noMatches": "Ничего не найдено по запросу «{keyword}» ни в одной папке.",
+		"searchAcrossFolders": "Показаны совпадения из всех папок."
+	},
+	"toastFolderLoadFail": { "title": "Папки", "body": "Не удалось загрузить папки" },
+	"toastFolderDeleteSuccess": { "title": "Папка удалена", "body": "Папка и всё её содержимое удалены" },
+	"toastFolderDeleteFail": { "title": "Папка", "body": "Не удалось удалить папку" },
+	"toastFolderMoveSuccess": { "title": "Перемещено", "body": "Модель теперь находится в выбранной папке" },
+	"toastFolderCopySuccess": { "title": "Скопировано", "body": "Копия теперь находится в выбранной папке" }
 }

@@ -39,13 +39,14 @@ const fetchProcesses = (firstResult, maxResults, keyword = '', diagramType = '')
 }
 
 // get unified paginated list of processes and forms
-const getUnifiedDiagrams = (firstResult, maxResults, keyword, type) => {
+const getUnifiedDiagrams = (firstResult, maxResults, keyword, type, folderId) => {
   return getAxios().get(getModelerServicePath() + '/unified-diagrams', {
     params: {
       firstResult,
       maxResults,
       keyword,
-      type
+      type,
+      folderId
     }
   })
 }
@@ -96,13 +97,15 @@ const deleteProcessById = id => {
   return getAxios().delete(getModelerServicePath() + '/process/delete/' + id)
 }
 
-const saveDiagramProcess = (name, processkey, blob, type) => {
+const saveDiagramProcess = (name, processkey, blob, type, folderId = null) => {
 
   const formData = new FormData()
   formData.append('name', name)
   formData.append('processkey', processkey)
   formData.append('diagram', blob)
   formData.append('type', type)
+  // Left out the backend files it under its default folder, which is rarely what the user meant
+  if (folderId) formData.append('folderId', folderId)
   return getAxios().post(getModelerServicePath() + '/process/save', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   })
@@ -128,6 +131,7 @@ export {
   getUnifiedDiagrams,
   getUnifiedDiagramById,
   keyExistsRemote,
+  fetchProcessByKey,
   fetchProcessByName,
   fetchProcessById,
   saveDiagramProcess,

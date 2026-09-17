@@ -50,6 +50,7 @@
     "title": "Не BPMN файл",
     "body": "Упс, цей файл не є діаграмою BPMN 2.0."
   },
+  "toastImportNeedsFolder": { "title": "Імпорт", "body": "Спершу відкрийте теку: модель завжди зберігається в теці." },
   "toastLoadErrorFile": {
     "title": "Помилка завантаження файлу",
     "body": "Файл не вдалося завантажити коректно."
@@ -57,6 +58,12 @@
   "toastImportBatch": {
     "title": "Імпорт завершено",
     "body": "Імпорт завершено."
+  },
+  "importErrors": {
+  	"empty": "файл порожній",
+  	"notXml": "файл не є коректним XML",
+  	"noDefinitions": "у файлі немає визначень BPMN або DMN",
+  	"lookupFailed": "не вдалося перевірити, чи цей ключ вже зайнятий"
   },
   "importSummary": {
     "imported": "{count} імпортовано",
@@ -416,6 +423,7 @@
   },
   "modalImportedFile": {
     "title": "Цей {item} \"{name}\" вже існує в моделері",
+    "titleInFolder": "Цей {item} \"{name}\" вже існує в теці \"{folder}\"",
     "body": "Бажаєте продовжити роботу з імпортованим {item}?",
     "newKeyLabel": "Новий ключ процесу (ID)",
     "newKeyLabelForm": "Новий ключ форми (ID)",
@@ -503,5 +511,43 @@
   },
   "cib-header": {
     "productName": "CIB seven Modeler"
-  }
+  },
+	"folders": {
+		"breadcrumb": "Шлях до теки",
+		"home": "Початок",
+		"create": "Нова тека",
+		"createTitle": "Нова тека",
+		"renameTitle": "Перейменувати теку",
+		"name": "Назва теки",
+		"nameRequired": "Тека потребує назви.",
+		"nameTaken": "Тека з такою назвою вже існує.",
+		"nameTooLong": "Назва довша за 255 символів.",
+		"valueTooLong": "Це довше за {limit} символів.",
+		"moveRefused": "Теку не можна перемістити саму в себе.",
+		"keyTaken": "«{key}» вже зайнято.",
+		"saveFailed": "Не вдалося зберегти теку.",
+		"rename": "Перейменувати",
+		"move": "Перемістити",
+		"copy": "Копіювати",
+		"delete": "Видалити",
+		"deleteTitle": "Видалити теку",
+		"deleteBody": "Видалити «{name}» з усім вмістом? Буде остаточно вилучено тек: {folders}, моделей: {models}. Наявні розгортання не зачіпаються.",
+		"moveTitle": "Перемістити «{name}»",
+		"moveModelTitle": "Перемістити «{name}» до теки",
+		"copyModelTitle": "Копіювати «{name}» до теки",
+		"copyKey": "Ключ процесу для копії",
+		"copyKeyRequired": "Копія потребує власного ключа процесу.",
+		"copyFormId": "Ідентифікатор форми для копії",
+		"copyFormIdRequired": "Копія потребує власного ідентифікатора форми.",
+		"destination": "Призначення",
+		"empty": "Ця тека порожня.",
+		"emptyHome": "Тек ще немає. Створіть одну, щоб зберігати в ній моделі.",
+		"noMatches": "Нічого не знайдено за запитом «{keyword}» у жодній теці.",
+		"searchAcrossFolders": "Показано збіги з усіх тек."
+	},
+	"toastFolderLoadFail": { "title": "Теки", "body": "Не вдалося завантажити теки" },
+	"toastFolderDeleteSuccess": { "title": "Теку видалено", "body": "Теку та весь її вміст вилучено" },
+	"toastFolderDeleteFail": { "title": "Тека", "body": "Не вдалося видалити теку" },
+	"toastFolderMoveSuccess": { "title": "Переміщено", "body": "Модель тепер у вибраній теці" },
+	"toastFolderCopySuccess": { "title": "Скопійовано", "body": "Копія тепер у вибраній теці" }
 }

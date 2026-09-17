@@ -25,8 +25,8 @@ import {
   setTagValueOfXml,
 } from '../utils.js'
 import { DIAGRAM_TYPE } from '../constants/diagramTypes.js'
-import { saveDiagramProcess, updateDiagramProcess, getUnifiedDiagrams } from '../services/processService.js'
-import { saveForm, updateForm } from '../services/formService.js'
+import { saveDiagramProcess, updateDiagramProcess, fetchProcessByKey } from '../services/processService.js'
+import { saveForm, updateForm, fetchFormByFormId } from '../services/formService.js'
 
 /**
  * Encapsulates file drag-and-drop / file-input handling and the conflict-resolution
@@ -63,6 +63,10 @@ export default function useFileImport({
   onBatchComplete,
   nextModalHiddenPromise,
   updateDiagramXml,
+  // Read at save time, not captured: a batch can outlive the folder the user started in
+  currentFolderId,
+  // (folderId) => folder name, so a conflict can say where the model it found lives
+  folderNameFor,
 }) {
   const { t } = useI18n()
 
@@ -160,6 +164,9 @@ export default function useFileImport({
       id: foundExternalProcessKey,
       key: foundExternalProcessKey,
       keyOfTabNav,
+      // An import opens a tab first and is stored when it is saved: without this the save
+      // names no folder and the backend files it under the default one
+      folderId: currentFolderId?.value,
       canSave: true,
       isSaved: false,
       isModelerVisible: false,
@@ -175,7 +182,7 @@ export default function useFileImport({
   const _autoSaveProcess = async (xml, processKey, diagramType) => {
     try {
       const blob = new Blob([xml], { type: 'text/xml' })
-      const response = await saveDiagramProcess(processKey, processKey, blob, diagramType)
+      const response = await saveDiagramProcess(processKey, processKey, blob, diagramType, currentFolderId?.value)
       if (response?.id) {
         const idx = tabNavList.value.findIndex(
           t => t.key === processKey && !t.isSaved && t.type !== DIAGRAM_TYPE.FORM
@@ -192,7 +199,7 @@ export default function useFileImport({
   /** Save a newly imported Form file to the database and mark its tab as saved. */
   const _autoSaveForm = async (jsonString, formId) => {
     try {
-      const response = await saveForm(formId, JSON.parse(jsonString))
+      const response = await saveForm(formId, JSON.parse(jsonString), currentFolderId?.value)
       if (response?.id) {
         const idx = tabNavList.value.findIndex(
           t => t.key === formId && !t.isSaved && t.type === DIAGRAM_TYPE.FORM
@@ -223,7 +230,10 @@ export default function useFileImport({
 
   const _openFormFromImportedFile = async (jsonExternal, isBatch = false) => {
     const jsonId = JSON.parse(jsonExternal)?.id
-    const foundForm = forms.value.find(form => form.formId === jsonId)
+    // The loaded list only holds the folder in view, but a form id is unique across all of
+    // them, so a form that is not on screen still collides
+    let foundForm = forms.value?.find(form => form.formId === jsonId)
+    if (!foundForm) foundForm = await _findFormRemotely(jsonId)
 
     if (foundForm) {
       let jsonFromEditor = _checkIfFormOpenInTab(jsonId)
@@ -239,6 +249,7 @@ export default function useFileImport({
         xmlFromModeler: jsonFromEditor,
         xmlExternalUrl: jsonExternal,
         diagramType: DIAGRAM_TYPE.FORM,
+        folderName: folderNameFor?.(foundForm.folderId) ?? null,
       }
       const isEqual = _canonicalFormJson(jsonFromEditor) === _canonicalFormJson(jsonExternal)
 
@@ -317,20 +328,44 @@ export default function useFileImport({
     }
   }
 
+  /**
+   * The stored diagram with that key, or null. Asked of the backend by exact key rather than
+   * searched: the key is what the unique constraint is on, so a near match is not a conflict.
+   */
+  const _findProcessRemotely = async key => {
+    try {
+      return await fetchProcessByKey(key)
+    } catch (e) {
+      // Only a 404 answers the question. Reading any other failure as "nothing there" would
+      // import a second diagram under a key the database then refuses
+      if (e?.response?.status === 404) return null
+      throw new Error(t('importErrors.lookupFailed'), { cause: e })
+    }
+  }
+
+  const _findFormRemotely = async formId => {
+    try {
+      return await fetchFormByFormId(formId)
+    } catch (e) {
+      if (e?.response?.status === 404) return null
+      throw new Error(t('importErrors.lookupFailed'), { cause: e })
+    }
+  }
+
   // A valid extension is not enough: an empty or malformed file (no <definitions>)
   // would otherwise open as a broken tab that only fails later with a console-only
   // "no definitions loaded" on save. Reject it here so handleFile surfaces a load error.
-  const _isParseableDiagram = xml => {
-    if (!xml || !xml.trim()) return false
+  const _diagramProblem = xml => {
+    if (!xml || !xml.trim()) return t('importErrors.empty')
     const doc = new DOMParser().parseFromString(xml, 'application/xml')
-    if (doc.querySelector('parsererror')) return false
-    return !!doc.querySelector('*|definitions')
+    if (doc.querySelector('parsererror')) return t('importErrors.notXml')
+    if (!doc.querySelector('*|definitions')) return t('importErrors.noDefinitions')
+    return null
   }
 
   const _openProcessFromImportedFile = async (resXmlExternalUrl, fileName, fileNameWithExtension, isBatch = false) => {
-    if (!_isParseableDiagram(resXmlExternalUrl)) {
-      throw new Error(`Invalid diagram file (no BPMN/DMN definitions): ${fileNameWithExtension}`)
-    }
+    const problem = _diagramProblem(resXmlExternalUrl)
+    if (problem) throw new Error(problem)
     let foundExternalProcessKey = getProcessKeyFromBpmn(resXmlExternalUrl) ?? fileName
     let diagramType = null
 
@@ -341,13 +376,10 @@ export default function useFileImport({
       diagramType = checkCamundaVersion(resXmlExternalUrl)
     }
 
-    let foundModelerProcess = processes.value.find(process => process.processkey === foundExternalProcessKey)
-    if (!foundModelerProcess) {
-      try {
-        const results = await getUnifiedDiagrams(0, 1, foundExternalProcessKey, '')
-        foundModelerProcess = results?.find(p => p.processkey === foundExternalProcessKey) ?? null
-      } catch { /* fall through to new-process path */ }
-    }
+    // The loaded list only holds the folder in view, but a process key is unique across all of
+    // them, so a diagram that is not on screen still collides
+    let foundModelerProcess = processes.value?.find(process => process.processkey === foundExternalProcessKey)
+    if (!foundModelerProcess) foundModelerProcess = await _findProcessRemotely(foundExternalProcessKey)
 
     if (foundModelerProcess) {
       let xmlFromModeler = _checkIfProcessOpenInTab(foundExternalProcessKey)
@@ -366,6 +398,7 @@ export default function useFileImport({
         xmlFromModeler,
         xmlExternalUrl: resXmlExternalUrl,
         diagramType,
+        folderName: folderNameFor?.(foundModelerProcess.folderId) ?? null,
       }
       const isEqual = compareXML(xmlFromModeler, resXmlExternalUrl)
       if (isEqual) {
@@ -456,6 +489,7 @@ export default function useFileImport({
     let replacedCount = 0     // unsaved tab overwritten with imported content (not persisted to DB)
     const invalidNames = []   // wrong extension — not a supported diagram file
     const readErrorNames = [] // valid extension but failed to read/parse/import
+    let readErrorReason = '' // what was wrong with the file, for a single-file import
 
     for (const file of files) {
       if (isBatch && _batchPolicy.value === 'stop') break
@@ -491,6 +525,7 @@ export default function useFileImport({
         // wrong extension, so it gets the "could not be loaded" message, not "not a BPMN file".
         console.error('Error importing file:', file.name, err)
         readErrorNames.push(file.name)
+        readErrorReason = `${file.name}: ${err?.message ?? ''}`.trim()
       }
     }
 
@@ -501,7 +536,7 @@ export default function useFileImport({
       if (invalidNames.length) {
         showToastMessage({ isSuccess: false, toastText: 'toastLoadErrorFileExtension' })
       } else if (readErrorNames.length) {
-        showToastMessage({ isSuccess: false, toastText: 'toastLoadErrorFile' })
+        showToastMessage({ isSuccess: false, toastText: 'toastLoadErrorFile', bodyTextAlt: readErrorReason })
       }
     } else {
       // Batch: compose a summary from all non-zero outcome counts

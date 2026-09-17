@@ -88,6 +88,7 @@ function skipValue(value, lang) {
       'http basic'
     ],
     'de': [
+      'import',
       'initiator',
       'message',
       'name',

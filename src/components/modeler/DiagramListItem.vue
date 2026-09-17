@@ -42,6 +42,16 @@
                 :class="{ 'invisible': !props.isHovered }"
                 @click.stop="handleDownloadItem">
             </button>
+            <button :title="$t('folders.move')" type="button"
+                class="btn mdi mdi-18px mdi-folder-move-outline border-0 btn-outline-secondary btn-sm"
+                :class="{ 'invisible': !props.isHovered }"
+                @click.stop="emit('moveModel', props.item)">
+            </button>
+            <button :title="$t('folders.copy')" type="button"
+                class="btn mdi mdi-18px mdi-content-copy border-0 btn-outline-secondary btn-sm"
+                :class="{ 'invisible': !props.isHovered }"
+                @click.stop="emit('copyModel', props.item)">
+            </button>
             <button :title="$t('buttons.delete')" type="button"
                 class="btn mdi mdi-18px mdi-delete-outline border-0 btn-outline-secondary btn-sm"
                 :class="{ 'invisible': !props.isHovered }"
@@ -69,6 +79,8 @@ const emit = defineEmits([
     'openDiagram',
     'toggleModal',
     'downloadDiagram',
+    'moveModel',
+    'copyModel',
 ])
 
 const store = useStore()
