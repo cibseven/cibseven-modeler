@@ -26,18 +26,6 @@ const fetchDecisionDiagram = decisionId => {
   return getAxios().get('/client/cibseven-engine/decision/id/' + decisionId + '/xml')
 }
 
-// get list of processes
-const fetchProcesses = (firstResult, maxResults, keyword = '', diagramType = '') => {
-  return getAxios().get(getModelerServicePath() + '/processes', {
-    params: {
-      firstResult,
-      maxResults,
-      keyword,
-      diagramType
-    }
-  })
-}
-
 // get unified paginated list of processes and forms
 const getUnifiedDiagrams = (firstResult, maxResults, keyword, type, folderId) => {
   return getAxios().get(getModelerServicePath() + '/unified-diagrams', {
@@ -127,7 +115,6 @@ const updateDiagramProcess = (id, name, processkey, blob, type) => {
 export {
   fetchDiagram,
   fetchDecisionDiagram,
-  fetchProcesses,
   getUnifiedDiagrams,
   getUnifiedDiagramById,
   keyExistsRemote,
