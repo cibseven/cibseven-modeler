@@ -27,7 +27,6 @@ vi.mock('../../services/servicesConfig', () => ({ getModelerServicePath: () => '
 
 import {
     keyExistsRemote,
-    fetchProcesses,
     fetchProcessById,
     fetchProcessByName,
     getUnifiedDiagrams,
@@ -70,37 +69,6 @@ describe('processService', () => {
         it('returns false (never throws) when the request fails', async () => {
             m.get.mockRejectedValueOnce(new Error('network'))
             expect(await keyExistsRemote('proc-1', 'bpmn-c7')).toBe(false)
-        })
-    })
-
-    describe('fetchProcesses', () => {
-        it('fetches processes with parameters', async () => {
-            const processes = [{ id: 'p1', name: 'Process 1' }]
-            m.get.mockResolvedValue({ data: processes })
-
-            const result = await fetchProcesses(0, 10, 'search', 'bpmn-c7')
-
-            expect(m.get).toHaveBeenCalled()
-            expect(result.data).toEqual(processes)
-        })
-
-        it('handles empty results', async () => {
-            m.get.mockResolvedValue({ data: [] })
-
-            const result = await fetchProcesses(0, 10)
-
-            expect(Array.isArray(result.data)).toBe(true)
-            expect(result.data.length).toBe(0)
-        })
-
-        it('handles fetch errors', async () => {
-            m.get.mockRejectedValue(new Error('Network error'))
-
-            try {
-                await fetchProcesses(0, 10)
-            } catch (error) {
-                expect(error).toBeDefined()
-            }
         })
     })
 

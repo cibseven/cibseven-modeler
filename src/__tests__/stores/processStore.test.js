@@ -18,14 +18,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createStore } from 'vuex'
 
 const m = vi.hoisted(() => ({
-    fetchProcesses: vi.fn().mockResolvedValue([]),
     getUnifiedDiagrams: vi.fn().mockResolvedValue([]),
     fetchProcessById: vi.fn().mockResolvedValue({}),
     fetchProcessByName: vi.fn().mockResolvedValue({}),
 }))
 
 vi.mock('../../services/processService.js', () => ({
-    fetchProcesses: m.fetchProcesses,
     getUnifiedDiagrams: m.getUnifiedDiagrams,
     fetchProcessById: m.fetchProcessById,
     fetchProcessByName: m.fetchProcessByName,
@@ -196,19 +194,7 @@ describe('processStore', () => {
             expect(store.state.processes.isLoading).toBe(false)
         })
 
-        it('fetchProcesses fetches processes with filter', async () => {
-            const processes = [{ id: 'p1', name: 'Process 1', type: 'bpmn-c7' }]
-            m.fetchProcesses.mockResolvedValue(processes)
-            const store = makeStore()
-            await store.dispatch('processes/fetchProcesses', {
-                firstResult: 0,
-                maxResults: 10,
-                keyword: 'test',
-            })
-            expect(m.fetchProcesses).toHaveBeenCalled()
-        })
-
-        it('fetchProcesses by name', async () => {
+        it('fetchProcessByName finds a process by its name', async () => {
             const process = { id: 'p1', name: 'My Process' }
             m.fetchProcessByName.mockResolvedValue(process)
             const store = makeStore()

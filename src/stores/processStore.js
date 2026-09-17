@@ -15,7 +15,6 @@
  *  limitations under the License.
  */
 import {
-  fetchProcesses,
   getUnifiedDiagrams,
   getUnifiedDiagramById,
   fetchProcessById,
@@ -81,21 +80,6 @@ const actions = {
     } catch (error) {
       console.error(error)
       commit('setError', error)
-    }
-  },
-
-  async fetchProcesses({ commit }, { firstResult, maxResults, keyword = '', diagramType = '' }) {
-    commit('setLoading', true)
-    commit('clearError')
-    
-    try {
-      const processes = await fetchProcesses(firstResult, maxResults, keyword, diagramType)
-      commit('setProcesses', processes)
-    } catch (error) {
-      console.error(error)
-      commit('setError', error)
-    } finally {
-      commit('setLoading', false)
     }
   },
 
