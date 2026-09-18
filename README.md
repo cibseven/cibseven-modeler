@@ -37,11 +37,16 @@ To test local changes inside a host application, temporarily point the host's `p
 
 ## BPMN Linting
 
-Lint rules are configured in `.bpmnlintrc` and packed into `linterConfig.js`. After changing rules, regenerate with:
+Lint rules are configured in `.bpmnlintrc` and packed into `linterConfig.js`. The modeler loads `linterConfig.js` — `.bpmnlintrc` is never read at runtime — so after changing rules you **must** regenerate, or the change has no effect:
 
 ```sh
+# the packer resolves `local/*` rules through node_modules
+ln -sfn ../bpmnlint-plugin-local node_modules/bpmnlint-plugin-local
+
 npx bpmnlint-pack-config -c .bpmnlintrc -o linterConfig.js -t es
 ```
+
+Without the symlink the packer silently leaves the `local/*` rules as unresolved external imports and the resulting bundle throws at runtime. `src/__tests__/linterConfig.test.js` lints against the generated bundle and asserts its rule names match `.bpmnlintrc`, so drift between the two fails the test suite.
 
 `bpmnlint-plugin-local/` contains a customized `no-overlapping-elements` rule (adds an optional-chaining guard for DataStoreReference DI objects). The stock rule is set to `off` and the local variant to `warn`. When updating `bpmn-js-bpmnlint`, check whether the upstream bug is fixed so the custom rule can be removed.
 
