@@ -331,7 +331,7 @@ describe('CibsevenModeler', () => {
 
       expect(fileImportMocks.handleFile).not.toHaveBeenCalled()
       expect(pickerMocks.show).toHaveBeenCalledWith(
-        expect.objectContaining({ title: 'folders.importTitle', selected: null }))
+        expect.objectContaining({ title: 'folders.importTitle', selected: null, runAfterClose: true }))
       await pickerMocks.show.mock.calls[0][0].accept('chosen')
       expect(folder()).toBe('chosen')
     })

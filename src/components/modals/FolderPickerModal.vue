@@ -86,6 +86,7 @@ const allowTopLevel = ref(false)
 const requireKey = ref(false)
 const keyLabel = ref('folders.copyKey')
 const keyRequired = ref('folders.copyKeyRequired')
+const runAfterClose = ref(false)
 let modalBootstrap = null
 let onAccept = null
 
@@ -103,6 +104,16 @@ const handleAccept = async () => {
         error.value = t(keyRequired.value)
         return
     }
+    if (runAfterClose.value) {
+        // The work says elsewhere how it went, so the dialog leaves first rather than sitting
+        // over it — and a dialog of its own can only open once this one is gone
+        const chosen = selected.value === '' ? null : selected.value
+        modalRoot.value?.addEventListener('hidden.bs.modal',
+            () => Promise.resolve(onAccept?.(chosen, key.value.trim())).catch(e => console.error(e)),
+            { once: true })
+        modalBootstrap?.hide()
+        return
+    }
     try {
         await onAccept?.(selected.value === '' ? null : selected.value, key.value.trim())
     } catch (e) {
@@ -117,15 +128,19 @@ const handleAccept = async () => {
  * @param {object} options where the folders come from and what the dialog asks for
  * @param {Array} options.folders rows of { id, name, depth }
  * @param {Function} options.accept receives (folderId, key); throwing keeps the dialog open
+ * @param {boolean} [options.runAfterClose] close first and accept afterwards, for work that
+ *   reports itself elsewhere
  */
 const show = ({ folders, title: dialogTitle, allowTopLevel: topLevel = false,
         requireKey: needsKey = false, defaultKey = '', accept, selected: preselected = null,
+        runAfterClose: afterClose = false,
         keyLabel: label = 'folders.copyKey',
         keyRequired: required = 'folders.copyKeyRequired' }) => {
     options.value = folders ?? []
     title.value = dialogTitle
     allowTopLevel.value = topLevel
     requireKey.value = needsKey
+    runAfterClose.value = afterClose
     keyLabel.value = label
     keyRequired.value = required
     key.value = defaultKey

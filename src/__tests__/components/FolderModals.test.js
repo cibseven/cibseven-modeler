@@ -210,6 +210,26 @@ describe('FolderPickerModal', () => {
         expect(accept).toHaveBeenCalledWith('invoicing', '')
     })
 
+    /**
+     * An import opens a tab and can ask about a conflict of its own, so the dialog is out of
+     * the way before it starts: bootstrap ignores a modal opened while another is hiding.
+     */
+    it('closes before the work it starts, when that work reports itself elsewhere', async () => {
+        const accept = vi.fn().mockResolvedValue()
+        const wrapper = mountModal(FolderPickerModal)
+        await open(wrapper, { accept, runAfterClose: true })
+
+        await wrapper.findAll('input[type="radio"]')[1].setValue()
+        await wrapper.find('button.btn-primary').trigger('click')
+        await flushPromises()
+        expect(accept).not.toHaveBeenCalled()
+
+        wrapper.element.dispatchEvent(new Event('hidden.bs.modal'))
+        await flushPromises()
+
+        expect(accept).toHaveBeenCalledWith('invoicing', '')
+    })
+
     /** The top level is an empty string in the form, but null to the caller. */
     it('reports the top level as no folder at all', async () => {
         const accept = vi.fn().mockResolvedValue()

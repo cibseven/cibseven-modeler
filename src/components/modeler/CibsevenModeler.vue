@@ -809,6 +809,8 @@ const importFile = e => {
 		folders,
 		title: t('folders.importTitle'),
 		selected: _lastImportFolderId.value,
+		// The import opens a tab and reports itself, and may have to ask about a conflict
+		runAfterClose: true,
 		accept: folderId => _runImport(dropped, folderId)
 	})
 }
