@@ -55,6 +55,11 @@
     "title": "Error cargando archivo.",
     "body": "El archivo no se ha podido cargar correctamente."
   },
+  "toastImportExists": {
+    "title": "Ya almacenado",
+    "body": "«{name}» ya está almacenado y se ha abierto.",
+    "bodyInFolder": "«{name}» ya está almacenado en «{folder}» y se ha abierto desde allí."
+  },
   "toastImportBatch": {
     "title": "Importación completada",
     "body": "Importación finalizada."

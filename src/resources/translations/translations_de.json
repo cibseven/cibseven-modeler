@@ -55,6 +55,11 @@
     "title": "Fehler beim Laden der Datei",
     "body": "Die Datei konnte nicht korrekt geladen werden."
   },
+  "toastImportExists": {
+    "title": "Bereits vorhanden",
+    "body": "„{name}“ ist bereits gespeichert und wurde geöffnet.",
+    "bodyInFolder": "„{name}“ ist bereits im Ordner „{folder}“ gespeichert und wurde von dort geöffnet."
+  },
   "toastImportBatch": {
     "title": "Import abgeschlossen",
     "body": "Import abgeschlossen."

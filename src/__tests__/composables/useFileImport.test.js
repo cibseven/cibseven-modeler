@@ -177,6 +177,26 @@ describe('useFileImport', () => {
         })
 
         /**
+         * Nothing is stored and nothing is asked, so without a word the import of a file that is
+         * already there looks like it went nowhere — least of all into the folder asked for.
+         */
+        it('says where the model it opened instead is stored', async () => {
+            const deps = makeDeps()
+            deps.processes.value = [{ id: 'db1', name: 'Proc A', processkey: 'procA', folderId: 'general' }]
+            deps.store.state.modeler.processes.processSelected = bpmn('procA')
+            deps.folderNameFor = folderId => folderId === 'general' ? 'General' : null
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
+
+            expect(deps.showToastMessage).toHaveBeenCalledWith(expect.objectContaining({
+                isSuccess: true,
+                toastText: 'toastImportExists',
+                bodyTextAlt: expect.stringContaining('toastImportExists.bodyInFolder'),
+            }))
+        })
+
+        /**
          * The loaded list only holds the folder in view, so a diagram in another folder is not
          * in it - and a process key collides across the whole installation, not per folder.
          */

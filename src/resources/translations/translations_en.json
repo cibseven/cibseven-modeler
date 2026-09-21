@@ -55,6 +55,11 @@
 		"title": "Error loading file.",
 		"body": "The file could not be loaded correctly."
 	},
+	"toastImportExists": {
+		"title": "Already stored",
+		"body": "\"{name}\" is already stored and was opened.",
+		"bodyInFolder": "\"{name}\" is already stored in \"{folder}\" and was opened from there."
+	},
 	"toastImportBatch": {
 		"title": "Import complete",
 		"body": "Import finished."

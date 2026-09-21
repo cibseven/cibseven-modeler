@@ -93,6 +93,21 @@ export default function useFileImport({
     _conflictResolve.value = null
   }
 
+  /**
+   * What is stored is what opens, and it stays in its own folder. Without this the import of a
+   * file that is already there looks like it went nowhere, least of all into the folder asked for.
+   */
+  const _sayItIsAlreadyStored = (name, folderId) => {
+    const folder = folderNameFor?.(folderId)
+    showToastMessage({
+      isSuccess: true,
+      toastText: 'toastImportExists',
+      bodyTextAlt: folder
+        ? t('toastImportExists.bodyInFolder', { name, folder })
+        : t('toastImportExists.body', { name }),
+    })
+  }
+
   /** Returns the current XML for the tab matching processKey, or null if not open.
    *  Only returns the tab XML if the tab has unsaved edits (canSave = true).
    *  When the tab is open but clean, returning null causes the caller to fetch
@@ -281,6 +296,7 @@ export default function useFileImport({
           } else {
             openDiagramFromChild(jsonExternal, foundForm.id, jsonId, jsonId, DIAGRAM_TYPE.FORM, true, false, false, foundForm.folderId)
           }
+          _sayItIsAlreadyStored(jsonId, foundForm.folderId)
         }
         return 'unchanged'
       }
@@ -402,7 +418,10 @@ export default function useFileImport({
       }
       const isEqual = compareXML(xmlFromModeler, resXmlExternalUrl)
       if (isEqual) {
-        if (!isBatch) openDiagramFromChild(resXmlExternalUrl, foundModelerProcess.id, foundModelerProcess.name, foundExternalProcessKey, diagramType, true, false, false, foundModelerProcess.folderId)
+        if (!isBatch) {
+          openDiagramFromChild(resXmlExternalUrl, foundModelerProcess.id, foundModelerProcess.name, foundExternalProcessKey, diagramType, true, false, false, foundModelerProcess.folderId)
+          _sayItIsAlreadyStored(foundModelerProcess.name ?? foundExternalProcessKey, foundModelerProcess.folderId)
+        }
         return 'unchanged'
       } else {
         const { choice, payload } = await _awaitConflictModal(diagramType, isBatch)
