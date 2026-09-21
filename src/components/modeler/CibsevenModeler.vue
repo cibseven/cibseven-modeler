@@ -16,10 +16,10 @@
 -->
 <template>
 	<div class="h-100">
-		<DropZone @handleDropFile="handleDroppedFile">
+		<DropZone @handleDropFile="importFile">
 			<div class="custom-content position-relative w-100 h-100 justify-content-center align-items-center"
 				style="display: flex;  background-color: lightgray; font-size: 2em; opacity: 0.3; color: var(--bs-rimary);">
-				{{ $t("dropFileToLoad") }}
+				{{ targetFolderPath ? $t("dropFileToFolder", { folder: targetFolderPath }) : $t("dropFileToLoad") }}
 				<div class="position-absolute"
 					style="border: 5px dashed var(--bs-primary); content: ''; bottom: 30px; left: 30px; right: 30px; top: 30px;">
 				</div>
@@ -40,7 +40,8 @@
 			:class="{ 'active show': activeTab === -1 && !hasDirectDiagram }" :aria-labelledby="`dashboard-tab`" tabindex="0">
 	<StartPage ref="startPage" v-if="diagrams !== null && !hasDirectDiagram" :diagrams="diagrams"
 		:hasMore="hasMore"
-		@openDiagram="openDiagramFromChild" @openSelectedFile="handleFile" @showToastMessage="showToastMessage"
+		@openDiagram="openDiagramFromChild" @openSelectedFile="importFile" @showToastMessage="showToastMessage"
+		@modelMoved="handleModelMoved"
 		@createNewBpmnc7Diagram="createNewBpmnDiagram"
 		@createNewDmnDiagram="createNewDmnDiagram" @getStoredDiagrams="getStoredDiagrams"
 		@loadMore="loadMore" @search="handleSearch" @navigateFolder="handleNavigateFolder"
@@ -269,6 +270,8 @@ const showModalAcceptCancelMessage = ref({ show: false, type: 'bpmn'})
 const modalData = ref({})
 const tabNavWidth = ref(0)
 const startPage = ref(null)
+// A tab shows a name; the folder its model lives in is only reachable through the tree
+provide('folderPathFor', folderId => startPage.value?.folderPathFor?.(folderId) ?? null)
 const modalNewDiagram = ref(null)
 const elementTemplateJson = ref(null)
 //one clipboard instance that we can pass around to every bpmn-js instance that we create.
@@ -621,8 +624,8 @@ const updateDiagramXml = async (valueFromChild, tabElementIndex, cansave, _typeD
 }
 
 //open from imported files
-const openDiagramFromModal = (valueFromChild, processId, processName, processKey, typeOfDiagram, isSaved, canSave, canReplaceXml) => {
-	const foundElIndex = openDiagram(valueFromChild, processId, processName, processKey, typeOfDiagram, isSaved, canSave, canReplaceXml)
+const openDiagramFromModal = (valueFromChild, processId, processName, processKey, typeOfDiagram, isSaved, canSave, canReplaceXml, folderId = null) => {
+	const foundElIndex = openDiagram(valueFromChild, processId, processName, processKey, typeOfDiagram, isSaved, canSave, canReplaceXml, folderId)
 	if (foundElIndex >= 0) {
 		updateDiagramXml(valueFromChild, foundElIndex, canSave, typeOfDiagram)
 		switchTabFromTabNav(foundElIndex)
@@ -640,9 +643,9 @@ const openDiagramFromChildAndResolve = () => resolveConflict('skip')
 const handleApplyAll = choice => resolveConflict(choice, true)
 
 //emit passed from ProcessDiagramElement to FlowModeler
-const openDiagramFromChild = async (valueFromChild, processId, processName, processKey, typeOfDiagram, isSaved, canSave, canReplaceXml) => {
+const openDiagramFromChild = async (valueFromChild, processId, processName, processKey, typeOfDiagram, isSaved, canSave, canReplaceXml, folderId = null) => {
 
-	const foundElIndex = openDiagram(valueFromChild, processId, processName, processKey, typeOfDiagram, isSaved, canSave, canReplaceXml)
+	const foundElIndex = openDiagram(valueFromChild, processId, processName, processKey, typeOfDiagram, isSaved, canSave, canReplaceXml, folderId)
 	if (foundElIndex >= 0) {
 		const xmlToLoad = editorXML.value[foundElIndex] ?? valueFromChild
 		openDiagramFromNavTabFromChild(xmlToLoad, foundElIndex, canSave)
@@ -651,14 +654,14 @@ const openDiagramFromChild = async (valueFromChild, processId, processName, proc
 	}
 }
 
-const openDiagram = (valueFromChild, processId, processName, processKey, typeOfDiagram, isSaved, canSave, canReplaceXml) => {
+const openDiagram = (valueFromChild, processId, processName, processKey, typeOfDiagram, isSaved, canSave, canReplaceXml, folderId = null) => {
 	const foundElIndex = tabNavList.value.findIndex((element) => {
 		return element.id === processId
 	})
 	//if the tab is not already opened
 	if (foundElIndex < 0) {
 		const keyOfTabNav = generateUniqueId()
-		tabNavList.value.push({ type: typeOfDiagram, name: processName, navId: processName, id: processId, key: processKey, keyOfTabNav: keyOfTabNav, isSaved: isSaved, canSave: canSave, isModelerVisible: false, isPropertyPanelVisible: false, isEditorVisible: false, replaceXml: canReplaceXml })
+		tabNavList.value.push({ type: typeOfDiagram, name: processName, navId: processName, id: processId, key: processKey, keyOfTabNav: keyOfTabNav, isSaved: isSaved, canSave: canSave, isModelerVisible: false, isPropertyPanelVisible: false, isEditorVisible: false, replaceXml: canReplaceXml, folderId: folderId })
 		tabNavListXml.value.push(valueFromChild) //adds xml
 		_saveTabNavSavedLocalStorage()
 		const newIndex = tabNavListXml.value.length - 1
@@ -756,13 +759,50 @@ const onBatchComplete = async () => {
 	await getStoredDiagrams()
 }
 
-// A dropped file is stored like any other import, so it needs the folder the button demands
-const handleDroppedFile = e => {
-	if (!currentFolderId.value) {
+// The import runs into one folder from start to finish, whatever the user does meanwhile
+const importFolderId = ref(null)
+const _lastImportFolderId = ref(null)
+
+const _runImport = async (event, folderId) => {
+	importFolderId.value = folderId
+	_lastImportFolderId.value = folderId
+	try {
+		return await handleFile(event)
+	} finally {
+		importFolderId.value = null
+	}
+}
+
+/**
+ * An import lands where the user is looking: the folder of the model on screen, or the one
+ * the list is browsing. Neither is set at the top level, and a new model has no folder yet.
+ */
+const targetFolderId = computed(() => activeTab.value === -1
+	? currentFolderId.value
+	: tabNavList.value[activeTab.value]?.folderId ?? null)
+
+const targetFolderPath = computed(() => targetFolderId.value
+	? startPage.value?.folderPathFor?.(targetFolderId.value)
+	: null)
+
+const importFile = e => {
+	if (targetFolderId.value) return _runImport(e, targetFolderId.value)
+	// Without the start page there is no tree to choose from, so there is nothing to ask
+	if (!startPage.value?.pickFolder) {
 		showToastMessage({ isSuccess: false, toastText: 'toastImportNeedsFolder', bodyTextAlt: '' })
 		return
 	}
-	return handleFile(e)
+	return startPage.value.pickFolder({
+		title: t('folders.importTitle'),
+		selected: _lastImportFolderId.value,
+		accept: folderId => _runImport(e, folderId)
+	})
+}
+
+// A model moved out of the list keeps its tab, so the tab has to learn where it went
+const handleModelMoved = (modelId, folderId) => {
+	const tab = tabNavList.value.find(element => element.id === modelId)
+	if (tab) tab.folderId = folderId
 }
 
 // File import is handled by useFileImport (initialized here, after all its dependencies are declared)
@@ -782,7 +822,7 @@ const { handleFile, _addNewBpmnFromLoadedXml, resolveConflict } = useFileImport(
 	onBatchComplete,
 	nextModalHiddenPromise,
 	updateDiagramXml,
-	currentFolderId,
+	importFolderId,
 	folderNameFor: folderId => startPage.value?.folderNameFor?.(folderId) ?? null,
 })
 
@@ -882,11 +922,11 @@ const _checkExternalReturn = async () => {
 				await store.dispatch('modeler/forms/fetchFormById', diagramId)
 				const selectedForm = store.state.modeler.forms.formSelected
 				const formKey = diagram.formId ?? diagram.processkey ?? diagram.name
-				openDiagramFromChild(selectedForm, diagram.id, formKey, formKey, 'form', true, false, false)
+				openDiagramFromChild(selectedForm, diagram.id, formKey, formKey, 'form', true, false, false, diagram.folderId)
 			} else {
 				await store.dispatch('modeler/processes/fetchProcessById', diagramId)
 				const selectedDiagram = store.state.modeler.processes.processSelected
-				openDiagramFromChild(selectedDiagram, diagram.id, diagram.name, diagram.processkey, diagram.type, true, false, false)
+				openDiagramFromChild(selectedDiagram, diagram.id, diagram.name, diagram.processkey, diagram.type, true, false, false, diagram.folderId)
 			}
 		}
 	}

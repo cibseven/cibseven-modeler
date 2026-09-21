@@ -210,7 +210,8 @@ const emit = defineEmits([
     'showToastMessage',
     'loadMore',
     'search',
-    'navigateFolder'
+    'navigateFolder',
+    'modelMoved'
 ])
 const downloadPopper = ref(null)
 const inputSearchValue = ref('')
@@ -437,8 +438,8 @@ const handleDownloadDiagram = async (item) => {
 }
 
 //passed from child ProcessDiagramElement to CibsevenModeler
-const openDiagramEmitFromChild = (valueFromChild, processId, processName, processKey, tabElementIndex, typeofDiagram) => {
-    emit('openDiagram', valueFromChild, processId, processName, processKey, typeofDiagram, true, false, false)
+const openDiagramEmitFromChild = (valueFromChild, processId, processName, processKey, tabElementIndex, typeofDiagram, folderId = null) => {
+    emit('openDiagram', valueFromChild, processId, processName, processKey, typeofDiagram, true, false, false, folderId)
 }
 
 const navigateTo = folderId => {
@@ -512,6 +513,7 @@ const handleMoveModel = item => {
         accept: async folderId => {
             if (item.type === DIAGRAM_TYPE.FORM) await moveFormToFolder(item.id, folderId)
             else await moveProcessToFolder(item.id, folderId)
+            emit('modelMoved', item.id, folderId)
             emit('getStoredDiagrams')
             emit('showToastMessage', { isSuccess: true, toastText: 'toastFolderMoveSuccess' })
         }
@@ -544,14 +546,27 @@ const _addIsHoveredElement = () => {
     dashboardElements.value?.map((element) => element.isHovered = false)
 }
 
-// The tree is loaded here, so this is where a folder id can be turned into a name
+// The tree is loaded here, so this is where a folder id can be turned into a name or a path
 const folderNameFor = folderId =>
     folderState.folders.value.find(folder => folder.id === folderId)?.name ?? null
+
+const folderPathFor = folderId =>
+    folderState.pathOf(folderId).map(folder => folder.name).join(' / ') || null
+
+/** Asks for the folder an import goes into. A model always lives in one, so not the top level. */
+const pickFolder = ({ title, selected, accept }) => folderPickerModal.value?.show({
+    folders: folderState.flatten(),
+    title,
+    selected,
+    accept
+})
 
 defineExpose({
     _toggleIsLoading,
     openDiagramEmitFromChild,
-    folderNameFor
+    folderNameFor,
+    folderPathFor,
+    pickFolder
 })
 </script>
 

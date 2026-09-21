@@ -268,8 +268,16 @@ describe('StartPage', () => {
       wrapper.vm.openDiagramEmitFromChild(true, 'id1', 'Name', 'key1', 0, DIAGRAM_TYPE.BPMN_C7)
       expect(wrapper.emitted('openDiagram')).toBeTruthy()
       expect(wrapper.emitted('openDiagram')[0]).toEqual([
-        true, 'id1', 'Name', 'key1', DIAGRAM_TYPE.BPMN_C7, true, false, false,
+        true, 'id1', 'Name', 'key1', DIAGRAM_TYPE.BPMN_C7, true, false, false, null,
       ])
+    })
+
+    /** The tab has to know the folder, and the list is where the model comes from. */
+    it('passes on the folder the model was opened from', async () => {
+      const wrapper = mountStartPage()
+      await flushPromises()
+      wrapper.vm.openDiagramEmitFromChild(true, 'id1', 'Name', 'key1', 0, DIAGRAM_TYPE.BPMN_C7, 'invoicing')
+      expect(wrapper.emitted('openDiagram')[0].at(-1)).toBe('invoicing')
     })
   })
 

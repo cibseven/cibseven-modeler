@@ -119,7 +119,7 @@ const handleAccept = async () => {
  * @param {Function} options.accept receives (folderId, key); throwing keeps the dialog open
  */
 const show = ({ folders, title: dialogTitle, allowTopLevel: topLevel = false,
-        requireKey: needsKey = false, defaultKey = '', accept,
+        requireKey: needsKey = false, defaultKey = '', accept, selected: preselected = null,
         keyLabel: label = 'folders.copyKey',
         keyRequired: required = 'folders.copyKeyRequired' }) => {
     options.value = folders ?? []
@@ -129,7 +129,8 @@ const show = ({ folders, title: dialogTitle, allowTopLevel: topLevel = false,
     keyLabel.value = label
     keyRequired.value = required
     key.value = defaultKey
-    selected.value = null
+    // Only a folder still in the tree can be offered as the choice already made
+    selected.value = options.value.some(folder => folder.id === preselected) ? preselected : null
     error.value = ''
     onAccept = accept
     modalBootstrap?.show()

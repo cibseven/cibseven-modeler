@@ -308,6 +308,18 @@ describe('StartPage folders', () => {
       expect(moveProcessToFolder).not.toHaveBeenCalled()
     })
 
+    /** The model keeps its tab open, and the tab has to be told where the model went. */
+    it('reports the move so an open tab can follow it', async () => {
+      const wrapper = await mountStartPage()
+      const picker = wrapper.findComponent({ name: 'FolderPickerModal' })
+      picker.vm.show = vi.fn()
+
+      await wrapper.findComponent({ name: 'DiagramListItem' }).vm.$emit('moveModel', DIAGRAMS[0])
+      await picker.vm.show.mock.calls[0][0].accept('invoicing')
+
+      expect(wrapper.emitted('modelMoved')).toEqual([['p1', 'invoicing']])
+    })
+
     /** A model cannot sit at the top level, so that is not offered as a destination. */
     it('does not offer the top level as a destination for a model', async () => {
       const wrapper = await mountStartPage()
@@ -317,6 +329,38 @@ describe('StartPage folders', () => {
       await wrapper.findComponent({ name: 'DiagramListItem' }).vm.$emit('moveModel', DIAGRAMS[0])
 
       expect(picker.vm.show.mock.calls[0][0].allowTopLevel).toBeUndefined()
+    })
+  })
+
+  /** The tree is loaded here, so the rest of the modeler asks this page about folders. */
+  describe('what it answers about folders', () => {
+    it('spells out the whole path down to a folder', async () => {
+      const wrapper = await mountStartPage()
+
+      expect(wrapper.vm.folderPathFor('invoicing')).toBe('General / Invoicing')
+      expect(wrapper.vm.folderNameFor('invoicing')).toBe('Invoicing')
+    })
+
+    it('has no path for the top level', async () => {
+      const wrapper = await mountStartPage()
+
+      expect(wrapper.vm.folderPathFor(null)).toBe(null)
+    })
+
+    it('asks for a folder without offering the top level, which holds no models', async () => {
+      const wrapper = await mountStartPage()
+      const picker = wrapper.findComponent({ name: 'FolderPickerModal' })
+      picker.vm.show = vi.fn()
+      const accept = vi.fn()
+
+      wrapper.vm.pickFolder({ title: 'Import', selected: 'general', accept })
+
+      expect(picker.vm.show).toHaveBeenCalledWith(expect.objectContaining({
+        title: 'Import', selected: 'general', accept
+      }))
+      expect(picker.vm.show.mock.calls[0][0].allowTopLevel).toBeUndefined()
+      expect(picker.vm.show.mock.calls[0][0].folders.map(folder => folder.id))
+        .toEqual(['general', 'invoicing'])
     })
   })
 

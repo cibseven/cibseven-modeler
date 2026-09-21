@@ -114,11 +114,11 @@ const handleClickLoadSelectedFromList = async () => {
     if (isForm.value) {
         await store.dispatch('modeler/forms/fetchFormById', props.item.id)
         const selectedForm = store.state.modeler.forms.formSelected
-        emit('openDiagram', selectedForm, props.item.id, props.item.formId, props.item.formId, props.index, props.item.type)
+        emit('openDiagram', selectedForm, props.item.id, props.item.formId, props.item.formId, props.index, props.item.type, props.item.folderId)
     } else {
         await store.dispatch('modeler/processes/fetchProcessById', props.item.id)
         const selectedProcess = store.state.modeler.processes.processSelected
-        emit('openDiagram', selectedProcess, props.item.id, props.item.name, props.item.processkey, props.index, props.item.type)
+        emit('openDiagram', selectedProcess, props.item.id, props.item.name, props.item.processkey, props.index, props.item.type, props.item.folderId)
     }
 }
 

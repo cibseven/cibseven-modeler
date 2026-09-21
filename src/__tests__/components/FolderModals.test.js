@@ -186,6 +186,18 @@ describe('FolderPickerModal', () => {
         expect(wrapper.find('button.btn-primary').attributes('disabled')).toBeDefined()
     })
 
+    /** Imports repeat, so the dialog can open on the folder the last one went into. */
+    it('starts from the folder it was given, if that folder is still there', async () => {
+        const wrapper = mountModal(FolderPickerModal)
+
+        await open(wrapper, { selected: 'invoicing' })
+        expect(wrapper.findAll('input[type="radio"]')[1].element.checked).toBe(true)
+        expect(wrapper.find('button.btn-primary').attributes('disabled')).toBeUndefined()
+
+        await open(wrapper, { selected: 'deleted' })
+        expect(wrapper.find('button.btn-primary').attributes('disabled')).toBeDefined()
+    })
+
     it('passes the chosen folder on', async () => {
         const accept = vi.fn().mockResolvedValue()
         const wrapper = mountModal(FolderPickerModal)

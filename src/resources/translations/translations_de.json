@@ -417,6 +417,7 @@
   "out of bounds release": "Freigabe außerhalb des zulässigen Bereichs",
   "ID must not be empty": "ID darf nicht leer sein.",
   "dropFileToLoad": "Legen Sie die Datei ab, um sie zu laden.",
+  "dropFileToFolder": "Legen Sie die Datei ab, um sie in „{folder}“ zu importieren.",
   "loading": "Lädt",
   "modal": {
     "autoCreate": "Beim nächsten Mal automatisch erstellen (Dialog überspringen)"
@@ -540,6 +541,7 @@
 		"copyFormId": "Form-ID der Kopie",
 		"copyFormIdRequired": "Eine Kopie braucht eine eigene Form-ID.",
 		"destination": "Ziel",
+		"importTitle": "In einen Ordner importieren",
 		"empty": "Dieser Ordner ist leer.",
 		"emptyHome": "Noch keine Ordner. Legen Sie einen an, um Modelle darin abzulegen.",
 		"noMatches": "Nichts passt zu „{keyword}“, in keinem Ordner.",
