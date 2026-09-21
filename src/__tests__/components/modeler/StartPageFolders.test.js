@@ -347,20 +347,13 @@ describe('StartPage folders', () => {
       expect(wrapper.vm.folderPathFor(null)).toBe(null)
     })
 
-    it('asks for a folder without offering the top level, which holds no models', async () => {
+    it('hands the whole tree over for a dialog shown outside this page', async () => {
       const wrapper = await mountStartPage()
-      const picker = wrapper.findComponent({ name: 'FolderPickerModal' })
-      picker.vm.show = vi.fn()
-      const accept = vi.fn()
 
-      wrapper.vm.pickFolder({ title: 'Import', selected: 'general', accept })
-
-      expect(picker.vm.show).toHaveBeenCalledWith(expect.objectContaining({
-        title: 'Import', selected: 'general', accept
-      }))
-      expect(picker.vm.show.mock.calls[0][0].allowTopLevel).toBeUndefined()
-      expect(picker.vm.show.mock.calls[0][0].folders.map(folder => folder.id))
-        .toEqual(['general', 'invoicing'])
+      expect(wrapper.vm.folderOptions()).toEqual([
+        { id: 'general', name: 'General', depth: 0 },
+        { id: 'invoicing', name: 'Invoicing', depth: 1 }
+      ])
     })
   })
 

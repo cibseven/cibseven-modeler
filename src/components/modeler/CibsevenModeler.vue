@@ -158,6 +158,8 @@
 
 	<ModalNewDiagram ref="modalNewDiagram" :showModal="isShowModalNewDiagram" :check-duplicate-id="checkDuplicateId">
 	</ModalNewDiagram>
+	<!-- A file can be dropped on any tab, and the start page is hidden behind the one open -->
+	<FolderPickerModal ref="importPicker" />
 	<modal-deploy :diagram="editorXML[activeTab]" v-if="activeTab > -1" :showModal="isShowModal"
 		:tabNavList="tabNavList[activeTab]" @toggleModal="toggleModal" @showToastMessage="showToastMessage"
 		@add-error-message-to-console="addErrorMessageToConsole" @show-console-notification="showConsoleNotification">
@@ -207,6 +209,7 @@ import TabNav from '../layout/TabNav.vue'
 import ModalNewDiagram from '../modals/ModalNewDiagram.vue'
 import ActionButtonsList from '../ActionButtonsList.vue'
 import ImportConflictModal from '../modals/ImportConflictModal.vue'
+import FolderPickerModal from '../modals/FolderPickerModal.vue'
 //for full screen drop files
 import DropZone from '../DropZone.vue'
 //composables
@@ -273,6 +276,7 @@ const startPage = ref(null)
 // A tab shows a name; the folder its model lives in is only reachable through the tree
 provide('folderPathFor', folderId => startPage.value?.folderPathFor?.(folderId) ?? null)
 const modalNewDiagram = ref(null)
+const importPicker = ref(null)
 const elementTemplateJson = ref(null)
 //one clipboard instance that we can pass around to every bpmn-js instance that we create.
 const clipboard = new Clipboard()
@@ -789,12 +793,14 @@ const targetFolderPath = computed(() => targetFolderId.value
 
 const importFile = e => {
 	if (targetFolderId.value) return _runImport(e, targetFolderId.value)
-	// Without the start page there is no tree to choose from, so there is nothing to ask
-	if (!startPage.value?.pickFolder) {
+	const folders = startPage.value?.folderOptions?.() ?? []
+	// No tree to choose from: the modeler was opened straight on a diagram, or it has no folders
+	if (folders.length === 0) {
 		showToastMessage({ isSuccess: false, toastText: 'toastImportNeedsFolder', bodyTextAlt: '' })
 		return
 	}
-	return startPage.value.pickFolder({
+	return importPicker.value?.show({
+		folders,
 		title: t('folders.importTitle'),
 		selected: _lastImportFolderId.value,
 		accept: folderId => _runImport(e, folderId)

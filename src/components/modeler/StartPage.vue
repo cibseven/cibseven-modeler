@@ -553,20 +553,15 @@ const folderNameFor = folderId =>
 const folderPathFor = folderId =>
     folderState.pathOf(folderId).map(folder => folder.name).join(' / ') || null
 
-/** Asks for the folder an import goes into. A model always lives in one, so not the top level. */
-const pickFolder = ({ title, selected, accept }) => folderPickerModal.value?.show({
-    folders: folderState.flatten(),
-    title,
-    selected,
-    accept
-})
+/** The tree as a picker takes it, for a dialog the modeler shows outside this page. */
+const folderOptions = () => folderState.flatten()
 
 defineExpose({
     _toggleIsLoading,
     openDiagramEmitFromChild,
     folderNameFor,
     folderPathFor,
-    pickFolder
+    folderOptions
 })
 </script>
 

@@ -25,10 +25,12 @@ const fileImportMocks = vi.hoisted(() => ({
   resolveConflict: vi.fn(),
 }))
 
+const pickerMocks = vi.hoisted(() => ({ show: vi.fn() }))
+
 const startPageMocks = vi.hoisted(() => ({
   folderNameFor: vi.fn(),
   folderPathFor: vi.fn(),
-  pickFolder: vi.fn(),
+  folderOptions: vi.fn(),
 }))
 
 const storeState = vi.hoisted(() => ({
@@ -130,7 +132,7 @@ vi.mock('../../../components/modeler/StartPage.vue', () => ({
       _toggleIsLoading: vi.fn(),
       folderNameFor: (...args) => startPageMocks.folderNameFor(...args),
       folderPathFor: (...args) => startPageMocks.folderPathFor(...args),
-      pickFolder: (...args) => startPageMocks.pickFolder(...args),
+      folderOptions: (...args) => startPageMocks.folderOptions(...args),
     },
   },
 }))
@@ -161,6 +163,9 @@ vi.mock('../../../components/messages/ToastMessage.vue', () => ({
   default: { name: 'ToastMessage', template: '<div class="toast-stub" />', methods: { _showToastTimeOut: vi.fn() } },
 }))
 vi.mock('../../../components/modals/ImportConflictModal.vue', () => ({ default: { template: '<div />' } }))
+vi.mock('../../../components/modals/FolderPickerModal.vue', () => ({
+  default: { name: 'FolderPickerModal', template: '<div />', methods: { show: (...args) => pickerMocks.show(...args) } },
+}))
 
 import CibsevenModeler from '../../../components/modeler/CibsevenModeler.vue'
 
@@ -185,6 +190,7 @@ describe('CibsevenModeler', () => {
     tabManagerState.tabNavList.value = []
     tabManagerState.tabNavListXml.value = []
     tabManagerState.editorXML.value = []
+    startPageMocks.folderOptions.mockReturnValue([{ id: 'invoicing', name: 'Invoicing', depth: 0 }])
     storeState.modeler.processes.unifiedDiagrams = [
       { id: '1', name: 'Diagram 1', processkey: 'key1', type: 'bpmn-c7' },
     ]
@@ -320,10 +326,34 @@ describe('CibsevenModeler', () => {
       await wrapper.vm.importFile({})
 
       expect(fileImportMocks.handleFile).not.toHaveBeenCalled()
-      expect(startPageMocks.pickFolder).toHaveBeenCalledWith(
+      expect(pickerMocks.show).toHaveBeenCalledWith(
         expect.objectContaining({ title: 'folders.importTitle', selected: null }))
-      await startPageMocks.pickFolder.mock.calls[0][0].accept('chosen')
+      await pickerMocks.show.mock.calls[0][0].accept('chosen')
       expect(folder()).toBe('chosen')
+    })
+
+    /**
+     * A file can be dropped on any tab, and the start page is a tab pane the browser hides
+     * behind the one open: a dialog rendered in there shows its backdrop and nothing else.
+     */
+    it('is asked for in a dialog the open tab cannot hide', async () => {
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+
+      const picker = wrapper.findComponent({ name: 'FolderPickerModal' })
+      expect(picker.exists()).toBe(true)
+      expect(wrapper.find('.tab-content').element.contains(picker.element)).toBe(false)
+    })
+
+    it('says so instead of asking when there are no folders to choose from', async () => {
+      startPageMocks.folderOptions.mockReturnValue([])
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+
+      await wrapper.vm.importFile({})
+
+      expect(pickerMocks.show).not.toHaveBeenCalled()
+      expect(wrapper.vm.toastText).toBe('toastImportNeedsFolder')
     })
 
     it('is asked for when the model on screen has no folder yet', async () => {
@@ -336,7 +366,7 @@ describe('CibsevenModeler', () => {
       await wrapper.vm.importFile({})
 
       expect(fileImportMocks.handleFile).not.toHaveBeenCalled()
-      expect(startPageMocks.pickFolder).toHaveBeenCalled()
+      expect(pickerMocks.show).toHaveBeenCalled()
     })
 
     it('offers the folder of the last import as the choice already made', async () => {
@@ -344,10 +374,10 @@ describe('CibsevenModeler', () => {
       await flushPromises()
 
       await wrapper.vm.importFile({})
-      await startPageMocks.pickFolder.mock.calls[0][0].accept('chosen')
+      await pickerMocks.show.mock.calls[0][0].accept('chosen')
       await wrapper.vm.importFile({})
 
-      expect(startPageMocks.pickFolder.mock.calls[1][0].selected).toBe('chosen')
+      expect(pickerMocks.show.mock.calls[1][0].selected).toBe('chosen')
     })
 
     /** The folder asked for belongs to that import alone, even when the import fails. */
@@ -357,7 +387,7 @@ describe('CibsevenModeler', () => {
       fileImportMocks.handleFile.mockRejectedValueOnce(new Error('no'))
 
       await wrapper.vm.importFile({})
-      await expect(startPageMocks.pickFolder.mock.calls[0][0].accept('chosen')).rejects.toThrow('no')
+      await expect(pickerMocks.show.mock.calls[0][0].accept('chosen')).rejects.toThrow('no')
       await wrapper.vm.handleNavigateFolder('invoicing')
 
       expect(wrapper.vm.importFolderId).toBe('invoicing')
