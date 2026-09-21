@@ -27,6 +27,8 @@ const fileImportMocks = vi.hoisted(() => ({
 
 const pickerMocks = vi.hoisted(() => ({ show: vi.fn() }))
 
+const storeMocks = vi.hoisted(() => ({ dispatch: vi.fn() }))
+
 const startPageMocks = vi.hoisted(() => ({
   folderNameFor: vi.fn(),
   folderPathFor: vi.fn(),
@@ -60,7 +62,7 @@ vi.mock('vuex', () => ({
     getters: {
       'modeler/elementTemplates/allElementTemplateContents': [],
     },
-    dispatch: vi.fn().mockResolvedValue(undefined),
+    dispatch: (...args) => storeMocks.dispatch(...args),
   })),
 }))
 
@@ -191,6 +193,7 @@ describe('CibsevenModeler', () => {
     tabManagerState.tabNavListXml.value = []
     tabManagerState.editorXML.value = []
     startPageMocks.folderOptions.mockReturnValue([{ id: 'invoicing', name: 'Invoicing', depth: 0 }])
+    storeMocks.dispatch.mockResolvedValue(undefined)
     storeState.modeler.processes.unifiedDiagrams = [
       { id: '1', name: 'Diagram 1', processkey: 'key1', type: 'bpmn-c7' },
     ]
@@ -387,6 +390,29 @@ describe('CibsevenModeler', () => {
       expect(fileImportMocks.handleFile).not.toHaveBeenCalled()
     })
 
+    /**
+     * Tabs kept from before the folder was carried would otherwise ask on every drop, and the
+     * only cure would be closing them.
+     */
+    it('is looked up from the stored model when the tab kept from before does not know it', async () => {
+      openTab(undefined)
+      tabManagerState.tabNavList.value[0].isSaved = true
+      storeMocks.dispatch.mockImplementation(action =>
+        Promise.resolve(action === 'modeler/processes/fetchUnifiedDiagramById' ? { folderId: 'general' } : undefined))
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      const folder = folderSeenByImport(wrapper)
+      wrapper.vm.activeTab = 0
+      await flushPromises()
+
+      await wrapper.vm.importFile(drop())
+
+      expect(pickerMocks.show).not.toHaveBeenCalled()
+      expect(folder()).toBe('general')
+      // Asked once: the tab keeps the answer
+      expect(tabManagerState.tabNavList.value[0].folderId).toBe('general')
+    })
+
     it('is asked for when the model on screen has no folder yet', async () => {
       openTab(undefined)
       const wrapper = mountCibsevenModeler()
@@ -457,6 +483,18 @@ describe('CibsevenModeler', () => {
       wrapper.vm.openDiagram('<bpmn/>', 'p1', 'Proc', 'k1', 'bpmn-c7', true, false, false, 'invoicing')
 
       expect(tabManagerState.tabNavList.value.at(-1).folderId).toBe('invoicing')
+    })
+
+    /** Opening it again is the moment to learn it: the tab is reused, not replaced. */
+    it('is learned by a tab that was already open when the model is opened again', async () => {
+      tabManagerState.tabNavList.value = [{ id: 'p1', key: 'k1', name: 'BPMN', type: 'bpmn-c7' }]
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+
+      wrapper.vm.openDiagram('<bpmn/>', 'p1', 'Proc', 'k1', 'bpmn-c7', true, false, false, 'invoicing')
+
+      expect(tabManagerState.tabNavList.value).toHaveLength(1)
+      expect(tabManagerState.tabNavList.value[0].folderId).toBe('invoicing')
     })
 
     it('follows the model when it is moved to another folder from the list', async () => {

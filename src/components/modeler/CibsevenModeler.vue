@@ -662,6 +662,8 @@ const openDiagram = (valueFromChild, processId, processName, processKey, typeOfD
 	const foundElIndex = tabNavList.value.findIndex((element) => {
 		return element.id === processId
 	})
+	// A tab kept from before knows no folder, and the model may have been moved since
+	if (foundElIndex > -1 && folderId) tabNavList.value[foundElIndex].folderId = folderId
 	//if the tab is not already opened
 	if (foundElIndex < 0) {
 		const keyOfTabNav = generateUniqueId()
@@ -791,14 +793,27 @@ const targetFolderPath = computed(() => targetFolderId.value
 	? startPage.value?.folderPathFor?.(targetFolderId.value)
 	: null)
 
-const importFile = e => {
+/**
+ * A tab kept from before the folder was carried does not know it, but the stored model does.
+ * Asking heals the tab, so it is asked once rather than on every drop.
+ */
+const _storedFolderOfOpenModel = async () => {
+	const tab = activeTab.value === -1 ? null : tabNavList.value[activeTab.value]
+	if (!tab?.id || !tab.isSaved) return null
+	const diagram = await store.dispatch('modeler/processes/fetchUnifiedDiagramById', tab.id)
+	if (diagram?.folderId) tab.folderId = diagram.folderId
+	return diagram?.folderId ?? null
+}
+
+const importFile = async e => {
 	// The files have to be taken now: the browser empties a drop as soon as this handler returns,
 	// and the folder may only be chosen afterwards
 	const files = Array.from(e?.dataTransfer?.files ?? e?.target?.files ?? [])
 	if (files.length === 0) return
 	const dropped = { dataTransfer: { files } }
 
-	if (targetFolderId.value) return _runImport(dropped, targetFolderId.value)
+	const known = targetFolderId.value ?? await _storedFolderOfOpenModel()
+	if (known) return _runImport(dropped, known)
 	const folders = startPage.value?.folderOptions?.() ?? []
 	// No tree to choose from: the modeler was opened straight on a diagram, or it has no folders
 	if (folders.length === 0) {
