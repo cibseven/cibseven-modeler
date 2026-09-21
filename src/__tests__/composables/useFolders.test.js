@@ -118,6 +118,22 @@ describe('useFolders', () => {
     })
   })
 
+  describe('pathOf', () => {
+    /** A tab shows a model that is not the folder open, so the path is asked for by id. */
+    it('walks from the top level down to any folder, not only the one open', async () => {
+      const folders = await loaded()
+
+      expect(folders.pathOf('2024').map(f => f.name)).toEqual(['General', 'Invoicing', '2024'])
+    })
+
+    it('has no path for the top level or for a folder that is gone', async () => {
+      const folders = await loaded()
+
+      expect(folders.pathOf(null)).toEqual([])
+      expect(folders.pathOf('removed')).toEqual([])
+    })
+  })
+
   describe('flatten', () => {
     it('gives every folder in tree order with its depth', async () => {
       const folders = await loaded()

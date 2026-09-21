@@ -55,6 +55,15 @@
     "title": "Error cargando archivo.",
     "body": "El archivo no se ha podido cargar correctamente."
   },
+  "toastImportNoFolders": {
+    "title": "Importar",
+    "body": "Cree primero una carpeta: un modelo siempre se almacena en una."
+  },
+  "toastImportExists": {
+    "title": "Ya almacenado",
+    "body": "«{name}» ya está almacenado y se ha abierto.",
+    "bodyInFolder": "«{name}» ya está almacenado en «{folder}» y se ha abierto desde allí."
+  },
   "toastImportBatch": {
     "title": "Importación completada",
     "body": "Importación finalizada."
@@ -417,6 +426,7 @@
   "out of bounds release": "lanzamiento fuera de límites",
   "ID must not be empty": "ID no debe estar vacío",
   "dropFileToLoad": "Suelte el archivo para cargarlo",
+  "dropFileToFolder": "Suelte el archivo para importarlo en «{folder}».",
   "loading": "Cargando",
   "modal": {
     "autoCreate": "Crear automáticamente la próxima vez (omitir este diálogo)"
@@ -540,6 +550,7 @@
 		"copyFormId": "ID de formulario de la copia",
 		"copyFormIdRequired": "La copia necesita un ID de formulario propio.",
 		"destination": "Destino",
+		"importTitle": "Importar a una carpeta",
 		"empty": "Esta carpeta está vacía.",
 		"emptyHome": "Todavía no hay carpetas. Cree una para guardar sus modelos.",
 		"noMatches": "Nada coincide con «{keyword}» en ninguna carpeta.",

@@ -55,6 +55,15 @@
 		"title": "Error loading file.",
 		"body": "The file could not be loaded correctly."
 	},
+	"toastImportNoFolders": {
+		"title": "Import",
+		"body": "Create a folder first: a model is always stored in one."
+	},
+	"toastImportExists": {
+		"title": "Already stored",
+		"body": "\"{name}\" is already stored and was opened.",
+		"bodyInFolder": "\"{name}\" is already stored in \"{folder}\" and was opened from there."
+	},
 	"toastImportBatch": {
 		"title": "Import complete",
 		"body": "Import finished."
@@ -417,6 +426,7 @@
 	"out of bounds release": "out of bounds release",
 	"ID must not be empty": "ID must not be empty.",
 	"dropFileToLoad": "Drop the file to load it.",
+	"dropFileToFolder": "Drop the file to import it into \"{folder}\".",
 	"loading": "Loading",
 	"modal": {
 		"autoCreate": "Create automatically next time (skip this dialog)"
@@ -540,6 +550,7 @@
 		"copyFormId": "Form id of the copy",
 		"copyFormIdRequired": "A copy needs a form id of its own.",
 		"destination": "Destination",
+		"importTitle": "Import into a folder",
 		"empty": "This folder is empty.",
 		"emptyHome": "No folders yet. Create one to store your models in.",
 		"noMatches": "Nothing matches \"{keyword}\" in any folder.",

@@ -44,19 +44,22 @@ export default function useFolders() {
 
   const currentChildren = computed(() => childrenOf(currentFolderId.value))
 
-  /** The folders from the top level down to the one open, for the breadcrumb. */
-  const breadcrumb = computed(() => {
+  /** The folders from the top level down to the one given. */
+  const pathOf = folderId => {
     const path = []
     // A cycle cannot be created through the API, but a stale list must not hang the page
     const seen = new Set()
-    let folder = currentFolder.value
+    let folder = folderId ? byId.value.get(folderId) : null
     while (folder && !seen.has(folder.id)) {
       seen.add(folder.id)
       path.unshift(folder)
       folder = folder.parentId ? byId.value.get(folder.parentId) : null
     }
     return path
-  })
+  }
+
+  /** The path down to the folder open, for the breadcrumb. */
+  const breadcrumb = computed(() => pathOf(currentFolderId.value))
 
   const load = async () => {
     const loaded = await fetchFolders()
@@ -127,6 +130,7 @@ export default function useFolders() {
     currentFolder,
     currentChildren,
     breadcrumb,
+    pathOf,
     load,
     open,
     flatten,

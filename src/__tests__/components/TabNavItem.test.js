@@ -51,6 +51,39 @@ describe('TabNavItem accessibility', () => {
     })
 })
 
+describe('TabNavItem tooltip', () => {
+    const mountWithPath = (tabNavList, folderPathFor) => mount(TabNavItem, {
+        props: { isDashboard: false, isVisible: true, name: 'proc', processkey: 'proc',
+            keyOfTabNav: 'k1', index: 0, activeTab: 0, tabNavList },
+        global: { mocks: { $t: k => k }, provide: { folderPathFor } },
+    })
+
+    /** The label is cut to the width of the tab, and it never says where the model is kept. */
+    it('names the whole folder path of the model', () => {
+        const w = mountWithPath({ type: 'bpmn-c7', canSave: false, folderId: '2024' },
+            () => 'General / Invoicing / 2024')
+
+        expect(w.find('[role="tab"]').attributes('title')).toBe('General / Invoicing / 2024 / proc.bpmn')
+    })
+
+    it('falls back to the file name for a model whose folder is not known', () => {
+        const w = mountWithPath({ type: 'bpmn-c7', canSave: false }, () => 'General')
+
+        expect(w.find('[role="tab"]').attributes('title')).toBe('proc.bpmn')
+    })
+
+    it('falls back to the file name where there is no tree to ask', () => {
+        const w = mount(TabNavItem, {
+            props: { isDashboard: false, isVisible: true, name: 'proc', processkey: 'proc',
+                keyOfTabNav: 'k1', index: 0, activeTab: 0,
+                tabNavList: { type: 'bpmn-c7', canSave: false, folderId: '2024' } },
+            global: { mocks: { $t: k => k } },
+        })
+
+        expect(w.find('[role="tab"]').attributes('title')).toBe('proc.bpmn')
+    })
+})
+
 describe('TabNavItem closeTab', () => {
     it('is exposed so the overflow dropdown can close a hidden tab', async () => {
         const w = mountItem()

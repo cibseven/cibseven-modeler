@@ -55,6 +55,15 @@
     "title": "Fehler beim Laden der Datei",
     "body": "Die Datei konnte nicht korrekt geladen werden."
   },
+  "toastImportNoFolders": {
+    "title": "Import",
+    "body": "Legen Sie zuerst einen Ordner an: Ein Modell wird immer in einem Ordner gespeichert."
+  },
+  "toastImportExists": {
+    "title": "Bereits vorhanden",
+    "body": "„{name}“ ist bereits gespeichert und wurde geöffnet.",
+    "bodyInFolder": "„{name}“ ist bereits im Ordner „{folder}“ gespeichert und wurde von dort geöffnet."
+  },
   "toastImportBatch": {
     "title": "Import abgeschlossen",
     "body": "Import abgeschlossen."
@@ -417,6 +426,7 @@
   "out of bounds release": "Freigabe außerhalb des zulässigen Bereichs",
   "ID must not be empty": "ID darf nicht leer sein.",
   "dropFileToLoad": "Legen Sie die Datei ab, um sie zu laden.",
+  "dropFileToFolder": "Legen Sie die Datei ab, um sie in „{folder}“ zu importieren.",
   "loading": "Lädt",
   "modal": {
     "autoCreate": "Beim nächsten Mal automatisch erstellen (Dialog überspringen)"
@@ -540,6 +550,7 @@
 		"copyFormId": "Form-ID der Kopie",
 		"copyFormIdRequired": "Eine Kopie braucht eine eigene Form-ID.",
 		"destination": "Ziel",
+		"importTitle": "In einen Ordner importieren",
 		"empty": "Dieser Ordner ist leer.",
 		"emptyHome": "Noch keine Ordner. Legen Sie einen an, um Modelle darin abzulegen.",
 		"noMatches": "Nichts passt zu „{keyword}“, in keinem Ordner.",

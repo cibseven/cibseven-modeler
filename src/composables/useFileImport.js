@@ -40,7 +40,7 @@ import { saveForm, updateForm, fetchFormByFormId } from '../services/formService
  * @param {import('vue').ComputedRef} deps.processes  - computed list of BPMN/DMN processes
  * @param {import('vue').ComputedRef} deps.forms      - computed list of forms
  * @param {function} deps.showToastMessage            - (toastInfo) => void
- * @param {function} deps.openDiagramFromChild        - (xml, id, name, key, type, isSaved, canSave, replaceXml) => void
+ * @param {function} deps.openDiagramFromChild        - (xml, id, name, key, type, isSaved, canSave, replaceXml, folderId) => void
  * @param {import('vue').Ref} deps.showModalAcceptCancelMessage - reactive: { show, type, isBatch }
  * @param {import('vue').Ref} deps.modalData          - reactive modal payload
  * @param {import('vue').Ref} deps.modelerTabNav      - ref to TabNav component instance
@@ -63,8 +63,8 @@ export default function useFileImport({
   onBatchComplete,
   nextModalHiddenPromise,
   updateDiagramXml,
-  // Read at save time, not captured: a batch can outlive the folder the user started in
-  currentFolderId,
+  // The folder the import goes into, pinned by the caller for as long as it runs
+  importFolderId,
   // (folderId) => folder name, so a conflict can say where the model it found lives
   folderNameFor,
 }) {
@@ -91,6 +91,21 @@ export default function useFileImport({
     if (applyAll) _batchPolicy.value = choice
     _conflictResolve.value?.({ choice, payload })
     _conflictResolve.value = null
+  }
+
+  /**
+   * What is stored is what opens, and it stays in its own folder. Without this the import of a
+   * file that is already there looks like it went nowhere, least of all into the folder asked for.
+   */
+  const _sayItIsAlreadyStored = (name, folderId) => {
+    const folder = folderNameFor?.(folderId)
+    showToastMessage({
+      isSuccess: true,
+      toastText: 'toastImportExists',
+      bodyTextAlt: folder
+        ? t('toastImportExists.bodyInFolder', { name, folder })
+        : t('toastImportExists.body', { name }),
+    })
   }
 
   /** Returns the current XML for the tab matching processKey, or null if not open.
@@ -166,7 +181,7 @@ export default function useFileImport({
       keyOfTabNav,
       // An import opens a tab first and is stored when it is saved: without this the save
       // names no folder and the backend files it under the default one
-      folderId: currentFolderId?.value,
+      folderId: importFolderId?.value,
       canSave: true,
       isSaved: false,
       isModelerVisible: false,
@@ -182,7 +197,7 @@ export default function useFileImport({
   const _autoSaveProcess = async (xml, processKey, diagramType) => {
     try {
       const blob = new Blob([xml], { type: 'text/xml' })
-      const response = await saveDiagramProcess(processKey, processKey, blob, diagramType, currentFolderId?.value)
+      const response = await saveDiagramProcess(processKey, processKey, blob, diagramType, importFolderId?.value)
       if (response?.id) {
         const idx = tabNavList.value.findIndex(
           t => t.key === processKey && !t.isSaved && t.type !== DIAGRAM_TYPE.FORM
@@ -199,7 +214,7 @@ export default function useFileImport({
   /** Save a newly imported Form file to the database and mark its tab as saved. */
   const _autoSaveForm = async (jsonString, formId) => {
     try {
-      const response = await saveForm(formId, JSON.parse(jsonString), currentFolderId?.value)
+      const response = await saveForm(formId, JSON.parse(jsonString), importFolderId?.value)
       if (response?.id) {
         const idx = tabNavList.value.findIndex(
           t => t.key === formId && !t.isSaved && t.type === DIAGRAM_TYPE.FORM
@@ -277,10 +292,13 @@ export default function useFileImport({
       } else {
         if (!isBatch) {
           if (foundTabIndex > -1) {
+            // The stored form knows the folder a tab kept from before does not
+            tabNavList.value[foundTabIndex].folderId = foundForm.folderId
             modelerTabNav.value.selectTab(foundTabIndex)
           } else {
-            openDiagramFromChild(jsonExternal, foundForm.id, jsonId, jsonId, DIAGRAM_TYPE.FORM, true, false, false)
+            openDiagramFromChild(jsonExternal, foundForm.id, jsonId, jsonId, DIAGRAM_TYPE.FORM, true, false, false, foundForm.folderId)
           }
+          _sayItIsAlreadyStored(jsonId, foundForm.folderId)
         }
         return 'unchanged'
       }
@@ -402,7 +420,10 @@ export default function useFileImport({
       }
       const isEqual = compareXML(xmlFromModeler, resXmlExternalUrl)
       if (isEqual) {
-        if (!isBatch) openDiagramFromChild(resXmlExternalUrl, foundModelerProcess.id, foundModelerProcess.name, foundExternalProcessKey, diagramType, true, false, false)
+        if (!isBatch) {
+          openDiagramFromChild(resXmlExternalUrl, foundModelerProcess.id, foundModelerProcess.name, foundExternalProcessKey, diagramType, true, false, false, foundModelerProcess.folderId)
+          _sayItIsAlreadyStored(foundModelerProcess.name ?? foundExternalProcessKey, foundModelerProcess.folderId)
+        }
         return 'unchanged'
       } else {
         const { choice, payload } = await _awaitConflictModal(diagramType, isBatch)
