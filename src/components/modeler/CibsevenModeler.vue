@@ -792,7 +792,13 @@ const targetFolderPath = computed(() => targetFolderId.value
 	: null)
 
 const importFile = e => {
-	if (targetFolderId.value) return _runImport(e, targetFolderId.value)
+	// The files have to be taken now: the browser empties a drop as soon as this handler returns,
+	// and the folder may only be chosen afterwards
+	const files = Array.from(e?.dataTransfer?.files ?? e?.target?.files ?? [])
+	if (files.length === 0) return
+	const dropped = { dataTransfer: { files } }
+
+	if (targetFolderId.value) return _runImport(dropped, targetFolderId.value)
 	const folders = startPage.value?.folderOptions?.() ?? []
 	// No tree to choose from: the modeler was opened straight on a diagram, or it has no folders
 	if (folders.length === 0) {
@@ -803,7 +809,7 @@ const importFile = e => {
 		folders,
 		title: t('folders.importTitle'),
 		selected: _lastImportFolderId.value,
-		accept: folderId => _runImport(e, folderId)
+		accept: folderId => _runImport(dropped, folderId)
 	})
 }
 

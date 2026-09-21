@@ -279,6 +279,10 @@ describe('CibsevenModeler', () => {
    * screen: the model of the open tab, or the folder the list is browsing behind it.
    */
   describe('the folder an import goes into', () => {
+    const drop = (...names) => ({
+      dataTransfer: { files: (names.length ? names : ['a.bpmn']).map(name => new File(['<bpmn/>'], name)) }
+    })
+
     // The folder is pinned for as long as the import runs, so it is read while it is running
     const folderSeenByImport = wrapper => {
       let seen
@@ -300,7 +304,7 @@ describe('CibsevenModeler', () => {
       const folder = folderSeenByImport(wrapper)
       await wrapper.vm.handleNavigateFolder('invoicing')
 
-      await wrapper.vm.importFile({})
+      await wrapper.vm.importFile(drop())
 
       expect(folder()).toBe('invoicing')
     })
@@ -313,7 +317,7 @@ describe('CibsevenModeler', () => {
       wrapper.vm.activeTab = 0
       await flushPromises()
 
-      await wrapper.vm.importFile({})
+      await wrapper.vm.importFile(drop())
 
       expect(folder()).toBe('archive')
     })
@@ -323,7 +327,7 @@ describe('CibsevenModeler', () => {
       await flushPromises()
       const folder = folderSeenByImport(wrapper)
 
-      await wrapper.vm.importFile({})
+      await wrapper.vm.importFile(drop())
 
       expect(fileImportMocks.handleFile).not.toHaveBeenCalled()
       expect(pickerMocks.show).toHaveBeenCalledWith(
@@ -350,10 +354,37 @@ describe('CibsevenModeler', () => {
       const wrapper = mountCibsevenModeler()
       await flushPromises()
 
-      await wrapper.vm.importFile({})
+      await wrapper.vm.importFile(drop())
 
       expect(pickerMocks.show).not.toHaveBeenCalled()
       expect(wrapper.vm.toastText).toBe('toastImportNeedsFolder')
+    })
+
+    /**
+     * The browser empties a drop as soon as its handler returns, and the folder is only
+     * chosen afterwards: a dialog that hands the event on imports nothing at all.
+     */
+    it('still has the dropped files after the folder was chosen', async () => {
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      const event = drop('a.bpmn', 'b.bpmn')
+
+      await wrapper.vm.importFile(event)
+      event.dataTransfer.files = []
+      await pickerMocks.show.mock.calls[0][0].accept('chosen')
+
+      const imported = fileImportMocks.handleFile.mock.calls[0][0]
+      expect(Array.from(imported.dataTransfer.files).map(file => file.name)).toEqual(['a.bpmn', 'b.bpmn'])
+    })
+
+    it('does nothing at all when the drop carries no file', async () => {
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+
+      await wrapper.vm.importFile({ dataTransfer: { files: [] } })
+
+      expect(pickerMocks.show).not.toHaveBeenCalled()
+      expect(fileImportMocks.handleFile).not.toHaveBeenCalled()
     })
 
     it('is asked for when the model on screen has no folder yet', async () => {
@@ -363,7 +394,7 @@ describe('CibsevenModeler', () => {
       wrapper.vm.activeTab = 0
       await flushPromises()
 
-      await wrapper.vm.importFile({})
+      await wrapper.vm.importFile(drop())
 
       expect(fileImportMocks.handleFile).not.toHaveBeenCalled()
       expect(pickerMocks.show).toHaveBeenCalled()
@@ -373,9 +404,9 @@ describe('CibsevenModeler', () => {
       const wrapper = mountCibsevenModeler()
       await flushPromises()
 
-      await wrapper.vm.importFile({})
+      await wrapper.vm.importFile(drop())
       await pickerMocks.show.mock.calls[0][0].accept('chosen')
-      await wrapper.vm.importFile({})
+      await wrapper.vm.importFile(drop())
 
       expect(pickerMocks.show.mock.calls[1][0].selected).toBe('chosen')
     })
@@ -386,7 +417,7 @@ describe('CibsevenModeler', () => {
       await flushPromises()
       fileImportMocks.handleFile.mockRejectedValueOnce(new Error('no'))
 
-      await wrapper.vm.importFile({})
+      await wrapper.vm.importFile(drop())
       await expect(pickerMocks.show.mock.calls[0][0].accept('chosen')).rejects.toThrow('no')
       await wrapper.vm.handleNavigateFolder('invoicing')
 
@@ -399,7 +430,7 @@ describe('CibsevenModeler', () => {
       const folder = folderSeenByImport(wrapper)
       await wrapper.vm.handleNavigateFolder('invoicing')
 
-      await wrapper.findComponent({ name: 'DropZone' }).vm.$emit('handleDropFile', {})
+      await wrapper.findComponent({ name: 'DropZone' }).vm.$emit('handleDropFile', drop())
       await flushPromises()
 
       expect(folder()).toBe('invoicing')
