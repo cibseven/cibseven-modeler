@@ -25,7 +25,7 @@ const fileImportMocks = vi.hoisted(() => ({
   resolveConflict: vi.fn(),
 }))
 
-const pickerMocks = vi.hoisted(() => ({ show: vi.fn() }))
+const pickerMocks = vi.hoisted(() => ({ show: vi.fn(), isShown: vi.fn() }))
 
 const storeMocks = vi.hoisted(() => ({ dispatch: vi.fn() }))
 
@@ -166,7 +166,7 @@ vi.mock('../../../components/messages/ToastMessage.vue', () => ({
 }))
 vi.mock('../../../components/modals/ImportConflictModal.vue', () => ({ default: { template: '<div />' } }))
 vi.mock('../../../components/modals/FolderPickerModal.vue', () => ({
-  default: { name: 'FolderPickerModal', template: '<div />', methods: { show: (...args) => pickerMocks.show(...args) } },
+  default: { name: 'FolderPickerModal', template: '<div />', methods: { show: (...args) => pickerMocks.show(...args), isShown: (...args) => pickerMocks.isShown(...args) } },
 }))
 
 import CibsevenModeler from '../../../components/modeler/CibsevenModeler.vue'
@@ -189,10 +189,18 @@ function mountCibsevenModeler() {
 describe('CibsevenModeler', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Clearing keeps whatever a test installed, and these two are installed per test
+    fileImportMocks.handleFile.mockReset()
+    startPageMocks.folderPathFor.mockReset()
+    pickerMocks.isShown.mockReturnValue(false)
     tabManagerState.tabNavList.value = []
     tabManagerState.tabNavListXml.value = []
     tabManagerState.editorXML.value = []
-    startPageMocks.folderOptions.mockReturnValue([{ id: 'invoicing', name: 'Invoicing', depth: 0 }])
+    startPageMocks.folderOptions.mockReturnValue([
+      { id: 'invoicing', name: 'Invoicing', depth: 0 },
+      { id: 'archive', name: 'Archive', depth: 0 },
+      { id: 'general', name: 'General', depth: 0 },
+    ])
     storeMocks.dispatch.mockResolvedValue(undefined)
     storeState.modeler.processes.unifiedDiagrams = [
       { id: '1', name: 'Diagram 1', processkey: 'key1', type: 'bpmn-c7' },
@@ -352,17 +360,6 @@ describe('CibsevenModeler', () => {
       expect(wrapper.find('.tab-content').element.contains(picker.element)).toBe(false)
     })
 
-    it('says so instead of asking when there are no folders to choose from', async () => {
-      startPageMocks.folderOptions.mockReturnValue([])
-      const wrapper = mountCibsevenModeler()
-      await flushPromises()
-
-      await wrapper.vm.importFile(drop())
-
-      expect(pickerMocks.show).not.toHaveBeenCalled()
-      expect(wrapper.vm.toastText).toBe('toastImportNeedsFolder')
-    })
-
     /**
      * The browser empties a drop as soon as its handler returns, and the folder is only
      * chosen afterwards: a dialog that hands the event on imports nothing at all.
@@ -438,16 +435,61 @@ describe('CibsevenModeler', () => {
     })
 
     /** The folder asked for belongs to that import alone, even when the import fails. */
-    it('stops holding the folder that was asked for once the import is over', async () => {
+    /**
+     * The dialog is gone by the time the import runs, so a failure has nowhere to appear
+     * unless it is said here — and the folder it asked for belongs to that import alone.
+     */
+    it('reports an import that failed, and stops holding the folder it was given', async () => {
+      vi.spyOn(console, 'error').mockImplementation(() => {})
       const wrapper = mountCibsevenModeler()
       await flushPromises()
       fileImportMocks.handleFile.mockRejectedValueOnce(new Error('no'))
 
       await wrapper.vm.importFile(drop())
-      await expect(pickerMocks.show.mock.calls[0][0].accept('chosen')).rejects.toThrow('no')
+      await pickerMocks.show.mock.calls[0][0].accept('chosen')
       await wrapper.vm.handleNavigateFolder('invoicing')
 
+      expect(wrapper.vm.toastText).toBe('toastLoadErrorFile')
       expect(wrapper.vm.importFolderId).toBe('invoicing')
+    })
+
+    /** A drop landing on the dialog would answer it with files it was not asked about. */
+    it('leaves the dialog alone when another file is dropped while it is up', async () => {
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      await wrapper.vm.importFile(drop('a.bpmn'))
+      pickerMocks.isShown.mockReturnValue(true)
+
+      await wrapper.vm.importFile(drop('b.bpmn'))
+
+      expect(pickerMocks.show).toHaveBeenCalledOnce()
+      expect(fileImportMocks.handleFile).not.toHaveBeenCalled()
+    })
+
+    /** Deleting the folder of an open model leaves the tab naming one that is not there. */
+    it('does not import into a folder that is no longer in the tree', async () => {
+      openTab('deleted-folder')
+      tabManagerState.tabNavList.value[0].isSaved = true
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      wrapper.vm.activeTab = 0
+      await flushPromises()
+
+      await wrapper.vm.importFile(drop())
+
+      expect(fileImportMocks.handleFile).not.toHaveBeenCalled()
+      expect(pickerMocks.show).toHaveBeenCalled()
+    })
+
+    it('tells the user to create a folder when the tree holds none', async () => {
+      startPageMocks.folderOptions.mockReturnValue([])
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+
+      await wrapper.vm.importFile(drop())
+
+      expect(pickerMocks.show).not.toHaveBeenCalled()
+      expect(wrapper.vm.toastText).toBe('toastImportNoFolders')
     })
 
     it('runs the same resolution for a dropped file', async () => {
@@ -495,6 +537,20 @@ describe('CibsevenModeler', () => {
 
       expect(tabManagerState.tabNavList.value).toHaveLength(1)
       expect(tabManagerState.tabNavList.value[0].folderId).toBe('invoicing')
+    })
+
+    /** The tab outlives the page, so a folder only learned in memory is lost on the next load. */
+    it('is kept for the next page load whenever the tab learns or changes it', async () => {
+      tabManagerState.tabNavList.value = [{ id: 'p1', key: 'k1', name: 'BPMN', type: 'bpmn-c7' }]
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      tabManagerState._saveTabNavSavedLocalStorage.mockClear()
+
+      wrapper.vm.openDiagram('<bpmn/>', 'p1', 'Proc', 'k1', 'bpmn-c7', true, false, false, 'invoicing')
+      expect(tabManagerState._saveTabNavSavedLocalStorage).toHaveBeenCalledOnce()
+
+      wrapper.vm.handleModelMoved('p1', 'archive')
+      expect(tabManagerState._saveTabNavSavedLocalStorage).toHaveBeenCalledTimes(2)
     })
 
     it('follows the model when it is moved to another folder from the list', async () => {

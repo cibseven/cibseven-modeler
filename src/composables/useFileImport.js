@@ -292,6 +292,8 @@ export default function useFileImport({
       } else {
         if (!isBatch) {
           if (foundTabIndex > -1) {
+            // The stored form knows the folder a tab kept from before does not
+            tabNavList.value[foundTabIndex].folderId = foundForm.folderId
             modelerTabNav.value.selectTab(foundTabIndex)
           } else {
             openDiagramFromChild(jsonExternal, foundForm.id, jsonId, jsonId, DIAGRAM_TYPE.FORM, true, false, false, foundForm.folderId)

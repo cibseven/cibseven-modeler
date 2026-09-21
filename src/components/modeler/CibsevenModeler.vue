@@ -663,7 +663,7 @@ const openDiagram = (valueFromChild, processId, processName, processKey, typeOfD
 		return element.id === processId
 	})
 	// A tab kept from before knows no folder, and the model may have been moved since
-	if (foundElIndex > -1 && folderId) tabNavList.value[foundElIndex].folderId = folderId
+	if (foundElIndex > -1 && folderId) _rememberTabFolder(tabNavList.value[foundElIndex], folderId)
 	//if the tab is not already opened
 	if (foundElIndex < 0) {
 		const keyOfTabNav = generateUniqueId()
@@ -784,6 +784,11 @@ const _runImport = async (event, folderId) => {
 	_lastImportFolderId.value = folderId
 	try {
 		return await handleFile(event)
+	} catch (e) {
+		// Each file reports itself; what is left is the import as a whole, and by now the
+		// dialog that started it is gone
+		console.error(e)
+		showToastMessage({ isSuccess: false, toastText: 'toastLoadErrorFile', bodyTextAlt: e?.message ?? '' })
 	} finally {
 		_pinnedFolderId.value = null
 	}
@@ -801,8 +806,21 @@ const _storedFolderOfOpenModel = async () => {
 	const tab = activeTab.value === -1 ? null : tabNavList.value[activeTab.value]
 	if (!tab?.id || !tab.isSaved) return null
 	const diagram = await store.dispatch('modeler/processes/fetchUnifiedDiagramById', tab.id)
-	if (diagram?.folderId) tab.folderId = diagram.folderId
+	if (diagram?.folderId) _rememberTabFolder(tab, diagram.folderId)
 	return diagram?.folderId ?? null
+}
+
+/** The tab outlives the page, so what it learns has to go with it. */
+const _rememberTabFolder = (tab, folderId) => {
+	tab.folderId = folderId
+	_saveTabNavSavedLocalStorage()
+}
+
+/** A folder deleted meanwhile is no target, and the save would fail with nothing said. */
+const _isKnownFolder = folderId => {
+	const folders = startPage.value?.folderOptions?.() ?? []
+	// Nothing to check against without a tree, and then the tab is all there is to go on
+	return folders.length === 0 || folders.some(folder => folder.id === folderId)
 }
 
 const importFile = async e => {
@@ -812,12 +830,19 @@ const importFile = async e => {
 	if (files.length === 0) return
 	const dropped = { dataTransfer: { files } }
 
-	const known = targetFolderId.value ?? await _storedFolderOfOpenModel()
+	const onScreen = _isKnownFolder(targetFolderId.value) ? targetFolderId.value : null
+	const known = onScreen ?? await _storedFolderOfOpenModel()
 	if (known) return _runImport(dropped, known)
+
+	// The dialog on screen is already asking about a drop, and answering it would carry the
+	// files of this one into the folder chosen for that one
+	if (importPicker.value?.isShown?.()) return
+
 	const folders = startPage.value?.folderOptions?.() ?? []
-	// No tree to choose from: the modeler was opened straight on a diagram, or it has no folders
 	if (folders.length === 0) {
-		showToastMessage({ isSuccess: false, toastText: 'toastImportNeedsFolder', bodyTextAlt: '' })
+		// Without the start page there is no tree at all; with it, the tree simply has no folder
+		const toastText = startPage.value ? 'toastImportNoFolders' : 'toastImportNeedsFolder'
+		showToastMessage({ isSuccess: false, toastText, bodyTextAlt: '' })
 		return
 	}
 	return importPicker.value?.show({
@@ -833,7 +858,7 @@ const importFile = async e => {
 // A model moved out of the list keeps its tab, so the tab has to learn where it went
 const handleModelMoved = (modelId, folderId) => {
 	const tab = tabNavList.value.find(element => element.id === modelId)
-	if (tab) tab.folderId = folderId
+	if (tab) _rememberTabFolder(tab, folderId)
 }
 
 // File import is handled by useFileImport (initialized here, after all its dependencies are declared)

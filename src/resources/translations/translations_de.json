@@ -55,6 +55,10 @@
     "title": "Fehler beim Laden der Datei",
     "body": "Die Datei konnte nicht korrekt geladen werden."
   },
+  "toastImportNoFolders": {
+    "title": "Import",
+    "body": "Legen Sie zuerst einen Ordner an: Ein Modell wird immer in einem Ordner gespeichert."
+  },
   "toastImportExists": {
     "title": "Bereits vorhanden",
     "body": "„{name}“ ist bereits gespeichert und wurde geöffnet.",

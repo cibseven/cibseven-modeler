@@ -230,6 +230,35 @@ describe('FolderPickerModal', () => {
         expect(accept).toHaveBeenCalledWith('invoicing', '')
     })
 
+    /** The button stays clickable while the dialog fades out, and the work must not be doubled. */
+    it('answers once however often the button is clicked', async () => {
+        const accept = vi.fn().mockResolvedValue()
+        const wrapper = mountModal(FolderPickerModal)
+        await open(wrapper, { accept, runAfterClose: true })
+        await wrapper.findAll('input[type="radio"]')[1].setValue()
+
+        await wrapper.find('button.btn-primary').trigger('click')
+        await wrapper.find('button.btn-primary').trigger('click')
+        wrapper.element.dispatchEvent(new Event('hidden.bs.modal'))
+        await flushPromises()
+
+        expect(accept).toHaveBeenCalledOnce()
+    })
+
+    it('can be answered again after a refusal kept it open', async () => {
+        const accept = vi.fn().mockRejectedValueOnce(new Error('nope')).mockResolvedValue()
+        const wrapper = mountModal(FolderPickerModal)
+        await open(wrapper, { accept })
+        await wrapper.findAll('input[type="radio"]')[1].setValue()
+
+        await wrapper.find('button.btn-primary').trigger('click')
+        await flushPromises()
+        await wrapper.find('button.btn-primary').trigger('click')
+        await flushPromises()
+
+        expect(accept).toHaveBeenCalledTimes(2)
+    })
+
     /** The top level is an empty string in the form, but null to the caller. */
     it('reports the top level as no folder at all', async () => {
         const accept = vi.fn().mockResolvedValue()

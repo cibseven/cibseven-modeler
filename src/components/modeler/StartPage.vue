@@ -547,11 +547,10 @@ const _addIsHoveredElement = () => {
 }
 
 // The tree is loaded here, so this is where a folder id can be turned into a name or a path
-const folderNameFor = folderId =>
-    folderState.folders.value.find(folder => folder.id === folderId)?.name ?? null
-
 const folderPathFor = folderId =>
     folderState.pathOf(folderId).map(folder => folder.name).join(' / ') || null
+
+const folderNameFor = folderId => folderState.pathOf(folderId).at(-1)?.name ?? null
 
 /** The tree as a picker takes it, for a dialog the modeler shows outside this page. */
 const folderOptions = () => folderState.flatten()

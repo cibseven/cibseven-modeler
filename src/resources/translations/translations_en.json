@@ -55,6 +55,10 @@
 		"title": "Error loading file.",
 		"body": "The file could not be loaded correctly."
 	},
+	"toastImportNoFolders": {
+		"title": "Import",
+		"body": "Create a folder first: a model is always stored in one."
+	},
 	"toastImportExists": {
 		"title": "Already stored",
 		"body": "\"{name}\" is already stored and was opened.",

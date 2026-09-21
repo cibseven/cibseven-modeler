@@ -87,8 +87,11 @@ const requireKey = ref(false)
 const keyLabel = ref('folders.copyKey')
 const keyRequired = ref('folders.copyKeyRequired')
 const runAfterClose = ref(false)
+const shown = ref(false)
 let modalBootstrap = null
 let onAccept = null
+// One click is one answer: the button stays clickable while the dialog fades out
+let accepting = false
 
 // An empty string is the top level, which is a valid choice; null is nothing chosen yet
 const isChosen = computed(() => selected.value !== null)
@@ -96,14 +99,16 @@ const isChosen = computed(() => selected.value !== null)
 onMounted(() => {
     if (!modalRoot.value) return
     modalBootstrap = new bootstrap.Modal(modalRoot.value)
+    modalRoot.value.addEventListener('hidden.bs.modal', () => { shown.value = false })
 })
 
 const handleAccept = async () => {
-    if (!isChosen.value) return
+    if (!isChosen.value || accepting) return
     if (requireKey.value && !key.value.trim()) {
         error.value = t(keyRequired.value)
         return
     }
+    accepting = true
     if (runAfterClose.value) {
         // The work says elsewhere how it went, so the dialog leaves first rather than sitting
         // over it — and a dialog of its own can only open once this one is gone
@@ -119,6 +124,7 @@ const handleAccept = async () => {
     } catch (e) {
         const refusal = folderErrorMessage(e)
         error.value = refusal ? t(refusal.key, refusal.params) : t('folders.saveFailed')
+        accepting = false
         return
     }
     modalBootstrap?.hide()
@@ -127,7 +133,8 @@ const handleAccept = async () => {
 /**
  * @param {object} options where the folders come from and what the dialog asks for
  * @param {Array} options.folders rows of { id, name, depth }
- * @param {Function} options.accept receives (folderId, key); throwing keeps the dialog open
+ * @param {Function} options.accept receives (folderId, key); throwing keeps the dialog open,
+ *   except under runAfterClose, where the dialog is already gone and reporting is the caller's
  * @param {boolean} [options.runAfterClose] close first and accept afterwards, for work that
  *   reports itself elsewhere
  */
@@ -147,9 +154,11 @@ const show = ({ folders, title: dialogTitle, allowTopLevel: topLevel = false,
     // Only a folder still in the tree can be offered as the choice already made
     selected.value = options.value.some(folder => folder.id === preselected) ? preselected : null
     error.value = ''
+    accepting = false
     onAccept = accept
+    shown.value = true
     modalBootstrap?.show()
 }
 
-defineExpose({ show })
+defineExpose({ show, isShown: () => shown.value })
 </script>

@@ -55,6 +55,10 @@
     "title": "Error cargando archivo.",
     "body": "El archivo no se ha podido cargar correctamente."
   },
+  "toastImportNoFolders": {
+    "title": "Importar",
+    "body": "Cree primero una carpeta: un modelo siempre se almacena en una."
+  },
   "toastImportExists": {
     "title": "Ya almacenado",
     "body": "«{name}» ya está almacenado y se ha abierto.",
