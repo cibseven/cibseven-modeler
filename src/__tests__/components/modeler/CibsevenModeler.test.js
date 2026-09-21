@@ -350,15 +350,17 @@ describe('CibsevenModeler', () => {
       expect(startPageMocks.pickFolder.mock.calls[1][0].selected).toBe('chosen')
     })
 
-    it('is released again once the import is over', async () => {
+    /** The folder asked for belongs to that import alone, even when the import fails. */
+    it('stops holding the folder that was asked for once the import is over', async () => {
       const wrapper = mountCibsevenModeler()
       await flushPromises()
       fileImportMocks.handleFile.mockRejectedValueOnce(new Error('no'))
+
+      await wrapper.vm.importFile({})
+      await expect(startPageMocks.pickFolder.mock.calls[0][0].accept('chosen')).rejects.toThrow('no')
       await wrapper.vm.handleNavigateFolder('invoicing')
 
-      await expect(wrapper.vm.importFile({})).rejects.toThrow('no')
-
-      expect(wrapper.vm.importFolderId).toBe(null)
+      expect(wrapper.vm.importFolderId).toBe('invoicing')
     })
 
     it('runs the same resolution for a dropped file', async () => {

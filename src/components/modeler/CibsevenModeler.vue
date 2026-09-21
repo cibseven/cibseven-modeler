@@ -759,19 +759,8 @@ const onBatchComplete = async () => {
 	await getStoredDiagrams()
 }
 
-// The import runs into one folder from start to finish, whatever the user does meanwhile
-const importFolderId = ref(null)
+const _pinnedFolderId = ref(null)
 const _lastImportFolderId = ref(null)
-
-const _runImport = async (event, folderId) => {
-	importFolderId.value = folderId
-	_lastImportFolderId.value = folderId
-	try {
-		return await handleFile(event)
-	} finally {
-		importFolderId.value = null
-	}
-}
 
 /**
  * An import lands where the user is looking: the folder of the model on screen, or the one
@@ -780,6 +769,19 @@ const _runImport = async (event, folderId) => {
 const targetFolderId = computed(() => activeTab.value === -1
 	? currentFolderId.value
 	: tabNavList.value[activeTab.value]?.folderId ?? null)
+
+// An import that is running keeps its folder from start to finish, whatever the user does meanwhile
+const importFolderId = computed(() => _pinnedFolderId.value ?? targetFolderId.value)
+
+const _runImport = async (event, folderId) => {
+	_pinnedFolderId.value = folderId
+	_lastImportFolderId.value = folderId
+	try {
+		return await handleFile(event)
+	} finally {
+		_pinnedFolderId.value = null
+	}
+}
 
 const targetFolderPath = computed(() => targetFolderId.value
 	? startPage.value?.folderPathFor?.(targetFolderId.value)
