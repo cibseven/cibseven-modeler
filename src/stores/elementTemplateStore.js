@@ -33,7 +33,7 @@ import {
   updateElementTemplateFull
 } from '../services/elementTemplateService'
 import { filterTemplates } from '../utils'
-import { categorizeTemplates } from '../components/templates/elementTemplateUtils'
+import { categorizeTemplates, parseCompleteTemplateContent, UNCATEGORIZED_TASK_TYPE } from '../components/templates/elementTemplateUtils'
 
 const state = () => ({
   elementTemplates: [],
@@ -420,34 +420,31 @@ const actions = {
 
   async setGroupVisibility({ state, dispatch }, { taskType, groupName, isVisible }) {
     try {
-      // Get categorized template data
-      const categorizedData = state.elementTemplates
-        .map(template => {
-          try {
-            if (template.content && template.content.trim() !== '') {
-              return { parsed: JSON.parse(template.content), original: template }
+      // The "Not categorized" bucket has no real appliesTo/name to match against — it's every
+      // template categorizeTemplates() couldn't parse into a group, found the same way here.
+      let templatesToUpdate
+      if (taskType === UNCATEGORIZED_TASK_TYPE) {
+        templatesToUpdate = state.elementTemplates.filter(template => !parseCompleteTemplateContent(template))
+      } else {
+        const categorizedData = state.elementTemplates
+          .map(template => {
+            const parsed = parseCompleteTemplateContent(template)
+            return parsed ? { parsed, original: template } : null
+          })
+          .filter(item => item !== null)
+
+        templatesToUpdate = []
+        categorizedData.forEach(({ parsed, original }) => {
+          const appliesTo = parsed.appliesTo || []
+          if (appliesTo.includes(taskType)) {
+            const splitTemplate = parsed.name.split(/-(.+)/)
+            const currentGroupName = splitTemplate.length > 1 ? splitTemplate[0] : 'undefined'
+            if (currentGroupName === groupName) {
+              templatesToUpdate.push(original)
             }
-            return null
-          } catch {
-            return null
           }
         })
-        // A template stored without a `name` can't be matched to a group (below splits on
-        // it), so it's excluded here the same way categorizeTemplates() excludes it from view.
-        .filter(item => item !== null && item.parsed.name)
-
-      // Find templates in the specified group
-      const templatesToUpdate = []
-      categorizedData.forEach(({ parsed, original }) => {
-        const appliesTo = parsed.appliesTo || []
-        if (appliesTo.includes(taskType)) {
-          const splitTemplate = parsed.name.split(/-(.+)/)
-          const currentGroupName = splitTemplate.length > 1 ? splitTemplate[0] : 'undefined'
-          if (currentGroupName === groupName) {
-            templatesToUpdate.push(original)
-          }
-        }
-      })
+      }
 
       // Update visibility for all templates in the group
       const updatePromises = templatesToUpdate.map(template => 
