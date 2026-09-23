@@ -51,11 +51,13 @@ vi.mock('../../services/elementTemplateService.js', () => ({
 vi.mock('../../utils.js', () => ({
     filterTemplates: (templates, excluded) => templates.filter(t => !excluded.includes(t.id)),
 }))
-vi.mock('../../components/templates/elementTemplateUtils.js', () => ({
+vi.mock('../../components/templates/elementTemplateUtils.js', async (importOriginal) => ({
+    ...(await importOriginal()),
     categorizeTemplates: vi.fn(_templates => ({ categories: [] })),
 }))
 
 import elementTemplateStore from '../../stores/elementTemplateStore.js'
+import { UNCATEGORIZED_TASK_TYPE } from '../../components/templates/elementTemplateUtils.js'
 
 const makeStore = () => createStore({
     modules: { elementTemplates: { namespaced: true, ...elementTemplateStore } }
@@ -842,6 +844,64 @@ describe('elementTemplateStore', () => {
             ])
 
             expect(store.getters['elementTemplates/excludeTemplates']).toEqual(['t1', 't2'])
+        })
+    })
+
+    describe('setGroupVisibility', () => {
+        // A template stored with content missing `name` used to crash the whole action with
+        // "Cannot read properties of undefined (reading 'split')" before it ever reached the
+        // templates that *do* belong to the group being toggled.
+        it('skips a template whose content is missing name, without throwing', async () => {
+            const store = makeStore()
+            store.commit('elementTemplates/setElementTemplates', [
+                { id: 'broken', templateId: 'broken', content: JSON.stringify({ appliesTo: ['bpmn:ServiceTask'] }) },
+                { id: 'ok', templateId: 'ok', content: JSON.stringify({ id: 'ok', name: 'Group - Ok', appliesTo: ['bpmn:ServiceTask'] }) },
+            ])
+            m.setTemplateIsActive.mockResolvedValueOnce({ id: 'ok', active: false })
+
+            const result = await store.dispatch('elementTemplates/setGroupVisibility',
+                { taskType: 'bpmn:ServiceTask', groupName: 'Group ', isVisible: false })
+
+            expect(result.templates).toEqual(['ok'])
+            expect(m.setTemplateIsActive).toHaveBeenCalledWith('ok', false)
+            expect(m.setTemplateIsActive).not.toHaveBeenCalledWith('broken', expect.anything())
+        })
+
+        it('updates every template in the target group when all have a name', async () => {
+            const store = makeStore()
+            store.commit('elementTemplates/setElementTemplates', [
+                { id: 't1', templateId: 't1', content: JSON.stringify({ id: 't1', name: 'Group - One', appliesTo: ['bpmn:ServiceTask'] }) },
+                { id: 't2', templateId: 't2', content: JSON.stringify({ id: 't2', name: 'Group - Two', appliesTo: ['bpmn:ServiceTask'] }) },
+                { id: 't3', templateId: 't3', content: JSON.stringify({ id: 't3', name: 'Other - Three', appliesTo: ['bpmn:ServiceTask'] }) },
+            ])
+            m.setTemplateIsActive.mockResolvedValue({ active: true })
+
+            const result = await store.dispatch('elementTemplates/setGroupVisibility',
+                { taskType: 'bpmn:ServiceTask', groupName: 'Group ', isVisible: true })
+
+            expect(result.updated).toBe(2)
+            expect(m.setTemplateIsActive).toHaveBeenCalledWith('t1', true)
+            expect(m.setTemplateIsActive).toHaveBeenCalledWith('t2', true)
+            expect(m.setTemplateIsActive).not.toHaveBeenCalledWith('t3', expect.anything())
+        })
+
+        // The "Not categorized" bucket (UNCATEGORIZED_TASK_TYPE) has no real appliesTo/groupName
+        // to match on — its group-visibility toggle instead targets every template whose content
+        // couldn't be parsed into a complete id/name, matching what categorizeTemplates() shows.
+        it('toggles every incomplete template when the taskType is the uncategorized bucket', async () => {
+            const store = makeStore()
+            store.commit('elementTemplates/setElementTemplates', [
+                { id: 'no-name', templateId: 'no-name', content: JSON.stringify({ id: 'x', appliesTo: ['bpmn:ServiceTask'] }) },
+                { id: 'empty', templateId: 'empty', content: '' },
+                { id: 'ok', templateId: 'ok', content: JSON.stringify({ id: 'ok', name: 'Group - Ok', appliesTo: ['bpmn:ServiceTask'] }) },
+            ])
+            m.setTemplateIsActive.mockResolvedValue({ active: false })
+
+            const result = await store.dispatch('elementTemplates/setGroupVisibility',
+                { taskType: UNCATEGORIZED_TASK_TYPE, groupName: 'not-categorized', isVisible: false })
+
+            expect(result.templates.sort()).toEqual(['empty', 'no-name'])
+            expect(m.setTemplateIsActive).not.toHaveBeenCalledWith('ok', expect.anything())
         })
     })
 })

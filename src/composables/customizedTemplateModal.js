@@ -74,7 +74,9 @@ export default function useCustomizedTemplateModal() {
 
     const templates = modeler.get('elementTemplates').getAll()
 
-    const taskGroups = templates.reduce((groups, template) => {
+    // A template loaded without id/name can't be grouped (both get split() below), so skip
+    // it rather than crash the whole picker for every task.
+    const taskGroups = templates.filter(template => template.id && template.name).reduce((groups, template) => {
       const version = template.id.split('-').pop()
       const appliesTo = template.appliesTo || []
 

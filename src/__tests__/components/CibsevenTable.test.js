@@ -203,11 +203,30 @@ describe('CibsevenTable', () => {
     it('sorts in descending order on second click', async () => {
       const wrapper = mountTable()
       const headers = wrapper.findAll('th')
-      
+
       await headers[0].trigger('click')
       await headers[0].trigger('click')
       const sortedItems = wrapper.vm.sortedItems
       expect(sortedItems[0].id).toBe(3)
+    })
+
+    // sortedItems must sort the entire `items` prop: there is no pagination/virtualization
+    // in this component, so a "sort only applies to the currently-loaded rows" bug would mean
+    // some items get left out of, or unsorted within, the result.
+    it('sorts the full item set, not a truncated subset', async () => {
+      const items = Array.from({ length: 200 }, (_, i) => ({ id: i, name: `Item ${200 - i}`, status: 'active' }))
+      const wrapper = mountTable({ items })
+      const headers = wrapper.findAll('th')
+
+      await headers[1].trigger('click') // sort by name
+
+      const sortedItems = wrapper.vm.sortedItems
+      expect(sortedItems).toHaveLength(items.length)
+      expect(new Set(sortedItems.map(item => item.id)).size).toBe(items.length)
+      for (let i = 1; i < sortedItems.length; i++) {
+        expect(sortedItems[i - 1].name.localeCompare(sortedItems[i].name, undefined,
+          { numeric: true, sensitivity: 'base' })).toBeLessThanOrEqual(0)
+      }
     })
   })
 
@@ -235,10 +254,35 @@ describe('CibsevenTable', () => {
     it('emits mouseleave on row leave', async () => {
       const wrapper = mountTable()
       const rows = wrapper.findAll('tbody tr')
-      
+
       await rows[0].trigger('mouseleave')
-      
+
       expect(wrapper.emitted('mouseleave')).toBeTruthy()
+    })
+
+    // Spreading a string class ("foo bar") used to split it into individual characters
+    // ("f", "o", "o", " ", "b", "a", "r", ...), producing garbage class names on every row.
+    it('applies a per-row class returned as a plain string, without splitting it into characters', () => {
+      const wrapper = mountTable({ tbodyTrClass: (item) => item.id === 2 ? 'row-inactive' : '' })
+      const rows = wrapper.findAll('tbody tr')
+
+      expect(rows[1].classes()).toContain('row-inactive')
+      expect(rows[1].classes()).not.toEqual(expect.arrayContaining(['r', 'o', 'w']))
+      expect(rows[0].classes()).not.toContain('row-inactive')
+    })
+
+    it('applies a per-row class returned as an array', () => {
+      const wrapper = mountTable({ tbodyTrClass: (item) => item.id === 2 ? ['row-inactive', 'text-muted'] : [] })
+      const rows = wrapper.findAll('tbody tr')
+
+      expect(rows[1].classes()).toEqual(expect.arrayContaining(['row-inactive', 'text-muted']))
+    })
+
+    it('applies a static tbodyTrClass string to every row', () => {
+      const wrapper = mountTable({ tbodyTrClass: 'static-row-class' })
+      const rows = wrapper.findAll('tbody tr')
+
+      rows.forEach(row => expect(row.classes()).toContain('static-row-class'))
     })
 
     it('applies clickable rows styling when enabled', () => {
