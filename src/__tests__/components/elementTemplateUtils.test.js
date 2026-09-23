@@ -142,3 +142,32 @@ describe('categorizeTemplates — exposed icon and templateVersion fields', () =
         expect(result['bpmn:UserTask']['undefined'][0].templateVersion).toBe(2)
     })
 })
+
+describe('categorizeTemplates — templates with missing required fields', () => {
+    // A parsed template without `id`/`name` used to crash the whole categorized view with
+    // "Cannot read properties of undefined (reading 'split')" (id.split for the version
+    // suffix, name.split for the group prefix) instead of just skipping that one template.
+    it('skips a template missing the id field without throwing', () => {
+        const raw = [
+            makeRawTemplate({ templateId: 'no-id', parsed: { id: undefined, name: 'No Id', appliesTo: ['bpmn:ServiceTask'] } }),
+            makeRawTemplate({ templateId: 'has-id', parsed: { id: 'com.example.ok', name: 'Ok', appliesTo: ['bpmn:ServiceTask'] } }),
+        ]
+
+        const result = categorizeTemplates(raw)
+
+        const names = result['bpmn:ServiceTask']['undefined'].map(entry => entry.name)
+        expect(names).toEqual(['Ok'])
+    })
+
+    it('skips a template missing the name field without throwing', () => {
+        const raw = [
+            makeRawTemplate({ templateId: 'no-name', parsed: { id: 'com.example.no-name', name: undefined, appliesTo: ['bpmn:ServiceTask'] } }),
+            makeRawTemplate({ templateId: 'has-name', parsed: { id: 'com.example.ok', name: 'Ok', appliesTo: ['bpmn:ServiceTask'] } }),
+        ]
+
+        const result = categorizeTemplates(raw)
+
+        const names = result['bpmn:ServiceTask']['undefined'].map(entry => entry.name)
+        expect(names).toEqual(['Ok'])
+    })
+})

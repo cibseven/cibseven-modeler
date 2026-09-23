@@ -844,4 +844,43 @@ describe('elementTemplateStore', () => {
             expect(store.getters['elementTemplates/excludeTemplates']).toEqual(['t1', 't2'])
         })
     })
+
+    describe('setGroupVisibility', () => {
+        // A template stored with content missing `name` used to crash the whole action with
+        // "Cannot read properties of undefined (reading 'split')" before it ever reached the
+        // templates that *do* belong to the group being toggled.
+        it('skips a template whose content is missing name, without throwing', async () => {
+            const store = makeStore()
+            store.commit('elementTemplates/setElementTemplates', [
+                { id: 'broken', templateId: 'broken', content: JSON.stringify({ appliesTo: ['bpmn:ServiceTask'] }) },
+                { id: 'ok', templateId: 'ok', content: JSON.stringify({ id: 'ok', name: 'Group - Ok', appliesTo: ['bpmn:ServiceTask'] }) },
+            ])
+            m.setTemplateIsActive.mockResolvedValueOnce({ id: 'ok', active: false })
+
+            const result = await store.dispatch('elementTemplates/setGroupVisibility',
+                { taskType: 'bpmn:ServiceTask', groupName: 'Group ', isVisible: false })
+
+            expect(result.templates).toEqual(['ok'])
+            expect(m.setTemplateIsActive).toHaveBeenCalledWith('ok', false)
+            expect(m.setTemplateIsActive).not.toHaveBeenCalledWith('broken', expect.anything())
+        })
+
+        it('updates every template in the target group when all have a name', async () => {
+            const store = makeStore()
+            store.commit('elementTemplates/setElementTemplates', [
+                { id: 't1', templateId: 't1', content: JSON.stringify({ id: 't1', name: 'Group - One', appliesTo: ['bpmn:ServiceTask'] }) },
+                { id: 't2', templateId: 't2', content: JSON.stringify({ id: 't2', name: 'Group - Two', appliesTo: ['bpmn:ServiceTask'] }) },
+                { id: 't3', templateId: 't3', content: JSON.stringify({ id: 't3', name: 'Other - Three', appliesTo: ['bpmn:ServiceTask'] }) },
+            ])
+            m.setTemplateIsActive.mockResolvedValue({ active: true })
+
+            const result = await store.dispatch('elementTemplates/setGroupVisibility',
+                { taskType: 'bpmn:ServiceTask', groupName: 'Group ', isVisible: true })
+
+            expect(result.updated).toBe(2)
+            expect(m.setTemplateIsActive).toHaveBeenCalledWith('t1', true)
+            expect(m.setTemplateIsActive).toHaveBeenCalledWith('t2', true)
+            expect(m.setTemplateIsActive).not.toHaveBeenCalledWith('t3', expect.anything())
+        })
+    })
 })

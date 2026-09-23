@@ -278,6 +278,7 @@ export const filterTemplates = (templates, config) => {
 				return true // Exact match by ID
 			}
 
+			if (!template.name) return false
 			const splitName = template.name.split('-').map(part => part.trim())
 
 			if (splitName.length > 1) {

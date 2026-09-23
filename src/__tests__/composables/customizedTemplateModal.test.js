@@ -64,3 +64,26 @@ describe('useCustomizedTemplateModal — applyTemplateToTask', () => {
     expect(applyTemplate).not.toHaveBeenCalled()
   })
 })
+
+describe('useCustomizedTemplateModal — customizedModalElementTemplatesData', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  // A template loaded into bpmn-js without id/name used to crash grouping for every task
+  // type with "Cannot read properties of undefined (reading 'split')" instead of just
+  // leaving that one template out of the picker.
+  it('excludes a template missing id or name instead of throwing, and still groups the rest', () => {
+    const good = { id: 'com.example.good-one', name: 'Group - Good', appliesTo: ['bpmn:ServiceTask'], properties: [] }
+    const noId = { id: undefined, name: 'Group - NoId', appliesTo: ['bpmn:ServiceTask'], properties: [] }
+    const noName = { id: 'com.example.no-name', name: undefined, appliesTo: ['bpmn:ServiceTask'], properties: [] }
+
+    expect(() => setup({ templates: [good, noId, noName] })).not.toThrow()
+
+    // call through the public API directly to capture the grouped return value
+    const { customizedModalElementTemplatesData } = useCustomizedTemplateModal()
+    const modeler = { get: key => (key === 'elementRegistry' ? { get: () => undefined } : { getAll: () => [good, noId, noName] }) }
+    const taskGroups = customizedModalElementTemplatesData(modeler, { value: null }, { value: null })
+
+    const names = taskGroups['bpmn:ServiceTask']['Group '].map(t => t.name)
+    expect(names).toEqual([' Good'])
+  })
+})

@@ -432,7 +432,9 @@ const actions = {
             return null
           }
         })
-        .filter(item => item !== null)
+        // A template stored without a `name` can't be matched to a group (below splits on
+        // it), so it's excluded here the same way categorizeTemplates() excludes it from view.
+        .filter(item => item !== null && item.parsed.name)
 
       // Find templates in the specified group
       const templatesToUpdate = []

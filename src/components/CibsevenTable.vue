@@ -202,7 +202,11 @@ export default {
       return this.$t('bcomponents.ariaSortNone')
     },
     getRowClass(item) {
-      return [... typeof this.tbodyTrClass === 'function' ? this.tbodyTrClass(item) : this.tbodyTrClass,
+      const trClass = typeof this.tbodyTrClass === 'function' ? this.tbodyTrClass(item) : this.tbodyTrClass
+      // Spreading a string (e.g. "foo bar") splits it into individual characters, so only
+      // arrays are spread; a plain string/falsy result is used as a single class entry instead.
+      return [
+        ...(Array.isArray(trClass) ? trClass : trClass ? [trClass] : []),
         this.clickableRows ? 'cursor-pointer' : '',
       ]
     },

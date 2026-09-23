@@ -48,6 +48,12 @@ export const categorizeTemplates = (rawTemplates, options = {}) => {
       try {
         if (template.content && template.content.trim() !== '') {
           const parsed = JSON.parse(template.content)
+          // id/name are required below (id suffix -> version, name prefix -> group), so a
+          // template stored without them would otherwise crash the whole categorized view.
+          if (!parsed.id || !parsed.name) {
+            console.warn(`Template ${template.templateId} is missing required 'id' or 'name' field`)
+            return null
+          }
           // Add reference to original template if requested
           return preserveOriginalTemplate ? { ...parsed, originalTemplate: template } : parsed
         } else {
