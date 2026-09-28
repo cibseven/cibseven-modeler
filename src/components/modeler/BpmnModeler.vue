@@ -1096,6 +1096,12 @@ defineExpose({
 	border-color: var(--bs-gray-500) !important;
 }
 
+/* bpmn-js only moves the breadcrumbs past a two-column palette when diagram-js marks it as one,
+   which it does only in short windows; keep them clear of the one forced above */
+.container.modeler :deep(.djs-palette-shown .bjs-breadcrumbs) {
+	left: 140px;
+}
+
 .container.modeler :deep(.bts-log .bts-header) {
 	background-color: var(--bs-primary);
 }
