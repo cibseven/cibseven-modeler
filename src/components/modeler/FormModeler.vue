@@ -225,4 +225,8 @@ defineExpose({
 	box-sizing: border-box;
 	width: 100%;
 }
+
+:deep(.fjs-powered-by) {
+	padding-right: 12px;
+}
 </style>
