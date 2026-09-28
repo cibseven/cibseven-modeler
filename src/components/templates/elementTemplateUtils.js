@@ -64,16 +64,6 @@ export const parseTemplateNameGroup = (name) => {
     return { groupName, templateName }
 }
 
-// Logs each broken template at most once per session instead of once per categorize() call —
-// categorizeTemplates() runs inside a computed/getter that recomputes on every filter/search
-// change, so without this a single broken template would warn on every keystroke.
-const warnedIncompleteTemplateIds = new Set()
-const warnIncompleteOnce = (template) => {
-    if (warnedIncompleteTemplateIds.has(template.id)) return
-    warnedIncompleteTemplateIds.add(template.id)
-    console.warn(`Template ${template.templateId} has empty, invalid, or incomplete content; showing it under "Not categorized"`)
-}
-
 /**
  * Consolidated template categorization utility function
  * Parses templates, groups them by task type and group name, and sorts the results
@@ -98,7 +88,6 @@ export const categorizeTemplates = (rawTemplates, options = {}) => {
       if (parsed) {
         templates.push(preserveOriginalTemplate ? { ...parsed, originalTemplate: template } : parsed)
       } else {
-        warnIncompleteOnce(template)
         incomplete.push(template)
       }
     })
@@ -140,6 +129,7 @@ export const categorizeTemplates = (rawTemplates, options = {}) => {
 
   // Surface templates that couldn't be grouped instead of hiding them
   if (incomplete.length > 0) {
+    console.warn('Element templates with invalid or incomplete content were not categorized:', incomplete.map(template => template.templateId))
     taskGroups[UNCATEGORIZED_TASK_TYPE] = {
       [UNCATEGORIZED_GROUP_NAME]: incomplete.map(template => ({
         name: template.name || template.templateId,

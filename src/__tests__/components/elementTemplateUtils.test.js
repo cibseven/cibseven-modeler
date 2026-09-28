@@ -309,32 +309,29 @@ describe('categorizeTemplates — "Not categorized" entries match normal entries
     })
 })
 
-describe('categorizeTemplates — warns about a broken template only once', () => {
-    it('logs a single warning even when categorize runs repeatedly for the same template', () => {
-        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-        const raw = [{ templateId: 'repeat-offender', id: 'repeat-offender', name: 'Repeat', content: '', active: true }]
-
-        categorizeTemplates(raw)
-        categorizeTemplates(raw)
-        categorizeTemplates(raw)
-
-        const callsForThisTemplate = warnSpy.mock.calls.filter(call => call[0].includes('repeat-offender'))
-        expect(callsForThisTemplate).toHaveLength(1)
-
-        warnSpy.mockRestore()
-    })
-
-    it('still warns about two different broken templates independently', () => {
+describe('categorizeTemplates — warns once per call about broken templates', () => {
+    it('logs a single warning listing every broken templateId', () => {
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
         const raw = [
-            { templateId: 'first-unique', id: 'first-unique', name: 'First', content: '', active: true },
-            { templateId: 'second-unique', id: 'second-unique', name: 'Second', content: '', active: true },
+            { templateId: 'broken-1', name: 'Broken 1', content: '', active: true },
+            { templateId: 'broken-2', name: 'Broken 2', content: '{bad', active: true },
         ]
 
         categorizeTemplates(raw)
 
-        expect(warnSpy.mock.calls.some(call => call[0].includes('first-unique'))).toBe(true)
-        expect(warnSpy.mock.calls.some(call => call[0].includes('second-unique'))).toBe(true)
+        expect(warnSpy).toHaveBeenCalledTimes(1)
+        expect(warnSpy.mock.calls[0][1]).toEqual(['broken-1', 'broken-2'])
+
+        warnSpy.mockRestore()
+    })
+
+    it('stays silent when every template is complete', () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+        const raw = [makeRawTemplate({ parsed: { id: 'com.example.ok', name: 'Ok', appliesTo: ['bpmn:ServiceTask'] } })]
+
+        categorizeTemplates(raw)
+
+        expect(warnSpy).not.toHaveBeenCalled()
 
         warnSpy.mockRestore()
     })
