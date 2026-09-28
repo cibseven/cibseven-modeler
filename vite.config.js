@@ -19,7 +19,7 @@
 import { fileURLToPath, URL } from 'node:url'
 import path from 'node:path'
 
-import { defineConfig } from 'vite'
+import { defineCibConfig } from '@cib/frontend-preset/vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 const backendUrl = 'http://localhost:8091'
@@ -29,7 +29,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineCibConfig({
   base: '/',
   plugins: [
     vue(),
@@ -154,6 +154,28 @@ export default defineConfig({
     },
     cssCodeSplit: true, // Ensure CSS is extracted into a separate file
     outDir: 'dist', // The output directory
+  },
+  test: {
+    alias: [{
+      // Redirects bare 'monaco-editor' import to a known resolvable entry point.
+      // Monaco-editor has no 'main'/'module' field resolvable by Vite in jsdom mode;
+      // this applies in both plain test and --coverage (istanbul instrumentation) runs.
+      find: /^monaco-editor$/,
+      replacement: 'monaco-editor/esm/vs/editor/editor.api'
+    }],
+    server: {
+      deps: {
+        inline: ['monaco-editor']
+      }
+    },
+    coverage: {
+      exclude: [
+        // Barrel/re-export file — no logic to cover, and importing it loads monaco-editor
+        // which cannot be resolved in the Node.js test environment
+        'src/library.js',
+        'linterConfig.js',
+      ],
+    },
   },
   // Add the module section with rules for bpmnlint
   module: {
