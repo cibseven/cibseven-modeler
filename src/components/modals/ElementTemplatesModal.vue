@@ -214,12 +214,7 @@ defineExpose({
   show
 })
 </script>
-<style>
-.deployment-modal-tooltip > .tooltip-inner {
-  font-size: .8rem;
-  max-width: 350px;
-  text-align: left;
-}
+<style scoped>
 .template-icon,
 .template-icon-placeholder {
   width: 28px;
@@ -233,5 +228,15 @@ defineExpose({
   justify-content: center;
   font-size: 22px;
   line-height: 1;
+}
+</style>
+
+<!-- Bootstrap teleports the tooltip to a div appended on document.body, outside this
+     component's own DOM tree, so a scoped style's data-v-xxxx selector can never reach it. -->
+<style>
+.deployment-modal-tooltip > .tooltip-inner {
+  font-size: .8rem;
+  max-width: 350px;
+  text-align: left;
 }
 </style>
