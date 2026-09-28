@@ -14,12 +14,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import {
     categorizeTemplates,
     parseCompleteTemplateContent,
+    parseTemplateNameGroup,
     UNCATEGORIZED_TASK_TYPE,
     UNCATEGORIZED_GROUP_NAME,
+    UNDEFINED_GROUP_NAME,
 } from '../../components/templates/elementTemplateUtils.js'
 
 const ICON_DATA_URI = 'data:image/svg+xml;base64,PHN2Zy8+'
@@ -250,6 +252,91 @@ describe('categorizeTemplates — "Not categorized" bucket', () => {
         const result = categorizeTemplates(raw)
 
         expect(result['bpmn:ServiceTask']['undefined'][0].incomplete).toBeUndefined()
+    })
+})
+
+describe('parseTemplateNameGroup', () => {
+    it('splits a "Group - Name" template name into its group and display name', () => {
+        expect(parseTemplateNameGroup('Email - Send Message')).toEqual({
+            groupName: 'Email ', templateName: ' Send Message'
+        })
+    })
+
+    it('falls back to UNDEFINED_GROUP_NAME when the name has no "-" prefix', () => {
+        expect(parseTemplateNameGroup('Send Message')).toEqual({
+            groupName: UNDEFINED_GROUP_NAME, templateName: 'Send Message'
+        })
+    })
+
+    it('strips a trailing "(...)" suffix from the display name', () => {
+        expect(parseTemplateNameGroup('Group - Name (deprecated)')).toEqual({
+            groupName: 'Group ', templateName: ' Name '
+        })
+    })
+})
+
+describe('categorizeTemplates — "Not categorized" entries match normal entries\' field semantics', () => {
+    // version/template used to come from unrelated sources for the two entry types: an
+    // incomplete entry's `version` was the database row's own revision counter instead of an
+    // id-suffix like normal entries get, and its `template` never respected
+    // `preserveOriginalTemplate` since there's no parsed content to offer instead.
+    it('derives version from the templateId suffix, the same way normal entries derive it from id', () => {
+        const raw = [{ templateId: 'com.example.broken-2.0.0', name: 'Broken', content: '', active: true, version: 9 }]
+
+        const result = categorizeTemplates(raw)
+
+        const entry = result[UNCATEGORIZED_TASK_TYPE][UNCATEGORIZED_GROUP_NAME][0]
+        expect(entry.version).toBe('2.0.0')
+        expect(entry.version).not.toBe(9)
+    })
+
+    it('keeps templateVersion as the database row\'s own version, since there is no parsed content to read one from', () => {
+        const raw = [{ templateId: 'broken', name: 'Broken', content: '', active: true, version: 9 }]
+
+        const result = categorizeTemplates(raw)
+
+        expect(result[UNCATEGORIZED_TASK_TYPE][UNCATEGORIZED_GROUP_NAME][0].templateVersion).toBe(9)
+    })
+
+    it('always uses the raw row as `template`, regardless of preserveOriginalTemplate', () => {
+        const raw = [{ templateId: 'broken', name: 'Broken', content: '', active: true }]
+
+        const withoutFlag = categorizeTemplates(raw)
+        const withFlag = categorizeTemplates(raw, { preserveOriginalTemplate: true })
+
+        expect(withoutFlag[UNCATEGORIZED_TASK_TYPE][UNCATEGORIZED_GROUP_NAME][0].template).toBe(raw[0])
+        expect(withFlag[UNCATEGORIZED_TASK_TYPE][UNCATEGORIZED_GROUP_NAME][0].template).toBe(raw[0])
+    })
+})
+
+describe('categorizeTemplates — warns about a broken template only once', () => {
+    it('logs a single warning even when categorize runs repeatedly for the same template', () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+        const raw = [{ templateId: 'repeat-offender', id: 'repeat-offender', name: 'Repeat', content: '', active: true }]
+
+        categorizeTemplates(raw)
+        categorizeTemplates(raw)
+        categorizeTemplates(raw)
+
+        const callsForThisTemplate = warnSpy.mock.calls.filter(call => call[0].includes('repeat-offender'))
+        expect(callsForThisTemplate).toHaveLength(1)
+
+        warnSpy.mockRestore()
+    })
+
+    it('still warns about two different broken templates independently', () => {
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+        const raw = [
+            { templateId: 'first-unique', id: 'first-unique', name: 'First', content: '', active: true },
+            { templateId: 'second-unique', id: 'second-unique', name: 'Second', content: '', active: true },
+        ]
+
+        categorizeTemplates(raw)
+
+        expect(warnSpy.mock.calls.some(call => call[0].includes('first-unique'))).toBe(true)
+        expect(warnSpy.mock.calls.some(call => call[0].includes('second-unique'))).toBe(true)
+
+        warnSpy.mockRestore()
     })
 })
 

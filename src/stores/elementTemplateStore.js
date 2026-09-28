@@ -33,7 +33,7 @@ import {
   updateElementTemplateFull
 } from '../services/elementTemplateService'
 import { filterTemplates } from '../utils'
-import { categorizeTemplates, parseCompleteTemplateContent, UNCATEGORIZED_TASK_TYPE } from '../components/templates/elementTemplateUtils'
+import { categorizeTemplates, parseCompleteTemplateContent, parseTemplateNameGroup, UNCATEGORIZED_TASK_TYPE } from '../components/templates/elementTemplateUtils'
 
 const state = () => ({
   elementTemplates: [],
@@ -437,8 +437,7 @@ const actions = {
         categorizedData.forEach(({ parsed, original }) => {
           const appliesTo = parsed.appliesTo || []
           if (appliesTo.includes(taskType)) {
-            const splitTemplate = parsed.name.split(/-(.+)/)
-            const currentGroupName = splitTemplate.length > 1 ? splitTemplate[0] : 'undefined'
+            const { groupName: currentGroupName } = parseTemplateNameGroup(parsed.name)
             if (currentGroupName === groupName) {
               templatesToUpdate.push(original)
             }

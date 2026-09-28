@@ -16,6 +16,7 @@
  */
 import { nextTick, ref } from 'vue'
 import {  translateValue } from "../i18n.js"
+import { parseTemplateNameGroup } from '../components/templates/elementTemplateUtils.js'
 
 export default function useCustomizedTemplateModal() {
   const containerModeler = ref(null)
@@ -84,10 +85,7 @@ export default function useCustomizedTemplateModal() {
         if (!groups[taskType]) {
           groups[taskType] = {}
         }
-        // extracts name before the first
-        const splitTemplate = template.name.split(/-(.+)/)
-        const templateName = splitTemplate.length>1 ? splitTemplate[1].split('(')[0] : splitTemplate[0].split('(')[0]
-        const groupName = splitTemplate.length >1 ? splitTemplate[0] : 'undefined'
+        const { groupName, templateName } = parseTemplateNameGroup(template.name)
         // initializes the array of templates in case it doesnt exists for that name
         if (!groups[taskType][groupName]) {
           groups[taskType][groupName] = [] // groups by templates name

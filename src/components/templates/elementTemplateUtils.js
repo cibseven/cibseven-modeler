@@ -34,6 +34,9 @@ export const applicableTaskTypes = {
 export const UNCATEGORIZED_TASK_TYPE = 'uncategorized'
 export const UNCATEGORIZED_GROUP_NAME = 'not-categorized'
 
+// Fallback group for a template name with no "Group - Name" prefix.
+export const UNDEFINED_GROUP_NAME = 'undefined'
+
 /**
  * Parses a template's content and returns it only if it's usable for categorization
  * (valid JSON with both `id` and `name`). Returns null otherwise.
@@ -47,6 +50,28 @@ export const parseCompleteTemplateContent = (template) => {
     } catch {
         return null
     }
+}
+
+/**
+ * Splits a template's display name into its group prefix and the name shown to the user,
+ * e.g. "Email - Send Message" -> { groupName: 'Email', templateName: 'Send Message' }.
+ * A name with no "prefix - " falls back to UNDEFINED_GROUP_NAME.
+ */
+export const parseTemplateNameGroup = (name) => {
+    const splitTemplate = name.split(/-(.+)/)
+    const templateName = splitTemplate.length > 1 ? splitTemplate[1].split('(')[0] : splitTemplate[0].split('(')[0]
+    const groupName = splitTemplate.length > 1 ? splitTemplate[0] : UNDEFINED_GROUP_NAME
+    return { groupName, templateName }
+}
+
+// Logs each broken template at most once per session instead of once per categorize() call —
+// categorizeTemplates() runs inside a computed/getter that recomputes on every filter/search
+// change, so without this a single broken template would warn on every keystroke.
+const warnedIncompleteTemplateIds = new Set()
+const warnIncompleteOnce = (template) => {
+    if (warnedIncompleteTemplateIds.has(template.id)) return
+    warnedIncompleteTemplateIds.add(template.id)
+    console.warn(`Template ${template.templateId} has empty, invalid, or incomplete content; showing it under "Not categorized"`)
 }
 
 /**
@@ -73,7 +98,7 @@ export const categorizeTemplates = (rawTemplates, options = {}) => {
       if (parsed) {
         templates.push(preserveOriginalTemplate ? { ...parsed, originalTemplate: template } : parsed)
       } else {
-        console.warn(`Template ${template.templateId} has empty, invalid, or incomplete content; showing it under "Not categorized"`)
+        warnIncompleteOnce(template)
         incomplete.push(template)
       }
     })
@@ -87,11 +112,8 @@ export const categorizeTemplates = (rawTemplates, options = {}) => {
       if (!groups[taskType]) {
         groups[taskType] = {}
       }
-      // extracts name before the first dash
-      const splitTemplate = template.name.split(/-(.+)/)
-      const templateName = splitTemplate.length > 1 ? splitTemplate[1].split('(')[0] : splitTemplate[0].split('(')[0]
-      const groupName = splitTemplate.length > 1 ? splitTemplate[0] : 'undefined'
-      
+      const { groupName, templateName } = parseTemplateNameGroup(template.name)
+
       // initializes the array of templates in case it doesn't exist for that name
       if (!groups[taskType][groupName]) {
         groups[taskType][groupName] = [] // groups by templates name
@@ -121,9 +143,14 @@ export const categorizeTemplates = (rawTemplates, options = {}) => {
     taskGroups[UNCATEGORIZED_TASK_TYPE] = {
       [UNCATEGORIZED_GROUP_NAME]: incomplete.map(template => ({
         name: template.name || template.templateId,
+        // No parsed content exists for these (that's why they're here), so there's no `id` to
+        // take a dash-suffix from the way normal entries do — `templateId` is the same business
+        // key under a different name (see ElementTemplate's `@JsonAlias("id")`), so use that.
+        version: template.templateId.split('-').pop(),
+        // Same reason `template` is always the raw row here, unlike normal entries: there's no
+        // parsed shape to offer instead, so `preserveOriginalTemplate` has nothing to toggle.
         template,
         id: template.templateId,
-        version: template.version,
         templateVersion: template.version,
         extern: false,
         tooltip: template.description ?? '',
