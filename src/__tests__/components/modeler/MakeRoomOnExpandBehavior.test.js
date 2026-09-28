@@ -56,14 +56,16 @@ function setup() {
     const eventBus = new EventBus()
     const root = { id: 'root', children: [], businessObject: bo(['bpmn:Process']) }
     const canvas = { getRootElement: () => root }
+    const move = (shapes, delta) => {
+        for (const s of shapes) {
+            s.x += delta.x
+            s.y += delta.y
+        }
+    }
     const modeling = {
-        // move the shapes like the real command, so later steps see the new positions
-        createSpace: vi.fn((movingShapes, _resizingShapes, delta) => {
-            for (const s of movingShapes) {
-                s.x += delta.x
-                s.y += delta.y
-            }
-        })
+        // move the shapes like the real commands, so later steps see the new positions
+        createSpace: vi.fn((movingShapes, _resizingShapes, delta) => move(movingShapes, delta)),
+        moveElements: vi.fn((shapes, delta) => move(shapes.flatMap((s) => [s, ...s.children, ...s.attachers]), delta))
     }
     const spaceTool = { _rules: { allowed: () => true }, calculateAdjustments: SpaceTool.prototype.calculateAdjustments }
     const injector = { invoke: (Fn, that) => Fn.call(that, eventBus) }
@@ -106,10 +108,10 @@ describe('growsIntoExpandedSubProcess', () => {
 })
 
 describe('MakeRoomOnExpandBehavior', () => {
-    let eventBus, root, modeling
+    let eventBus, root, modeling, behavior
 
     beforeEach(() => {
-        ({ eventBus, root, modeling } = setup())
+        ({ eventBus, root, modeling, behavior } = setup())
     })
 
     it('registers as an auto-initialised behaviour with its dependencies', () => {
@@ -240,6 +242,92 @@ describe('MakeRoomOnExpandBehavior', () => {
         eventBus.fire('commandStack.shape.replace.preExecute', { command: 'shape.replace', context })
         eventBus.fire('commandStack.shape.replace.postExecuted', { command: 'shape.replace', context })
 
+        expect(modeling.createSpace).not.toHaveBeenCalled()
+    })
+
+    it('pushes a neighbour on the left away when the shape grew to the left', () => {
+        const before = shape('Before_1', 60, 100, 100, 80)
+        const subProcess = expanded()
+        subProcess.x = 100
+        add(root, before, subProcess)
+
+        behavior.makeRoom(subProcess, OLD)
+
+        const [movingShapes, , delta, direction, start] = modeling.createSpace.mock.calls[0]
+        // old gap 40 kept in front of the new left edge 100
+        expect([delta, direction, start]).toEqual([{ x: -100, y: 0 }, 'w', 200])
+        expect(movingShapes).toEqual([before])
+        expect(before.x).toBe(-40)
+    })
+})
+
+describe('MakeRoomOnExpandBehavior — expanding a collapsed sub-process', () => {
+    let eventBus, root, modeling
+
+    beforeEach(() => {
+        ({ eventBus, root, modeling } = setup())
+    })
+
+    // what bpmn-js does to the shape between the two hooks
+    function toggle(subProcess, expandTo) {
+        const context = { shape: subProcess }
+        eventBus.fire('commandStack.shape.toggleCollapse.preExecute', { command: 'shape.toggleCollapse', context })
+        subProcess.collapsed = !subProcess.collapsed
+        Object.assign(subProcess, expandTo)
+        eventBus.fire('commandStack.shape.toggleCollapse.postExecuted', { command: 'shape.toggleCollapse', context })
+        return context
+    }
+
+    function collapsed() {
+        const subProcess = shape('SubProcess_1', OLD.x, OLD.y, OLD.width, OLD.height, SUB_PROCESS)
+        subProcess.collapsed = true
+        return subProcess
+    }
+
+    it('moves the expanded shape and its content back to the old left edge, then makes room', () => {
+        const subProcess = collapsed()
+        const inner = shape('InnerTask_1', 150, 150, 100, 80)
+        add(subProcess, inner)
+        const end = shape('End_1', 352, 122, 36, 36, EVENT)
+        add(root, subProcess, end)
+
+        // bpmn-js centred it on its content
+        const context = toggle(subProcess, { x: 100, y: 60, width: 350, height: 200 })
+
+        expect(context.makeRoomFor).toEqual(OLD)
+        expect(modeling.moveElements).toHaveBeenCalledWith([subProcess], { x: 100, y: -20 })
+        expect(subProcess.x).toBe(200)
+        expect(subProcess.y).toBe(40)
+        expect(inner.x).toBe(250)
+        expect(modeling.createSpace).toHaveBeenCalledTimes(1)
+        expect(modeling.createSpace.mock.calls[0].slice(2)).toEqual([{ x: 248, y: 0 }, 'e', 300])
+        expect(end.x).toBe(600)
+    })
+
+    it('does not move a shape that already sits at the old left edge', () => {
+        const subProcess = collapsed()
+        add(root, subProcess)
+
+        toggle(subProcess, { x: 200, y: 40, width: 350, height: 200 })
+
+        expect(modeling.moveElements).not.toHaveBeenCalled()
+    })
+
+    it('leaves collapsing, a shape that did not grow and other element types alone', () => {
+        const open = shape('SubProcess_2', OLD.x, 40, 350, 200, SUB_PROCESS)
+        open.collapsed = false
+        const same = collapsed()
+        const task = shape('Task_1', OLD.x, OLD.y, OLD.width, OLD.height)
+        task.collapsed = true
+        add(root, open, same, task, shape('End_1', 352, 122, 36, 36, EVENT))
+
+        const collapsing = toggle(open, { x: 325, y: 100, width: 100, height: 80 })
+        toggle(same, {})
+        const other = toggle(task, { width: 350, height: 200 })
+
+        expect(collapsing.makeRoomFor).toBeUndefined()
+        expect(other.makeRoomFor).toBeUndefined()
+        expect(modeling.moveElements).not.toHaveBeenCalled()
         expect(modeling.createSpace).not.toHaveBeenCalled()
     })
 })

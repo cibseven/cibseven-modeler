@@ -15,10 +15,10 @@
  *  limitations under the License.
  */
 
-// bpmn-js grows a shape replaced by an expanded sub-process to its default size
-// around the old centre, covering the neighbours. Keep the left edge instead and
-// push whatever is in the way aside with the space tool, inside the replace
-// command so a single undo restores the diagram.
+// bpmn-js grows a task changed into an expanded sub-process, and a collapsed
+// sub-process that gets expanded, around the old centre, covering the neighbours.
+// Keep the old left edge instead and push whatever is in the way aside with the
+// space tool, inside the same command so a single undo restores the diagram.
 
 import inherits from 'inherits-browser'
 import CommandInterceptor from 'diagram-js/lib/command/CommandInterceptor'
@@ -28,7 +28,10 @@ import { is, isAny } from 'bpmn-js/lib/util/ModelUtil'
 import { isLabel } from 'bpmn-js/lib/util/LabelUtil'
 
 // after bpmn-js' own replace behaviours
-const LOW_PRIORITY = 500
+const REPLACE_PRIORITY = 500
+
+// after ToggleElementCollapseBehaviour resized the shape (500)
+const TOGGLE_PRIORITY = 250
 
 // largest gap kept to a neighbour that gets pushed
 const SPACING = 50
@@ -36,7 +39,7 @@ const SPACING = 50
 export function growsIntoExpandedSubProcess(oldShape, newData) {
     return is(newData, 'bpmn:SubProcess')
         && newData.isExpanded === true
-        && (newData.width > oldShape.width || newData.height > oldShape.height)
+        && grew(newData, oldShape)
 }
 
 function MakeRoomOnExpandBehavior(injector, canvas, modeling, spaceTool) {
@@ -52,12 +55,27 @@ function MakeRoomOnExpandBehavior(injector, canvas, modeling, spaceTool) {
 
         // shape.replace takes centre coordinates
         newData.x = Math.round(oldShape.x + newData.width / 2)
-        context.makeRoomFor = { x: oldShape.x, y: oldShape.y, width: oldShape.width, height: oldShape.height }
+        context.makeRoomFor = bounds(oldShape)
     })
 
-    this.postExecuted('shape.replace', LOW_PRIORITY, ({ context }) => {
+    this.postExecuted('shape.replace', REPLACE_PRIORITY, ({ context }) => {
         if (!context.makeRoomFor || !context.newShape) return
         this.makeRoom(context.newShape, context.makeRoomFor)
+    })
+
+    this.preExecute('shape.toggleCollapse', ({ context }) => {
+        const { shape } = context
+        if (is(shape, 'bpmn:SubProcess') && shape.collapsed) context.makeRoomFor = bounds(shape)
+    })
+
+    this.postExecuted('shape.toggleCollapse', TOGGLE_PRIORITY, ({ context }) => {
+        const { shape, makeRoomFor: old } = context
+        if (!old || shape.collapsed || !grew(shape, old)) return
+
+        // bpmn-js centres the expanded shape on its content; move both back to the old left edge
+        const delta = { x: old.x - shape.x, y: Math.round(old.y + old.height / 2 - (shape.y + shape.height / 2)) }
+        if (delta.x || delta.y) this._modeling.moveElements([shape], delta)
+        this.makeRoom(shape, old)
     })
 }
 
@@ -70,33 +88,28 @@ MakeRoomOnExpandBehavior.prototype.makeRoom = function(shape, oldBounds) {
     const isOwn = (element) => own.has(element) || own.has(element.labelTarget)
 
     const elements = selfAndAllChildren(this._canvas.getRootElement(), true).filter((element) => !isOwn(element))
-    const neighbours = (shape.parent?.children ?? []).filter((element) =>
+    const neighbours = () => (shape.parent?.children ?? []).filter((element) =>
         !element.waypoints && !isLabel(element) && !isOwn(element) && !isAny(element, ['bpmn:Lane', 'bpmn:Group'])
     )
 
     const oldRight = oldBounds.x + oldBounds.width
-    const ahead = neighbours.filter((n) => n.x > oldRight && overlaps(n, shape, 'y'))
-    if (ahead.length) {
-        const nearest = Math.min(...ahead.map((n) => n.x))
-        const delta = right(shape) + Math.min(nearest - oldRight, SPACING) - nearest
-        if (delta > 0) this.createSpace(elements, 'x', delta, oldRight)
-    }
-
     const oldBottom = oldBounds.y + oldBounds.height
-    const below = neighbours.filter((n) => n.y > oldBottom && overlaps(n, shape, 'x'))
-    if (below.length) {
-        const nearest = Math.min(...below.map((n) => n.y))
-        const delta = bottom(shape) + Math.min(nearest - oldBottom, SPACING) - nearest
-        if (delta > 0) this.createSpace(elements, 'y', delta, oldBottom)
-    }
 
-    const oldTop = oldBounds.y
-    const above = neighbours.filter((n) => bottom(n) < oldTop && overlaps(n, shape, 'x'))
-    if (above.length) {
-        const nearest = Math.max(...above.map(bottom))
-        const delta = shape.y - Math.min(oldTop - nearest, SPACING) - nearest
-        if (delta < 0) this.createSpace(elements, 'y', delta, oldTop)
-    }
+    // sideways first: what that clears needs no vertical push
+    this.pushAway(elements, neighbours().filter((n) => n.x > oldRight && overlaps(n, shape, 'y')), 'x', oldRight, end(shape, 'x'), 1)
+    this.pushAway(elements, neighbours().filter((n) => end(n, 'x') < oldBounds.x && overlaps(n, shape, 'y')), 'x', oldBounds.x, shape.x, -1)
+    this.pushAway(elements, neighbours().filter((n) => n.y > oldBottom && overlaps(n, shape, 'x')), 'y', oldBottom, end(shape, 'y'), 1)
+    this.pushAway(elements, neighbours().filter((n) => end(n, 'y') < oldBounds.y && overlaps(n, shape, 'x')), 'y', oldBounds.y, shape.y, -1)
+}
+
+// push the candidates past the new edge, keeping their old gap up to SPACING
+MakeRoomOnExpandBehavior.prototype.pushAway = function(elements, candidates, axis, start, edge, sign) {
+    if (!candidates.length) return
+
+    const near = candidates.map((n) => (sign > 0 ? n[axis] : end(n, axis)))
+    const nearest = sign > 0 ? Math.min(...near) : Math.max(...near)
+    const delta = edge + sign * Math.min(Math.abs(nearest - start), SPACING) - nearest
+    if (delta * sign > 0) this.createSpace(elements, axis, delta, start)
 }
 
 MakeRoomOnExpandBehavior.prototype.createSpace = function(elements, axis, delta, start) {
@@ -105,17 +118,20 @@ MakeRoomOnExpandBehavior.prototype.createSpace = function(elements, axis, delta,
     this._modeling.createSpace(movingShapes, resizingShapes, point, getDirection(axis, delta), start)
 }
 
-function right(shape) {
-    return shape.x + shape.width
+function bounds({ x, y, width, height }) {
+    return { x, y, width, height }
 }
 
-function bottom(shape) {
-    return shape.y + shape.height
+function grew(shape, old) {
+    return shape.width > old.width || shape.height > old.height
+}
+
+function end(shape, axis) {
+    return shape[axis] + shape[axis === 'x' ? 'width' : 'height']
 }
 
 function overlaps(a, b, axis) {
-    const size = axis === 'x' ? 'width' : 'height'
-    return a[axis] < b[axis] + b[size] && b[axis] < a[axis] + a[size]
+    return a[axis] < end(b, axis) && b[axis] < end(a, axis)
 }
 
 export default {
