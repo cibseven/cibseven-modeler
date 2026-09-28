@@ -156,6 +156,7 @@ import { ElementTemplatesPropertiesProviderModule } from 'bpmn-js-element-templa
 import ScopedTemplateGroupsModule from './element-templates/ScopedGroupsModule.js'
 import ElementTemplateChooserModule from '@bpmn-io/element-template-chooser'
 import ElementTemplateIconRendererModule from './element-templates/IconRendererModule.js'
+import MakeRoomOnExpandBehaviorModule from './behaviors/MakeRoomOnExpandBehavior.js'
 import CamundaModdleDescriptors from 'camunda-bpmn-moddle/resources/camunda.json'
 import { customTranslate, translateValue } from "../../i18n.js"
 import lintModule from 'bpmn-js-bpmnlint'
@@ -542,6 +543,7 @@ const initializeCamunda7Modeler = () => {
 			BpmnColorPickerModule,
 			customTranslateModule,
 			camundaPlatformBehaviors,
+			MakeRoomOnExpandBehaviorModule,
 			{ clipboard: ['value', props.clipboard] },
 			...extraBpmnModules,
 			lintModule
