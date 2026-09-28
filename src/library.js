@@ -52,7 +52,7 @@ export { default as FolderListItem } from './components/modeler/FolderListItem.v
 export { default as StartPage } from './components/modeler/StartPage.vue'
 export { default as MonacoConsole } from './components/monaco/MonacoConsole.vue'
 export { default as MonacoEditor } from './components/monaco/MonacoEditor.vue'
-export { categorizeTemplates, applicableTaskTypes } from './components/templates/elementTemplateUtils.js'
+export { categorizeTemplates, applicableTaskTypes, UNCATEGORIZED_TASK_TYPE, UNCATEGORIZED_GROUP_NAME } from './components/templates/elementTemplateUtils.js'
 
 export { default as store, createModelerStore } from './store.js'
 export { i18n, setLocale, messages, createI18n } from './i18n.js'
