@@ -129,7 +129,6 @@ export const categorizeTemplates = (rawTemplates, options = {}) => {
 
   // Surface templates that couldn't be grouped instead of hiding them
   if (incomplete.length > 0) {
-    console.warn('Element templates with invalid or incomplete content were not categorized:', incomplete.map(template => template.templateId))
     taskGroups[UNCATEGORIZED_TASK_TYPE] = {
       [UNCATEGORIZED_GROUP_NAME]: incomplete.map(template => ({
         name: template.name || template.templateId,

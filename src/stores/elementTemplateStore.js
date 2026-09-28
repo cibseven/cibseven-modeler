@@ -106,6 +106,15 @@ const actions = {
       const templates = await getAllElementTemplates()
       if (!Array.isArray(templates)) {
         console.warn('Element templates response was not an array (modeler backend disabled?); using [].')
+      } else {
+        // Warn once per fetch (not per categorization recompute, which can run on every
+        // search keystroke) about rows whose content categorizeTemplates() can't group.
+        const incompleteIds = templates
+          .filter(template => !parseCompleteTemplateContent(template))
+          .map(template => template.templateId)
+        if (incompleteIds.length > 0) {
+          console.warn('Element templates with invalid or incomplete content will not be categorized:', incompleteIds)
+        }
       }
       commit('setElementTemplates', Array.isArray(templates) ? templates : [])
     } catch (error) {

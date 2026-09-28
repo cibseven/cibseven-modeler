@@ -228,7 +228,7 @@ describe('elementTemplateStore', () => {
 
         it('fetchAllElementTemplates stores a valid array response without warning', async () => {
             vi.spyOn(console, 'warn').mockImplementation(() => {})
-            const templates = [{ id: '1', active: true, content: '{}' }]
+            const templates = [{ id: '1', active: true, content: JSON.stringify({ id: 'com.example.ok', name: 'Ok' }) }]
             m.getAllElementTemplates.mockResolvedValue(templates)
             const store = makeStore()
 
@@ -236,6 +236,38 @@ describe('elementTemplateStore', () => {
 
             expect(store.state.elementTemplates.elementTemplates).toEqual(templates)
             expect(console.warn).not.toHaveBeenCalled()
+        })
+
+        it('fetchAllElementTemplates warns once, naming every templateId whose content is incomplete', async () => {
+            vi.spyOn(console, 'warn').mockImplementation(() => {})
+            const templates = [
+                { templateId: 'broken-1', active: true, content: '' },
+                { templateId: 'broken-2', active: true, content: '{not valid json' },
+                { templateId: 'ok', active: true, content: JSON.stringify({ id: 'com.example.ok', name: 'Ok' }) },
+            ]
+            m.getAllElementTemplates.mockResolvedValue(templates)
+            const store = makeStore()
+
+            await store.dispatch('elementTemplates/fetchAllElementTemplates')
+
+            expect(console.warn).toHaveBeenCalledTimes(1)
+            expect(console.warn.mock.calls[0][1]).toEqual(['broken-1', 'broken-2'])
+        })
+
+        it('fetchAllElementTemplates does not re-warn when categorization is recomputed elsewhere', async () => {
+            // Regression guard: the warning must live at fetch time, not inside categorizeTemplates,
+            // since that function is recomputed on every search/filter keystroke by consumers.
+            vi.spyOn(console, 'warn').mockImplementation(() => {})
+            const templates = [{ templateId: 'broken-1', active: true, content: '' }]
+            m.getAllElementTemplates.mockResolvedValue(templates)
+            const store = makeStore()
+
+            await store.dispatch('elementTemplates/fetchAllElementTemplates')
+            store.getters['elementTemplates/categorizedTemplateData']
+            store.getters['elementTemplates/categorizedTemplateData']
+            store.getters['elementTemplates/allCategorizedTemplateData']
+
+            expect(console.warn).toHaveBeenCalledTimes(1)
         })
 
         it('toggleTemplateActiveState updates template active state', async () => {

@@ -14,7 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import {
     categorizeTemplates,
     parseCompleteTemplateContent,
@@ -306,34 +306,6 @@ describe('categorizeTemplates — "Not categorized" entries match normal entries
 
         expect(withoutFlag[UNCATEGORIZED_TASK_TYPE][UNCATEGORIZED_GROUP_NAME][0].template).toBe(raw[0])
         expect(withFlag[UNCATEGORIZED_TASK_TYPE][UNCATEGORIZED_GROUP_NAME][0].template).toBe(raw[0])
-    })
-})
-
-describe('categorizeTemplates — warns once per call about broken templates', () => {
-    it('logs a single warning listing every broken templateId', () => {
-        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-        const raw = [
-            { templateId: 'broken-1', name: 'Broken 1', content: '', active: true },
-            { templateId: 'broken-2', name: 'Broken 2', content: '{bad', active: true },
-        ]
-
-        categorizeTemplates(raw)
-
-        expect(warnSpy).toHaveBeenCalledTimes(1)
-        expect(warnSpy.mock.calls[0][1]).toEqual(['broken-1', 'broken-2'])
-
-        warnSpy.mockRestore()
-    })
-
-    it('stays silent when every template is complete', () => {
-        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-        const raw = [makeRawTemplate({ parsed: { id: 'com.example.ok', name: 'Ok', appliesTo: ['bpmn:ServiceTask'] } })]
-
-        categorizeTemplates(raw)
-
-        expect(warnSpy).not.toHaveBeenCalled()
-
-        warnSpy.mockRestore()
     })
 })
 
