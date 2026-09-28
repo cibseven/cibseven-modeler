@@ -982,14 +982,19 @@ defineExpose({
 })
 </script>
 
-<style scoped>
-.container.modeler :deep(svg) {
+<style>
+/* Unscoped on purpose: bpmn-js, dmn-js, and form-js properties panels all render the same
+   @bpmn-io/properties-panel markup (.bio-properties-panel-*), and dmn-js's DRD view shares
+   diagram-js's .djs-palette/.djs-minimap with bpmn-js — DmnModeler.vue and FormModeler.vue
+   rely on these rules too, not just this component's own tree. Scoping this block previously
+   broke DMN/Form styling since Vue's scoped CSS only reaches a component's own render tree. */
+svg {
 	outline: none;
 }
-.container.modeler :deep(.djs-minimap .toggle) {
+.djs-minimap .toggle {
 	display: none;
 }
-.container.modeler :deep(.djs-minimap) {
+.djs-minimap {
 	position: absolute !important;
 	left: auto !important;
 	right: 60px !important;
@@ -997,7 +1002,7 @@ defineExpose({
 
 
 /*for the resize panel to work */
-.container.modeler :deep(#js-properties-panel) {
+#js-properties-panel {
 	min-width: 200px;
 	height: 100%;
 	width: 100%;
@@ -1005,7 +1010,7 @@ defineExpose({
 	z-index: 9999;
 }
 
-.container.modeler :deep(.bio-properties-panel-scroll-container) {
+.bio-properties-panel-scroll-container {
 	width: 100%;
 }
 
@@ -1015,29 +1020,29 @@ defineExpose({
    box. Make the button position: static so the popup anchors to the full-width,
    sticky group header instead (its existing min-width then spans the panel),
    lift the width cap, and let the text fill the popup (it was pinned at 216px). */
-.container.modeler :deep(.bio-properties-panel-dropdown-button.bio-properties-panel-template-not-found),
-.container.modeler :deep(.bio-properties-panel-dropdown-button.bio-properties-panel-template-update-available),
-.container.modeler :deep(.bio-properties-panel-dropdown-button.bio-properties-panel-deprecated-template),
-.container.modeler :deep(.bio-properties-panel-dropdown-button.bio-properties-panel-template-incompatible) {
+.bio-properties-panel-dropdown-button.bio-properties-panel-template-not-found,
+.bio-properties-panel-dropdown-button.bio-properties-panel-template-update-available,
+.bio-properties-panel-dropdown-button.bio-properties-panel-deprecated-template,
+.bio-properties-panel-dropdown-button.bio-properties-panel-template-incompatible {
 	position: static;
 }
 
-.container.modeler :deep(.bio-properties-panel-template-not-found .bio-properties-panel-dropdown-button__menu),
-.container.modeler :deep(.bio-properties-panel-template-update-available .bio-properties-panel-dropdown-button__menu),
-.container.modeler :deep(.bio-properties-panel-deprecated-template .bio-properties-panel-dropdown-button__menu),
-.container.modeler :deep(.bio-properties-panel-template-incompatible .bio-properties-panel-dropdown-button__menu) {
+.bio-properties-panel-template-not-found .bio-properties-panel-dropdown-button__menu,
+.bio-properties-panel-template-update-available .bio-properties-panel-dropdown-button__menu,
+.bio-properties-panel-deprecated-template .bio-properties-panel-dropdown-button__menu,
+.bio-properties-panel-template-incompatible .bio-properties-panel-dropdown-button__menu {
 	left: 5px;
 	max-width: none;
 }
 
-.container.modeler :deep(.bio-properties-panel-template-not-found-text),
-.container.modeler :deep(.bio-properties-panel-template-update-available-text),
-.container.modeler :deep(.bio-properties-panel-deprecated-template-text),
-.container.modeler :deep(.bio-properties-panel-template-incompatible-text) {
+.bio-properties-panel-template-not-found-text,
+.bio-properties-panel-template-update-available-text,
+.bio-properties-panel-deprecated-template-text,
+.bio-properties-panel-template-incompatible-text {
 	width: 100% !important;
 }
 
-.container.modeler :deep(input[name="historyTimeToLive"].is-invalid) {
+input[name="historyTimeToLive"].is-invalid {
 	border-color: #dc3545 !important;
 	background-color: #fee !important;
 }
@@ -1058,92 +1063,92 @@ defineExpose({
 
 }
 
-.container.modeler :deep(.bts-notifications) {
+.bts-notifications {
 	/*leaves space for de action buttons*/
 	margin-bottom: 50px;
 }
 
-.container.modeler :deep(.bts-toggle-mode:hover) {
+.container.modeler .bts-toggle-mode:hover {
 	background-color: var(--bs-primary);
 }
 
-.container.modeler :deep(.bjs-container.simulation .bts-toggle-mode) {
+.container.modeler .bjs-container.simulation .bts-toggle-mode {
 	background-color: var(--bs-primary);
 }
 
-.container.modeler :deep(.bjs-container.simulation .djs-container) {
+.container.modeler .bjs-container.simulation .djs-container {
 	box-shadow: inset 0px 0px 0px 4px var(--bs-primary);
 }
 
-.container.modeler :deep(.bts-context-pad:not(.disabled):hover) {
+.container.modeler .bts-context-pad:not(.disabled):hover {
 	background-color: var(--bs-primary);
 }
 
-.container.modeler :deep(.bts-set-animation-speed .bts-animation-speed-button.active),
-.container.modeler :deep(.bts-set-animation-speed .bts-animation-speed-button:hover) {
+.container.modeler .bts-set-animation-speed .bts-animation-speed-button.active,
+.container.modeler .bts-set-animation-speed .bts-animation-speed-button:hover {
 	background-color: var(--bs-primary);
 }
 
-.container.modeler :deep(.bts-palette .bts-entry.active),
-.container.modeler :deep(.bts-palette .bts-entry:not(.disabled):hover) {
+.container.modeler .bts-palette .bts-entry.active,
+.container.modeler .bts-palette .bts-entry:not(.disabled):hover {
 	background-color: var(--bs-primary);
 }
 
 /* Force palette to always display 2 columns */
-.container.modeler :deep(.djs-palette) {
+.djs-palette {
 	width: 94px !important;
 	border-radius: 0.25rem !important;
 	border-color: var(--bs-gray-500) !important;
 }
 
-.container.modeler :deep(.bts-log .bts-header) {
+.container.modeler .bts-log .bts-header {
 	background-color: var(--bs-primary);
 }
 
-.container.modeler :deep(.bjs-container .bjsl-button-warning) {
+.bjs-container .bjsl-button-warning {
 	background-color: var(--bs-warning) !important;
 }
 
-.container.modeler :deep(.bjs-container .bjsl-button-error) {
+.bjs-container .bjsl-button-error {
 	background-color: var(--bs-danger) !important;
 }
 
 /* Style the linted elements with warning/error overlays */
-.container.modeler :deep(.bjs-container .bjsl-icon.bjsl-icon-warning) {
+.bjs-container .bjsl-icon.bjsl-icon-warning {
 	--icon-bg-color: var(--bs-warning);
 }
 
-.container.modeler :deep(.bjs-container .bjsl-icon.bjsl-icon-error) {
+.bjs-container .bjsl-icon.bjsl-icon-error {
 	--icon-bg-color: var(--bs-danger);
 }
 
 /* Style the hover/active error and warning states */
-.container.modeler :deep(.bjs-container .bjsl-icon.warning) {
+.bjs-container .bjsl-icon.warning {
 	--icon-bg-color: var(--bs-warning);
 }
 
-.container.modeler :deep(.bjs-container .bjsl-icon.error) {
+.bjs-container .bjsl-icon.error {
 	--icon-bg-color: var(--bs-danger);
 }
 
 /* Style the linting issue icons with Bootstrap colors */
-.container.modeler :deep(.bjs-container .bjsl-icon.bjsl-icon-warning),
-.container.modeler :deep(.bjs-container .bjsl-icon.warning),
-.container.modeler :deep(.bjs-container .bjsl-current-element-issues .bjsl-icon) {
+.bjs-container .bjsl-icon.bjsl-icon-warning,
+.bjs-container .bjsl-icon.warning,
+.bjs-container .bjsl-current-element-issues .bjsl-icon {
 	--icon-bg-color: var(--bs-warning);
 }
 
-.container.modeler :deep(.bjs-container .bjsl-icon.bjsl-icon-error),
-.container.modeler :deep(.bjs-container .bjsl-icon.error),
-.container.modeler :deep(.bjs-container .bjsl-current-element-issues .bjsl-icon.error) {
+.bjs-container .bjsl-icon.bjsl-icon-error,
+.bjs-container .bjsl-icon.error,
+.bjs-container .bjsl-current-element-issues .bjsl-icon.error {
 	--icon-bg-color: var(--bs-danger);
 }
 
-.container.modeler :deep(.bjs-container .bjsl-issues li) {
+.bjs-container .bjsl-issues li {
 	align-items: center;
 }
 
-.container.modeler :deep(.bjs-container .bjsl-issues .icon) {
+.bjs-container .bjsl-issues .icon {
 	--icon-color: var(--bs-warning);
 	display: flex;
 	align-items: center;
@@ -1152,23 +1157,23 @@ defineExpose({
 	margin-top: 0;
 }
 
-.container.modeler :deep(.bjs-container .bjsl-issues .error .icon),
-.container.modeler :deep(.bjs-container .bjsl-issues .icon.error) {
+.bjs-container .bjsl-issues .error .icon,
+.bjs-container .bjsl-issues .icon.error {
 	--icon-color: var(--bs-danger);
 }
 
-.container.modeler :deep(.bjs-container .bjsl-issues .warning .icon),
-.container.modeler :deep(.bjs-container .bjsl-issues .icon.warning) {
+.bjs-container .bjsl-issues .warning .icon,
+.bjs-container .bjsl-issues .icon.warning {
 	--icon-color: var(--bs-warning);
 }
 
 
 /* Lint summary button (bpmn-js-bpmnlint) */
-.container.modeler :deep(.bjs-container .bjsl-button) {
+.bjs-container .bjsl-button {
 	align-items: center;
 }
 
-.container.modeler :deep(.bjs-container .bjsl-button .icon) {
+.bjs-container .bjsl-button .icon {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -1176,14 +1181,17 @@ defineExpose({
 }
 
 /* Style the linting button when inactive */
-.container.modeler :deep(.bjs-container .bjsl-button.bjsl-button-inactive) {
+.bjs-container .bjsl-button.bjsl-button-inactive {
 	color: var(--bs-gray-700) !important;
 }
 
-.container.modeler :deep(.bjs-container .bjsl-button.bjsl-button-inactive:hover) {
+.bjs-container .bjsl-button.bjsl-button-inactive:hover {
 	color: var(--bs-dark) !important;
 }
 
+</style>
+
+<style scoped>
 .container.modeler :deep(.bjs-container .bjs-powered-by) {
 	bottom: 1.125rem !important;
 	right: 0rem !important;

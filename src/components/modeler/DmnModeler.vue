@@ -533,4 +533,11 @@ defineExpose({
   outline: none !important;
   box-shadow: inset 0 -2px 0 0 rgba(0,0,0,0.06);
 }
+/* dmn-js-shared renders the same .bjs-powered-by badge as bpmn-js (both with
+   position: absolute; bottom: 15px; right: 15px inline) — nudge it flush to the
+   corner to match BpmnModeler.vue's override. */
+:deep(.bjs-powered-by) {
+  bottom: 1.125rem !important;
+  right: 0rem !important;
+}
 </style>
