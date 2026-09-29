@@ -42,12 +42,18 @@ export function growsIntoExpandedSubProcess(oldShape, newData) {
         && grew(newData, oldShape)
 }
 
+// Auto-resize is held back while the shape still sits at bpmn-js' position, otherwise the
+// enclosing pool grows for that position and again for the room made afterwards.
+const NO_AUTO_RESIZE = { autoResize: false }
+
 function MakeRoomOnExpandBehavior(injector, canvas, modeling, spaceTool) {
     injector.invoke(CommandInterceptor, this)
 
     this._canvas = canvas
     this._modeling = modeling
     this._spaceTool = spaceTool
+    this._autoResize = injector.get('bpmnAutoResize', false)
+    this._expanding = null
 
     this.preExecute('shape.replace', ({ context }) => {
         const { oldShape, newData } = context
@@ -56,26 +62,44 @@ function MakeRoomOnExpandBehavior(injector, canvas, modeling, spaceTool) {
         // shape.replace takes centre coordinates
         newData.x = Math.round(oldShape.x + newData.width / 2)
         context.makeRoomFor = bounds(oldShape)
+        context.hints = { ...context.hints, ...NO_AUTO_RESIZE }
     })
 
     this.postExecuted('shape.replace', REPLACE_PRIORITY, ({ context }) => {
         if (!context.makeRoomFor || !context.newShape) return
         this.makeRoom(context.newShape, context.makeRoomFor)
+        this.fitParent(context.newShape)
     })
 
     this.preExecute('shape.toggleCollapse', ({ context }) => {
         const { shape } = context
-        if (is(shape, 'bpmn:SubProcess') && shape.collapsed) context.makeRoomFor = bounds(shape)
+        this._expanding = null
+        if (!is(shape, 'bpmn:SubProcess') || !shape.collapsed) return
+
+        context.makeRoomFor = bounds(shape)
+        context.hints = { ...context.hints, ...NO_AUTO_RESIZE }
+        this._expanding = shape
+    })
+
+    // the resize ToggleElementCollapseBehaviour runs while expanding
+    this.preExecute('shape.resize', ({ context }) => {
+        if (this._expanding && context.shape === this._expanding) {
+            context.hints = { ...context.hints, ...NO_AUTO_RESIZE }
+        }
     })
 
     this.postExecuted('shape.toggleCollapse', TOGGLE_PRIORITY, ({ context }) => {
         const { shape, makeRoomFor: old } = context
+        this._expanding = null
         if (!old || shape.collapsed || !grew(shape, old)) return
 
-        // bpmn-js centres the expanded shape on its content; move both back to the old left edge
+        // bpmn-js centres the expanded shape on its content and lifts the content's annotations
+        // to the process; move all of it back to the old left edge
+        const annotations = linkedAnnotations(shape)
         const delta = { x: old.x - shape.x, y: Math.round(old.y + old.height / 2 - (shape.y + shape.height / 2)) }
-        if (delta.x || delta.y) this._modeling.moveElements([shape], delta)
-        this.makeRoom(shape, old)
+        if (delta.x || delta.y) this._modeling.moveElements([shape, ...annotations], delta, undefined, NO_AUTO_RESIZE)
+        this.makeRoom(shape, old, annotations)
+        this.fitParent(shape)
     })
 }
 
@@ -83,8 +107,12 @@ inherits(MakeRoomOnExpandBehavior, CommandInterceptor)
 
 MakeRoomOnExpandBehavior.$inject = ['injector', 'canvas', 'modeling', 'spaceTool']
 
-MakeRoomOnExpandBehavior.prototype.makeRoom = function(shape, oldBounds) {
-    const own = new Set([...selfAndAllChildren(shape, true), ...(shape.attachers ?? [])])
+MakeRoomOnExpandBehavior.prototype.fitParent = function(shape) {
+    if (shape.parent) this._autoResize?._expand([shape], shape.parent)
+}
+
+MakeRoomOnExpandBehavior.prototype.makeRoom = function(shape, oldBounds, extra = []) {
+    const own = new Set([...selfAndAllChildren(shape, true), ...(shape.attachers ?? []), ...extra])
     const isOwn = (element) => own.has(element) || own.has(element.labelTarget)
 
     const elements = selfAndAllChildren(this._canvas.getRootElement(), true).filter((element) => !isOwn(element))
@@ -116,6 +144,21 @@ MakeRoomOnExpandBehavior.prototype.createSpace = function(elements, axis, delta,
     const { movingShapes, resizingShapes } = this._spaceTool.calculateAdjustments(elements, axis, delta, start)
     const point = axis === 'x' ? { x: delta, y: 0 } : { x: 0, y: delta }
     this._modeling.createSpace(movingShapes, resizingShapes, point, getDirection(axis, delta), start)
+}
+
+// text annotations tied to the content of a shape, outside the shape itself
+function linkedAnnotations(shape) {
+    const inside = new Set(selfAndAllChildren(shape, true))
+    const found = new Set()
+    for (const element of inside) {
+        if (element === shape) continue
+        for (const connection of [...(element.incoming ?? []), ...(element.outgoing ?? [])]) {
+            if (!is(connection, 'bpmn:Association')) continue
+            const other = connection.source === element ? connection.target : connection.source
+            if (other && !inside.has(other) && is(other, 'bpmn:TextAnnotation')) found.add(other)
+        }
+    }
+    return [...found]
 }
 
 function bounds({ x, y, width, height }) {

@@ -52,7 +52,14 @@ function flow(id, source, target) {
     return { id, source, target, waypoints: [{ x: 0, y: 0 }, { x: 1, y: 1 }], children: [], businessObject: bo(['bpmn:SequenceFlow']) }
 }
 
-function setup() {
+function association(id, source, target) {
+    const a = { id, source, target, waypoints: [{ x: 0, y: 0 }, { x: 1, y: 1 }], children: [], businessObject: bo(['bpmn:Association']) }
+    source.outgoing.push(a)
+    target.incoming.push(a)
+    return a
+}
+
+function setup({ withAutoResize = true } = {}) {
     const eventBus = new EventBus()
     const root = { id: 'root', children: [], businessObject: bo(['bpmn:Process']) }
     const canvas = { getRootElement: () => root }
@@ -68,9 +75,13 @@ function setup() {
         moveElements: vi.fn((shapes, delta) => move(shapes.flatMap((s) => [s, ...s.children, ...s.attachers]), delta))
     }
     const spaceTool = { _rules: { allowed: () => true }, calculateAdjustments: SpaceTool.prototype.calculateAdjustments }
-    const injector = { invoke: (Fn, that) => Fn.call(that, eventBus) }
+    const autoResize = withAutoResize ? { _expand: vi.fn() } : null
+    const injector = {
+        invoke: (Fn, that) => Fn.call(that, eventBus),
+        get: (name) => (name === 'bpmnAutoResize' ? autoResize : null)
+    }
     const behavior = new MakeRoomOnExpandBehavior(injector, canvas, modeling, spaceTool)
-    return { eventBus, root, modeling, behavior }
+    return { eventBus, root, modeling, behavior, autoResize }
 }
 
 // the task the user changes, and the expanded sub-process bpmn-js puts in its place
@@ -245,6 +256,29 @@ describe('MakeRoomOnExpandBehavior', () => {
         expect(modeling.createSpace).not.toHaveBeenCalled()
     })
 
+    it('holds back auto-resize during the replace and fits the parent once afterwards', () => {
+        const { eventBus: bus, root: top, autoResize } = setup()
+        const pool = shape('Pool_1', 0, 0, 600, 300, ['bpmn:Participant'])
+        const task = shape('Task_1', OLD.x, OLD.y, OLD.width, OLD.height)
+        const subProcess = expanded()
+        add(top, add(pool, subProcess))
+
+        const context = replace(bus, task, subProcess)
+
+        expect(context.hints).toEqual({ autoResize: false })
+        expect(autoResize._expand).toHaveBeenCalledTimes(1)
+        expect(autoResize._expand).toHaveBeenCalledWith([subProcess], pool)
+    })
+
+    it('still makes room when no auto-resize service is registered', () => {
+        const { eventBus: bus, root: top, modeling: mod } = setup({ withAutoResize: false })
+        const task = shape('Task_1', OLD.x, OLD.y, OLD.width, OLD.height)
+        add(top, shape('End_1', 352, 122, 36, 36, EVENT), expanded())
+
+        expect(() => replace(bus, task, top.children[1])).not.toThrow()
+        expect(mod.createSpace).toHaveBeenCalledTimes(1)
+    })
+
     it('pushes a neighbour on the left away when the shape grew to the left', () => {
         const before = shape('Before_1', 60, 100, 100, 80)
         const subProcess = expanded()
@@ -295,13 +329,64 @@ describe('MakeRoomOnExpandBehavior — expanding a collapsed sub-process', () =>
         const context = toggle(subProcess, { x: 100, y: 60, width: 350, height: 200 })
 
         expect(context.makeRoomFor).toEqual(OLD)
-        expect(modeling.moveElements).toHaveBeenCalledWith([subProcess], { x: 100, y: -20 })
+        expect(modeling.moveElements).toHaveBeenCalledWith([subProcess], { x: 100, y: -20 }, undefined, { autoResize: false })
         expect(subProcess.x).toBe(200)
         expect(subProcess.y).toBe(40)
         expect(inner.x).toBe(250)
         expect(modeling.createSpace).toHaveBeenCalledTimes(1)
         expect(modeling.createSpace.mock.calls[0].slice(2)).toEqual([{ x: 248, y: 0 }, 'e', 300])
         expect(end.x).toBe(600)
+    })
+
+    it('moves the annotations of its content along instead of pushing them away', () => {
+        const subProcess = collapsed()
+        const inner = shape('InnerTask_1', 150, 150, 100, 80)
+        add(subProcess, inner)
+        // lifted to the process by bpmn-js, sitting right of the centred shape
+        const note = shape('Note_1', 470, 90, 100, 40, ['bpmn:TextAnnotation', 'bpmn:Artifact'])
+        const ownNote = shape('Note_2', 150, 30, 100, 40, ['bpmn:TextAnnotation', 'bpmn:Artifact'])
+        const noteLink = association('Assoc_1', inner, note)
+        const ownLink = association('Assoc_2', subProcess, ownNote)
+        const end = shape('End_1', 352, 122, 36, 36, EVENT)
+        add(root, subProcess, note, ownNote, noteLink, ownLink, end)
+
+        toggle(subProcess, { x: 100, y: 60, width: 350, height: 200 })
+
+        expect(modeling.moveElements.mock.calls[0][0]).toEqual([subProcess, note])
+        expect(note.x).toBe(570)
+        const [movingShapes] = modeling.createSpace.mock.calls[0]
+        expect(movingShapes).toContain(end)
+        expect(movingShapes).not.toContain(note)
+        // the sub-process's own annotation is a neighbour like any other
+        expect(ownNote.x).toBe(150)
+    })
+
+    it('holds back auto-resize for the expand and its resize, but not for other shapes', () => {
+        const { eventBus: bus, root: top, autoResize } = setup()
+        const pool = shape('Pool_1', 0, 0, 800, 400, ['bpmn:Participant'])
+        const subProcess = collapsed()
+        const other = shape('Task_9', 600, 300, 100, 80)
+        add(top, add(pool, subProcess, other))
+
+        const context = { shape: subProcess }
+        bus.fire('commandStack.shape.toggleCollapse.preExecute', { command: 'shape.toggleCollapse', context })
+        const ownResize = { shape: subProcess, hints: { autoResize: 'nwse' } }
+        const otherResize = { shape: other, hints: { autoResize: 'nwse' } }
+        bus.fire('commandStack.shape.resize.preExecute', { command: 'shape.resize', context: ownResize })
+        bus.fire('commandStack.shape.resize.preExecute', { command: 'shape.resize', context: otherResize })
+        subProcess.collapsed = false
+        Object.assign(subProcess, { x: 100, y: 60, width: 350, height: 200 })
+        bus.fire('commandStack.shape.toggleCollapse.postExecuted', { command: 'shape.toggleCollapse', context })
+
+        expect(context.hints).toEqual({ autoResize: false })
+        expect(ownResize.hints).toEqual({ autoResize: false })
+        expect(otherResize.hints).toEqual({ autoResize: 'nwse' })
+        expect(autoResize._expand).toHaveBeenCalledWith([subProcess], pool)
+
+        // once the expand is done, resizes are left alone again
+        const laterResize = { shape: subProcess, hints: { autoResize: 'nwse' } }
+        bus.fire('commandStack.shape.resize.preExecute', { command: 'shape.resize', context: laterResize })
+        expect(laterResize.hints).toEqual({ autoResize: 'nwse' })
     })
 
     it('does not move a shape that already sits at the old left edge', () => {
