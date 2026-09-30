@@ -17,7 +17,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import EventBus from 'diagram-js/lib/core/EventBus'
 import SpaceTool from 'diagram-js/lib/features/space-tool/SpaceTool'
-import MakeRoomOnExpandModule, { growsIntoExpandedSubProcess } from '../../../components/modeler/behaviors/MakeRoomOnExpandBehavior.js'
+import MakeRoomOnExpandModule, { growsIntoExpandedSubProcess, shrinksFromExpandedSubProcess } from '../../../components/modeler/behaviors/MakeRoomOnExpandBehavior.js'
 
 const MakeRoomOnExpandBehavior = MakeRoomOnExpandModule.makeRoomOnExpandBehavior[1]
 
@@ -398,21 +398,111 @@ describe('MakeRoomOnExpandBehavior — expanding a collapsed sub-process', () =>
         expect(modeling.moveElements).not.toHaveBeenCalled()
     })
 
-    it('leaves collapsing, a shape that did not grow and other element types alone', () => {
-        const open = shape('SubProcess_2', OLD.x, 40, 350, 200, SUB_PROCESS)
-        open.collapsed = false
+    it('leaves a shape that did not grow and other element types alone', () => {
         const same = collapsed()
         const task = shape('Task_1', OLD.x, OLD.y, OLD.width, OLD.height)
         task.collapsed = true
-        add(root, open, same, task, shape('End_1', 352, 122, 36, 36, EVENT))
+        add(root, same, task, shape('End_1', 352, 122, 36, 36, EVENT))
 
-        const collapsing = toggle(open, { x: 325, y: 100, width: 100, height: 80 })
         toggle(same, {})
         const other = toggle(task, { width: 350, height: 200 })
 
-        expect(collapsing.makeRoomFor).toBeUndefined()
         expect(other.makeRoomFor).toBeUndefined()
+        expect(other.collapseFrom).toBeUndefined()
         expect(modeling.moveElements).not.toHaveBeenCalled()
         expect(modeling.createSpace).not.toHaveBeenCalled()
+    })
+})
+
+describe('MakeRoomOnExpandBehavior — shrinking back', () => {
+    let eventBus, root, modeling
+
+    beforeEach(() => {
+        ({ eventBus, root, modeling } = setup())
+    })
+
+    function toggle(subProcess, to) {
+        const context = { shape: subProcess }
+        eventBus.fire('commandStack.shape.toggleCollapse.preExecute', { command: 'shape.toggleCollapse', context })
+        subProcess.collapsed = !subProcess.collapsed
+        Object.assign(subProcess, to)
+        eventBus.fire('commandStack.shape.toggleCollapse.postExecuted', { command: 'shape.toggleCollapse', context })
+        return context
+    }
+
+    // bpmn-js collapses towards the centre; keeping the left edge instead is what stops the creep
+    it('collapses back to the left edge and middle it had, without making or taking room', () => {
+        const subProcess = expanded(SUB_PROCESS)
+        subProcess.collapsed = false
+        const end = shape('End_1', 600, 122, 36, 36, EVENT)
+        add(root, subProcess, end)
+
+        // bpmn-js' collapsed bounds, centred on the expanded shape
+        const context = toggle(subProcess, { x: 325, y: 100, width: 100, height: 80 })
+
+        expect(context.collapseFrom).toEqual({ x: 200, y: 40, width: 350, height: 200 })
+        expect(context.makeRoomFor).toBeUndefined()
+        expect(modeling.moveElements).toHaveBeenCalledWith([subProcess], { x: -125, y: 0 })
+        expect([subProcess.x, subProcess.y]).toEqual([OLD.x, OLD.y])
+        expect(modeling.createSpace).not.toHaveBeenCalled()
+        expect(end.x).toBe(600)
+    })
+
+    it('does not move a collapsed shape that already sits at the left edge', () => {
+        const subProcess = expanded(SUB_PROCESS)
+        subProcess.collapsed = false
+        add(root, subProcess)
+
+        toggle(subProcess, { x: 200, y: 100, width: 100, height: 80 })
+
+        expect(modeling.moveElements).not.toHaveBeenCalled()
+    })
+
+    it('returns to where it started after expanding and collapsing again', () => {
+        const subProcess = shape('SubProcess_1', OLD.x, OLD.y, OLD.width, OLD.height, SUB_PROCESS)
+        subProcess.collapsed = true
+        add(root, subProcess, shape('End_1', 352, 122, 36, 36, EVENT))
+
+        // each time as bpmn-js leaves it: centred on the shape before
+        toggle(subProcess, { x: 75, y: 40, width: 350, height: 200 })
+        toggle(subProcess, { x: 325, y: 100, width: 100, height: 80 })
+
+        expect([subProcess.x, subProcess.y, subProcess.width, subProcess.height]).toEqual([OLD.x, OLD.y, OLD.width, OLD.height])
+    })
+
+    // Replace centres the smaller shape horizontally and keeps the top; the task goes back where it was
+    it('replaces an expanded sub-process by a task at its left edge and middle', () => {
+        const subProcess = expanded(SUB_PROCESS)
+        subProcess.collapsed = false
+        add(root, subProcess)
+        const context = {
+            oldShape: subProcess,
+            newData: { businessObject: bo(TASK), x: 375, y: 80, width: 100, height: 80 },
+            hints: {}
+        }
+
+        eventBus.fire('commandStack.shape.replace.preExecute', { command: 'shape.replace', context })
+
+        // centre coordinates: left edge 200 + 50, middle of 40..240
+        expect([context.newData.x, context.newData.y]).toEqual([250, 140])
+        expect(context.makeRoomFor).toBeUndefined()
+        expect(context.hints).toEqual({})
+    })
+})
+
+describe('shrinksFromExpandedSubProcess', () => {
+    const open = () => Object.assign(expanded(SUB_PROCESS), { collapsed: false })
+
+    it('is true for an expanded sub-process replaced by something smaller', () => {
+        expect(shrinksFromExpandedSubProcess(open(), { width: 100, height: 80 })).toBe(true)
+    })
+
+    it('is false for a collapsed sub-process, a task, or a replacement of the same size', () => {
+        const closed = Object.assign(expanded(SUB_PROCESS), { collapsed: true })
+        const task = shape('Task_1', OLD.x, OLD.y, 350, 200)
+
+        expect(shrinksFromExpandedSubProcess(closed, { width: 100, height: 80 })).toBe(false)
+        expect(shrinksFromExpandedSubProcess(task, { width: 100, height: 80 })).toBe(false)
+        expect(shrinksFromExpandedSubProcess(open(), { width: 350, height: 200 })).toBe(false)
     })
 })

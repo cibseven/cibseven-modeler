@@ -19,6 +19,8 @@
 // sub-process that gets expanded, around the old centre, covering the neighbours.
 // Keep the old left edge instead and push whatever is in the way aside with the
 // space tool, inside the same command so a single undo restores the diagram.
+// Shrinking back, which bpmn-js centres too, keeps the left edge as well, so the shape
+// does not creep sideways with every expand and collapse.
 
 import inherits from 'inherits-browser'
 import CommandInterceptor from 'diagram-js/lib/command/CommandInterceptor'
@@ -42,6 +44,12 @@ export function growsIntoExpandedSubProcess(oldShape, newData) {
         && grew(newData, oldShape)
 }
 
+export function shrinksFromExpandedSubProcess(oldShape, newData) {
+    return is(oldShape, 'bpmn:SubProcess')
+        && !oldShape.collapsed
+        && grew(oldShape, newData)
+}
+
 // Auto-resize is held back while the shape still sits at bpmn-js' position, otherwise the
 // enclosing pool grows for that position and again for the room made afterwards.
 const NO_AUTO_RESIZE = { autoResize: false }
@@ -57,9 +65,15 @@ function MakeRoomOnExpandBehavior(injector, canvas, modeling, spaceTool) {
 
     this.preExecute('shape.replace', ({ context }) => {
         const { oldShape, newData } = context
-        if (!growsIntoExpandedSubProcess(oldShape, newData)) return
 
         // shape.replace takes centre coordinates
+        if (shrinksFromExpandedSubProcess(oldShape, newData)) {
+            newData.x = Math.round(oldShape.x + newData.width / 2)
+            newData.y = Math.round(oldShape.y + oldShape.height / 2)
+            return
+        }
+        if (!growsIntoExpandedSubProcess(oldShape, newData)) return
+
         newData.x = Math.round(oldShape.x + newData.width / 2)
         context.makeRoomFor = bounds(oldShape)
         context.hints = { ...context.hints, ...NO_AUTO_RESIZE }
@@ -74,7 +88,11 @@ function MakeRoomOnExpandBehavior(injector, canvas, modeling, spaceTool) {
     this.preExecute('shape.toggleCollapse', ({ context }) => {
         const { shape } = context
         this._expanding = null
-        if (!is(shape, 'bpmn:SubProcess') || !shape.collapsed) return
+        if (!is(shape, 'bpmn:SubProcess')) return
+        if (!shape.collapsed) {
+            context.collapseFrom = bounds(shape)
+            return
+        }
 
         context.makeRoomFor = bounds(shape)
         context.hints = { ...context.hints, ...NO_AUTO_RESIZE }
@@ -89,14 +107,21 @@ function MakeRoomOnExpandBehavior(injector, canvas, modeling, spaceTool) {
     })
 
     this.postExecuted('shape.toggleCollapse', TOGGLE_PRIORITY, ({ context }) => {
-        const { shape, makeRoomFor: old } = context
+        const { shape, makeRoomFor: old, collapseFrom } = context
         this._expanding = null
+
+        // bpmn-js shrinks it towards the centre; back to the left edge and middle it had
+        if (collapseFrom && shape.collapsed) {
+            const delta = offsetTo(collapseFrom, shape)
+            if (delta.x || delta.y) this._modeling.moveElements([shape], delta)
+            return
+        }
         if (!old || shape.collapsed || !grew(shape, old)) return
 
         // bpmn-js centres the expanded shape on its content and lifts the content's annotations
         // to the process; move all of it back to the old left edge
         const annotations = linkedAnnotations(shape)
-        const delta = { x: old.x - shape.x, y: Math.round(old.y + old.height / 2 - (shape.y + shape.height / 2)) }
+        const delta = offsetTo(old, shape)
         if (delta.x || delta.y) this._modeling.moveElements([shape, ...annotations], delta, undefined, NO_AUTO_RESIZE)
         this.makeRoom(shape, old, annotations)
         this.fitParent(shape)
@@ -159,6 +184,11 @@ function linkedAnnotations(shape) {
         }
     }
     return [...found]
+}
+
+// how far the shape has to move to share the old bounds' left edge and vertical middle
+function offsetTo(old, shape) {
+    return { x: old.x - shape.x, y: Math.round(old.y + old.height / 2 - (shape.y + shape.height / 2)) }
 }
 
 function bounds({ x, y, width, height }) {
