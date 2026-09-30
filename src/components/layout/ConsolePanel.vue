@@ -15,17 +15,19 @@
    limitations under the License.
 -->
 <template>
-    <div :class="shouldRenderConsoleClass" class="flex-column border position-relative" style="z-index: 1;">
+    <div :class="shouldRenderConsoleClass" class="flex-column position-relative" style="z-index: 1;">
         <div ref="parent" :class="{ 'collapsible-content ': !isResizing }"
             class="d-flex flex-column resizable-component bg-light" :style="style">
-            <div class="align-self-end">
-                <button type="button" :title="$t('buttons.copy')" class="btn btn-link text-muted" @click="emit('copy-line')">
-                    <span class="mdi mdi-24px mdi-content-copy"></span></button>
-                <button type="button" :title="$t('buttons.delete')" class="btn btn-link text-muted" @click="emit('clean-console')">
-                    <span class="mdi mdi-24px mdi-trash-can-outline"></span></button>
-                <button type="button" :title="$t('buttons.close')" class="btn btn-link text-muted" @click="toggleConsole(false)">
-                    <span class="mdi mdi-24px mdi-close"></span>
-                </button>              
+            <div class="align-self-end d-flex align-items-center flex-shrink-0 pe-2 pt-3 gap-3">
+                <button type="button" :title="$t('buttons.copy')" class="btn btn-link btn-sm text-secondary text-decoration-none border-0 p-0 lh-1" @click="emit('copy-line')">
+                    <span class="mdi mdi-18px mdi-content-copy" aria-hidden="true"></span>
+                </button>
+                <button type="button" :title="$t('buttons.delete')" class="btn btn-link btn-sm text-secondary text-decoration-none border-0 p-0 lh-1" @click="emit('clean-console')">
+                    <span class="mdi mdi-18px mdi-trash-can-outline" aria-hidden="true"></span>
+                </button>
+                <button type="button" :title="$t('buttons.close')" class="btn btn-link btn-sm text-secondary text-decoration-none border-0 p-0 lh-1" @click="toggleConsole(false)">
+                    <span class="mdi mdi-18px mdi-close" aria-hidden="true"></span>
+                </button>
             </div>
             <div class="d-flex h-100 flex-grow" v-show="isVisible">
                 <slot />
@@ -126,6 +128,7 @@ defineExpose({ isOpen, toggleConsole, _changeHeight, _resetPropertiesPanelHeight
     max-width: none;
     width: 100%;
     height: 0;
+    box-shadow: 0 -0.125rem 0.25rem rgba(0, 0, 0, 0.075);
 }
 
 .collapsible-content {
