@@ -32,6 +32,10 @@ const messages = {
     en: {
         folders: {
             createTitle: 'New folder', renameTitle: 'Rename folder', name: 'Folder name',
+            createProject: 'Create project', renameProject: 'Rename project', projectName: 'Project name',
+            projectNameRequired: 'A project needs a name.',
+            projectNameTaken: 'A project with that name is already there.',
+            projectSaveFailed: 'The project could not be saved.',
             nameRequired: 'A folder needs a name.', saveFailed: 'The folder could not be saved.',
             home: 'Home', destination: 'Destination', copyKey: 'Process key of the copy',
             copyKeyRequired: 'A copy needs a process key of its own.',
@@ -66,6 +70,74 @@ describe('FolderNameModal', () => {
 
         expect(wrapper.find('input').element.value).toBe('')
         expect(wrapper.find('.modal-title').text()).toBe('New folder')
+    })
+
+    // A folder at the top level is a project, and every text of the dialog calls it one
+    describe('for a project', () => {
+        const showProject = async (mode, name, accept) => {
+            const wrapper = mountModal(FolderNameModal)
+            wrapper.vm.show(mode, name, accept, 'project')
+            await flushPromises()
+            return wrapper
+        }
+        const accept = async wrapper => {
+            await wrapper.find('button.btn-primary').trigger('click')
+            await flushPromises()
+        }
+
+        it('asks for a project name when one is created', async () => {
+            const wrapper = await showProject('create', '', vi.fn())
+
+            expect(wrapper.find('.modal-title').text()).toBe('Create project')
+            expect(wrapper.find('label').text()).toBe('Project name')
+            expect(wrapper.find('input').element.value).toBe('')
+        })
+
+        it('speaks of renaming the project', async () => {
+            const wrapper = await showProject('rename', 'Invoicing', vi.fn())
+
+            expect(wrapper.find('.modal-title').text()).toBe('Rename project')
+            expect(wrapper.find('input').element.value).toBe('Invoicing')
+        })
+
+        it('says a project needs a name', async () => {
+            const wrapper = await showProject('create', '', vi.fn())
+
+            await accept(wrapper)
+
+            expect(wrapper.find('[role="alert"]').text()).toBe('A project needs a name.')
+        })
+
+        it('says a project with that name is already there', async () => {
+            const refuse = vi.fn().mockRejectedValue({
+                response: { data: { type: 'InvalidFolderException', params: ['name', 'a folder with that name is already there'] } }
+            })
+            const wrapper = await showProject('create', '', refuse)
+            await wrapper.find('input').setValue('Invoicing')
+
+            await accept(wrapper)
+
+            expect(wrapper.find('[role="alert"]').text()).toBe('A project with that name is already there.')
+        })
+
+        it('says the project could not be saved', async () => {
+            const wrapper = await showProject('create', '', vi.fn().mockRejectedValue(new Error('offline')))
+            await wrapper.find('input').setValue('Invoicing')
+
+            await accept(wrapper)
+
+            expect(wrapper.find('[role="alert"]').text()).toBe('The project could not be saved.')
+        })
+
+        it('speaks of a folder again when the next one is opened without a kind', async () => {
+            const wrapper = await showProject('create', '', vi.fn())
+
+            wrapper.vm.show('create', '', vi.fn())
+            await flushPromises()
+
+            expect(wrapper.find('.modal-title').text()).toBe('New folder')
+            expect(wrapper.find('label').text()).toBe('Folder name')
+        })
     })
 
     it('starts from the current name when a folder is renamed', async () => {

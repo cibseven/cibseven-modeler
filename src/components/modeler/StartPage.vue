@@ -76,9 +76,11 @@
                                     @click="navigateTo(folder.id)">{{ folder.name }}</button>
                             </li>
                         </ol>
-                        <button type="button" class="btn btn-sm btn-outline-secondary text-nowrap"
-                            :title="$t('folders.create')" @click="handleCreateFolder">
-                            <i class="mdi mdi-folder-plus-outline me-1" aria-hidden="true"></i>{{ $t('folders.create') }}
+                        <!-- A folder at the top level is a project, and creating one is what the page is there for -->
+                        <button type="button" class="btn text-nowrap create-folder"
+                            :class="currentFolderId ? 'btn-outline-secondary' : 'btn-primary'"
+                            :title="createFolderLabel" @click="handleCreateFolder">
+                            <i class="mdi mdi-folder-plus-outline me-1" aria-hidden="true"></i>{{ createFolderLabel }}
                         </button>
                     </nav>
                     <p v-if="isSearching && !isEmptyHere" class="mt-2 mb-2 small text-muted">{{ $t('folders.searchAcrossFolders') }}</p>
@@ -448,16 +450,18 @@ const navigateTo = folderId => {
     emit('navigateFolder', folderId ?? null)
 }
 
+const createFolderLabel = computed(() => currentFolderId.value ? t('folders.create') : t('folders.createProject'))
+
 const handleCreateFolder = () => {
     folderNameModal.value?.show('create', '', async name => {
         await folderState.create(name)
-    })
+    }, currentFolderId.value ? 'folder' : 'project')
 }
 
 const handleRenameFolder = folder => {
     folderNameModal.value?.show('rename', folder.name, async name => {
         await folderState.rename(folder.id, name)
-    })
+    }, folder.parentId ? 'folder' : 'project')
 }
 
 const handleMoveFolder = folder => {

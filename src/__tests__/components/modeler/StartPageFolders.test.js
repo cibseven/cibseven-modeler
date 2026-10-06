@@ -171,6 +171,74 @@ describe('StartPage folders', () => {
     })
   })
 
+  // A folder at the top level is a project, and creating one is the page's main action there
+  describe('creating a folder', () => {
+    const createButton = wrapper => wrapper.find('button.create-folder')
+    // The stub's own mock; the instance only holds a bound copy of it
+    const showOf = wrapper => wrapper.findComponent({ name: 'FolderNameModal' }).vm.$options.methods.show
+    const openGeneral = async wrapper => {
+      await wrapper.findComponent({ name: 'FolderListItem' }).vm.$emit('open', 'general')
+      await flushPromises()
+    }
+
+    it('offers to create a project at the top level, as the primary action', async () => {
+      const wrapper = await mountStartPage()
+
+      expect(createButton(wrapper).text()).toBe('folders.createProject')
+      expect(createButton(wrapper).classes()).toContain('btn-primary')
+      expect(createButton(wrapper).classes()).not.toContain('btn-sm')
+    })
+
+    it('offers a new folder inside a folder, as before', async () => {
+      const wrapper = await mountStartPage()
+      await openGeneral(wrapper)
+
+      expect(createButton(wrapper).text()).toBe('folders.create')
+      expect(createButton(wrapper).classes()).toContain('btn-outline-secondary')
+      expect(createButton(wrapper).classes()).not.toContain('btn-primary')
+      // Same size as the project button, so the row does not jump when a folder is opened
+      expect(createButton(wrapper).classes()).not.toContain('btn-sm')
+    })
+
+    it('asks for a project name at the top level', async () => {
+      const wrapper = await mountStartPage()
+      const show = showOf(wrapper)
+
+      await createButton(wrapper).trigger('click')
+
+      expect(show).toHaveBeenCalledWith('create', '', expect.any(Function), 'project')
+    })
+
+    it('asks for a folder name inside a folder', async () => {
+      const wrapper = await mountStartPage()
+      await openGeneral(wrapper)
+      const show = showOf(wrapper)
+
+      await createButton(wrapper).trigger('click')
+
+      expect(show).toHaveBeenCalledWith('create', '', expect.any(Function), 'folder')
+    })
+
+    it('renames a folder at the top level as a project', async () => {
+      const wrapper = await mountStartPage()
+      const show = showOf(wrapper)
+
+      await wrapper.findComponent({ name: 'FolderListItem' }).vm.$emit('rename', TREE[0])
+
+      expect(show).toHaveBeenCalledWith('rename', 'General', expect.any(Function), 'project')
+    })
+
+    it('renames a folder inside another as a folder', async () => {
+      const wrapper = await mountStartPage()
+      await openGeneral(wrapper)
+      const show = showOf(wrapper)
+
+      await wrapper.findComponent({ name: 'FolderListItem' }).vm.$emit('rename', TREE[1])
+
+      expect(show).toHaveBeenCalledWith('rename', 'Invoicing', expect.any(Function), 'folder')
+    })
+  })
+
   describe('copying a model', () => {
     const openPicker = async (wrapper, model) => {
       const picker = wrapper.findComponent({ name: 'FolderPickerModal' })
