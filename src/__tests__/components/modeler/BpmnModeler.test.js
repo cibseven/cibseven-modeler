@@ -24,12 +24,14 @@ const bpmnInstance = vi.hoisted(() => {
     resized: vi.fn(),
   }
   const minimap = { toggle: vi.fn() }
+  const searchPad = { toggle: vi.fn() }
   const propertiesPanel = { attachTo: vi.fn(), detach: vi.fn() }
   const eventBus = { on: vi.fn() }
   const commandStack = { undo: vi.fn(), redo: vi.fn() }
   return {
     canvas,
     minimap,
+    searchPad,
     propertiesPanel,
     eventBus,
     instance: {
@@ -40,6 +42,7 @@ const bpmnInstance = vi.hoisted(() => {
       get: vi.fn((name) => {
         if (name === 'canvas') return canvas
         if (name === 'minimap') return minimap
+        if (name === 'searchPad') return searchPad
         if (name === 'propertiesPanel') return propertiesPanel
         if (name === 'eventBus') return eventBus
         if (name === 'elementRegistry') return { _elements: {} }
@@ -238,6 +241,60 @@ describe('BpmnModeler', () => {
         await minimapBtn.trigger('click')
         expect(bpmnInstance.minimap.toggle).toHaveBeenCalled()
       }
+    })
+  })
+
+  // The search is only reachable with Ctrl+F while the canvas has focus; the button makes it visible
+  describe('search button', () => {
+    const fire = name => bpmnInstance.eventBus.on.mock.calls.filter(([event]) => event === name).at(-1)[1]()
+
+    it('opens the same search as Ctrl+F', async () => {
+      const wrapper = mountBpmnModeler()
+      await flushPromises()
+      bpmnInstance.searchPad.toggle.mockClear()
+
+      await wrapper.find('button.search-elements').trigger('click')
+
+      expect(bpmnInstance.searchPad.toggle).toHaveBeenCalledTimes(1)
+    })
+
+    it('shows the search as open until it closes, however it was closed', async () => {
+      const wrapper = mountBpmnModeler()
+      await flushPromises()
+      const button = () => wrapper.find('button.search-elements')
+      expect(button().attributes('aria-pressed')).toBe('false')
+
+      fire('searchPad.opened')
+      await flushPromises()
+      expect(button().attributes('aria-pressed')).toBe('true')
+      // The look of a pressed button: a dark fill would hide the grey icon
+      expect(button().classes()).toContain('active')
+      expect(button().classes()).not.toContain('btn-secondary')
+
+      // Escape or picking a result closes it without the button
+      fire('searchPad.closed')
+      await flushPromises()
+      expect(button().attributes('aria-pressed')).toBe('false')
+      expect(button().classes()).not.toContain('active')
+    })
+
+    // The search closes on any click that reaches the page, so the opening click must not get there
+    it('keeps its click from reaching the page', async () => {
+      const wrapper = mountBpmnModeler()
+      await flushPromises()
+      const reached = vi.fn()
+      wrapper.element.addEventListener('click', reached)
+
+      wrapper.find('button.search-elements').element.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+
+      expect(reached).not.toHaveBeenCalled()
+    })
+
+    it('names the shortcut', async () => {
+      const wrapper = mountBpmnModeler()
+      await flushPromises()
+
+      expect(wrapper.find('button.search-elements').attributes('aria-label')).toBe('buttons.searchElements')
     })
   })
 

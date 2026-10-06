@@ -31,8 +31,13 @@
 							<span class="mdi mdi-18px mdi-fit-to-screen-outline" aria-hidden="true"></span>
 						</button>
 						<button @click="toggleMinimap" :title="$t('buttons.minimap')" :aria-label="$t('buttons.minimap')" :aria-pressed="isMinimapOpen"
-							:class="['btn btn-sm border text-secondary', isMinimapOpen ? 'btn-secondary' : 'btn-light']">
+							:class="['btn btn-sm btn-light border text-secondary', { active: isMinimapOpen }]">
 							<span class="mdi mdi-18px mdi-map-outline" aria-hidden="true"></span>
+						</button>
+						<!-- .stop: the search closes on any click that reaches the page, this one included -->
+						<button @click.stop="toggleSearch" :title="$t('buttons.searchElements')" :aria-label="$t('buttons.searchElements')" :aria-pressed="isSearchOpen"
+							:class="['btn btn-sm btn-light border text-secondary search-elements', { active: isSearchOpen }]">
+							<span class="mdi mdi-18px mdi-magnify" aria-hidden="true"></span>
 						</button>
 						<button @click="toggleFullscreen" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.fullscreen')" :aria-label="$t('buttons.fullscreen')" :aria-pressed="isFullscreen">
 							<span :class="['mdi', 'mdi-18px', isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen']" aria-hidden="true"></span>
@@ -321,6 +326,7 @@ let isScriptTaskUpdate = false
 let currentScriptBpmnElement = null
 
 const isMinimapOpen = ref(false)
+const isSearchOpen = ref(false)
 const isFullscreen = ref(false)
 const selectedElement = ref(null)
 const BPMN_ROOT_TYPES = new Set(['bpmn:Process', 'bpmn:Collaboration', 'bpmn:Participant'])
@@ -330,6 +336,8 @@ const zoomIn = () => { const c = bpmnModeler.get('canvas'); c.zoom(c.zoom() + ZO
 const zoomOut = () => { const c = bpmnModeler.get('canvas'); c.zoom(c.zoom() - ZOOM_STEP) }
 const resetViewport = () => { bpmnModeler.get('canvas').zoom('fit-viewport') }
 const toggleMinimap = () => { bpmnModeler.get('minimap').toggle(); isMinimapOpen.value = !isMinimapOpen.value }
+// The same search as Ctrl+F; its state follows the search pad, which also closes on Escape or a pick
+const toggleSearch = () => { bpmnModeler.get('searchPad').toggle() }
 const toggleFullscreen = async () => {
 	if (!document.fullscreenElement) await document.documentElement.requestFullscreen()
 	else await document.exitFullscreen()
@@ -605,6 +613,8 @@ const _setupTTLMonitoring = () => {
 		})
 	}
 	bpmnModeler.get('eventBus').on(['selection.changed', 'propertiesPanel.updated'], checkTTL)
+	bpmnModeler.get('eventBus').on('searchPad.opened', () => { isSearchOpen.value = true })
+	bpmnModeler.get('eventBus').on('searchPad.closed', () => { isSearchOpen.value = false })
 
 	bpmnModeler.get('eventBus').on('selection.changed', ({ newSelection }) => {
 		const el = newSelection.length === 1 ? newSelection[0] : null
