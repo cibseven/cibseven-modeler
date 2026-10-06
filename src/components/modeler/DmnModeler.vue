@@ -413,7 +413,9 @@ watch(() => props.isModelerVisible, async newValue => {
 
 watch(() => props.isActiveTab, async newValue => {
 	if (newValue && propertiesPanelComponent.value) {
-		propertiesPanelComponent.value.attachTo(dmnProperties.value)
+		// Only the diagram has a properties panel; attaching it on a decision table would bring
+		// the diagram's canvas controls back over the table
+		if (dmnModeler?.getActiveView()?.type === 'drd') propertiesPanelComponent.value.attachTo(dmnProperties.value)
 		await nextTick()
 		emit('resizeTabNav', resDiv.value?._changeWidth() ?? canvasWidth.value)
 	} else if (propertiesPanelComponent.value) {

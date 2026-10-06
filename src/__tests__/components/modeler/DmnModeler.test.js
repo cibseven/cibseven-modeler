@@ -43,6 +43,7 @@ const dmnInstance = vi.hoisted(() => {
     instance: {
       saveXML: vi.fn().mockResolvedValue({ xml: '<dmn/>' }),
       getActiveViewer: vi.fn(() => viewer),
+      getActiveView: vi.fn(() => ({ type: 'drd' })),
       on: vi.fn(),
       destroy: vi.fn(),
       get: vi.fn(),
@@ -266,6 +267,36 @@ describe('DmnModeler', () => {
 
       const labels = wrapper.findAll('button').map(button => button.attributes('aria-label'))
       expect(labels).toEqual(expect.arrayContaining(['buttons.zoomIn', 'buttons.minimap', 'buttons.searchElements', 'buttons.fullscreen']))
+    })
+
+    // Coming back to a tab re-attached the panel, and its attach event made the table look like the diagram
+    it('keeps them hidden when the tab of a decision table is opened again', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      fire('propertiesPanel.detach')
+      await flushPromises()
+      dmnInstance.instance.getActiveView.mockReturnValue({ type: 'decisionTable' })
+      dmnInstance.propertiesPanel.attachTo.mockClear()
+
+      await wrapper.setProps({ isActiveTab: false })
+      await wrapper.setProps({ isActiveTab: true })
+      await flushPromises()
+
+      expect(dmnInstance.propertiesPanel.attachTo).not.toHaveBeenCalled()
+      expect(wrapper.findAll('button').map(button => button.attributes('aria-label'))).not.toContain('buttons.zoomIn')
+      dmnInstance.instance.getActiveView.mockReturnValue({ type: 'drd' })
+    })
+
+    it('brings the properties panel back when the tab of a diagram is opened again', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      dmnInstance.propertiesPanel.attachTo.mockClear()
+
+      await wrapper.setProps({ isActiveTab: false })
+      await wrapper.setProps({ isActiveTab: true })
+      await flushPromises()
+
+      expect(dmnInstance.propertiesPanel.attachTo).toHaveBeenCalled()
     })
 
     it('does nothing in a view without a search', async () => {
