@@ -20,6 +20,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 const dmnInstance = vi.hoisted(() => {
   const canvas = { zoom: vi.fn() }
   const minimap = { toggle: vi.fn() }
+  const searchPad = { toggle: vi.fn() }
   const propertiesPanel = { attachTo: vi.fn(), detach: vi.fn() }
   const eventBus = { on: vi.fn() }
   const viewer = {
@@ -29,17 +30,20 @@ const dmnInstance = vi.hoisted(() => {
       if (name === 'eventBus') return eventBus
       if (name === 'canvas') return canvas
       if (name === 'minimap') return minimap
+      if (name === 'searchPad') return searchPad
       return null
     }),
   }
   return {
     canvas,
     minimap,
+    searchPad,
     propertiesPanel,
     viewer,
     instance: {
       saveXML: vi.fn().mockResolvedValue({ xml: '<dmn/>' }),
       getActiveViewer: vi.fn(() => viewer),
+      getActiveView: vi.fn(() => ({ type: 'drd' })),
       on: vi.fn(),
       destroy: vi.fn(),
       get: vi.fn(),
@@ -105,7 +109,7 @@ const layoutStubs = {
   PropertiesPanel: {
     name: 'PropertiesPanel',
     template: '<div class="properties-panel-stub" ref="propertiesPanelEl" />',
-    methods: { _changeWidth: vi.fn(() => 400) },
+    methods: { _changeWidth: vi.fn(() => 400), _resetPropertiesPanelWidth: vi.fn(), _restorePropertiesPanelWidth: vi.fn() },
   },
   ConsolePanel: {
     name: 'ConsolePanel',
@@ -182,6 +186,127 @@ describe('DmnModeler', () => {
         await minimapBtn.trigger('click')
         expect(dmnInstance.minimap.toggle).toHaveBeenCalled()
       }
+    })
+  })
+
+  // Only the diagram (DRD) view has a search, so the button follows that view
+  describe('search button', () => {
+    const fire = name => dmnInstance.viewer.on.mock.calls.filter(([event]) => event === name).at(-1)[1]()
+
+    it('opens the same search as Ctrl+F in the diagram view', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      dmnInstance.searchPad.toggle.mockClear()
+
+      await wrapper.find('button.search-elements').trigger('click')
+
+      expect(dmnInstance.searchPad.toggle).toHaveBeenCalledTimes(1)
+    })
+
+    it('shows the search as open until it closes', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      const button = () => wrapper.find('button.search-elements')
+
+      fire('searchPad.opened')
+      await flushPromises()
+      expect(button().attributes('aria-pressed')).toBe('true')
+
+      fire('searchPad.closed')
+      await flushPromises()
+      expect(button().attributes('aria-pressed')).toBe('false')
+    })
+
+    // The search closes on any click that reaches the page, so the opening click must not get there
+    it('keeps its click from reaching the page', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      const reached = vi.fn()
+      wrapper.element.addEventListener('click', reached)
+
+      wrapper.find('button.search-elements').element.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+
+      expect(reached).not.toHaveBeenCalled()
+    })
+
+    it('is not offered in a decision table, which has no search', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+
+      fire('propertiesPanel.detach')
+      await flushPromises()
+
+      expect(wrapper.find('button.search-elements').exists()).toBe(false)
+    })
+
+    // Zoom, fit and the minimap work on the diagram canvas, which a decision table does not have
+    it('offers only fullscreen in a decision table', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      const labels = () => wrapper.findAll('button').map(button => button.attributes('aria-label'))
+      expect(labels()).toEqual(expect.arrayContaining(['buttons.zoomIn', 'buttons.zoomOut', 'buttons.resetViewport', 'buttons.minimap']))
+
+      fire('propertiesPanel.detach')
+      await flushPromises()
+
+      expect(labels()).not.toContain('buttons.zoomIn')
+      expect(labels()).not.toContain('buttons.zoomOut')
+      expect(labels()).not.toContain('buttons.resetViewport')
+      expect(labels()).not.toContain('buttons.minimap')
+      expect(labels()).toContain('buttons.fullscreen')
+    })
+
+    it('offers them all again back in the diagram', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      fire('propertiesPanel.detach')
+      await flushPromises()
+
+      fire('propertiesPanel.attach')
+      await flushPromises()
+
+      const labels = wrapper.findAll('button').map(button => button.attributes('aria-label'))
+      expect(labels).toEqual(expect.arrayContaining(['buttons.zoomIn', 'buttons.minimap', 'buttons.searchElements', 'buttons.fullscreen']))
+    })
+
+    // Coming back to a tab re-attached the panel, and its attach event made the table look like the diagram
+    it('keeps them hidden when the tab of a decision table is opened again', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      fire('propertiesPanel.detach')
+      await flushPromises()
+      dmnInstance.instance.getActiveView.mockReturnValue({ type: 'decisionTable' })
+      dmnInstance.propertiesPanel.attachTo.mockClear()
+
+      await wrapper.setProps({ isActiveTab: false })
+      await wrapper.setProps({ isActiveTab: true })
+      await flushPromises()
+
+      expect(dmnInstance.propertiesPanel.attachTo).not.toHaveBeenCalled()
+      expect(wrapper.findAll('button').map(button => button.attributes('aria-label'))).not.toContain('buttons.zoomIn')
+      dmnInstance.instance.getActiveView.mockReturnValue({ type: 'drd' })
+    })
+
+    it('brings the properties panel back when the tab of a diagram is opened again', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      dmnInstance.propertiesPanel.attachTo.mockClear()
+
+      await wrapper.setProps({ isActiveTab: false })
+      await wrapper.setProps({ isActiveTab: true })
+      await flushPromises()
+
+      expect(dmnInstance.propertiesPanel.attachTo).toHaveBeenCalled()
+    })
+
+    it('does nothing in a view without a search', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      dmnInstance.viewer.get.mockImplementationOnce(() => { throw new Error('No provider for "searchPad"') })
+
+      await wrapper.find('button.search-elements').trigger('click')
+
+      expect(dmnInstance.searchPad.toggle).not.toHaveBeenCalled()
     })
   })
 
