@@ -21,6 +21,8 @@
 				<div v-show="!props.isModelerVisible" class="position-relative" :style="styleCanvas">
 					<div class="canvas h-100 w-100" ref="canvas" tabindex="0"></div>
 					<div class="position-absolute top-0 end-0 d-flex flex-column gap-1 m-2" style="z-index: 10;">
+						<!-- These work on the diagram (DRD) canvas; decision tables and literal expressions have none -->
+						<template v-if="isDrdShowing">
 						<button @click="zoomIn" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomIn')" :aria-label="$t('buttons.zoomIn')">
 							<span class="mdi mdi-18px mdi-magnify-plus-outline" aria-hidden="true"></span>
 						</button>
@@ -34,12 +36,12 @@
 							:class="['btn btn-sm btn-light border text-secondary', { active: isMinimapOpen }]">
 							<span class="mdi mdi-18px mdi-map-outline" aria-hidden="true"></span>
 						</button>
-						<!-- Only the diagram (DRD) view has a search; decision tables and literal expressions do not.
-							.stop: the search closes on any click that reaches the page, this one included -->
-						<button v-if="isDrdShowing" @click.stop="toggleSearch" :title="$t('buttons.searchElements')" :aria-label="$t('buttons.searchElements')" :aria-pressed="isSearchOpen"
+						<!-- .stop: the search closes on any click that reaches the page, this one included -->
+						<button @click.stop="toggleSearch" :title="$t('buttons.searchElements')" :aria-label="$t('buttons.searchElements')" :aria-pressed="isSearchOpen"
 							:class="['btn btn-sm btn-light border text-secondary search-elements', { active: isSearchOpen }]">
 							<span class="mdi mdi-18px mdi-magnify" aria-hidden="true"></span>
 						</button>
+						</template>
 						<button @click="toggleFullscreen" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.fullscreen')" :aria-label="$t('buttons.fullscreen')" :aria-pressed="isFullscreen">
 							<span :class="['mdi', 'mdi-18px', isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen']" aria-hidden="true"></span>
 						</button>

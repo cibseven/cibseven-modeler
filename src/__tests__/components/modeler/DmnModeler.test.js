@@ -108,7 +108,7 @@ const layoutStubs = {
   PropertiesPanel: {
     name: 'PropertiesPanel',
     template: '<div class="properties-panel-stub" ref="propertiesPanelEl" />',
-    methods: { _changeWidth: vi.fn(() => 400), _resetPropertiesPanelWidth: vi.fn() },
+    methods: { _changeWidth: vi.fn(() => 400), _resetPropertiesPanelWidth: vi.fn(), _restorePropertiesPanelWidth: vi.fn() },
   },
   ConsolePanel: {
     name: 'ConsolePanel',
@@ -236,6 +236,36 @@ describe('DmnModeler', () => {
       await flushPromises()
 
       expect(wrapper.find('button.search-elements').exists()).toBe(false)
+    })
+
+    // Zoom, fit and the minimap work on the diagram canvas, which a decision table does not have
+    it('offers only fullscreen in a decision table', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      const labels = () => wrapper.findAll('button').map(button => button.attributes('aria-label'))
+      expect(labels()).toEqual(expect.arrayContaining(['buttons.zoomIn', 'buttons.zoomOut', 'buttons.resetViewport', 'buttons.minimap']))
+
+      fire('propertiesPanel.detach')
+      await flushPromises()
+
+      expect(labels()).not.toContain('buttons.zoomIn')
+      expect(labels()).not.toContain('buttons.zoomOut')
+      expect(labels()).not.toContain('buttons.resetViewport')
+      expect(labels()).not.toContain('buttons.minimap')
+      expect(labels()).toContain('buttons.fullscreen')
+    })
+
+    it('offers them all again back in the diagram', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      fire('propertiesPanel.detach')
+      await flushPromises()
+
+      fire('propertiesPanel.attach')
+      await flushPromises()
+
+      const labels = wrapper.findAll('button').map(button => button.attributes('aria-label'))
+      expect(labels).toEqual(expect.arrayContaining(['buttons.zoomIn', 'buttons.minimap', 'buttons.searchElements', 'buttons.fullscreen']))
     })
 
     it('does nothing in a view without a search', async () => {
