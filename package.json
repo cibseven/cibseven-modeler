@@ -50,7 +50,7 @@
   },
   "devDependencies": {
     "@bpmn-io/form-js": "1.21.3",
-    "@cib/common-frontend": "1.0.5-dev.2",
+    "@cib/common-frontend": "1.0.5-dev.3",
     "@eslint/js": "10.0.1",
     "@vitejs/plugin-vue": "6.0.6",
     "@vitest/coverage-istanbul": "4.1.11",
@@ -84,7 +84,7 @@
   },
   "peerDependencies": {
     "@bpmn-io/form-js": "^1.21.3",
-    "@cib/common-frontend": "^1.0.5-dev.2",
+    "@cib/common-frontend": "^1.0.5-dev.3",
     "axios": "^1.18.1",
     "bootstrap": "^5.3.8",
     "bpmn-js": "^18.14.0",
