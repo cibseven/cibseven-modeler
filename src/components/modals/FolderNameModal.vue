@@ -20,12 +20,12 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title fs-5" :id="titleId">
-                        {{ mode === 'rename' ? $t('folders.renameTitle') : $t('folders.createTitle') }}
+                        {{ title }}
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" :aria-label="$t('buttons.close')"></button>
                 </div>
                 <div class="modal-body">
-                    <label class="form-label" :for="nameId">{{ $t('folders.name') }}</label>
+                    <label class="form-label" :for="nameId">{{ $t(texts.name) }}</label>
                     <input :id="nameId" ref="nameInput" type="text" maxlength="255" class="form-control form-control-sm"
                         v-model="name" @input="error = ''" @keyup.enter="handleAccept">
                     <div v-if="error" tabindex="-1" role="alert" aria-live="assertive" aria-atomic="true"
@@ -42,7 +42,7 @@
 
 <script setup>
 import * as bootstrap from 'bootstrap'
-import { onMounted, ref, useId } from 'vue'
+import { computed, onMounted, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { folderErrorMessage } from '../../utils/folderErrors.js'
 
@@ -55,8 +55,23 @@ const nameInput = ref(null)
 const name = ref('')
 const error = ref('')
 const mode = ref('create')
+const kind = ref('folder')
 let modalBootstrap = null
 let onAccept = null
+
+/** Every text the dialog shows, per kind: a folder at the top level is a project. */
+const TEXTS = {
+    folder: {
+        create: 'folders.createTitle', rename: 'folders.renameTitle', name: 'folders.name',
+        required: 'folders.nameRequired', taken: 'folders.nameTaken', failed: 'folders.saveFailed',
+    },
+    project: {
+        create: 'folders.createProject', rename: 'folders.renameProject', name: 'folders.projectName',
+        required: 'folders.projectNameRequired', taken: 'folders.projectNameTaken', failed: 'folders.projectSaveFailed',
+    },
+}
+const texts = computed(() => TEXTS[kind.value] ?? TEXTS.folder)
+const title = computed(() => t(mode.value === 'rename' ? texts.value.rename : texts.value.create))
 
 onMounted(() => {
     if (!modalRoot.value) return
@@ -67,7 +82,7 @@ onMounted(() => {
 const handleAccept = async () => {
     const trimmed = name.value.trim()
     if (!trimmed) {
-        error.value = t('folders.nameRequired')
+        error.value = t(texts.value.required)
         return
     }
     // The column holds 255, and saying so here is clearer than a refusal from the backend
@@ -80,7 +95,9 @@ const handleAccept = async () => {
         await onAccept?.(trimmed)
     } catch (e) {
         const refusal = folderErrorMessage(e)
-        error.value = refusal ? t(refusal.key, refusal.params) : t('folders.saveFailed')
+        if (!refusal) error.value = t(texts.value.failed)
+        else if (refusal.key === 'folders.nameTaken') error.value = t(texts.value.taken)
+        else error.value = t(refusal.key, refusal.params)
         return
     }
     modalBootstrap?.hide()
@@ -90,9 +107,11 @@ const handleAccept = async () => {
  * @param {'create'|'rename'} nextMode
  * @param {string} currentName filled in for a rename
  * @param {Function} accept receives the new name; throwing keeps the dialog open with the message
+ * @param {'folder'|'project'} [nextKind] what the dialog calls it; a folder at the top level is a project
  */
-const show = (nextMode, currentName, accept) => {
+const show = (nextMode, currentName, accept, nextKind = 'folder') => {
     mode.value = nextMode
+    kind.value = nextKind
     name.value = currentName ?? ''
     error.value = ''
     onAccept = accept
