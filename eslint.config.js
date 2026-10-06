@@ -14,49 +14,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import js from '@eslint/js'
-import pluginVue from 'eslint-plugin-vue'
-import pluginVitest from '@vitest/eslint-plugin'
-import pluginVueA11y from 'eslint-plugin-vuejs-accessibility'
+import { cibEslintConfig } from '@cib/frontend-preset/eslint'
 
 export default [
-  {
-    name: 'app/files-to-lint',
-    files: ['**/*.{js,mjs,jsx,vue}'],
-  },
-
-  {
-    name: 'app/files-to-ignore',
-    ignores: [
-      '**/dist/**',
-      '**/dist-ssr/**',
-      '**/coverage/**',
-      '**/target/**',
-      'linterConfig.js',
-    ],
-  },
-
-  js.configs.recommended,
-  ...pluginVue.configs['flat/essential'],
-
-  {
-    ...pluginVitest.configs.recommended,
-    files: ['src/**/__tests__/*'],
-  },
-
-  ...pluginVueA11y.configs['flat/recommended'],
-  {
-    rules: {
-      'vuejs-accessibility/label-has-for': [
-        'error',
-        {
-          required: {
-            every: ['id'],
-          },
-        },
-      ],
-    },
-  },
+  // The modeler does not use the CIB formatting rules (see max-len below).
+  // Vitest rules only for files directly in a __tests__ folder, as before.
+  ...cibEslintConfig({ formatting: false, testFiles: ['src/**/__tests__/*'], ignores: ['linterConfig.js'] }),
 
   {
     rules: {
@@ -81,7 +44,6 @@ export default [
     },
   },
 
-  // CIB formatting rules
   {
     rules: {
       'max-len': ['error', { code: 350 }],
