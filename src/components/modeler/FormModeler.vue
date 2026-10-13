@@ -33,11 +33,10 @@
 				<template #leftButtons>
 					<slot name="menu" />
 				</template>
-				<template v-if="AutosaveIndicatorComponent" #centerContent>
-					<component :is="AutosaveIndicatorComponent" :tab-element="props.tabElement" />
-				</template>
 				<template #rightButtons>
 					<div class="d-flex align-items-center">
+						<!-- The autosave time sits with the snapshot it relates to -->
+						<component v-if="AutosaveIndicatorComponent" :is="AutosaveIndicatorComponent" :tab-element="props.tabElement" />
 						<component v-if="VersionButtonComponent && formHistoryListComp?.length > 0"
 							:is="VersionButtonComponent" :history-list="formHistoryListComp"
 							:active-version="activeVersion" content-field="formSchema" />

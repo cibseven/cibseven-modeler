@@ -49,21 +49,33 @@
             </button>
         </div>
         <div class="btn-menu d-flex align-items-center mx-1" v-show="!isButtonDisabled">
-            <button type="button"
-                class="btn btn-outline-light border-0 btn-sm"
-                :title="$t('buttons.saveDiagram')"
-                :aria-label="$t('buttons.saveDiagram')"
-                :aria-busy="isSaving"
-                :disabled="(!props.canSave && !props.tabElement.changedVersion) || isSaving" @click="_saveDiagram">
-                <span class="mdi mdi-24px" :class="isSaving ? 'mdi-loading mdi-spin' : 'mdi-content-save-outline'" aria-hidden="true"></span>
-            </button>
-        </div>
-        <div v-if="AutosaveToggleComponent" v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
-            <component
-                :is="AutosaveToggleComponent"
-                :tab-element="props.tabElement"
-                :is-saving="isSaving"
-            />
+            <!-- A disabled button lets the hover through (Bootstrap: pointer-events none), so the group carries its title too -->
+            <div class="btn-group" :title="saveTitle">
+                <button type="button"
+                    class="btn btn-outline-light border-0 btn-sm rounded save-diagram"
+                    :title="saveTitle"
+                    :aria-label="saveTitle"
+                    :aria-busy="isSaving"
+                    :disabled="(!props.canSave && !props.tabElement.changedVersion) || isSaving" @click="_saveDiagram">
+                    <span class="mdi mdi-24px" :class="saveIcon" aria-hidden="true"></span>
+                </button>
+                <!-- What saving offers beyond the button, e.g. autosave, comes from the host as a menu -->
+                <template v-if="AutosaveToggleComponent">
+                    <button type="button"
+                        class="btn btn-outline-light border-0 btn-sm rounded px-0"
+                        data-bs-toggle="dropdown" aria-expanded="false"
+                        :title="$t('buttons.saveOptions')" :aria-label="$t('buttons.saveOptions')">
+                        <span class="mdi mdi-18px mdi-chevron-down" aria-hidden="true"></span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <component
+                            :is="AutosaveToggleComponent"
+                            :tab-element="props.tabElement"
+                            :is-saving="isSaving"
+                        />
+                    </div>
+                </template>
+            </div>
         </div>
 
         <!-- Separator -->
@@ -184,6 +196,7 @@ const props = defineProps({
 const extraDownloadLinks = inject('extraDownloadLinks', null)
 const BpmnFilterButtonComponent = inject('bpmnFilterButtonComponent', null)
 const AutosaveToggleComponent = inject('autosaveToggleComponent', null)
+const autosaveOptions = inject('autosaveOptions', null)
 const config = inject('config', {})
 const announce = inject('announce', () => {})
 const isBpmnTab = computed(() => props.tabElement.type.startsWith('bpmn'))
@@ -200,6 +213,15 @@ const emit = defineEmits([
 const isOutdatedTemplateWarning = ref(false)
 
 const isSaving = ref(false)
+// The save button tells whether autosave is on, so the state shows without opening the menu
+const saveIcon = computed(() => {
+    if (isSaving.value) return 'mdi-loading mdi-spin'
+    return autosaveOptions?.enabled ? 'mdi-content-save-check-outline' : 'mdi-content-save-outline'
+})
+const saveTitle = computed(() => {
+    if (!AutosaveToggleComponent || !autosaveOptions) return t('buttons.saveDiagram')
+    return `${t('buttons.saveDiagram')} – ${t(autosaveOptions.enabled ? 'buttons.autosaveOn' : 'buttons.autosaveOff')}`
+})
 
 const downloadName = ref()
 const downloadLink = ref('#')

@@ -73,11 +73,10 @@
 					<template #leftButtons>
 						<slot name="menu" />
 					</template>
-					<template v-if="AutosaveIndicatorComponent" #centerContent>
-						<component :is="AutosaveIndicatorComponent" :tab-element="props.tabElement" />
-					</template>
 					<template #rightButtons>
 						<div class="d-flex align-items-center">
+							<!-- The autosave time sits with the snapshot it relates to -->
+							<component v-if="AutosaveIndicatorComponent" :is="AutosaveIndicatorComponent" :tab-element="props.tabElement" />
 							<component v-if="VersionButtonComponent && processHistoryListComp?.length > 0"
 								:is="VersionButtonComponent" :history-list="processHistoryListComp" :active-version="activeVersion" />
 							<component v-if="CompareButtonComponent && processHistoryListComp?.length > 1"
