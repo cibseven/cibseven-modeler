@@ -64,9 +64,9 @@
                         :aria-label="$t('folders.breadcrumb')">
                         <ol class="breadcrumb bg-transparent mb-0 p-0 flex-wrap folder-breadcrumb">
                             <li class="breadcrumb-item" :class="{ active: !breadcrumb.length }">
-                                <span v-if="!breadcrumb.length" aria-current="page">{{ $t('folders.home') }}</span>
+                                <span v-if="!breadcrumb.length" aria-current="page">{{ $t('folders.projects') }}</span>
                                 <button v-else type="button" class="btn btn-link btn-sm p-0 border-0 align-baseline"
-                                    @click="navigateTo(null)">{{ $t('folders.home') }}</button>
+                                    @click="navigateTo(null)">{{ $t('folders.projects') }}</button>
                             </li>
                             <li v-for="(folder, level) in breadcrumb" :key="folder.id" class="breadcrumb-item"
                                 :class="{ active: level === breadcrumb.length - 1 }"
@@ -196,6 +196,8 @@ const functionAfterAccepting = ref(null)
 const { t } = useI18n()
 const props = defineProps({
     diagrams: Array,
+    // The folder to come back to after a refresh, from the URL; an empty value is the top level
+    initialFolderId: { type: String, default: null },
     hasMore: {
         type: Boolean,
         default: false
@@ -257,13 +259,23 @@ const emptyState = computed(() => {
     }
     return {
         icon: 'mdi-folder-open-outline',
-        text: currentFolderId.value ? t('folders.empty') : t('folders.emptyHome')
+        text: currentFolderId.value ? t('folders.empty') : t('folders.emptyProjects')
     }
 })
+
+// A refresh comes back to the folder in the URL, a new visit starts in the user's own folder
+const startFolder = () => {
+    const requested = props.initialFolderId
+    if (requested === '') return null
+    const exists = requested && folderState.folders.value.some(folder => folder.id === requested)
+    return exists ? requested : folderState.homeId.value
+}
 
 onMounted(async () => {
     try {
         await folderState.load()
+        const folderId = startFolder()
+        if (folderId && !currentFolderId.value) navigateTo(folderId)
     } catch (error) {
         // Without the tree there is still a list to show, so say so and carry on
         console.error(error)

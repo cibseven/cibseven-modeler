@@ -293,7 +293,7 @@ describe('StartPage folders', () => {
       fetchFolders.mockResolvedValue([])
       const wrapper = await mountStartPage({ diagrams: [] })
 
-      expect(emptyText(wrapper)).toContain('folders.emptyHome')
+      expect(emptyText(wrapper)).toContain('folders.emptyProjects')
     })
 
     it('says a folder is empty once you are inside one', async () => {
@@ -448,8 +448,43 @@ describe('StartPage folders', () => {
       fetchHomeFolder.mockResolvedValue({ folder: HOME, manageHomes: false })
     })
 
+    it('opens the own folder when the page opens', async () => {
+      const wrapper = await mountStartPage()
+
+      expect(wrapper.emitted('navigateFolder')).toEqual([['home']])
+      expect(wrapper.find('.breadcrumb').text()).toContain('demo')
+    })
+
+    it('comes back to the folder of the URL after a refresh', async () => {
+      const wrapper = await mountStartPage({ initialFolderId: 'general' })
+
+      expect(wrapper.emitted('navigateFolder')).toEqual([['general']])
+    })
+
+    it('stays on the top level when the URL says so', async () => {
+      const wrapper = await mountStartPage({ initialFolderId: '' })
+
+      expect(wrapper.emitted('navigateFolder')).toBeUndefined()
+    })
+
+    /** A folder deleted in another tab must not leave the page pointing at nothing. */
+    it('opens the own folder when the folder of the URL is gone', async () => {
+      const wrapper = await mountStartPage({ initialFolderId: 'deleted' })
+
+      expect(wrapper.emitted('navigateFolder')).toEqual([['home']])
+    })
+
+    it('stays on the top level when there is no own folder', async () => {
+      fetchHomeFolder.mockResolvedValue(null)
+
+      const wrapper = await mountStartPage()
+
+      expect(wrapper.emitted('navigateFolder')).toBeUndefined()
+    })
+
     it('lists the home like any folder, but without actions', async () => {
       const wrapper = await mountStartPage()
+      await wrapper.findAll('.breadcrumb button')[0].trigger('click')
 
       const rows = wrapper.findAllComponents({ name: 'FolderListItem' })
       expect(rows.map(row => row.props('folder').name)).toEqual(['demo', 'General'])

@@ -31,7 +31,7 @@
                                     value="" v-model="selected">
                                 <label :for="`${optionId}-home`" class="d-flex align-items-center gap-2 mb-0">
                                     <span class="mdi mdi-home-outline" aria-hidden="true"></span>
-                                    <span>{{ $t('folders.home') }}</span>
+                                    <span>{{ $t('folders.projects') }}</span>
                                 </label>
                             </div>
                             <div v-for="folder in options" :key="folder.id"

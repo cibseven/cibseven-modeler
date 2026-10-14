@@ -29,6 +29,8 @@ const pickerMocks = vi.hoisted(() => ({ show: vi.fn(), isShown: vi.fn() }))
 
 const storeMocks = vi.hoisted(() => ({ dispatch: vi.fn() }))
 
+const routerMocks = vi.hoisted(() => ({ route: null, replace: vi.fn() }))
+
 const startPageMocks = vi.hoisted(() => ({
   folderNameFor: vi.fn(),
   folderPathFor: vi.fn(),
@@ -52,8 +54,8 @@ vi.mock('../../../monaco-setup.js', () => ({
 }))
 
 vi.mock('vue-router', () => ({
-  useRoute: vi.fn(() => ({ params: {}, path: '/modeler' })),
-  useRouter: vi.fn(() => ({ replace: vi.fn().mockResolvedValue(undefined) })),
+  useRoute: vi.fn(() => routerMocks.route),
+  useRouter: vi.fn(() => ({ replace: (...args) => routerMocks.replace(...args) })),
 }))
 
 vi.mock('vuex', () => ({
@@ -129,6 +131,7 @@ vi.mock('../../../components/modeler/FormModeler.vue', () => ({
 vi.mock('../../../components/modeler/StartPage.vue', () => ({
   default: {
     name: 'StartPage',
+    props: { initialFolderId: String },
     template: '<div class="start-page-stub" />',
     methods: {
       _toggleIsLoading: vi.fn(),
@@ -189,6 +192,8 @@ function mountCibsevenModeler() {
 describe('CibsevenModeler', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    routerMocks.route = { params: {}, path: '/modeler', query: {} }
+    routerMocks.replace.mockResolvedValue(undefined)
     // Clearing keeps whatever a test installed, and these two are installed per test
     fileImportMocks.handleFile.mockReset()
     startPageMocks.folderPathFor.mockReset()
@@ -561,6 +566,58 @@ describe('CibsevenModeler', () => {
       wrapper.vm.handleModelMoved('p1', 'archive')
 
       expect(tabManagerState.tabNavList.value[0].folderId).toBe('archive')
+    })
+  })
+  /** A refresh keeps the URL, so the folder in it is where the page comes back to. */
+  describe('the folder in the URL', () => {
+    const startPage = wrapper => wrapper.findComponent({ name: 'StartPage' })
+
+    it('hands the start page the folder of the page that was refreshed', async () => {
+      routerMocks.route.query = { folder: 'invoicing' }
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+
+      expect(startPage(wrapper).props('initialFolderId')).toBe('invoicing')
+    })
+
+    it('hands it none on a new visit, which starts in the own folder', async () => {
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+
+      expect(startPage(wrapper).props('initialFolderId')).toBeNull()
+    })
+
+    it('writes the folder that is opened into the URL', async () => {
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+
+      startPage(wrapper).vm.$emit('navigateFolder', 'invoicing')
+      await flushPromises()
+
+      expect(routerMocks.replace).toHaveBeenCalledWith({ query: { folder: 'invoicing' } })
+    })
+
+    it('writes the top level as an empty folder, so a refresh stays there too', async () => {
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+
+      startPage(wrapper).vm.$emit('navigateFolder', null)
+      await flushPromises()
+
+      expect(routerMocks.replace).toHaveBeenCalledWith({ query: { folder: '' } })
+    })
+
+    it('keeps the folder when a tab writes its diagram into the URL', async () => {
+      routerMocks.route.query = { folder: 'invoicing' }
+      tabManagerState.tabNavList.value = [{ id: 'p1', key: 'k1', name: 'BPMN', type: 'bpmn-c7', isSaved: true }]
+      tabManagerState.editorXML.value = ['<bpmn/>']
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      routerMocks.replace.mockClear()
+
+      await wrapper.vm.switchTabFromTabNav(0)
+
+      expect(routerMocks.replace).toHaveBeenCalledWith({ params: { diagramId: 'p1' }, query: { folder: 'invoicing' } })
     })
   })
 })

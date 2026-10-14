@@ -37,7 +37,7 @@ const messages = {
             projectNameTaken: 'A project with that name is already there.',
             projectSaveFailed: 'The project could not be saved.',
             nameRequired: 'A folder needs a name.', saveFailed: 'The folder could not be saved.',
-            home: 'Home', destination: 'Destination', copyKey: 'Process key of the copy',
+            projects: 'Projects', destination: 'Destination', copyKey: 'Process key of the copy',
             copyKeyRequired: 'A copy needs a process key of its own.',
             copyFormId: 'Form id of the copy',
             copyFormIdRequired: 'A copy needs a form id of its own.',
@@ -244,10 +244,10 @@ describe('FolderPickerModal', () => {
         const wrapper = mountModal(FolderPickerModal)
 
         await open(wrapper)
-        expect(wrapper.text()).not.toContain('Home')
+        expect(wrapper.text()).not.toContain('Projects')
 
         await open(wrapper, { allowTopLevel: true })
-        expect(wrapper.text()).toContain('Home')
+        expect(wrapper.text()).toContain('Projects')
     })
 
     it('refuses to submit until a destination is chosen', async () => {
