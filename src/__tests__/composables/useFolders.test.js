@@ -18,6 +18,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('../../services/folderService.js', () => ({
   fetchFolders: vi.fn(),
+  fetchHomeFolder: vi.fn(),
   fetchFolderContents: vi.fn(),
   createFolder: vi.fn(),
   renameFolder: vi.fn(),
@@ -31,6 +32,7 @@ import {
   deleteFolder,
   fetchFolderContents,
   fetchFolders,
+  fetchHomeFolder,
   moveFolder,
   renameFolder
 } from '../../services/folderService.js'
@@ -232,6 +234,58 @@ describe('useFolders', () => {
       fetchFolderContents.mockResolvedValue({ folders: 1, diagrams: 2, forms: 3 })
 
       await expect(folders.contents('general')).resolves.toEqual({ folders: 1, diagrams: 2, forms: 3 })
+    })
+  })
+  describe('home', () => {
+    const HOME = { id: 'home', parentId: null, name: 'demo', home: true }
+    const OTHER_HOME = { id: 'other-home', parentId: null, name: 'alice', home: true }
+
+    beforeEach(() => {
+      fetchFolders.mockResolvedValue([...TREE, HOME, OTHER_HOME])
+      fetchHomeFolder.mockResolvedValue({ folder: HOME, manageHomes: false })
+    })
+
+    it('asks for the home of the user before reading the tree', async () => {
+      const folders = await loaded()
+
+      expect(fetchHomeFolder).toHaveBeenCalledTimes(1)
+      expect(folders.homeId.value).toBe('home')
+    })
+
+    it('asks only once, since the first call is the one that creates it', async () => {
+      const folders = await loaded()
+
+      await folders.load()
+
+      expect(fetchHomeFolder).toHaveBeenCalledTimes(1)
+      expect(fetchFolders).toHaveBeenCalledTimes(2)
+    })
+
+    it('locks every home for a user who may not manage homes', async () => {
+      const folders = await loaded()
+
+      expect(folders.isLocked(HOME)).toBe(true)
+      expect(folders.isLocked(OTHER_HOME)).toBe(true)
+      expect(folders.isLocked(TREE[0])).toBe(false)
+    })
+
+    it('leaves homes open to an administrator', async () => {
+      fetchHomeFolder.mockResolvedValue({ folder: HOME, manageHomes: true })
+      const folders = await loaded()
+
+      expect(folders.isLocked(HOME)).toBe(false)
+    })
+
+    /** A backend without homes, or a failing call, must not cost the user the tree. */
+    it('still reads the tree when the home cannot be had', async () => {
+      const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+      fetchHomeFolder.mockRejectedValue(new Error('404'))
+
+      const folders = await loaded()
+
+      expect(folders.homeId.value).toBeNull()
+      expect(folders.folders.value).toHaveLength(TREE.length + 2)
+      error.mockRestore()
     })
   })
 })

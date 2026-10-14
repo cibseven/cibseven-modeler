@@ -31,6 +31,7 @@ vi.mock('../../../services/formService.js', () => ({
 
 vi.mock('../../../services/folderService.js', () => ({
   fetchFolders: vi.fn(),
+  fetchHomeFolder: vi.fn(),
   fetchFolderContents: vi.fn().mockResolvedValue({ folders: 0, diagrams: 0, forms: 0 }),
   createFolder: vi.fn().mockResolvedValue({}),
   renameFolder: vi.fn().mockResolvedValue({}),
@@ -56,7 +57,7 @@ vi.mock('@cib/common-frontend', () => ({
 }))
 
 import StartPage from '../../../components/modeler/StartPage.vue'
-import { copyFormToFolder, copyProcessToFolder, fetchFolders, moveFormToFolder, moveProcessToFolder } from '../../../services/folderService.js'
+import { copyFormToFolder, copyProcessToFolder, fetchFolders, fetchHomeFolder, moveFormToFolder, moveProcessToFolder } from '../../../services/folderService.js'
 
 const TREE = [
   { id: 'general', parentId: null, name: 'General' },
@@ -437,6 +438,23 @@ describe('StartPage folders', () => {
         isSuccess: false,
         toastText: 'toastFolderLoadFail',
       })
+    })
+  })
+  describe('home', () => {
+    const HOME = { id: 'home', parentId: null, name: 'demo', home: true }
+
+    beforeEach(() => {
+      fetchFolders.mockResolvedValue([...TREE, HOME])
+      fetchHomeFolder.mockResolvedValue({ folder: HOME, manageHomes: false })
+    })
+
+    it('lists the home like any folder, but without actions', async () => {
+      const wrapper = await mountStartPage()
+
+      const rows = wrapper.findAllComponents({ name: 'FolderListItem' })
+      expect(rows.map(row => row.props('folder').name)).toEqual(['demo', 'General'])
+      expect(rows[0].props('locked')).toBe(true)
+      expect(rows[1].props('locked')).toBe(false)
     })
   })
 })

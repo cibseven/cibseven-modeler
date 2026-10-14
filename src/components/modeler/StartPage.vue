@@ -94,7 +94,7 @@
                             <div v-if="!isLoading">
                                 <template v-if="!isSearching">
                                     <div v-for="folder in currentChildren" :key="folder.id">
-                                        <FolderListItem :folder="folder" :isHovered="hoveredFolderId === folder.id"
+                                        <FolderListItem :folder="folder" :isHovered="hoveredFolderId === folder.id" :locked="folderState.isLocked(folder)"
                                             @mouseover="hoveredFolderId = folder.id" @mouseleave="hoveredFolderId = null"
                                             @focusin="hoveredFolderId = folder.id" @focusout="hoveredFolderId = null"
                                             @open="navigateTo" @rename="handleRenameFolder"

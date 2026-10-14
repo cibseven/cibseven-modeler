@@ -74,4 +74,11 @@ describe('FolderListItem', () => {
     it('shows them once it is', () => {
         expect(mountItem({ isHovered: true }).findAll('button.invisible')).toHaveLength(0)
     })
+
+    /** Only an administrator renames, moves or deletes a home. */
+    it('offers no actions on a locked folder', () => {
+        const wrapper = mountItem({ locked: true })
+
+        expect(wrapper.findAll('button')).toHaveLength(0)
+    })
 })
