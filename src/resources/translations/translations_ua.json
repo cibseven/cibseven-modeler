@@ -529,6 +529,9 @@
 	"folders": {
 		"breadcrumb": "Шлях до теки",
 		"projects": "Проєкти",
+		"setDefault": "Зробити текою за замовчуванням",
+		"unsetDefault": "Тека за замовчуванням: натисніть, щоб скасувати",
+		"defaultFolder": "Тека за замовчуванням",
 		"create": "Нова тека",
 		"createTitle": "Нова тека",
 		"createProject": "Створити проєкт",

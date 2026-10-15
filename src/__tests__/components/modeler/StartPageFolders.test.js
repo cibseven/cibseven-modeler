@@ -99,6 +99,8 @@ async function mountStartPage(props = {}) {
 describe('StartPage folders', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // A default folder kept by one test would decide where the next one starts
+    localStorage.clear()
     fetchFolders.mockResolvedValue(TREE)
   })
 
@@ -477,6 +479,96 @@ describe('StartPage folders', () => {
       const wrapper = await mountStartPage({ initialFolderId: 'deleted' })
 
       expect(wrapper.emitted('navigateFolder')).toEqual([['demo-folder']])
+    })
+
+    describe('default folder', () => {
+      const KEY = 'cibseven-modeler.defaultFolder.demo'
+      const star = wrapper => wrapper.find('button.default-folder')
+
+      beforeEach(() => localStorage.clear())
+
+      it('opens the default folder on a new visit', async () => {
+        localStorage.setItem(KEY, 'general')
+
+        const wrapper = await mountStartPage()
+
+        expect(wrapper.emitted('navigateFolder')).toEqual([['general']])
+      })
+
+      it('stays on the top level when that is the default', async () => {
+        localStorage.setItem(KEY, '')
+
+        const wrapper = await mountStartPage()
+
+        expect(wrapper.emitted('navigateFolder')).toBeUndefined()
+      })
+
+      it('leaves a refresh where it was, whatever the default', async () => {
+        localStorage.setItem(KEY, 'general')
+
+        const wrapper = await mountStartPage({ initialFolderId: 'demo-folder' })
+
+        expect(wrapper.emitted('navigateFolder')).toEqual([['demo-folder']])
+      })
+
+      it('opens the own folder and forgets a default that is gone', async () => {
+        localStorage.setItem(KEY, 'deleted')
+
+        const wrapper = await mountStartPage()
+
+        expect(wrapper.emitted('navigateFolder')).toEqual([['demo-folder']])
+        expect(localStorage.getItem(KEY)).toBeNull()
+      })
+
+      it('sets the place on screen as default, and unsets it again', async () => {
+        const wrapper = await mountStartPage()
+
+        await star(wrapper).trigger('click')
+        expect(localStorage.getItem(KEY)).toBe('demo-folder')
+        expect(star(wrapper).attributes('aria-pressed')).toBe('true')
+        expect(star(wrapper).attributes('title')).toBe('folders.unsetDefault')
+
+        await star(wrapper).trigger('click')
+        expect(localStorage.getItem(KEY)).toBeNull()
+        expect(star(wrapper).attributes('aria-pressed')).toBe('false')
+        expect(star(wrapper).attributes('title')).toBe('folders.setDefault')
+      })
+
+      it('sets the top level as default', async () => {
+        const wrapper = await mountStartPage({ initialFolderId: '' })
+
+        await star(wrapper).trigger('click')
+
+        expect(localStorage.getItem(KEY)).toBe('')
+      })
+
+      it('marks the default folder in the list', async () => {
+        localStorage.setItem(KEY, 'general')
+        const wrapper = await mountStartPage({ initialFolderId: '' })
+
+        const rows = wrapper.findAllComponents({ name: 'FolderListItem' })
+
+        expect(rows.find(row => row.props('folder').id === 'general').props('isDefault')).toBe(true)
+        expect(rows.find(row => row.props('folder').id === 'demo-folder').props('isDefault')).toBe(false)
+      })
+
+      it('offers no star without knowing the user', async () => {
+        fetchUserFolder.mockResolvedValue(null)
+
+        const wrapper = await mountStartPage()
+
+        expect(star(wrapper).exists()).toBe(false)
+      })
+
+      it('sends a file dropped on the top level into the default folder, unless that is the top level', async () => {
+        localStorage.setItem(KEY, 'general')
+        const wrapper = await mountStartPage()
+        expect(wrapper.vm.defaultDropFolderId()).toBe('general')
+
+        localStorage.setItem(KEY, '')
+        const onTop = await mountStartPage()
+        expect(onTop.vm.defaultDropFolderId()).toBeNull()
+      })
     })
 
     it('stays on the top level when there is no own folder', async () => {

@@ -827,6 +827,11 @@ const _isKnownFolder = folderId => {
 	return folders.length === 0 || folders.some(folder => folder.id === folderId)
 }
 
+// On the top level of the list a drop goes into the default folder, if the user chose one there
+const _defaultDropFolderId = () => activeTab.value === -1
+	? startPage.value?.defaultDropFolderId?.() ?? null
+	: null
+
 const importFile = async e => {
 	// The files have to be taken now: the browser empties a drop as soon as this handler returns,
 	// and the folder may only be chosen afterwards
@@ -835,7 +840,7 @@ const importFile = async e => {
 	const dropped = { dataTransfer: { files } }
 
 	const onScreen = _isKnownFolder(targetFolderId.value) ? targetFolderId.value : null
-	const known = onScreen ?? await _storedFolderOfOpenModel()
+	const known = onScreen ?? await _storedFolderOfOpenModel() ?? _defaultDropFolderId()
 	if (known) return _runImport(dropped, known)
 
 	// The dialog on screen is already asking about a drop, and answering it would carry the

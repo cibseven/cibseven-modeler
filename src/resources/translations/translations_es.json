@@ -529,6 +529,9 @@
 	"folders": {
 		"breadcrumb": "Ruta de carpetas",
 		"projects": "Proyectos",
+		"setDefault": "Establecer como carpeta predeterminada",
+		"unsetDefault": "Carpeta predeterminada: haga clic para quitarla",
+		"defaultFolder": "Carpeta predeterminada",
 		"create": "Nueva carpeta",
 		"createTitle": "Nueva carpeta",
 		"createProject": "Crear proyecto",

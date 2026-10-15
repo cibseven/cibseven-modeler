@@ -288,4 +288,71 @@ describe('useFolders', () => {
       error.mockRestore()
     })
   })
+  describe('default folder', () => {
+    const USER_FOLDER = { id: 'demo-folder', parentId: null, name: 'demo', userFolder: true }
+
+    beforeEach(() => {
+      localStorage.clear()
+      fetchFolders.mockResolvedValue([...TREE, USER_FOLDER])
+      fetchUserFolder.mockResolvedValue({ folder: USER_FOLDER, manageUserFolders: false })
+    })
+
+    it('has none until the user chooses one', async () => {
+      const folders = await loaded()
+
+      expect(folders.defaultFolderId.value).toBeNull()
+      expect(folders.isDefault('general')).toBe(false)
+      expect(folders.isDefault(null)).toBe(false)
+    })
+
+    it('keeps a folder for the next visit', async () => {
+      const folders = await loaded()
+
+      folders.setDefault('general')
+
+      expect(folders.isDefault('general')).toBe(true)
+      expect(localStorage.getItem('cibseven-modeler.defaultFolder.demo')).toBe('general')
+      expect((await loaded()).defaultFolderId.value).toBe('general')
+    })
+
+    it('keeps the top level as an empty value', async () => {
+      const folders = await loaded()
+
+      folders.setDefault(null)
+
+      expect(folders.isDefault(null)).toBe(true)
+      expect(localStorage.getItem('cibseven-modeler.defaultFolder.demo')).toBe('')
+    })
+
+    it('forgets it when unset', async () => {
+      const folders = await loaded()
+      folders.setDefault('general')
+
+      folders.clearDefault()
+
+      expect(folders.defaultFolderId.value).toBeNull()
+      expect(localStorage.getItem('cibseven-modeler.defaultFolder.demo')).toBeNull()
+    })
+
+    /** People sharing a browser each keep their own. */
+    it('keeps the default of every user apart', async () => {
+      localStorage.setItem('cibseven-modeler.defaultFolder.alice', 'archive')
+
+      const folders = await loaded()
+
+      expect(folders.defaultFolderId.value).toBeNull()
+    })
+
+    it('cannot be set without knowing the user', async () => {
+      fetchUserFolder.mockResolvedValue(null)
+      const folders = await loaded()
+
+      folders.setDefault('general')
+      folders.clearDefault()
+
+      expect(folders.canSetDefault.value).toBe(false)
+      expect(folders.defaultFolderId.value).toBeNull()
+      expect(localStorage.length).toBe(0)
+    })
+  })
 })
