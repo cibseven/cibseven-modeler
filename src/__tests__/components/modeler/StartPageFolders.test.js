@@ -14,8 +14,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount, flushPromises } from '@vue/test-utils'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { mount, flushPromises, enableAutoUnmount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
 import { DIAGRAM_TYPE } from '../../../constants/diagramTypes.js'
 
@@ -31,6 +31,7 @@ vi.mock('../../../services/formService.js', () => ({
 
 vi.mock('../../../services/folderService.js', () => ({
   fetchFolders: vi.fn(),
+  fetchUserFolder: vi.fn(),
   fetchFolderContents: vi.fn().mockResolvedValue({ folders: 0, diagrams: 0, forms: 0 }),
   createFolder: vi.fn().mockResolvedValue({}),
   renameFolder: vi.fn().mockResolvedValue({}),
@@ -56,7 +57,10 @@ vi.mock('@cib/common-frontend', () => ({
 }))
 
 import StartPage from '../../../components/modeler/StartPage.vue'
-import { copyFormToFolder, copyProcessToFolder, fetchFolders, moveFormToFolder, moveProcessToFolder } from '../../../services/folderService.js'
+
+import { copyFormToFolder, copyProcessToFolder, fetchFolders, fetchUserFolder, moveFormToFolder, moveProcessToFolder } from '../../../services/folderService.js'
+
+enableAutoUnmount(afterEach)
 
 const TREE = [
   { id: 'general', parentId: null, name: 'General' },
@@ -68,7 +72,9 @@ const DIAGRAMS = [
 ]
 
 async function mountStartPage(props = {}) {
-  const i18n = createI18n({ legacy: false, locale: 'en', messages: { en: {} } })
+  // The keys stand in for the texts; warning about each one only writes to the console, and a
+  // warning that lands after a test has ended fails the run
+  const i18n = createI18n({ legacy: false, locale: 'en', messages: { en: {} }, missingWarn: false, fallbackWarn: false })
 
   const wrapper = mount(StartPage, {
     props: { diagrams: DIAGRAMS, hasMore: false, ...props },
@@ -292,7 +298,7 @@ describe('StartPage folders', () => {
       fetchFolders.mockResolvedValue([])
       const wrapper = await mountStartPage({ diagrams: [] })
 
-      expect(emptyText(wrapper)).toContain('folders.emptyHome')
+      expect(emptyText(wrapper)).toContain('folders.emptyProjects')
     })
 
     it('says a folder is empty once you are inside one', async () => {
@@ -437,6 +443,59 @@ describe('StartPage folders', () => {
         isSuccess: false,
         toastText: 'toastFolderLoadFail',
       })
+    })
+  })
+  describe('user folder', () => {
+    const USER_FOLDER = { id: 'demo-folder', parentId: null, name: 'demo', userFolder: true }
+
+    beforeEach(() => {
+      fetchFolders.mockResolvedValue([...TREE, USER_FOLDER])
+      fetchUserFolder.mockResolvedValue({ folder: USER_FOLDER, manageUserFolders: false })
+    })
+
+    it('opens the own folder when the page opens', async () => {
+      const wrapper = await mountStartPage()
+
+      expect(wrapper.emitted('navigateFolder')).toEqual([['demo-folder']])
+      expect(wrapper.find('.breadcrumb').text()).toContain('demo')
+    })
+
+    it('comes back to the folder of the URL after a refresh', async () => {
+      const wrapper = await mountStartPage({ initialFolderId: 'general' })
+
+      expect(wrapper.emitted('navigateFolder')).toEqual([['general']])
+    })
+
+    it('stays on the top level when the URL says so', async () => {
+      const wrapper = await mountStartPage({ initialFolderId: '' })
+
+      expect(wrapper.emitted('navigateFolder')).toBeUndefined()
+    })
+
+    /** A folder deleted in another tab must not leave the page pointing at nothing. */
+    it('opens the own folder when the folder of the URL is gone', async () => {
+      const wrapper = await mountStartPage({ initialFolderId: 'deleted' })
+
+      expect(wrapper.emitted('navigateFolder')).toEqual([['demo-folder']])
+    })
+
+    it('stays on the top level when there is no own folder', async () => {
+      fetchUserFolder.mockResolvedValue(null)
+
+      const wrapper = await mountStartPage()
+
+      expect(wrapper.emitted('navigateFolder')).toBeUndefined()
+    })
+
+    it('lists the user folder like any folder, but without actions', async () => {
+      const wrapper = await mountStartPage()
+      await wrapper.findAll('.breadcrumb button')[0].trigger('click')
+      await flushPromises()
+
+      const rows = wrapper.findAllComponents({ name: 'FolderListItem' })
+      expect(rows.map(row => row.props('folder').name)).toEqual(['demo', 'General'])
+      expect(rows[0].props('locked')).toBe(true)
+      expect(rows[1].props('locked')).toBe(false)
     })
   })
 })

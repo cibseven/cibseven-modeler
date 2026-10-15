@@ -23,7 +23,8 @@
         <div class="w-80 flex-grow-1 mx-2 min-w-0 d-flex flex-column">
             <span class="text-truncate">{{ folder.name }}</span>
         </div>
-        <span class="w-10 ml-2 d-flex justify-content-end">
+        <!-- A user folder is only renamed, moved or deleted by an administrator -->
+        <span v-if="!locked" class="w-10 ml-2 d-flex justify-content-end">
             <button :title="$t('folders.rename')" :aria-label="`${$t('folders.rename')}: ${folder.name}`" type="button"
                 class="btn mdi mdi-18px mdi-rename-outline border-0 btn-outline-secondary btn-sm"
                 :class="{ 'invisible': !isHovered }"
@@ -47,6 +48,7 @@
 defineProps({
     folder: { type: Object, required: true },
     isHovered: Boolean,
+    locked: Boolean,
 })
 
 const emit = defineEmits(['open', 'rename', 'move', 'remove'])

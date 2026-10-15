@@ -38,7 +38,7 @@
 	<div ref="modelerTabPanes" class="tab-content flex-grow-1" style="min-height: 0;" :key="`modelerid1-i`">
 		<div class="tab-pane  bg-light fade" role="tabpanel" style="height: calc(100vh - 40px);"
 			:class="{ 'active show': activeTab === -1 && !hasDirectDiagram }" :aria-labelledby="`dashboard-tab`" tabindex="0">
-	<StartPage ref="startPage" v-if="diagrams !== null && !hasDirectDiagram" :diagrams="diagrams"
+	<StartPage ref="startPage" v-if="diagrams !== null && !hasDirectDiagram" :diagrams="diagrams" :initialFolderId="folderFromUrl"
 		:hasMore="hasMore"
 		@openDiagram="openDiagramFromChild" @openSelectedFile="importFile" @showToastMessage="showToastMessage"
 		@modelMoved="handleModelMoved"
@@ -259,6 +259,9 @@ const hasMore = ref(true)
 const PAGE_SIZE = 20
 const currentKeyword = ref('')
 const currentFolderId = ref(null)
+// The open folder is kept in the URL, so a refresh comes back to it while a new visit, which has
+// none, starts in the user's own folder. An empty value is the top level.
+const folderFromUrl = typeof route.query.folder === 'string' ? route.query.folder : null
 const currentDiagramType = ref('')
 // Tab state is owned by useTabManager — initialized after modeler ref
 const { tabNavList, tabNavListXml, editorXML, _copyArray, _saveTabNavSavedLocalStorage, _loadTabNavList, _closeSelectedTab, orderTabNavListHiddenTab: _orderTabNavListHiddenTab } = useTabManager(modeler)
@@ -472,6 +475,7 @@ const getStoredDiagrams = async functionAfterExecution => {
 
 const handleNavigateFolder = async folderId => {
 	currentFolderId.value = folderId ?? null
+	router.replace({ query: { ...route.query, folder: folderId ?? '' } }).catch(() => {})
 	if (startPage.value) startPage.value._toggleIsLoading(true)
 	await getStoredDiagrams()
 	if (startPage.value) startPage.value._toggleIsLoading(false)
@@ -556,9 +560,9 @@ const switchTabFromTabNav = async selectedTabIndex => {
 	activeTab.value = selectedTabIndex
 	const tab = tabNavList.value[selectedTabIndex]
 	if (tab?.isSaved && tab?.id) {
-		router.replace({ params: { diagramId: tab.id } }).catch(() => {})
+		router.replace({ params: { diagramId: tab.id }, query: route.query }).catch(() => {})
 	} else if (route.params.diagramId) {
-		router.replace({ path: route.path.replace('/' + route.params.diagramId, '') }).catch(() => {})
+		router.replace({ path: route.path.replace('/' + route.params.diagramId, ''), query: route.query }).catch(() => {})
 	}
 	// Fetch XML if not already loaded for saved tabs
 	if (selectedTabIndex > -1 && tab?.isSaved && tab?.id && !editorXML.value[selectedTabIndex] && !tabNavListXml.value[selectedTabIndex]) {

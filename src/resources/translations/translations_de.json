@@ -528,7 +528,7 @@
   },
 	"folders": {
 		"breadcrumb": "Ordnerpfad",
-		"home": "Start",
+		"projects": "Projekte",
 		"create": "Neuer Ordner",
 		"createTitle": "Neuer Ordner",
 		"createProject": "Projekt erstellen",
@@ -562,7 +562,7 @@
 		"destination": "Ziel",
 		"importTitle": "In einen Ordner importieren",
 		"empty": "Dieser Ordner ist leer.",
-		"emptyHome": "Noch keine Ordner. Legen Sie einen an, um Modelle darin abzulegen.",
+		"emptyProjects": "Noch keine Projekte. Legen Sie eines an, um Modelle darin abzulegen.",
 		"noMatches": "Nichts passt zu „{keyword}“, in keinem Ordner.",
 		"searchAcrossFolders": "Treffer aus allen Ordnern."
 	},

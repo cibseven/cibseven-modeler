@@ -31,6 +31,7 @@ vi.mock('../../../services/formService.js', () => ({
 
 vi.mock('../../../services/folderService.js', () => ({
   fetchFolders: vi.fn().mockResolvedValue([]),
+  fetchUserFolder: vi.fn().mockResolvedValue(null),
   fetchFolderContents: vi.fn().mockResolvedValue({ folders: 0, diagrams: 0, forms: 0 }),
   createFolder: vi.fn().mockResolvedValue({}),
   renameFolder: vi.fn().mockResolvedValue({}),

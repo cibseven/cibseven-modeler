@@ -528,7 +528,7 @@
 	},
 	"folders": {
 		"breadcrumb": "Folder path",
-		"home": "Home",
+		"projects": "Projects",
 		"create": "New folder",
 		"createTitle": "New folder",
 		"createProject": "Create project",
@@ -562,7 +562,7 @@
 		"destination": "Destination",
 		"importTitle": "Import into a folder",
 		"empty": "This folder is empty.",
-		"emptyHome": "No folders yet. Create one to store your models in.",
+		"emptyProjects": "No projects yet. Create one to store your models in.",
 		"noMatches": "Nothing matches \"{keyword}\" in any folder.",
 		"searchAcrossFolders": "Showing matches from every folder."
 	},

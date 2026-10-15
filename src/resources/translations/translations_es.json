@@ -528,7 +528,7 @@
   },
 	"folders": {
 		"breadcrumb": "Ruta de carpetas",
-		"home": "Inicio",
+		"projects": "Proyectos",
 		"create": "Nueva carpeta",
 		"createTitle": "Nueva carpeta",
 		"createProject": "Crear proyecto",
@@ -562,7 +562,7 @@
 		"destination": "Destino",
 		"importTitle": "Importar a una carpeta",
 		"empty": "Esta carpeta está vacía.",
-		"emptyHome": "Todavía no hay carpetas. Cree una para guardar sus modelos.",
+		"emptyProjects": "Todavía no hay proyectos. Cree uno para guardar sus modelos.",
 		"noMatches": "Nada coincide con «{keyword}» en ninguna carpeta.",
 		"searchAcrossFolders": "Mostrando resultados de todas las carpetas."
 	},

@@ -27,11 +27,11 @@
                         <legend class="form-label fs-6">{{ $t('folders.destination') }}</legend>
                         <div class="list-group overflow-auto" style="max-height: 40vh">
                             <div v-if="allowTopLevel" class="list-group-item d-flex align-items-center gap-2">
-                                <input :id="`${optionId}-home`" type="radio" class="form-check-input m-0"
+                                <input :id="`${optionId}-top-level`" type="radio" class="form-check-input m-0"
                                     value="" v-model="selected">
-                                <label :for="`${optionId}-home`" class="d-flex align-items-center gap-2 mb-0">
-                                    <span class="mdi mdi-home-outline" aria-hidden="true"></span>
-                                    <span>{{ $t('folders.home') }}</span>
+                                <label :for="`${optionId}-top-level`" class="d-flex align-items-center gap-2 mb-0">
+                                    <span class="mdi mdi-folder-multiple-outline" aria-hidden="true"></span>
+                                    <span>{{ $t('folders.projects') }}</span>
                                 </label>
                             </div>
                             <div v-for="folder in options" :key="folder.id"

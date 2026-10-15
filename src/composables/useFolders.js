@@ -20,6 +20,7 @@ import {
   deleteFolder,
   fetchFolderContents,
   fetchFolders,
+  fetchUserFolder,
   moveFolder,
   renameFolder
 } from '../services/folderService'
@@ -32,8 +33,14 @@ export default function useFolders() {
   const folders = ref([])
   // Null is the top level, which holds folders only: a model always lives in a folder
   const currentFolderId = ref(null)
+  // The folder at the top level named after the user, created on the first visit
+  const userFolderId = ref(null)
+  // Administrators may rename, move and delete user folders, everybody else leaves them where they are
+  const manageUserFolders = ref(false)
 
   const byId = computed(() => new Map(folders.value.map(folder => [folder.id, folder])))
+
+  const isLocked = folder => !!folder?.userFolder && !manageUserFolders.value
 
   const childrenOf = parentId => folders.value
     .filter(folder => (folder.parentId ?? null) === (parentId ?? null))
@@ -61,7 +68,21 @@ export default function useFolders() {
   /** The path down to the folder open, for the breadcrumb. */
   const breadcrumb = computed(() => pathOf(currentFolderId.value))
 
+  // Asked for until it is known: the first call is the one that creates it
+  const ensureUserFolder = async () => {
+    if (userFolderId.value) return
+    try {
+      const userFolder = await fetchUserFolder()
+      userFolderId.value = userFolder?.folder?.id ?? null
+      manageUserFolders.value = !!userFolder?.manageUserFolders
+    } catch (error) {
+      // The tree is usable without a user folder, so the listing goes on
+      console.error(error)
+    }
+  }
+
   const load = async () => {
+    await ensureUserFolder()
     const loaded = await fetchFolders()
     folders.value = Array.isArray(loaded) ? loaded : []
     // A folder removed in another tab must not leave the view pointing at nothing
@@ -127,6 +148,9 @@ export default function useFolders() {
   return {
     folders,
     currentFolderId,
+    userFolderId,
+    manageUserFolders,
+    isLocked,
     currentFolder,
     currentChildren,
     breadcrumb,
