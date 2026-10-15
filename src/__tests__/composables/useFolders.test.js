@@ -18,7 +18,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('../../services/folderService.js', () => ({
   fetchFolders: vi.fn(),
-  fetchHomeFolder: vi.fn(),
+  fetchUserFolder: vi.fn(),
   fetchFolderContents: vi.fn(),
   createFolder: vi.fn(),
   renameFolder: vi.fn(),
@@ -32,7 +32,7 @@ import {
   deleteFolder,
   fetchFolderContents,
   fetchFolders,
-  fetchHomeFolder,
+  fetchUserFolder,
   moveFolder,
   renameFolder
 } from '../../services/folderService.js'
@@ -236,20 +236,20 @@ describe('useFolders', () => {
       await expect(folders.contents('general')).resolves.toEqual({ folders: 1, diagrams: 2, forms: 3 })
     })
   })
-  describe('home', () => {
-    const HOME = { id: 'home', parentId: null, name: 'demo', home: true }
-    const OTHER_HOME = { id: 'other-home', parentId: null, name: 'alice', home: true }
+  describe('user folder', () => {
+    const USER_FOLDER = { id: 'demo-folder', parentId: null, name: 'demo', userFolder: true }
+    const OTHER_USER_FOLDER = { id: 'alice-folder', parentId: null, name: 'alice', userFolder: true }
 
     beforeEach(() => {
-      fetchFolders.mockResolvedValue([...TREE, HOME, OTHER_HOME])
-      fetchHomeFolder.mockResolvedValue({ folder: HOME, manageHomes: false })
+      fetchFolders.mockResolvedValue([...TREE, USER_FOLDER, OTHER_USER_FOLDER])
+      fetchUserFolder.mockResolvedValue({ folder: USER_FOLDER, manageUserFolders: false })
     })
 
-    it('asks for the home of the user before reading the tree', async () => {
+    it('asks for the folder of the user before reading the tree', async () => {
       const folders = await loaded()
 
-      expect(fetchHomeFolder).toHaveBeenCalledTimes(1)
-      expect(folders.homeId.value).toBe('home')
+      expect(fetchUserFolder).toHaveBeenCalledTimes(1)
+      expect(folders.userFolderId.value).toBe('demo-folder')
     })
 
     it('asks only once, since the first call is the one that creates it', async () => {
@@ -257,33 +257,33 @@ describe('useFolders', () => {
 
       await folders.load()
 
-      expect(fetchHomeFolder).toHaveBeenCalledTimes(1)
+      expect(fetchUserFolder).toHaveBeenCalledTimes(1)
       expect(fetchFolders).toHaveBeenCalledTimes(2)
     })
 
-    it('locks every home for a user who may not manage homes', async () => {
+    it('locks every user folder for a user who may not manage them', async () => {
       const folders = await loaded()
 
-      expect(folders.isLocked(HOME)).toBe(true)
-      expect(folders.isLocked(OTHER_HOME)).toBe(true)
+      expect(folders.isLocked(USER_FOLDER)).toBe(true)
+      expect(folders.isLocked(OTHER_USER_FOLDER)).toBe(true)
       expect(folders.isLocked(TREE[0])).toBe(false)
     })
 
-    it('leaves homes open to an administrator', async () => {
-      fetchHomeFolder.mockResolvedValue({ folder: HOME, manageHomes: true })
+    it('leaves user folders open to an administrator', async () => {
+      fetchUserFolder.mockResolvedValue({ folder: USER_FOLDER, manageUserFolders: true })
       const folders = await loaded()
 
-      expect(folders.isLocked(HOME)).toBe(false)
+      expect(folders.isLocked(USER_FOLDER)).toBe(false)
     })
 
-    /** A backend without homes, or a failing call, must not cost the user the tree. */
-    it('still reads the tree when the home cannot be had', async () => {
+    /** A backend without user folders, or a failing call, must not cost the user the tree. */
+    it('still reads the tree when the user folder cannot be had', async () => {
       const error = vi.spyOn(console, 'error').mockImplementation(() => {})
-      fetchHomeFolder.mockRejectedValue(new Error('404'))
+      fetchUserFolder.mockRejectedValue(new Error('404'))
 
       const folders = await loaded()
 
-      expect(folders.homeId.value).toBeNull()
+      expect(folders.userFolderId.value).toBeNull()
       expect(folders.folders.value).toHaveLength(TREE.length + 2)
       error.mockRestore()
     })

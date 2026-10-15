@@ -24,9 +24,9 @@ const fetchFolders = () => {
   return getAxios().get(foldersPath())
 }
 
-// The user's home, created on the first call, and whether this user may manage homes
-const fetchHomeFolder = () => {
-  return getAxios().post(foldersPath() + '/home')
+// The user's own folder, created on the first call, and whether this user may manage user folders
+const fetchUserFolder = () => {
+  return getAxios().post(foldersPath() + '/user-folder')
 }
 
 // What a folder holds through its whole subtree, for the delete warning
@@ -73,7 +73,7 @@ const moveFormToFolder = (id, folderId) => {
 
 export {
   fetchFolders,
-  fetchHomeFolder,
+  fetchUserFolder,
   fetchFolderContents,
   createFolder,
   renameFolder,

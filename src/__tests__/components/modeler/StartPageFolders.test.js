@@ -31,7 +31,7 @@ vi.mock('../../../services/formService.js', () => ({
 
 vi.mock('../../../services/folderService.js', () => ({
   fetchFolders: vi.fn(),
-  fetchHomeFolder: vi.fn(),
+  fetchUserFolder: vi.fn(),
   fetchFolderContents: vi.fn().mockResolvedValue({ folders: 0, diagrams: 0, forms: 0 }),
   createFolder: vi.fn().mockResolvedValue({}),
   renameFolder: vi.fn().mockResolvedValue({}),
@@ -57,7 +57,7 @@ vi.mock('@cib/common-frontend', () => ({
 }))
 
 import StartPage from '../../../components/modeler/StartPage.vue'
-import { copyFormToFolder, copyProcessToFolder, fetchFolders, fetchHomeFolder, moveFormToFolder, moveProcessToFolder } from '../../../services/folderService.js'
+import { copyFormToFolder, copyProcessToFolder, fetchFolders, fetchUserFolder, moveFormToFolder, moveProcessToFolder } from '../../../services/folderService.js'
 
 const TREE = [
   { id: 'general', parentId: null, name: 'General' },
@@ -440,18 +440,18 @@ describe('StartPage folders', () => {
       })
     })
   })
-  describe('home', () => {
-    const HOME = { id: 'home', parentId: null, name: 'demo', home: true }
+  describe('user folder', () => {
+    const USER_FOLDER = { id: 'demo-folder', parentId: null, name: 'demo', userFolder: true }
 
     beforeEach(() => {
-      fetchFolders.mockResolvedValue([...TREE, HOME])
-      fetchHomeFolder.mockResolvedValue({ folder: HOME, manageHomes: false })
+      fetchFolders.mockResolvedValue([...TREE, USER_FOLDER])
+      fetchUserFolder.mockResolvedValue({ folder: USER_FOLDER, manageUserFolders: false })
     })
 
     it('opens the own folder when the page opens', async () => {
       const wrapper = await mountStartPage()
 
-      expect(wrapper.emitted('navigateFolder')).toEqual([['home']])
+      expect(wrapper.emitted('navigateFolder')).toEqual([['demo-folder']])
       expect(wrapper.find('.breadcrumb').text()).toContain('demo')
     })
 
@@ -471,18 +471,18 @@ describe('StartPage folders', () => {
     it('opens the own folder when the folder of the URL is gone', async () => {
       const wrapper = await mountStartPage({ initialFolderId: 'deleted' })
 
-      expect(wrapper.emitted('navigateFolder')).toEqual([['home']])
+      expect(wrapper.emitted('navigateFolder')).toEqual([['demo-folder']])
     })
 
     it('stays on the top level when there is no own folder', async () => {
-      fetchHomeFolder.mockResolvedValue(null)
+      fetchUserFolder.mockResolvedValue(null)
 
       const wrapper = await mountStartPage()
 
       expect(wrapper.emitted('navigateFolder')).toBeUndefined()
     })
 
-    it('lists the home like any folder, but without actions', async () => {
+    it('lists the user folder like any folder, but without actions', async () => {
       const wrapper = await mountStartPage()
       await wrapper.findAll('.breadcrumb button')[0].trigger('click')
 

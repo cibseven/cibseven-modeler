@@ -75,7 +75,7 @@ describe('FolderListItem', () => {
         expect(mountItem({ isHovered: true }).findAll('button.invisible')).toHaveLength(0)
     })
 
-    /** Only an administrator renames, moves or deletes a home. */
+    /** Only an administrator renames, moves or deletes a user folder. */
     it('offers no actions on a locked folder', () => {
         const wrapper = mountItem({ locked: true })
 

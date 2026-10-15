@@ -268,7 +268,7 @@ const startFolder = () => {
     const requested = props.initialFolderId
     if (requested === '') return null
     const exists = requested && folderState.folders.value.some(folder => folder.id === requested)
-    return exists ? requested : folderState.homeId.value
+    return exists ? requested : folderState.userFolderId.value
 }
 
 onMounted(async () => {

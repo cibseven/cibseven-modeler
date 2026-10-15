@@ -27,7 +27,7 @@ vi.mock('../../services/servicesConfig', () => ({ getModelerServicePath: () => '
 
 import {
     fetchFolders,
-    fetchHomeFolder,
+    fetchUserFolder,
     fetchFolderContents,
     createFolder,
     renameFolder,
@@ -50,10 +50,10 @@ describe('folderService', () => {
         expect(m.get).toHaveBeenCalledWith('svc/folders')
     })
 
-    it('asks for the home of the user', () => {
-        fetchHomeFolder()
+    it('asks for the folder of the user', () => {
+        fetchUserFolder()
 
-        expect(m.post).toHaveBeenCalledWith('svc/folders/home')
+        expect(m.post).toHaveBeenCalledWith('svc/folders/user-folder')
     })
 
     it('reads what a folder holds', () => {
