@@ -529,6 +529,9 @@
 	"folders": {
 		"breadcrumb": "Путь по папкам",
 		"projects": "Проекты",
+		"setDefault": "Сделать папкой по умолчанию",
+		"unsetDefault": "Папка по умолчанию: нажмите, чтобы отменить",
+		"defaultFolder": "Папка по умолчанию",
 		"create": "Новая папка",
 		"createTitle": "Новая папка",
 		"createProject": "Создать проект",

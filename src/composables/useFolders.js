@@ -29,6 +29,8 @@ import {
  * The folder a user is looking at and the folders around it. The whole tree arrives in one call
  * and the levels are derived here, so walking in and out of folders costs no request.
  */
+const DEFAULT_FOLDER_KEY = 'cibseven-modeler.defaultFolder'
+
 export default function useFolders() {
   const folders = ref([])
   // Null is the top level, which holds folders only: a model always lives in a folder
@@ -37,10 +39,34 @@ export default function useFolders() {
   const userFolderId = ref(null)
   // Administrators may rename, move and delete user folders, everybody else leaves them where they are
   const manageUserFolders = ref(false)
+  // Whose default folder is kept: people sharing a browser keep their own
+  const userId = ref(null)
+  // Where a visit starts: null when none is chosen, an empty value for the top level, else a folder
+  const defaultFolderId = ref(null)
 
   const byId = computed(() => new Map(folders.value.map(folder => [folder.id, folder])))
 
   const isLocked = folder => !!folder?.userFolder && !manageUserFolders.value
+
+  const defaultFolderKey = () => `${DEFAULT_FOLDER_KEY}.${userId.value}`
+
+  // Without knowing the user there is nobody to keep it for
+  const canSetDefault = computed(() => !!userId.value)
+
+  /** The top level is passed as null, like everywhere else. */
+  const isDefault = folderId => defaultFolderId.value !== null && defaultFolderId.value === (folderId ?? '')
+
+  const setDefault = folderId => {
+    if (!canSetDefault.value) return
+    defaultFolderId.value = folderId ?? ''
+    localStorage.setItem(defaultFolderKey(), defaultFolderId.value)
+  }
+
+  const clearDefault = () => {
+    if (!canSetDefault.value) return
+    defaultFolderId.value = null
+    localStorage.removeItem(defaultFolderKey())
+  }
 
   const childrenOf = parentId => folders.value
     .filter(folder => (folder.parentId ?? null) === (parentId ?? null))
@@ -75,6 +101,9 @@ export default function useFolders() {
       const userFolder = await fetchUserFolder()
       userFolderId.value = userFolder?.folder?.id ?? null
       manageUserFolders.value = !!userFolder?.manageUserFolders
+      // The folder is named after the user, which is all the modeler knows of who is working
+      userId.value = userFolder?.folder?.name ?? null
+      if (userId.value) defaultFolderId.value = localStorage.getItem(defaultFolderKey())
     } catch (error) {
       // The tree is usable without a user folder, so the listing goes on
       console.error(error)
@@ -151,6 +180,11 @@ export default function useFolders() {
     userFolderId,
     manageUserFolders,
     isLocked,
+    defaultFolderId,
+    canSetDefault,
+    isDefault,
+    setDefault,
+    clearDefault,
     currentFolder,
     currentChildren,
     breadcrumb,

@@ -75,6 +75,17 @@ describe('FolderListItem', () => {
         expect(mountItem({ isHovered: true }).findAll('button.invisible')).toHaveLength(0)
     })
 
+    it('marks the default folder, for screen readers too', () => {
+        const wrapper = mountItem({ isDefault: true })
+
+        expect(wrapper.find('.mdi-star').exists()).toBe(true)
+        expect(wrapper.find('.visually-hidden').text()).toBe('folders.defaultFolder')
+    })
+
+    it('shows no marker on other folders', () => {
+        expect(mountItem().find('.mdi-star').exists()).toBe(false)
+    })
+
     /** Only an administrator renames, moves or deletes a user folder. */
     it('offers no actions on a locked folder', () => {
         const wrapper = mountItem({ locked: true })
