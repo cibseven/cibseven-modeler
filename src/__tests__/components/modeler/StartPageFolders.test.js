@@ -14,8 +14,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount, flushPromises } from '@vue/test-utils'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { mount, flushPromises, enableAutoUnmount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
 import { DIAGRAM_TYPE } from '../../../constants/diagramTypes.js'
 
@@ -57,7 +57,10 @@ vi.mock('@cib/common-frontend', () => ({
 }))
 
 import StartPage from '../../../components/modeler/StartPage.vue'
+
 import { copyFormToFolder, copyProcessToFolder, fetchFolders, fetchUserFolder, moveFormToFolder, moveProcessToFolder } from '../../../services/folderService.js'
+
+enableAutoUnmount(afterEach)
 
 const TREE = [
   { id: 'general', parentId: null, name: 'General' },
@@ -69,7 +72,9 @@ const DIAGRAMS = [
 ]
 
 async function mountStartPage(props = {}) {
-  const i18n = createI18n({ legacy: false, locale: 'en', messages: { en: {} } })
+  // The keys stand in for the texts; warning about each one only writes to the console, and a
+  // warning that lands after a test has ended fails the run
+  const i18n = createI18n({ legacy: false, locale: 'en', messages: { en: {} }, missingWarn: false, fallbackWarn: false })
 
   const wrapper = mount(StartPage, {
     props: { diagrams: DIAGRAMS, hasMore: false, ...props },
@@ -485,6 +490,7 @@ describe('StartPage folders', () => {
     it('lists the user folder like any folder, but without actions', async () => {
       const wrapper = await mountStartPage()
       await wrapper.findAll('.breadcrumb button')[0].trigger('click')
+      await flushPromises()
 
       const rows = wrapper.findAllComponents({ name: 'FolderListItem' })
       expect(rows.map(row => row.props('folder').name)).toEqual(['demo', 'General'])
