@@ -62,6 +62,7 @@
                 <div>
                     <nav class="mt-4 mb-3 d-flex align-items-center justify-content-between gap-2"
                         :aria-label="$t('folders.breadcrumb')">
+                        <div class="d-flex align-items-center gap-1 min-w-0">
                         <ol class="breadcrumb bg-transparent mb-0 p-0 flex-wrap folder-breadcrumb">
                             <li class="breadcrumb-item" :class="{ active: !breadcrumb.length }">
                                 <span v-if="!breadcrumb.length" aria-current="page">{{ $t('folders.projects') }}</span>
@@ -76,6 +77,12 @@
                                     @click="navigateTo(folder.id)">{{ folder.name }}</button>
                             </li>
                         </ol>
+                        <button v-if="canSetDefault" type="button" class="btn btn-sm border-0 py-0 default-folder"
+                            :title="defaultLabel" :aria-label="defaultLabel" :aria-pressed="isDefaultHere"
+                            @click="toggleDefault">
+                            <i class="mdi mdi-18px" :class="isDefaultHere ? 'mdi-star text-warning' : 'mdi-star-outline'" aria-hidden="true"></i>
+                        </button>
+                        </div>
                         <!-- A folder at the top level is a project, and creating one is what the page is there for -->
                         <button type="button" class="btn text-nowrap create-folder"
                             :class="currentFolderId ? 'btn-outline-secondary' : 'btn-primary'"
@@ -95,6 +102,7 @@
                                 <template v-if="!isSearching">
                                     <div v-for="folder in currentChildren" :key="folder.id">
                                         <FolderListItem :folder="folder" :isHovered="hoveredFolderId === folder.id" :locked="folderState.isLocked(folder)"
+                                            :isDefault="folderState.isDefault(folder.id)"
                                             @mouseover="hoveredFolderId = folder.id" @mouseleave="hoveredFolderId = null"
                                             @focusin="hoveredFolderId = folder.id" @focusout="hoveredFolderId = null"
                                             @open="navigateTo" @rename="handleRenameFolder"
@@ -237,7 +245,14 @@ const folderPickerModal = ref(null)
 const hoveredFolderId = ref(null)
 const folderDeleteBody = ref('')
 const folderState = useFolders()
-const { breadcrumb, currentChildren, currentFolderId } = folderState
+const { breadcrumb, currentChildren, currentFolderId, canSetDefault } = folderState
+
+// The place on screen, the top level included, is what the star sets as the start of a visit
+const isDefaultHere = computed(() => folderState.isDefault(currentFolderId.value))
+const defaultLabel = computed(() => isDefaultHere.value ? t('folders.unsetDefault') : t('folders.setDefault'))
+const toggleDefault = () => isDefaultHere.value
+    ? folderState.clearDefault()
+    : folderState.setDefault(currentFolderId.value)
 
 // The keyword the list actually reflects, set when the search is sent rather than typed:
 // while typing, what is on screen is still the folder, and it is described as the folder
@@ -263,12 +278,28 @@ const emptyState = computed(() => {
     }
 })
 
-// A refresh comes back to the folder in the URL, a new visit starts in the user's own folder
+const _exists = folderId => folderState.folders.value.some(folder => folder.id === folderId)
+
+/**
+ * A refresh comes back to the folder in the URL; a new visit starts in the default the user
+ * chose, else in the user's own folder. Null is the top level.
+ */
 const startFolder = () => {
     const requested = props.initialFolderId
     if (requested === '') return null
-    const exists = requested && folderState.folders.value.some(folder => folder.id === requested)
-    return exists ? requested : folderState.userFolderId.value
+    if (requested && _exists(requested)) return requested
+    const preferred = folderState.defaultFolderId.value
+    if (preferred === '') return null
+    if (preferred && _exists(preferred)) return preferred
+    // A default that is gone is forgotten, so the next visit does not look for it again
+    if (preferred) folderState.clearDefault()
+    return folderState.userFolderId.value
+}
+
+/** Where a file dropped on the top level goes; none when the default is the top level itself. */
+const defaultDropFolderId = () => {
+    const preferred = folderState.defaultFolderId.value
+    return preferred && _exists(preferred) ? preferred : null
 }
 
 onMounted(async () => {
@@ -576,7 +607,8 @@ defineExpose({
     openDiagramEmitFromChild,
     folderNameFor,
     folderPathFor,
-    folderOptions
+    folderOptions,
+    defaultDropFolderId
 })
 </script>
 

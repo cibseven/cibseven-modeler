@@ -529,6 +529,9 @@
 	"folders": {
 		"breadcrumb": "Folder path",
 		"projects": "Projects",
+		"setDefault": "Set as default folder",
+		"unsetDefault": "Default folder: click to unset",
+		"defaultFolder": "Default folder",
 		"create": "New folder",
 		"createTitle": "New folder",
 		"createProject": "Create project",

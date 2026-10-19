@@ -21,7 +21,12 @@
         :class="{ 'bg-light': isHovered }">
         <span class="w-10 justify-content-center mr-2 mdi mdi-18px mdi-folder-outline" aria-hidden="true"></span>
         <div class="w-80 flex-grow-1 mx-2 min-w-0 d-flex flex-column">
-            <span class="text-truncate">{{ folder.name }}</span>
+            <span class="text-truncate">{{ folder.name }}
+                <template v-if="isDefault">
+                    <span class="mdi mdi-star text-warning ms-1" :title="$t('folders.defaultFolder')" aria-hidden="true"></span>
+                    <span class="visually-hidden">{{ $t('folders.defaultFolder') }}</span>
+                </template>
+            </span>
         </div>
         <!-- A user folder is only renamed, moved or deleted by an administrator -->
         <span v-if="!locked" class="w-10 ml-2 d-flex justify-content-end">
@@ -49,6 +54,8 @@ defineProps({
     folder: { type: Object, required: true },
     isHovered: Boolean,
     locked: Boolean,
+    // The folder a visit starts in
+    isDefault: Boolean,
 })
 
 const emit = defineEmits(['open', 'rename', 'move', 'remove'])

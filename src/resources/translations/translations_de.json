@@ -529,6 +529,9 @@
 	"folders": {
 		"breadcrumb": "Ordnerpfad",
 		"projects": "Projekte",
+		"setDefault": "Als Standardordner festlegen",
+		"unsetDefault": "Standardordner: zum Aufheben klicken",
+		"defaultFolder": "Standardordner",
 		"create": "Neuer Ordner",
 		"createTitle": "Neuer Ordner",
 		"createProject": "Projekt erstellen",

@@ -35,6 +35,7 @@ const startPageMocks = vi.hoisted(() => ({
   folderNameFor: vi.fn(),
   folderPathFor: vi.fn(),
   folderOptions: vi.fn(),
+  defaultDropFolderId: vi.fn(),
 }))
 
 const storeState = vi.hoisted(() => ({
@@ -138,6 +139,7 @@ vi.mock('../../../components/modeler/StartPage.vue', () => ({
       folderNameFor: (...args) => startPageMocks.folderNameFor(...args),
       folderPathFor: (...args) => startPageMocks.folderPathFor(...args),
       folderOptions: (...args) => startPageMocks.folderOptions(...args),
+      defaultDropFolderId: (...args) => startPageMocks.defaultDropFolderId(...args),
     },
   },
 }))
@@ -197,6 +199,7 @@ describe('CibsevenModeler', () => {
     // Clearing keeps whatever a test installed, and these two are installed per test
     fileImportMocks.handleFile.mockReset()
     startPageMocks.folderPathFor.mockReset()
+    startPageMocks.defaultDropFolderId.mockReturnValue(null)
     pickerMocks.isShown.mockReturnValue(false)
     tabManagerState.tabNavList.value = []
     tabManagerState.tabNavListXml.value = []
@@ -336,6 +339,33 @@ describe('CibsevenModeler', () => {
       await wrapper.vm.importFile(drop())
 
       expect(folder()).toBe('archive')
+    })
+
+    it('is the default folder when the file is dropped on the top level', async () => {
+      startPageMocks.defaultDropFolderId.mockReturnValue('archive')
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      const folder = folderSeenByImport(wrapper)
+
+      await wrapper.vm.importFile(drop())
+
+      expect(folder()).toBe('archive')
+      expect(pickerMocks.show).not.toHaveBeenCalled()
+    })
+
+    /** A default belongs to the list: a model on screen that has no folder yet still asks. */
+    it('does not take the default while a model without a folder is on screen', async () => {
+      startPageMocks.defaultDropFolderId.mockReturnValue('archive')
+      openTab(null)
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      wrapper.vm.activeTab = 0
+      await flushPromises()
+
+      await wrapper.vm.importFile(drop())
+
+      expect(fileImportMocks.handleFile).not.toHaveBeenCalled()
+      expect(pickerMocks.show).toHaveBeenCalled()
     })
 
     it('is asked for at the top level, where the list is in no folder', async () => {
