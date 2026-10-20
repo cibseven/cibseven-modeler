@@ -48,6 +48,13 @@ vi.mock('../../../resources/dmn.dmn', () => ({ default: '<dmn/>' }))
 vi.mock('../../../resources/formSchema.json', () => ({ default: { id: 'newForm' } }))
 vi.mock('../../../assets/images/start/modeler.svg', () => ({ default: 'modeler.svg' }))
 
+// Opening a model loads it through the store first
+const store = vi.hoisted(() => ({
+  dispatch: vi.fn(),
+  state: { modeler: { processes: { processSelected: '<bpmn/>' }, forms: { formSelected: { id: 'schema' } } } },
+}))
+vi.mock('vuex', () => ({ useStore: () => store }))
+
 vi.mock('@cib/common-frontend', () => ({
   TaskPopper: {
     name: 'TaskPopper',
@@ -57,8 +64,8 @@ vi.mock('@cib/common-frontend', () => ({
 }))
 
 import StartPage from '../../../components/modeler/StartPage.vue'
-import { fetchProcessById } from '../../../services/processService.js'
-import { fetchFormById } from '../../../services/formService.js'
+import { deleteProcessById, fetchProcessById } from '../../../services/processService.js'
+import { deleteFormById, fetchFormById } from '../../../services/formService.js'
 import { registerPlugin } from '../../../plugins/pluginsConfig.js'
 
 const SAMPLE_DIAGRAMS = [
@@ -82,10 +89,10 @@ function mountStartPage(props = {}, options = {}) {
     global: {
       plugins: [i18n],
       stubs: {
-        DiagramListItem: {
-          name: 'DiagramListItem',
-          template: '<div class="diagram-list-item-stub" />',
-          methods: { _processingDeletingItem: vi.fn() },
+        FilesTable: {
+          name: 'FilesTable',
+          props: ['folders', 'models', 'deletingId', 'sort'],
+          template: '<div class="files-table-stub"><div v-for="model in models" :key="model.id" class="model-row" /></div>',
         },
         ConfirmModal: {
           name: 'ConfirmModal',
@@ -118,7 +125,23 @@ describe('StartPage', () => {
     it('renders diagram list when not loading', async () => {
       const wrapper = mountStartPage()
       await flushPromises()
-      expect(wrapper.findAll('.diagram-list-item-stub').length).toBe(2)
+      expect(wrapper.findAll('.model-row').length).toBe(2)
+    })
+
+    /** The table is rebuilt while a folder loads, and the order picked must outlast that. */
+    it('keeps the chosen order when the table is shown again', async () => {
+      const wrapper = mountStartPage()
+      await flushPromises()
+      expect(wrapper.findComponent({ name: 'FilesTable' }).props('sort')).toEqual({ by: 'updated', desc: true })
+
+      await wrapper.findComponent({ name: 'FilesTable' }).vm.$emit('update:sort', { by: 'name', desc: false })
+      wrapper.vm._toggleIsLoading(true)
+      await flushPromises()
+      expect(wrapper.findComponent({ name: 'FilesTable' }).exists()).toBe(false)
+      wrapper.vm._toggleIsLoading(false)
+      await flushPromises()
+
+      expect(wrapper.findComponent({ name: 'FilesTable' }).props('sort')).toEqual({ by: 'name', desc: false })
     })
 
     it('shows loading spinner when diagrams is null', async () => {
@@ -242,27 +265,49 @@ describe('StartPage', () => {
     })
   })
 
-  describe('scroll and hover', () => {
+  describe('scroll', () => {
     it('emits loadMore when scrolled near bottom', async () => {
       const wrapper = mountStartPage({ hasMore: true })
       await flushPromises()
-      const list = wrapper.find('.list-group').element
+      const list = wrapper.find('.files-list').element
       Object.defineProperty(list, 'scrollTop', { value: 500, configurable: true })
       Object.defineProperty(list, 'scrollHeight', { value: 550, configurable: true })
       Object.defineProperty(list, 'clientHeight', { value: 100, configurable: true })
       wrapper.vm.handleListScroll()
       expect(wrapper.emitted('loadMore')).toBeTruthy()
     })
-
-    it('setHoverElement toggles isHovered', async () => {
-      const wrapper = mountStartPage()
-      await flushPromises()
-      wrapper.vm.setHoverElement(0, true)
-      expect(wrapper.vm.filteredDashboardElements[0].isHovered).toBe(true)
-    })
   })
 
   describe('open diagram', () => {
+    /** The tab opens with the model already loaded, and knows the folder it came from. */
+    it('loads a diagram from the table before opening it', async () => {
+      const wrapper = mountStartPage()
+      await flushPromises()
+
+      await wrapper.findComponent({ name: 'FilesTable' }).vm.$emit('openModel',
+        { id: 'p1', name: 'Process One', processkey: 'process-one', type: DIAGRAM_TYPE.BPMN_C7, folderId: 'general' })
+      await flushPromises()
+
+      expect(store.dispatch).toHaveBeenCalledWith('modeler/processes/fetchProcessById', 'p1')
+      expect(wrapper.emitted('openDiagram')[0]).toEqual([
+        '<bpmn/>', 'p1', 'Process One', 'process-one', DIAGRAM_TYPE.BPMN_C7, true, false, false, 'general',
+      ])
+    })
+
+    it('loads a form from the table by its form id', async () => {
+      const wrapper = mountStartPage()
+      await flushPromises()
+
+      await wrapper.findComponent({ name: 'FilesTable' }).vm.$emit('openModel',
+        { id: 'f1', formId: 'request', type: DIAGRAM_TYPE.FORM, folderId: null })
+      await flushPromises()
+
+      expect(store.dispatch).toHaveBeenCalledWith('modeler/forms/fetchFormById', 'f1')
+      expect(wrapper.emitted('openDiagram')[0]).toEqual([
+        { id: 'schema' }, 'f1', 'request', 'request', DIAGRAM_TYPE.FORM, true, false, false, null,
+      ])
+    })
+
     it('openDiagramEmitFromChild emits openDiagram', async () => {
       const wrapper = mountStartPage()
       await flushPromises()
@@ -311,20 +356,51 @@ describe('StartPage', () => {
   })
 
   describe('modal', () => {
-    it('toggleModal sets delete state for process', async () => {
+    it('asks before deleting a diagram from the table', async () => {
       const wrapper = mountStartPage()
       await flushPromises()
-      wrapper.vm.toggleModal(true, 'p1', 'Process', 0, 'bpmn')
+      await wrapper.findComponent({ name: 'FilesTable' }).vm.$emit('removeModel', SAMPLE_DIAGRAMS[0])
       expect(wrapper.vm.showModalAcceptCancelMessage).toBe(true)
       expect(wrapper.vm.processIdForDelete).toBe('p1')
+      expect(wrapper.vm.processNameForDelete).toBe('Process One')
       expect(wrapper.vm.itemKey).toBe('process')
     })
 
-    it('toggleModal sets delete state for form', async () => {
+    it('asks before deleting a form, named by its form id', async () => {
       const wrapper = mountStartPage()
       await flushPromises()
-      wrapper.vm.toggleModal(true, 'f1', 'Form', 1, 'form')
+      await wrapper.findComponent({ name: 'FilesTable' }).vm.$emit('removeModel', { id: 'f1', formId: 'request', type: DIAGRAM_TYPE.FORM })
       expect(wrapper.vm.itemKey).toBe('form')
+      expect(wrapper.vm.processNameForDelete).toBe('request')
+    })
+
+    /** The row shows that it is going, and cannot be opened while it does. */
+    it('marks the model as being deleted until the deletion is done', async () => {
+      let finish
+      deleteProcessById.mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+      const wrapper = mountStartPage()
+      await flushPromises()
+
+      const deletion = wrapper.vm.deleteProcessWithId('p1')
+      await flushPromises()
+      expect(wrapper.findComponent({ name: 'FilesTable' }).props('deletingId')).toBe('p1')
+
+      finish({})
+      await deletion
+      await flushPromises()
+      expect(wrapper.findComponent({ name: 'FilesTable' }).props('deletingId')).toBeNull()
+    })
+
+    it('stops marking the model when the deletion fails', async () => {
+      deleteFormById.mockRejectedValueOnce(new Error('gone'))
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+      const wrapper = mountStartPage()
+      await flushPromises()
+
+      await wrapper.vm.deleteFormWithId('f1')
+
+      expect(wrapper.vm.deletingId).toBeNull()
+      expect(wrapper.emitted('showToastMessage')).toEqual([[{ isSuccess: false, toastText: 'toastDeleteFormFail' }]])
     })
 
     it('hideModal closes modal', async () => {
@@ -351,6 +427,8 @@ describe('StartPage host actions slot', () => {
     const w = mountStartPage()
     await flushPromises()
     expect(w.find('.host-action-stub').exists()).toBe(true)
+    // Next to the heading, apart from the actions on the open folder
+    expect(w.find('h4').element.parentElement.contains(w.find('.host-action-stub').element)).toBe(true)
     registerPlugin('start-page-tools', null)
   })
 })

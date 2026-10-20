@@ -53,11 +53,16 @@ export default function useFolders() {
   // Without knowing the user there is nobody to keep it for
   const canSetDefault = computed(() => !!userId.value)
 
-  /** The top level is passed as null, like everywhere else. */
-  const isDefault = folderId => defaultFolderId.value !== null && defaultFolderId.value === (folderId ?? '')
+  /** The top level is passed as null, like everywhere else. Without a choice, the user folder is the default. */
+  const isDefault = folderId => {
+    const target = defaultFolderId.value ?? userFolderId.value
+    return target !== null && target === (folderId ?? '')
+  }
 
   const setDefault = folderId => {
     if (!canSetDefault.value) return
+    // Choosing the user folder is the same as choosing nothing
+    if (folderId && folderId === userFolderId.value) return clearDefault()
     defaultFolderId.value = folderId ?? ''
     localStorage.setItem(defaultFolderKey(), defaultFolderId.value)
   }

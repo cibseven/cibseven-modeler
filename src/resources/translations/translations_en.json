@@ -1,6 +1,6 @@
 {
 	"titles": {
-		"searchIntro": "Search for matching, upload one you have created, start with a blank version or import a local file.",
+		"searchIntro": "Search, edit, create or import BPMN diagrams, DMN tables and forms.",
 		"search": "Search a Process, Definition or Form Model",
 		"recent": "Recent",
 		"lastSaved": "Last saved"
@@ -144,6 +144,7 @@
 		"createDmn": "Create DMN",
 		"createForm": "Create Form",
 		"importFile": "Import local file",
+		"import": "Import",
 		"edit": "Edit",
 		"delDiagram": "Delete",
 		"prevDiagram": "Preview diagram",
@@ -567,7 +568,16 @@
 		"empty": "This folder is empty.",
 		"emptyProjects": "No projects yet. Create one to store your models in.",
 		"noMatches": "Nothing matches \"{keyword}\" in any folder.",
-		"searchAcrossFolders": "Showing matches from every folder."
+		"searchAcrossFolders": "Showing matches from every folder.",
+		"columnName": "Name",
+		"columnModified": "Last modified",
+		"columnModifiedBy": "Modified by",
+		"columnActions": "Actions",
+		"actionsFor": "Actions for {name}",
+		"open": "Open",
+		"moveTo": "Move to…",
+		"copyTo": "Copy to…",
+		"defaultBadge": "Default"
 	},
 	"toastFolderLoadFail": { "title": "Folders", "body": "The folders could not be loaded" },
 	"toastFolderDeleteSuccess": { "title": "Folder deleted", "body": "The folder and everything in it have been removed" },

@@ -297,12 +297,33 @@ describe('useFolders', () => {
       fetchUserFolder.mockResolvedValue({ folder: USER_FOLDER, manageUserFolders: false })
     })
 
-    it('has none until the user chooses one', async () => {
+    it('is the user folder until the user chooses one', async () => {
       const folders = await loaded()
 
       expect(folders.defaultFolderId.value).toBeNull()
+      expect(folders.isDefault('demo-folder')).toBe(true)
       expect(folders.isDefault('general')).toBe(false)
       expect(folders.isDefault(null)).toBe(false)
+    })
+
+    it('has none without a user folder', async () => {
+      fetchUserFolder.mockResolvedValue(null)
+      const folders = await loaded()
+
+      expect(folders.isDefault(null)).toBe(false)
+      expect(folders.isDefault('general')).toBe(false)
+    })
+
+    /** It is the default anyway, so keeping it would only be a copy of that. */
+    it('keeps nothing when the user folder is chosen', async () => {
+      const folders = await loaded()
+      folders.setDefault('general')
+
+      folders.setDefault('demo-folder')
+
+      expect(folders.defaultFolderId.value).toBeNull()
+      expect(localStorage.getItem('cibseven-modeler.defaultFolder.demo')).toBeNull()
+      expect(folders.isDefault('demo-folder')).toBe(true)
     })
 
     it('keeps a folder for the next visit', async () => {

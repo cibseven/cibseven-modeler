@@ -1,6 +1,6 @@
 {
   "titles": {
-    "searchIntro": "Busque coincidencias, cargue una que haya creado, comience con una versión en blanco o importe un archivo local.",
+    "searchIntro": "Busque, edite, cree o importe diagramas BPMN, tablas DMN y formularios.",
     "search": "Buscar un modelo de proceso, definición o formulario",
     "recent": "Recientes",
     "lastSaved": "Último guardado"
@@ -144,6 +144,7 @@
     "createDmn": "Crear DMN",
     "createForm": "Crear formulario",
     "importFile": "Importar archivo local",
+    "import": "Importar",
     "edit": "Editar",
     "delDiagram": "Eliminar",
     "prevDiagram": "Previsualizar diagrama",
@@ -567,7 +568,16 @@
 		"empty": "Esta carpeta está vacía.",
 		"emptyProjects": "Todavía no hay proyectos. Cree uno para guardar sus modelos.",
 		"noMatches": "Nada coincide con «{keyword}» en ninguna carpeta.",
-		"searchAcrossFolders": "Mostrando resultados de todas las carpetas."
+		"searchAcrossFolders": "Mostrando resultados de todas las carpetas.",
+		"columnName": "Nombre",
+		"columnModified": "Última modificación",
+		"columnModifiedBy": "Modificado por",
+		"columnActions": "Acciones",
+		"actionsFor": "Acciones para {name}",
+		"open": "Abrir",
+		"moveTo": "Mover a…",
+		"copyTo": "Copiar a…",
+		"defaultBadge": "Predeterminada"
 	},
 	"toastFolderLoadFail": { "title": "Carpetas", "body": "No se han podido cargar las carpetas" },
 	"toastFolderDeleteSuccess": { "title": "Carpeta eliminada", "body": "La carpeta y todo su contenido se han eliminado" },

@@ -1,6 +1,6 @@
 {
   "titles": {
-    "searchIntro": "Suchen Sie nach Passendem, laden Sie eine selbst erstellte Datei hoch, beginnen Sie mit einer leeren Version oder importieren Sie eine lokale Datei.",
+    "searchIntro": "Suchen, bearbeiten, erstellen oder importieren Sie BPMN-Diagramme, DMN-Tabellen und Formulare.",
     "search": "Prozess-, Definitions- oder Formularmodell suchen",
     "recent": "Zuletzt benutzt",
     "lastSaved": "Zuletzt gespeichert"
@@ -144,6 +144,7 @@
     "createDmn": "DMN erstellen",
     "createForm": "Formular erstellen",
     "importFile": "Lokale Datei importieren",
+    "import": "Importieren",
     "edit": "Bearbeiten",
     "delDiagram": "Löschen",
     "prevDiagram": "Diagrammvorschau",
@@ -567,7 +568,16 @@
 		"empty": "Dieser Ordner ist leer.",
 		"emptyProjects": "Noch keine Projekte. Legen Sie eines an, um Modelle darin abzulegen.",
 		"noMatches": "Nichts passt zu „{keyword}“, in keinem Ordner.",
-		"searchAcrossFolders": "Treffer aus allen Ordnern."
+		"searchAcrossFolders": "Treffer aus allen Ordnern.",
+		"columnName": "Name",
+		"columnModified": "Zuletzt geändert",
+		"columnModifiedBy": "Geändert von",
+		"columnActions": "Aktionen",
+		"actionsFor": "Aktionen für {name}",
+		"open": "Öffnen",
+		"moveTo": "Verschieben nach…",
+		"copyTo": "Kopieren nach…",
+		"defaultBadge": "Standard"
 	},
 	"toastFolderLoadFail": { "title": "Ordner", "body": "Die Ordner konnten nicht geladen werden" },
 	"toastFolderDeleteSuccess": { "title": "Ordner gelöscht", "body": "Der Ordner und sein gesamter Inhalt wurden entfernt" },
