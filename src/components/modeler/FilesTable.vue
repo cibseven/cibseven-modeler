@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 <template>
-    <FlowTable class="files-table mb-0" striped thead-class="sticky-header" prefix="folders."
+    <FlowTable class="mb-0" striped thead-class="sticky-header" prefix="folders."
         :items="rows" :fields="fields" external-sort :sort-by="sort.by" :sort-desc="sort.desc"
         @external-sort="onSort" @click="open">
         <!-- Reachable by keyboard; the click bubbles to the header cell, which sorts -->
@@ -45,12 +45,12 @@
         </template>
 
         <template #cell(updated)="{ item }">
-            <span class="text-truncate" :title="formatDate(item.updated)">{{ formatDate(item.updated) }}</span>
+            <span class="text-truncate" style="min-width: 0" :title="formatDate(item.updated)">{{ formatDate(item.updated) }}</span>
         </template>
 
         <template #cell(updatedBy)="{ item }">
-            <span v-if="item.updatedBy" class="d-inline-flex align-items-center gap-1 text-truncate" :title="item.updatedBy">
-                <span class="mdi mdi-account" aria-hidden="true"></span>{{ item.updatedBy }}
+            <span v-if="item.updatedBy" class="d-inline-flex align-items-center gap-1" style="min-width: 0" :title="item.updatedBy">
+                <span class="mdi mdi-account" aria-hidden="true"></span><span class="text-truncate">{{ item.updatedBy }}</span>
             </span>
         </template>
 
@@ -203,9 +203,3 @@ const run = (item, { id, event }) => {
     else emit(event, item.source)
 }
 </script>
-
-<style scoped>
-.files-table :deep(td) {
-    min-width: 0;
-}
-</style>
