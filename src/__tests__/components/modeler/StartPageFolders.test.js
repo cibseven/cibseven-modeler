@@ -209,6 +209,7 @@ describe('StartPage folders', () => {
 
       expect(createButton(wrapper).text()).toBe('folders.createProject')
       expect(createButton(wrapper).classes()).toContain('btn-secondary')
+      expect(createButton(wrapper).find('.mdi-folder-plus').exists()).toBe(true)
       expect(createButton(wrapper).classes()).not.toContain('btn-sm')
     })
 
@@ -219,6 +220,7 @@ describe('StartPage folders', () => {
       expect(createButton(wrapper).text()).toBe('folders.create')
       expect(createButton(wrapper).classes()).toContain('btn-outline-secondary')
       expect(createButton(wrapper).classes()).not.toContain('btn-secondary')
+      expect(createButton(wrapper).find('.mdi-folder-plus-outline').exists()).toBe(true)
       // Same size as the project button, so the row does not jump when a folder is opened
       expect(createButton(wrapper).classes()).not.toContain('btn-sm')
     })

@@ -17,13 +17,13 @@
 <template>
 
     <div class="d-flex flex-column h-100 bg-light">
-        <div class="container d-flex flex-wrap align-items-center justify-content-between gap-2 mt-5 mb-3 position-relative" style="z-index: 9">
+        <div class="container d-flex flex-wrap align-items-center justify-content-between gap-2 mt-4 mb-3">
             <h4 class="fw-normal mb-0">{{ $t('titles.searchIntro') }}</h4>
             <!-- Tools of the host lead elsewhere, so they stay out of the folder's actions -->
             <component v-if="startPageTool" :is="startPageTool"></component>
         </div>
         <!-- One block for search, folders and files, like the lists of the webclient -->
-        <div class="d-flex flex-column container bg-white border rounded shadow-sm p-0 mb-3 position-relative" style="z-index: 9; min-height: 0">
+        <div class="d-flex flex-column container bg-white border rounded shadow-sm p-0 mb-3" style="min-height: 0">
             <div class="container pt-4">
                 <div class="row align-items-center g-2 pb-2">
                     <div class="col-12 col-xl-5">
@@ -68,7 +68,7 @@
                         <button type="button" class="btn text-nowrap create-folder"
                             :class="currentFolderId ? 'btn-outline-secondary' : 'btn-secondary'"
                             :title="createFolderLabel" @click="handleCreateFolder">
-                            <i class="mdi mdi-folder-plus-outline me-1" aria-hidden="true"></i>{{ createFolderLabel }}
+                            <i class="mdi me-1" :class="currentFolderId ? 'mdi-folder-plus-outline' : 'mdi-folder-plus'" aria-hidden="true"></i>{{ createFolderLabel }}
                         </button>
                         <!-- Models are always stored in a folder -->
                         <template v-if="currentFolderId">
@@ -151,9 +151,6 @@
             <input ref="fileInput" type="file" accept=".bpmn,.dmn,.form" multiple :aria-label="$t('buttons.importFile')" style="display: none;"
                 @change="handleFileChange" />
         </div>
-            <img :alt="$t('cib-header.productName')" :src="modelerSvg"
-                class="d-none d-sm-inline position-fixed w-25"
-                style="bottom: 0; left: 30px; mix-blend-mode: multiply; opacity: 0.7;">
 
       <ConfirmModal :showModal="showModalAcceptCancelMessage" :title="modalTitle.title"
           :body="modalTitle.body" @hideModal="hideModal" :id="processIdForDelete" type="closeTab"
@@ -194,7 +191,6 @@ import { getPlugin } from '../../plugins/pluginsConfig.js'
 import { folderIcon, modelName } from '../../utils'
 
 const startPageTool = getPlugin('start-page-tools')
-import modelerSvg from '../../assets/images/start/modeler.svg'
 const functionAfterAccepting = ref(null)
 const { t } = useI18n()
 const store = useStore()
