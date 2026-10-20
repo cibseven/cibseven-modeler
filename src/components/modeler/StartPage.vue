@@ -112,9 +112,9 @@
                             </li>
                         </ol>
                     </nav>
-                    <button v-if="canSetDefault" type="button" class="btn btn-sm btn-link text-reset text-decoration-none default-folder"
+                    <button v-if="canSetDefault" type="button" class="btn btn-light border-0 d-inline-flex align-items-center gap-2 default-folder"
                         :title="defaultLabel" :aria-disabled="isFallbackHere ? 'true' : null" @click="toggleDefault">
-                        <i class="mdi mdi-18px me-1" :class="isDefaultHere ? 'mdi-star' : 'mdi-star-outline'" aria-hidden="true"></i>{{ defaultText }}
+                        <i class="mdi mdi-18px" :class="isDefaultHere ? 'mdi-star' : 'mdi-star-outline'" aria-hidden="true"></i>{{ defaultText }}
                     </button>
                 </div>
                 <p v-if="isSearching && !isEmptyHere" class="mb-2 small text-muted">{{ $t('folders.searchAcrossFolders') }}</p>
