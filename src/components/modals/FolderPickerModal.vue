@@ -26,22 +26,26 @@
                     <fieldset>
                         <legend class="form-label fs-6">{{ $t('folders.destination') }}</legend>
                         <div class="list-group overflow-auto" style="max-height: 40vh">
-                            <div v-if="allowTopLevel" class="list-group-item d-flex align-items-center gap-2">
+                            <div v-if="allowTopLevel" class="list-group-item d-flex align-items-center gap-2"
+                                :class="{ 'text-body-secondary': isCurrent('') }">
                                 <input :id="`${optionId}-top-level`" type="radio" class="form-check-input m-0"
-                                    value="" v-model="selected">
+                                    value="" v-model="selected" :disabled="isCurrent('')">
                                 <label :for="`${optionId}-top-level`" class="d-flex align-items-center gap-2 mb-0">
                                     <span class="mdi mdi-folder-multiple-outline" aria-hidden="true"></span>
                                     <span>{{ $t('folders.projects') }}</span>
+                                    <span v-if="isCurrent('')" class="small">({{ $t('folders.currentLocation') }})</span>
                                 </label>
                             </div>
                             <div v-for="folder in options" :key="folder.id"
-                                class="list-group-item d-flex align-items-center gap-2">
+                                class="list-group-item d-flex align-items-center gap-2"
+                                :class="{ 'text-body-secondary': isCurrent(folder.id) }">
                                 <input :id="`${optionId}-${folder.id}`" type="radio" class="form-check-input m-0"
-                                    :value="folder.id" v-model="selected">
+                                    :value="folder.id" v-model="selected" :disabled="isCurrent(folder.id)">
                                 <label :for="`${optionId}-${folder.id}`" class="d-flex align-items-center gap-2 mb-0">
                                     <span class="mdi mdi-folder-outline" aria-hidden="true"
                                         :style="{ marginLeft: `${folder.depth}rem` }"></span>
                                     <span>{{ folder.name }}</span>
+                                    <span v-if="isCurrent(folder.id)" class="small">({{ $t('folders.currentLocation') }})</span>
                                 </label>
                             </div>
                         </div>
@@ -55,10 +59,10 @@
                         class="d-block invalid-feedback">{{ error }}</div>
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ $t('buttons.cancel') }}</button>
                     <button type="submit" class="btn btn-primary" :disabled="!isChosen" @click="handleAccept">
                         {{ $t('buttons.accept') }}
                     </button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ $t('buttons.cancel') }}</button>
                 </div>
             </div>
         </div>
@@ -87,6 +91,8 @@ const requireKey = ref(false)
 const keyLabel = ref('folders.copyKey')
 const keyRequired = ref('folders.copyKeyRequired')
 const runAfterClose = ref(false)
+// Where the item already is: listed, but not a choice. null is the top level, undefined is none
+const current = ref(undefined)
 const shown = ref(false)
 let modalBootstrap = null
 let onAccept = null
@@ -95,6 +101,8 @@ let accepting = false
 
 // An empty string is the top level, which is a valid choice; null is nothing chosen yet
 const isChosen = computed(() => selected.value !== null)
+
+const isCurrent = id => current.value !== undefined && id === (current.value ?? '')
 
 onMounted(() => {
     if (!modalRoot.value) return
@@ -137,10 +145,12 @@ const handleAccept = async () => {
  *   except under runAfterClose, where the dialog is already gone and reporting is the caller's
  * @param {boolean} [options.runAfterClose] close first and accept afterwards, for work that
  *   reports itself elsewhere
+ * @param {string|null} [options.current] the item's current location, shown but disabled;
+ *   null is the top level
  */
 const show = ({ folders, title: dialogTitle, allowTopLevel: topLevel = false,
         requireKey: needsKey = false, defaultKey = '', accept, selected: preselected = null,
-        runAfterClose: afterClose = false,
+        runAfterClose: afterClose = false, current: currentLocation = undefined,
         keyLabel: label = 'folders.copyKey',
         keyRequired: required = 'folders.copyKeyRequired' }) => {
     options.value = folders ?? []
@@ -151,8 +161,10 @@ const show = ({ folders, title: dialogTitle, allowTopLevel: topLevel = false,
     keyLabel.value = label
     keyRequired.value = required
     key.value = defaultKey
+    current.value = currentLocation
     // Only a folder still in the tree can be offered as the choice already made
-    selected.value = options.value.some(folder => folder.id === preselected) ? preselected : null
+    selected.value = options.value.some(folder => folder.id === preselected) && !isCurrent(preselected)
+        ? preselected : null
     error.value = ''
     accepting = false
     onAccept = accept

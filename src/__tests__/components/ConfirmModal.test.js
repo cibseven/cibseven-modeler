@@ -81,6 +81,13 @@ describe('ConfirmModal', () => {
             expect(buttons.length).toBeGreaterThan(0)
         })
 
+        // As everywhere in the webclient, the main action comes last
+        it('puts Cancel first and the main action last', () => {
+            const wrapper = mountConfirmModal({ acceptLabel: 'Delete' })
+            const footer = wrapper.findAll('.modal-footer button').map(button => button.text())
+            expect(footer).toEqual(['buttons.cancel', 'Delete'])
+        })
+
         it('renders close button', () => {
             const wrapper = mountConfirmModal()
             expect(wrapper.find('.btn-close').exists()).toBe(true)

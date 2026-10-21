@@ -37,6 +37,16 @@ const open = async (wrapper, cb, type = 'bpmn-c7') => {
     await flushPromises()
 }
 
+describe('ModalNewDiagram footer', () => {
+    // As everywhere in the webclient, the main action comes last
+    it('puts "Do it later" first and Accept last', () => {
+        const wrapper = mountModal()
+        const footer = wrapper.findAll('.modal-footer button').map(button => button.text())
+        expect(footer).toEqual(['modalNewDiagram.cancel', 'buttons.accept'])
+        wrapper.unmount()
+    })
+})
+
 describe('ModalNewDiagram duplicate-id validation', () => {
     it('shows the inline error and blocks Accept when the id already exists', async () => {
         const cb = vi.fn()

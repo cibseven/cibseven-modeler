@@ -368,8 +368,18 @@ watch(() => store.getters['modeler/elementTemplates/allElementTemplateContents']
 	elementTemplateJson.value = filterTemplates(templateContents, config)
 }, { deep: true })
 
+// Asks for name and id first unless the user opted out; done() releases the start page button
+const _startCreation = async (callback, type, done) => {
+	try {
+		if (localStorage.getItem(SKIP_CREATION_MODAL_KEY) === 'true') await callback(null, null)
+		else await modalNewDiagram.value._toggleModalNewDiagram(true, callback, type)
+	} finally {
+		done?.()
+	}
+}
+
 //emit calls an exposed function from StartPage
-const createNewBpmnDiagram = async (diagramXML, type) => {
+const createNewBpmnDiagram = async (diagramXML, type, done) => {
 	const callback = async (nameUpdated, idUpdated) => {
 		const uniqueId = idUpdated ? idUpdated.trim() : _assignUniqueId('Process')
 		const name = nameUpdated ? nameUpdated.trim() : uniqueId
@@ -382,11 +392,10 @@ const createNewBpmnDiagram = async (diagramXML, type) => {
 		editorXML.value[tabNavList.value.length - 1] = finalXml
 		switchTabFromTabNav(tabNavList.value.length - 1)
 	}
-	if (localStorage.getItem(SKIP_CREATION_MODAL_KEY) === 'true') { await callback(null, null); return }
-	await modalNewDiagram.value._toggleModalNewDiagram(true, callback, type)
+	await _startCreation(callback, type, done)
 }
 
-const createNewDmnDiagram = async (dmnXML, type) => {
+const createNewDmnDiagram = async (dmnXML, type, done) => {
 	const callback = async (nameUpdated, idUpdated) => {
 		const uniqueId = idUpdated ? idUpdated.trim() : _assignUniqueId('Dmn')
 		const name = nameUpdated ? nameUpdated.trim() : uniqueId
@@ -399,11 +408,10 @@ const createNewDmnDiagram = async (dmnXML, type) => {
 		editorXML.value[tabNavList.value.length - 1] = finalXml
 		switchTabFromTabNav(tabNavList.value.length - 1)
 	}
-	if (localStorage.getItem(SKIP_CREATION_MODAL_KEY) === 'true') { await callback(null, null); return }
-	await modalNewDiagram.value._toggleModalNewDiagram(true, callback, type)
+	await _startCreation(callback, type, done)
 }
 
-const createNewFormDiagram = async(formJson, type) => {
+const createNewFormDiagram = async (formJson, type, done) => {
 	const callback = async (nameUpdated, idUpdated) => {
 		const uniqueId = idUpdated ? idUpdated.trim() : _assignUniqueId('Form')
 		formJson.id = uniqueId
@@ -412,8 +420,7 @@ const createNewFormDiagram = async(formJson, type) => {
 		editorXML.value[tabNavList.value.length - 1] = JSON.stringify(formJson, null, 2)
 		switchTabFromTabNav(tabNavList.value.length - 1)
 	}
-	if (localStorage.getItem(SKIP_CREATION_MODAL_KEY) === 'true') { await callback(null, null); return }
-	await modalNewDiagram.value._toggleModalNewDiagram(true, callback, type)
+	await _startCreation(callback, type, done)
 }
 
 const saveWithKeyboardFromTab = (e, tabElementName, tabElementIndex) => {

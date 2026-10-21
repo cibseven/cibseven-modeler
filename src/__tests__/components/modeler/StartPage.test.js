@@ -239,11 +239,11 @@ describe('StartPage', () => {
   })
 
   describe('create diagrams', () => {
+    // The click is answered at once: no timer has to run before the dialog is asked for
     it('emits createNewBpmnc7Diagram', async () => {
       const wrapper = mountStartPage()
       await flushPromises()
       wrapper.vm.handleClickCreateBpmnc7Diagram()
-      vi.advanceTimersByTime(600)
       expect(wrapper.emitted('createNewBpmnc7Diagram')).toBeTruthy()
       expect(wrapper.emitted('createNewBpmnc7Diagram')[0][1]).toBe(DIAGRAM_TYPE.BPMN_C7)
     })
@@ -252,16 +252,32 @@ describe('StartPage', () => {
       const wrapper = mountStartPage()
       await flushPromises()
       wrapper.vm.handleClickCreateDmnDiagram()
-      vi.advanceTimersByTime(600)
-      expect(wrapper.emitted('createNewDmnDiagram')).toBeTruthy()
+      expect(wrapper.emitted('createNewDmnDiagram')[0][1]).toBe(DIAGRAM_TYPE.DMN)
     })
 
     it('emits createNewFormDiagram', async () => {
       const wrapper = mountStartPage()
       await flushPromises()
       wrapper.vm.handleClickCreateFormDiagram()
-      vi.advanceTimersByTime(600)
-      expect(wrapper.emitted('createNewFormDiagram')).toBeTruthy()
+      expect(wrapper.emitted('createNewFormDiagram')[0][1]).toBe(DIAGRAM_TYPE.FORM)
+    })
+
+    it('ignores further clicks until the listener is done', async () => {
+      const wrapper = mountStartPage()
+      await flushPromises()
+
+      wrapper.vm.handleClickCreateBpmnc7Diagram()
+      wrapper.vm.handleClickCreateBpmnc7Diagram()
+      wrapper.vm.handleClickCreateFormDiagram()
+
+      expect(wrapper.emitted('createNewBpmnc7Diagram')).toHaveLength(1)
+      expect(wrapper.emitted('createNewFormDiagram')).toBeUndefined()
+
+      const done = wrapper.emitted('createNewBpmnc7Diagram')[0][2]
+      done()
+      wrapper.vm.handleClickCreateFormDiagram()
+
+      expect(wrapper.emitted('createNewFormDiagram')).toHaveLength(1)
     })
   })
 

@@ -32,8 +32,8 @@
                         class="d-block invalid-feedback">{{ error }}</div>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary" @click="handleAccept">{{ $t('buttons.accept') }}</button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ $t('buttons.cancel') }}</button>
+                    <button type="submit" class="btn btn-primary" @click="handleAccept">{{ $t('buttons.accept') }}</button>
                 </div>
             </div>
         </div>

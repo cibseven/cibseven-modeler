@@ -37,7 +37,8 @@ const messages = {
             projectNameTaken: 'A project with that name is already there.',
             projectSaveFailed: 'The project could not be saved.',
             nameRequired: 'A folder needs a name.', saveFailed: 'The folder could not be saved.',
-            projects: 'Projects', destination: 'Destination', copyKey: 'Process key of the copy',
+            projects: 'Projects', destination: 'Destination', currentLocation: 'current location',
+            copyKey: 'Process key of the copy',
             copyKeyRequired: 'A copy needs a process key of its own.',
             copyFormId: 'Form id of the copy',
             copyFormIdRequired: 'A copy needs a form id of its own.',
@@ -70,6 +71,13 @@ describe('FolderNameModal', () => {
 
         expect(wrapper.find('input').element.value).toBe('')
         expect(wrapper.find('.modal-title').text()).toBe('New folder')
+    })
+
+    // As everywhere in the webclient, the main action comes last
+    it('puts Cancel first and Accept last', () => {
+        const wrapper = mountModal(FolderNameModal)
+
+        expect(wrapper.findAll('.modal-footer button').map(button => button.text())).toEqual(['Cancel', 'Accept'])
     })
 
     // A folder at the top level is a project, and every text of the dialog calls it one
@@ -402,5 +410,55 @@ describe('FolderPickerModal', () => {
         await flushPromises()
 
         expect(wrapper.find('.invalid-feedback').text()).toBe('"invoice-copy" is already taken.')
+    })
+
+    it('puts Cancel first and Accept last', () => {
+        const wrapper = mountModal(FolderPickerModal)
+
+        expect(wrapper.findAll('.modal-footer button').map(button => button.text())).toEqual(['Cancel', 'Accept'])
+    })
+
+    describe('the current location', () => {
+        const radios = wrapper => wrapper.findAll('input[type="radio"]')
+
+        it('is listed but cannot be chosen', async () => {
+            const wrapper = mountModal(FolderPickerModal)
+
+            await open(wrapper, { current: 'invoicing' })
+
+            expect(radios(wrapper)[0].attributes('disabled')).toBeUndefined()
+            expect(radios(wrapper)[1].attributes('disabled')).toBeDefined()
+            expect(wrapper.findAll('.list-group-item')[1].text()).toContain('Invoicing')
+            expect(wrapper.findAll('.list-group-item')[1].text()).toContain('(current location)')
+        })
+
+        it('is the top level for a folder that sits there', async () => {
+            const wrapper = mountModal(FolderPickerModal)
+
+            await open(wrapper, { allowTopLevel: true, current: null })
+
+            expect(radios(wrapper)[0].attributes('disabled')).toBeDefined()
+            expect(wrapper.findAll('.list-group-item')[0].text()).toMatch(/Projects\s*\(current location\)/)
+            expect(radios(wrapper).slice(1).every(radio => radio.attributes('disabled') === undefined)).toBe(true)
+        })
+
+        it('is never the choice already made', async () => {
+            const wrapper = mountModal(FolderPickerModal)
+
+            await open(wrapper, { current: 'invoicing', selected: 'invoicing' })
+
+            expect(radios(wrapper)[1].element.checked).toBe(false)
+            expect(wrapper.find('button.btn-primary').attributes('disabled')).toBeDefined()
+        })
+
+        it('leaves every folder selectable when none is given', async () => {
+            const wrapper = mountModal(FolderPickerModal)
+
+            await open(wrapper, { current: 'invoicing' })
+            await open(wrapper, { allowTopLevel: true })
+
+            expect(radios(wrapper).every(radio => radio.attributes('disabled') === undefined)).toBe(true)
+            expect(wrapper.text()).not.toContain('current location')
+        })
     })
 })

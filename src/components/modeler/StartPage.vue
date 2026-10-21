@@ -76,17 +76,13 @@
                                 @click="handleOpenFileInput">
                                 <i class="mdi mdi-upload me-1" aria-hidden="true"></i>{{ $t('buttons.import') }}
                             </button>
-                            <button type="button" class="btn btn-secondary text-nowrap" :title="$t('buttons.createBpmn')"
-                                @click="handleClickCreateBpmnc7Diagram">
-                                <i class="mdi me-1" :class="DIAGRAM_ICON[DIAGRAM_TYPE.BPMN_C7]" aria-hidden="true"></i>{{ $t('buttons.createBpmn') }}
-                            </button>
-                            <button type="button" class="btn btn-secondary text-nowrap" :title="$t('buttons.createDmn')"
-                                @click="handleClickCreateDmnDiagram">
-                                <i class="mdi me-1" :class="DIAGRAM_ICON[DIAGRAM_TYPE.DMN]" aria-hidden="true"></i>{{ $t('buttons.createDmn') }}
-                            </button>
-                            <button type="button" class="btn btn-secondary text-nowrap" :title="$t('buttons.createForm')"
-                                @click="handleClickCreateFormDiagram">
-                                <i class="mdi me-1" :class="DIAGRAM_ICON[DIAGRAM_TYPE.FORM]" aria-hidden="true"></i>{{ $t('buttons.createForm') }}
+                            <button v-for="button in createButtons" :key="button.type" type="button"
+                                class="btn btn-secondary text-nowrap" :title="$t(button.label)"
+                                :disabled="creatingType !== null" :aria-busy="creatingType === button.type"
+                                @click="button.handler">
+                                <span v-if="creatingType === button.type" class="spinner-border spinner-border-sm me-1"
+                                    aria-hidden="true"></span>
+                                <i v-else class="mdi me-1" :class="DIAGRAM_ICON[button.type]" aria-hidden="true"></i>{{ $t(button.label) }}
                             </button>
                         </template>
                     </div>
@@ -206,6 +202,7 @@ const props = defineProps({
 const emit = defineEmits([
     'closeRemovedProcessesOpenInTab',
     'getStoredDiagrams',
+    // (content, type, done): the listener calls done() once the dialog or the new tab is open
     'createNewDmnDiagram',
     'createNewBpmnc7Diagram',
     'createNewFormDiagram',
@@ -384,14 +381,24 @@ const handleFileChange = event => {
     fileInput.value = null
 }
 
-//calls the function that initializes the diagram
-const handleClickCreateDmnDiagram = debounce(async () => {
-    emit('createNewDmnDiagram', dmnXML, DIAGRAM_TYPE.DMN)
-}, 500)
+// The button that was clicked stays busy until the listener calls done(), i.e. until the
+// dialog or the new tab is open; one creation at a time keeps a double click from making two
+const creatingType = ref(null)
+const createNew = (event, content, type) => {
+    if (creatingType.value !== null) return
+    creatingType.value = type
+    emit(event, content, type, () => { creatingType.value = null })
+}
 
-const handleClickCreateBpmnc7Diagram = debounce(async () => {
-    emit('createNewBpmnc7Diagram', diagramXMLC7, DIAGRAM_TYPE.BPMN_C7)
-}, 500)
+const handleClickCreateDmnDiagram = () => createNew('createNewDmnDiagram', dmnXML, DIAGRAM_TYPE.DMN)
+const handleClickCreateBpmnc7Diagram = () => createNew('createNewBpmnc7Diagram', diagramXMLC7, DIAGRAM_TYPE.BPMN_C7)
+const handleClickCreateFormDiagram = () => createNew('createNewFormDiagram', formJson, DIAGRAM_TYPE.FORM)
+
+const createButtons = [
+    { type: DIAGRAM_TYPE.BPMN_C7, label: 'buttons.createBpmn', handler: handleClickCreateBpmnc7Diagram },
+    { type: DIAGRAM_TYPE.DMN, label: 'buttons.createDmn', handler: handleClickCreateDmnDiagram },
+    { type: DIAGRAM_TYPE.FORM, label: 'buttons.createForm', handler: handleClickCreateFormDiagram }
+]
 
 const handleSearch = debounce(() => {
     const len = inputSearchValue.value.length
@@ -399,10 +406,6 @@ const handleSearch = debounce(() => {
         _applySearch(inputSearchValue.value, filterType.value === 'all' ? '' : filterType.value)
     }
 }, 300)
-
-const handleClickCreateFormDiagram = debounce(async () => {
-    emit('createNewFormDiagram', formJson, DIAGRAM_TYPE.FORM)
-}, 500)
 
 //emits
 const resetVariablesForModalAcceptCancelMessage = () => {
@@ -511,6 +514,7 @@ const handleMoveFolder = folder => {
         folders: folderState.flatten(folder.id),
         title: t('folders.moveTitle', { name: folder.name }),
         allowTopLevel: true,
+        current: folder.parentId ?? null,
         accept: async parentId => {
             await folderState.move(folder.id, parentId)
         }
@@ -552,6 +556,7 @@ const handleMoveModel = item => {
     folderPickerModal.value?.show({
         folders: folderState.flatten(),
         title: t('folders.moveModelTitle', { name: modelName(item) }),
+        current: item.folderId,
         accept: async folderId => {
             if (item.type === DIAGRAM_TYPE.FORM) await moveFormToFolder(item.id, folderId)
             else await moveProcessToFolder(item.id, folderId)

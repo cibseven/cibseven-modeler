@@ -53,12 +53,12 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary" @click="handleClick">{{
-                        $t('buttons.accept') }}</button>
                     <button type="button" class="btn btn-secondary" ref="closeButton" @click="handleCancel"
                         data-bs-dismiss="modal">{{
                         $t('modalNewDiagram.cancel') }}
                     </button>
+                    <button type="submit" class="btn btn-primary" @click="handleClick">{{
+                        $t('buttons.accept') }}</button>
                 </div>
             </div>
         </div>
