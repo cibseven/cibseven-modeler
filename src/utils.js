@@ -19,6 +19,7 @@ import moment from 'moment'
 
 const TYPEC7 = 'bpmn-c7'
 const TYPEDMN = 'dmn'
+const TYPEFORM = 'form'
 const BPMNC7TAG = 'xmlns:camunda'
 
 export const getTimeStamp = () => {
@@ -313,19 +314,34 @@ export const addHtmlErrorsToConsole = error => {
 	return error
 }
 
-export const formatDate = (date, format = null) => {
-	if (!date) return ''
-	format = format || localStorage.getItem('cibseven:preferences:formatDefault') || 'LL HH:mm'
-	let d
+export const toMoment = date => {
+	if (!date) return null
 	if (Array.isArray(date)) {
 		// Java LocalDateTime serializes as [year, month(1-indexed), day, hour, min, sec, nanoseconds]
 		// Moment expects                   [year, month(0-indexed), day, hour, min, sec, milliseconds]
-		const [year, month, day, hour, min, sec, nanos] = date
-		d = moment([year, month - 1, day, hour, min, sec, Math.floor(nanos / 1_000_000)])
-	} else {
-		d = moment(date)
+		// Jackson leaves out trailing fields that are zero
+		const [year, month, day, hour = 0, min = 0, sec = 0, nanos = 0] = date
+		return moment([year, month - 1, day, hour, min, sec, Math.floor(nanos / 1_000_000)])
 	}
-	return d.isValid() ? d.format(format) : ''
+	return moment(date)
+}
+
+export const formatDate = (date, format = null) => {
+	const d = toMoment(date)
+	if (!d?.isValid()) return ''
+	return d.format(format || localStorage.getItem('cibseven:preferences:formatDefault') || 'LL HH:mm')
+}
+
+/** A project is a folder at the top level; a user folder has its own icon wherever it shows. */
+export const folderIcon = folder => {
+	if (folder.userFolder) return 'mdi-folder-account-outline'
+	return folder.parentId ? 'mdi-folder-outline' : 'mdi-folder'
+}
+
+/** A form goes by its form id; a diagram by its name, or by its key when it has none. */
+export const modelName = item => {
+	if (item.type === TYPEFORM) return item.formId ?? ''
+	return item.name && item.name !== 'undefined' ? item.name : (item.processkey ?? '')
 }
 
 export const formatFileSize = (bytes) => {

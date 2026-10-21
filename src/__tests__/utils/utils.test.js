@@ -28,6 +28,10 @@ import {
     checkJSON,
     getFormRefsFromBpmn,
     resolveTabIndexById,
+    folderIcon,
+    formatDate,
+    modelName,
+    toMoment,
 } from '../../utils.js'
 
 describe('Utils', () => {
@@ -530,6 +534,57 @@ describe('Utils', () => {
 
         it('returns empty array for invalid XML', () => {
             expect(getFormRefsFromBpmn('not xml <<>>')).toEqual([])
+        })
+    })
+
+    describe('toMoment', () => {
+        it('reads a Java LocalDateTime array, whose month starts at 1', () => {
+            const date = toMoment([2026, 10, 12, 9, 30, 15, 500_000_000])
+            expect(date.format('YYYY-MM-DD HH:mm:ss.SSS')).toBe('2026-10-12 09:30:15.500')
+        })
+
+        /** Jackson leaves out trailing zero fields, so a full minute has no seconds or nanos. */
+        it('reads an array without seconds or nanos', () => {
+            expect(toMoment([2026, 10, 12, 9, 30]).format('YYYY-MM-DD HH:mm:ss')).toBe('2026-10-12 09:30:00')
+        })
+
+        it('reads text and epoch milliseconds', () => {
+            expect(toMoment('2026-10-12T09:30:00').isValid()).toBe(true)
+            expect(toMoment(0)).toBeNull()
+            expect(toMoment(1_000).valueOf()).toBe(1_000)
+        })
+
+        it('has nothing for a missing date', () => {
+            expect(toMoment(null)).toBeNull()
+            expect(formatDate(null)).toBe('')
+            expect(formatDate('not a date')).toBe('')
+        })
+
+        it('formats with the given pattern', () => {
+            expect(formatDate([2026, 10, 12, 9, 30], 'DD.MM.YYYY HH:mm')).toBe('12.10.2026 09:30')
+        })
+    })
+
+    describe('folderIcon', () => {
+        it('tells projects, folders and user folders apart', () => {
+            expect(folderIcon({ parentId: null })).toBe('mdi-folder')
+            expect(folderIcon({ parentId: 'p' })).toBe('mdi-folder-outline')
+            expect(folderIcon({ parentId: null, userFolder: true })).toBe('mdi-folder-account-outline')
+        })
+    })
+
+    describe('modelName', () => {
+        it('names a form by its form id', () => {
+            expect(modelName({ type: 'form', formId: 'request', name: 'ignored' })).toBe('request')
+        })
+
+        it('names a diagram by its name', () => {
+            expect(modelName({ type: 'bpmn-c7', name: 'Invoice', processkey: 'invoice' })).toBe('Invoice')
+        })
+
+        /** Older diagrams were stored with the text "undefined" as their name. */
+        it.each([undefined, '', 'undefined'])('falls back to the key when the name is %j', name => {
+            expect(modelName({ type: 'dmn', name, processkey: 'approval' })).toBe('approval')
         })
     })
 })

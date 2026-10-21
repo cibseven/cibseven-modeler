@@ -36,7 +36,7 @@
 	</TabNav>
 
 	<div ref="modelerTabPanes" class="tab-content flex-grow-1" style="min-height: 0;" :key="`modelerid1-i`">
-		<div class="tab-pane  bg-light fade" role="tabpanel" style="height: calc(100vh - 40px);"
+		<div class="tab-pane  bg-light fade h-100" role="tabpanel"
 			:class="{ 'active show': activeTab === -1 && !hasDirectDiagram }" :aria-labelledby="`dashboard-tab`" tabindex="0">
 	<StartPage ref="startPage" v-if="diagrams !== null && !hasDirectDiagram" :diagrams="diagrams" :initialFolderId="folderFromUrl"
 		:hasMore="hasMore"

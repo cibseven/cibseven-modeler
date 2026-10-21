@@ -62,6 +62,10 @@ import { copyFormToFolder, copyProcessToFolder, fetchFolders, fetchUserFolder, m
 
 enableAutoUnmount(afterEach)
 
+const filesTable = wrapper => wrapper.findComponent({ name: 'FilesTable' })
+// The folders the table lists; none when it is not shown at all
+const folderRows = wrapper => filesTable(wrapper).exists() ? filesTable(wrapper).props('folders') : []
+
 const TREE = [
   { id: 'general', parentId: null, name: 'General' },
   { id: 'invoicing', parentId: 'general', name: 'Invoicing' },
@@ -81,10 +85,10 @@ async function mountStartPage(props = {}) {
     global: {
       plugins: [i18n],
       stubs: {
-        DiagramListItem: {
-          name: 'DiagramListItem',
-          template: '<div class="diagram-list-item-stub" />',
-          methods: { _processingDeletingItem: vi.fn() },
+        FilesTable: {
+          name: 'FilesTable',
+          props: ['folders', 'models', 'isDefault', 'isLocked', 'locationOf', 'deletingId'],
+          template: '<div class="files-table-stub" />',
         },
         ConfirmModal: { name: 'ConfirmModal', template: '<div class="confirm-modal-stub" />' },
         FolderNameModal: { name: 'FolderNameModal', template: '<div />', methods: { show: vi.fn() } },
@@ -108,16 +112,16 @@ describe('StartPage folders', () => {
     it('lists the folders of the top level', async () => {
       const wrapper = await mountStartPage()
 
-      const rows = wrapper.findAllComponents({ name: 'FolderListItem' })
+      const rows = folderRows(wrapper)
       expect(rows).toHaveLength(1)
-      expect(rows[0].props('folder').name).toBe('General')
+      expect(rows[0].name).toBe('General')
     })
 
     /** The host fetches the models, so it has to be told which folder is open. */
     it('reports the folder it was asked to open', async () => {
       const wrapper = await mountStartPage()
 
-      await wrapper.findComponent({ name: 'FolderListItem' }).vm.$emit('open', 'general')
+      await filesTable(wrapper).vm.$emit('openFolder', 'general')
 
       expect(wrapper.emitted('navigateFolder')).toEqual([['general']])
     })
@@ -125,16 +129,27 @@ describe('StartPage folders', () => {
     it('shows the folders below the one that was opened', async () => {
       const wrapper = await mountStartPage()
 
-      await wrapper.findComponent({ name: 'FolderListItem' }).vm.$emit('open', 'general')
+      await filesTable(wrapper).vm.$emit('openFolder', 'general')
       await flushPromises()
 
-      const rows = wrapper.findAllComponents({ name: 'FolderListItem' })
-      expect(rows.map(row => row.props('folder').name)).toEqual(['Invoicing'])
+      expect(folderRows(wrapper).map(folder => folder.name)).toEqual(['Invoicing'])
+    })
+
+    /** Like the rows of the table, every step of the path shows what it is. */
+    it('shows the icon of each folder on the path, the open one in bold', async () => {
+      const wrapper = await mountStartPage()
+      await filesTable(wrapper).vm.$emit('openFolder', 'invoicing')
+      await flushPromises()
+
+      const steps = wrapper.findAll('.breadcrumb-item')
+      expect(steps[1].find('.mdi-folder').exists()).toBe(true)
+      expect(steps[2].find('.mdi-folder-outline').exists()).toBe(true)
+      expect(steps[2].find('.fw-semibold').text()).toBe('Invoicing')
     })
 
     it('walks back to the top level through the breadcrumb', async () => {
       const wrapper = await mountStartPage()
-      await wrapper.findComponent({ name: 'FolderListItem' }).vm.$emit('open', 'general')
+      await filesTable(wrapper).vm.$emit('openFolder', 'general')
       await flushPromises()
 
       await wrapper.findAll('.breadcrumb button')[0].trigger('click')
@@ -145,7 +160,7 @@ describe('StartPage folders', () => {
     it('names the open folder in the breadcrumb', async () => {
       const wrapper = await mountStartPage()
 
-      await wrapper.findComponent({ name: 'FolderListItem' }).vm.$emit('open', 'general')
+      await filesTable(wrapper).vm.$emit('openFolder', 'general')
       await flushPromises()
 
       expect(wrapper.find('.breadcrumb').text()).toContain('General')
@@ -161,18 +176,18 @@ describe('StartPage folders', () => {
       const wrapper = await mountStartPage()
 
       const labels = wrapper.findAll('button').map(button => button.text())
-      expect(labels).not.toContain('buttons.importFile')
+      expect(labels).not.toContain('buttons.import')
       expect(labels).not.toContain('buttons.createBpmn')
     })
 
     it('offers them again inside a folder', async () => {
       const wrapper = await mountStartPage()
 
-      await wrapper.findComponent({ name: 'FolderListItem' }).vm.$emit('open', 'general')
+      await filesTable(wrapper).vm.$emit('openFolder', 'general')
       await flushPromises()
 
       const labels = wrapper.findAll('button').map(button => button.text())
-      expect(labels).toContain('buttons.importFile')
+      expect(labels).toContain('buttons.import')
       expect(labels).toContain('buttons.createBpmn')
       expect(labels).toContain('buttons.createDmn')
       expect(labels).toContain('buttons.createForm')
@@ -185,15 +200,16 @@ describe('StartPage folders', () => {
     // The stub's own mock; the instance only holds a bound copy of it
     const showOf = wrapper => wrapper.findComponent({ name: 'FolderNameModal' }).vm.$options.methods.show
     const openGeneral = async wrapper => {
-      await wrapper.findComponent({ name: 'FolderListItem' }).vm.$emit('open', 'general')
+      await filesTable(wrapper).vm.$emit('openFolder', 'general')
       await flushPromises()
     }
 
-    it('offers to create a project at the top level, as the primary action', async () => {
+    it('offers to create a project at the top level, as the main action', async () => {
       const wrapper = await mountStartPage()
 
       expect(createButton(wrapper).text()).toBe('folders.createProject')
-      expect(createButton(wrapper).classes()).toContain('btn-primary')
+      expect(createButton(wrapper).classes()).toContain('btn-secondary')
+      expect(createButton(wrapper).find('.mdi-folder-plus').exists()).toBe(true)
       expect(createButton(wrapper).classes()).not.toContain('btn-sm')
     })
 
@@ -203,7 +219,8 @@ describe('StartPage folders', () => {
 
       expect(createButton(wrapper).text()).toBe('folders.create')
       expect(createButton(wrapper).classes()).toContain('btn-outline-secondary')
-      expect(createButton(wrapper).classes()).not.toContain('btn-primary')
+      expect(createButton(wrapper).classes()).not.toContain('btn-secondary')
+      expect(createButton(wrapper).find('.mdi-folder-plus-outline').exists()).toBe(true)
       // Same size as the project button, so the row does not jump when a folder is opened
       expect(createButton(wrapper).classes()).not.toContain('btn-sm')
     })
@@ -231,7 +248,7 @@ describe('StartPage folders', () => {
       const wrapper = await mountStartPage()
       const show = showOf(wrapper)
 
-      await wrapper.findComponent({ name: 'FolderListItem' }).vm.$emit('rename', TREE[0])
+      await filesTable(wrapper).vm.$emit('renameFolder', TREE[0])
 
       expect(show).toHaveBeenCalledWith('rename', 'General', expect.any(Function), 'project')
     })
@@ -241,7 +258,7 @@ describe('StartPage folders', () => {
       await openGeneral(wrapper)
       const show = showOf(wrapper)
 
-      await wrapper.findComponent({ name: 'FolderListItem' }).vm.$emit('rename', TREE[1])
+      await filesTable(wrapper).vm.$emit('renameFolder', TREE[1])
 
       expect(show).toHaveBeenCalledWith('rename', 'Invoicing', expect.any(Function), 'folder')
     })
@@ -251,7 +268,7 @@ describe('StartPage folders', () => {
     const openPicker = async (wrapper, model) => {
       const picker = wrapper.findComponent({ name: 'FolderPickerModal' })
       picker.vm.show = vi.fn()
-      await wrapper.findComponent({ name: 'DiagramListItem' }).vm.$emit('copyModel', model)
+      await filesTable(wrapper).vm.$emit('copyModel', model)
       return picker.vm.show.mock.calls[0][0]
     }
 
@@ -282,7 +299,7 @@ describe('StartPage folders', () => {
   })
 
   describe('when there is nothing to show', () => {
-    const emptyText = wrapper => wrapper.find('.list-group-item.text-center').text()
+    const emptyText = wrapper => wrapper.find('.files-empty').text()
 
     /** The search is debounced, so nothing is searched until 300ms after the last keystroke. */
     const search = async (wrapper, keyword) => {
@@ -306,7 +323,7 @@ describe('StartPage folders', () => {
     it('says a folder is empty once you are inside one', async () => {
       const wrapper = await mountStartPage({ diagrams: [] })
 
-      await wrapper.findComponent({ name: 'FolderListItem' }).vm.$emit('open', 'invoicing')
+      await filesTable(wrapper).vm.$emit('openFolder', 'invoicing')
       await flushPromises()
 
       expect(emptyText(wrapper)).toContain('folders.empty')
@@ -318,7 +335,7 @@ describe('StartPage folders', () => {
      */
     it('says a search found nothing, even in a folder that has subfolders', async () => {
       const wrapper = await mountStartPage({ diagrams: [] })
-      await wrapper.findComponent({ name: 'FolderListItem' }).vm.$emit('open', 'general')
+      await filesTable(wrapper).vm.$emit('openFolder', 'general')
       await flushPromises()
 
       await search(wrapper, 'invoice')
@@ -332,7 +349,7 @@ describe('StartPage folders', () => {
      */
     it('still describes the folder while a search is only being typed', async () => {
       const wrapper = await mountStartPage({ diagrams: [] })
-      await wrapper.findComponent({ name: 'FolderListItem' }).vm.$emit('open', 'invoicing')
+      await filesTable(wrapper).vm.$emit('openFolder', 'invoicing')
       await flushPromises()
 
       await wrapper.find('input[type="text"]').setValue('invoice')
@@ -364,7 +381,7 @@ describe('StartPage folders', () => {
       const picker = wrapper.findComponent({ name: 'FolderPickerModal' })
       picker.vm.show = vi.fn()
 
-      await wrapper.findComponent({ name: 'DiagramListItem' }).vm.$emit('moveModel', DIAGRAMS[0])
+      await filesTable(wrapper).vm.$emit('moveModel', DIAGRAMS[0])
       await picker.vm.show.mock.calls[0][0].accept('invoicing')
 
       expect(moveProcessToFolder).toHaveBeenCalledWith('p1', 'invoicing')
@@ -377,7 +394,7 @@ describe('StartPage folders', () => {
       const picker = wrapper.findComponent({ name: 'FolderPickerModal' })
       picker.vm.show = vi.fn()
 
-      await wrapper.findComponent({ name: 'DiagramListItem' }).vm.$emit('moveModel', form)
+      await filesTable(wrapper).vm.$emit('moveModel', form)
       await picker.vm.show.mock.calls[0][0].accept('invoicing')
 
       expect(moveFormToFolder).toHaveBeenCalledWith('f1', 'invoicing')
@@ -390,7 +407,7 @@ describe('StartPage folders', () => {
       const picker = wrapper.findComponent({ name: 'FolderPickerModal' })
       picker.vm.show = vi.fn()
 
-      await wrapper.findComponent({ name: 'DiagramListItem' }).vm.$emit('moveModel', DIAGRAMS[0])
+      await filesTable(wrapper).vm.$emit('moveModel', DIAGRAMS[0])
       await picker.vm.show.mock.calls[0][0].accept('invoicing')
 
       expect(wrapper.emitted('modelMoved')).toEqual([['p1', 'invoicing']])
@@ -402,7 +419,7 @@ describe('StartPage folders', () => {
       const picker = wrapper.findComponent({ name: 'FolderPickerModal' })
       picker.vm.show = vi.fn()
 
-      await wrapper.findComponent({ name: 'DiagramListItem' }).vm.$emit('moveModel', DIAGRAMS[0])
+      await filesTable(wrapper).vm.$emit('moveModel', DIAGRAMS[0])
 
       expect(picker.vm.show.mock.calls[0][0].allowTopLevel).toBeUndefined()
     })
@@ -440,7 +457,7 @@ describe('StartPage folders', () => {
 
       const wrapper = await mountStartPage()
 
-      expect(wrapper.findAllComponents({ name: 'FolderListItem' })).toHaveLength(0)
+      expect(folderRows(wrapper)).toHaveLength(0)
       expect(wrapper.emitted('showToastMessage')[0][0]).toMatchObject({
         isSuccess: false,
         toastText: 'toastFolderLoadFail',
@@ -521,17 +538,39 @@ describe('StartPage folders', () => {
       })
 
       it('sets the place on screen as default, and unsets it again', async () => {
-        const wrapper = await mountStartPage()
+        const wrapper = await mountStartPage({ initialFolderId: 'general' })
 
         await star(wrapper).trigger('click')
-        expect(localStorage.getItem(KEY)).toBe('demo-folder')
-        expect(star(wrapper).attributes('aria-pressed')).toBe('true')
+        expect(localStorage.getItem(KEY)).toBe('general')
+        expect(star(wrapper).text()).toBe('folders.defaultFolder')
         expect(star(wrapper).attributes('title')).toBe('folders.unsetDefault')
 
         await star(wrapper).trigger('click')
         expect(localStorage.getItem(KEY)).toBeNull()
-        expect(star(wrapper).attributes('aria-pressed')).toBe('false')
+        expect(star(wrapper).text()).toBe('folders.setDefault')
         expect(star(wrapper).attributes('title')).toBe('folders.setDefault')
+      })
+
+      /** The user folder is the default when nothing else is chosen, so there is nothing to unset. */
+      it('shows the user folder as the default, without a way to unset it', async () => {
+        const wrapper = await mountStartPage()
+
+        expect(star(wrapper).text()).toBe('folders.defaultFolder')
+        expect(star(wrapper).attributes('aria-disabled')).toBe('true')
+        expect(star(wrapper).attributes('title')).toBe('folders.defaultFolder')
+
+        await star(wrapper).trigger('click')
+        expect(localStorage.getItem(KEY)).toBeNull()
+        expect(star(wrapper).text()).toBe('folders.defaultFolder')
+      })
+
+      it('marks the user folder in the list when no default is chosen', async () => {
+        const wrapper = await mountStartPage({ initialFolderId: '' })
+
+        const isDefault = filesTable(wrapper).props('isDefault')
+
+        expect(isDefault('demo-folder')).toBe(true)
+        expect(isDefault('general')).toBe(false)
       })
 
       it('sets the top level as default', async () => {
@@ -546,10 +585,10 @@ describe('StartPage folders', () => {
         localStorage.setItem(KEY, 'general')
         const wrapper = await mountStartPage({ initialFolderId: '' })
 
-        const rows = wrapper.findAllComponents({ name: 'FolderListItem' })
+        const isDefault = filesTable(wrapper).props('isDefault')
 
-        expect(rows.find(row => row.props('folder').id === 'general').props('isDefault')).toBe(true)
-        expect(rows.find(row => row.props('folder').id === 'demo-folder').props('isDefault')).toBe(false)
+        expect(isDefault('general')).toBe(true)
+        expect(isDefault('demo-folder')).toBe(false)
       })
 
       it('offers no star without knowing the user', async () => {
@@ -584,10 +623,11 @@ describe('StartPage folders', () => {
       await wrapper.findAll('.breadcrumb button')[0].trigger('click')
       await flushPromises()
 
-      const rows = wrapper.findAllComponents({ name: 'FolderListItem' })
-      expect(rows.map(row => row.props('folder').name)).toEqual(['demo', 'General'])
-      expect(rows[0].props('locked')).toBe(true)
-      expect(rows[1].props('locked')).toBe(false)
+      const rows = folderRows(wrapper)
+      const isLocked = filesTable(wrapper).props('isLocked')
+      expect(rows.map(folder => folder.name)).toEqual(['demo', 'General'])
+      expect(isLocked(rows[0])).toBe(true)
+      expect(isLocked(rows[1])).toBe(false)
     })
   })
 })
