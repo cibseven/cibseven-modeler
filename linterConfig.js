@@ -72,7 +72,7 @@ var index_esm = /*#__PURE__*/Object.freeze({
 	isAny: isAny
 });
 
-var require$$0$1 = /*@__PURE__*/getAugmentedNamespace(index_esm);
+var require$$0 = /*@__PURE__*/getAugmentedNamespace(index_esm);
 
 var helper = {};
 
@@ -83,7 +83,7 @@ function requireHelper () {
 	hasRequiredHelper = 1;
 	const {
 	  is
-	} = require$$0$1;
+	} = require$$0;
 
 	/**
 	 * @typedef { import('../lib/types.js').ModdleElement } ModdleElement
@@ -216,7 +216,7 @@ function requireAdHocSubProcess () {
 	hasRequiredAdHocSubProcess = 1;
 	const {
 	  is
-	} = require$$0$1;
+	} = require$$0;
 
 	const {
 	  annotateRule
@@ -263,69 +263,62 @@ function requireAdHocSubProcess () {
 var adHocSubProcessExports = requireAdHocSubProcess();
 var rule_0 = /*@__PURE__*/getDefaultExportFromCjs(adHocSubProcessExports);
 
-var conditionalEvent;
-var hasRequiredConditionalEvent;
+var endEventRequired;
+var hasRequiredEndEventRequired;
 
-function requireConditionalEvent () {
-	if (hasRequiredConditionalEvent) return conditionalEvent;
-	hasRequiredConditionalEvent = 1;
+function requireEndEventRequired () {
+	if (hasRequiredEndEventRequired) return endEventRequired;
+	hasRequiredEndEventRequired = 1;
 	const {
-	  is
-	} = require$$0$1;
+	  is,
+	  isAny
+	} = require$$0;
 
 	const {
-	  annotateRule,
-	  isInExecutableProcess
+	  annotateRule
 	} = requireHelper();
 
 
 	/**
-	 * Ensures that a conditional event has a condition specified.
+	 * A rule that checks the presence of an end event per scope.
 	 *
 	 * @type { import('../lib/types.js').RuleFactory }
 	 */
-	conditionalEvent = function() {
+	endEventRequired = function() {
+
+	  function hasEndEvent(node) {
+	    const flowElements = node.flowElements || [];
+
+	    return (
+	      flowElements.some(node => is(node, 'bpmn:EndEvent'))
+	    );
+	  }
 
 	  function check(node, reporter) {
 
-	    if (!isInExecutableProcess(node)) {
+	    if (!isAny(node, [
+	      'bpmn:Process',
+	      'bpmn:SubProcess'
+	    ]) || is(node, 'bpmn:AdHocSubProcess')) {
 	      return;
 	    }
 
-	    const eventDefinition = getConditionalEventDefinition(node);
+	    if (!hasEndEvent(node)) {
+	      const type = is(node, 'bpmn:SubProcess') ? 'Sub process' : 'Process';
 
-	    if (!eventDefinition) {
-	      return;
-	    }
-
-	    if (!hasCondition(eventDefinition)) {
-	      reporter.report(node.id, 'Conditional event is missing a condition', [ 'condition' ]);
+	      reporter.report(node.id, type + ' is missing end event');
 	    }
 	  }
 
-	  return annotateRule('conditional-event', {
+	  return annotateRule('end-event-required', {
 	    check
 	  });
-
 	};
-
-	function getConditionalEventDefinition(node) {
-	  if (!is(node, 'bpmn:Event')) {
-	    return;
-	  }
-
-	  const eventDefinitions = node.eventDefinitions || [];
-	  return eventDefinitions.find(def => is(def, 'bpmn:ConditionalEventDefinition'));
-	}
-
-	function hasCondition(eventDefinition) {
-	  return !!eventDefinition.condition?.body;
-	}
-	return conditionalEvent;
+	return endEventRequired;
 }
 
-var conditionalEventExports = requireConditionalEvent();
-var rule_1 = /*@__PURE__*/getDefaultExportFromCjs(conditionalEventExports);
+var endEventRequiredExports = requireEndEventRequired();
+var rule_2 = /*@__PURE__*/getDefaultExportFromCjs(endEventRequiredExports);
 
 var eventBasedGateway;
 var hasRequiredEventBasedGateway;
@@ -335,7 +328,7 @@ function requireEventBasedGateway () {
 	hasRequiredEventBasedGateway = 1;
 	const {
 	  is
-	} = require$$0$1;
+	} = require$$0;
 
 	const {
 	  annotateRule
@@ -382,7 +375,7 @@ function requireEventBasedGateway () {
 }
 
 var eventBasedGatewayExports = requireEventBasedGateway();
-var rule_2 = /*@__PURE__*/getDefaultExportFromCjs(eventBasedGatewayExports);
+var rule_3 = /*@__PURE__*/getDefaultExportFromCjs(eventBasedGatewayExports);
 
 var eventSubProcessTypedStartEvent;
 var hasRequiredEventSubProcessTypedStartEvent;
@@ -392,7 +385,7 @@ function requireEventSubProcessTypedStartEvent () {
 	hasRequiredEventSubProcessTypedStartEvent = 1;
 	const {
 	  is
-	} = require$$0$1;
+	} = require$$0;
 
 	const {
 	  annotateRule
@@ -438,7 +431,165 @@ function requireEventSubProcessTypedStartEvent () {
 }
 
 var eventSubProcessTypedStartEventExports = requireEventSubProcessTypedStartEvent();
-var rule_3 = /*@__PURE__*/getDefaultExportFromCjs(eventSubProcessTypedStartEventExports);
+var rule_4 = /*@__PURE__*/getDefaultExportFromCjs(eventSubProcessTypedStartEventExports);
+
+var global;
+var hasRequiredGlobal;
+
+function requireGlobal () {
+	if (hasRequiredGlobal) return global;
+	hasRequiredGlobal = 1;
+	const {
+	  is,
+	  isAny
+	} = require$$0;
+
+	const {
+	  annotateRule
+	} = requireHelper();
+
+
+	/**
+	 * A rule that verifies that global elements are properly used.
+	 *
+	 * Currently recognized global elements are:
+	 *
+	 *   * `bpmn:Error`
+	 *   * `bpmn:Escalation`
+	 *   * `bpmn:Message`
+	 *   * `bpmn:Signal`
+	 *
+	 * For each of these elements proper usage implies:
+	 *
+	 *   * element must have a name
+	 *   * element is referenced by at least one element
+	 *   * there exists only a single element per type with a given name
+	 *
+	 * @type { import('../lib/types.js').RuleFactory }
+	 */
+	global = function() {
+
+	  function check(node, reporter) {
+
+	    if (!is(node, 'bpmn:Definitions')) {
+	      return false;
+	    }
+
+	    const rootElements = getRootElements(node);
+
+	    const referencingElements = getReferencingElements(node);
+
+	    rootElements.forEach(rootElement => {
+	      if (!hasName(rootElement)) {
+	        reporter.report(rootElement.id, 'Element is missing name');
+	      }
+
+	      if (!isReferenced(rootElement, referencingElements)) {
+	        reporter.report(rootElement.id, 'Element is unused');
+	      }
+
+	      if (!isUnique(rootElement, rootElements)) {
+	        reporter.report(rootElement.id, 'Element name is not unique');
+	      }
+	    });
+
+	  }
+
+	  return annotateRule('global', {
+	    check
+	  });
+
+	  // helpers /////////////////////////////
+
+	  function getRootElements(definitions) {
+	    return definitions.rootElements.filter(node => isAny(node, [ 'bpmn:Error', 'bpmn:Escalation', 'bpmn:Message', 'bpmn:Signal' ]));
+	  }
+
+	  function getReferencingElements(definitions) {
+	    const referencingElements = [];
+
+	    function traverse(element) {
+	      if (is(element, 'bpmn:Definitions') && element.get('rootElements').length) {
+	        element.get('rootElements').forEach(traverse);
+	      }
+
+	      if (is(element, 'bpmn:FlowElementsContainer') && element.get('flowElements').length) {
+	        element.get('flowElements').forEach(traverse);
+	      }
+
+	      if (is(element, 'bpmn:Event') && element.get('eventDefinitions').length) {
+	        element.get('eventDefinitions').forEach(eventDefinition => referencingElements.push(eventDefinition));
+	      }
+
+	      if (is(element, 'bpmn:Collaboration') && element.get('messageFlows').length) {
+	        element.get('messageFlows').forEach(traverse);
+	      }
+
+	      if (isAny(element, [
+	        'bpmn:MessageFlow',
+	        'bpmn:ReceiveTask',
+	        'bpmn:SendTask'
+	      ])) {
+	        referencingElements.push(element);
+	      }
+	    }
+
+	    traverse(definitions);
+
+	    return referencingElements;
+	  }
+
+	  function hasName(event) {
+	    return (
+	      event.name?.trim() !== ''
+	    );
+	  }
+
+	  function isReferenced(rootElement, referencingElements) {
+	    if (is(rootElement, 'bpmn:Error')) {
+	      return referencingElements.some(referencingElement => {
+	        return is(referencingElement, 'bpmn:ErrorEventDefinition')
+	          && rootElement.get('id') === referencingElement.get('errorRef')?.get('id');
+	      });
+	    }
+
+	    if (is(rootElement, 'bpmn:Escalation')) {
+	      return referencingElements.some(referencingElement => {
+	        return is(referencingElement, 'bpmn:EscalationEventDefinition')
+	          && rootElement.get('id') === referencingElement.get('escalationRef')?.get('id');
+	      });
+	    }
+
+	    if (is(rootElement, 'bpmn:Message')) {
+	      return referencingElements.some(referencingElement => {
+	        return isAny(referencingElement, [
+	          'bpmn:MessageEventDefinition',
+	          'bpmn:MessageFlow',
+	          'bpmn:ReceiveTask',
+	          'bpmn:SendTask'
+	        ]) && rootElement.get('id') === referencingElement.get('messageRef')?.get('id');
+	      });
+	    }
+
+	    if (is(rootElement, 'bpmn:Signal')) {
+	      return referencingElements.some(referencingElement => {
+	        return is(referencingElement, 'bpmn:SignalEventDefinition')
+	          && rootElement.get('id') === referencingElement.get('signalRef')?.get('id');
+	      });
+	    }
+	  }
+
+	  function isUnique(rootElement, rootElements) {
+	    return (
+	      rootElements.filter(otherRootElement => is(otherRootElement, rootElement.$type) && rootElement.name === otherRootElement.name).length === 1
+	    );
+	  }
+	};
+	return global;
+}
+
+var globalExports = requireGlobal();
+var rule_6 = /*@__PURE__*/getDefaultExportFromCjs(globalExports);
 
 /**
  * Flatten array, one level deep.
@@ -1355,7 +1506,7 @@ var dist = /*#__PURE__*/Object.freeze({
 	without: without
 });
 
-var require$$0 = /*@__PURE__*/getAugmentedNamespace(dist);
+var require$$1 = /*@__PURE__*/getAugmentedNamespace(dist);
 
 var linkEvent;
 var hasRequiredLinkEvent;
@@ -1365,11 +1516,11 @@ function requireLinkEvent () {
 	hasRequiredLinkEvent = 1;
 	const {
 	  groupBy
-	} = require$$0;
+	} = require$$1;
 
 	const {
 	  is
-	} = require$$0$1;
+	} = require$$0;
 
 	const {
 	  annotateRule
@@ -1474,7 +1625,287 @@ function requireLinkEvent () {
 }
 
 var linkEventExports = requireLinkEvent();
-var rule_4 = /*@__PURE__*/getDefaultExportFromCjs(linkEventExports);
+var rule_8 = /*@__PURE__*/getDefaultExportFromCjs(linkEventExports);
+
+var noBpmndi;
+var hasRequiredNoBpmndi;
+
+function requireNoBpmndi () {
+	if (hasRequiredNoBpmndi) return noBpmndi;
+	hasRequiredNoBpmndi = 1;
+	const {
+	  is
+	} = require$$0;
+
+	const {
+	  flatten
+	} = require$$1;
+
+	const {
+	  annotateRule
+	} = requireHelper();
+
+	/**
+	 * @typedef { import('../lib/types.js').ModdleElement } ModdleElement
+	 */
+
+
+	/**
+	 * A rule that checks that there is no BPMNDI information missing for elements,
+	 * which require BPMNDI.
+	 *
+	 * @type { import('../lib/types.js').RuleFactory }
+	 */
+	noBpmndi = function() {
+
+	  function check(node, reporter) {
+
+	    if (!is(node, 'bpmn:Definitions')) {
+	      return false;
+	    }
+
+	    // (1) Construct array of all BPMN elements
+	    const bpmnElements = getAllBpmnElements(node.rootElements);
+
+	    // (2) Filter BPMN elements without visual representation
+	    const visualBpmnElements = bpmnElements.filter(hasVisualRepresentation);
+
+	    // (3) Construct set of BPMNDI references
+	    const referencedBpmnElementIds = getReferencedBpmnElementIds(node);
+
+	    // (4) Report elements without BPMNDI
+	    visualBpmnElements.forEach((element) => {
+	      if (!referencedBpmnElementIds.has(element.id)) {
+	        reporter.report(element.id, 'Element is missing bpmndi');
+	      }
+	    });
+	  }
+
+	  return annotateRule('no-bpmndi', {
+	    check
+	  });
+
+	};
+
+
+	// helpers /////////////////////////////
+
+	/**
+	 * Get all BPMN elements within a bpmn:Definitions node
+	 *
+	 * @param { ModdleElement[] } rootElements - An array of Moddle rootElements
+	 *
+	 * @return { { id: string, $type: string }[] } A flat array with all BPMN elements, each represented with { id: elementId, $type: elementType }
+	 */
+	function getAllBpmnElements(rootElements) {
+
+	  return flatten(rootElements.map((rootElement) => {
+	    const laneSet =
+	      rootElement.laneSets && rootElement.laneSets[0] || rootElement.childLaneSet;
+
+	    // Include
+	    // * flowElements (e.g., tasks, sequenceFlows),
+	    // * nested flowElements,
+	    // * participants,
+	    // * artifacts (groups),
+	    // * laneSets
+	    // * nested laneSets
+	    // * childLaneSets
+	    // * nested childLaneSets
+	    // * messageFlows
+	    const elements = flatten([
+	      rootElement.flowElements || [],
+	      (rootElement.flowElements && getAllBpmnElements(rootElement.flowElements.filter(hasFlowElements))) || [],
+	      rootElement.participants || [],
+	      rootElement.artifacts || [],
+	      laneSet && laneSet.lanes || [],
+	      laneSet && laneSet.lanes && getAllBpmnElements(laneSet.lanes.filter(hasChildLaneSet)) || [],
+	      rootElement.messageFlows || []
+	    ]);
+
+	    if (elements.length > 0) {
+	      return elements.map((element) => {
+
+	        return {
+	          id: element.id,
+	          $type: element.$type
+	        };
+	      });
+	    } else {
+
+	      // We are not interested in the rest here (DI)
+	      return [];
+	    }
+	  }));
+	}
+
+	/**
+	 * Get the ids of all BPMN elements referenced by BPMNDI elements
+	 * within a bpmn:Definitions node
+	 *
+	 * @param {ModdleElement} definitionsNode - A moddleElement representing the
+	 *   bpmn:Definitions element
+	 *
+	 * @return {Set<string>} ids of all BPMN elements referenced by BPMNDI
+	 *   elements part of this bpmn:Definitions node
+	 */
+	function getReferencedBpmnElementIds(definitionsNode) {
+	  return new Set(flatten(
+	    definitionsNode.get('diagrams').map((diagram) => {
+
+	      const diElements = diagram.plane.planeElement || [];
+
+	      return diElements.map((element) => {
+
+	        return element.bpmnElement?.id;
+	      });
+	    })
+	  ));
+	}
+
+	/**
+	 * @param { ModdleElement } element
+	 *
+	 * @return {boolean}
+	 */
+	function hasVisualRepresentation(element) {
+	  const noVisRepresentation = [ 'bpmn:DataObject' ];
+
+	  return noVisRepresentation.includes(element.$type) ? false : true;
+	}
+
+	/**
+	 * @param { ModdleElement } element
+	 *
+	 * @return {boolean}
+	 */
+	function hasFlowElements(element) {
+	  return element.flowElements ? true : false;
+	}
+
+	/**
+	 * @param { ModdleElement } element
+	 *
+	 * @return {boolean}
+	 */
+	function hasChildLaneSet(element) {
+	  return element.childLaneSet ? true : false;
+	}
+	return noBpmndi;
+}
+
+var noBpmndiExports = requireNoBpmndi();
+var rule_9 = /*@__PURE__*/getDefaultExportFromCjs(noBpmndiExports);
+
+var noComplexGateway;
+var hasRequiredNoComplexGateway;
+
+function requireNoComplexGateway () {
+	if (hasRequiredNoComplexGateway) return noComplexGateway;
+	hasRequiredNoComplexGateway = 1;
+	const checkDiscouragedNodeType = requireHelper().checkDiscouragedNodeType;
+
+	noComplexGateway = checkDiscouragedNodeType('bpmn:ComplexGateway', 'no-complex-gateway');
+	return noComplexGateway;
+}
+
+var noComplexGatewayExports = requireNoComplexGateway();
+var rule_10 = /*@__PURE__*/getDefaultExportFromCjs(noComplexGatewayExports);
+
+var noDisconnected;
+var hasRequiredNoDisconnected;
+
+function requireNoDisconnected () {
+	if (hasRequiredNoDisconnected) return noDisconnected;
+	hasRequiredNoDisconnected = 1;
+	const {
+	  isAny,
+	  is
+	} = require$$0;
+
+	const {
+	  annotateRule
+	} = requireHelper();
+
+
+	/**
+	 * A rule that verifies that there exists no disconnected
+	 * flow elements, i.e. elements without incoming or outgoing sequence flows.
+	 *
+	 * @type { import('../lib/types.js').RuleFactory }
+	 */
+	noDisconnected = function() {
+
+	  function check(node, reporter) {
+
+	    if (!isAny(node, [
+	      'bpmn:Task',
+	      'bpmn:Gateway',
+	      'bpmn:SubProcess',
+	      'bpmn:Event'
+	    ]) || node.triggeredByEvent) {
+	      return;
+	    }
+
+	    // compensation activity and boundary events are
+	    // linked visually via associations. If these associations
+	    // exist we are fine, too
+	    if (isCompensationLinked(node)) {
+	      return;
+	    }
+
+	    // adhoc subprocesses can have disconnected activities
+	    if (is(node.$parent, 'bpmn:AdHocSubProcess')) {
+	      return;
+	    }
+
+	    const incoming = node.incoming || [];
+	    const outgoing = node.outgoing || [];
+
+	    if (!incoming.length && !outgoing.length) {
+	      reporter.report(node.id, 'Element is not connected');
+	    }
+	  }
+
+	  return annotateRule('no-disconnected', {
+	    check
+	  });
+	};
+
+
+	// helpers /////////////////
+
+	function isCompensationBoundary(node) {
+
+	  var eventDefinitions = node.eventDefinitions;
+
+	  if (!is(node, 'bpmn:BoundaryEvent')) {
+	    return false;
+	  }
+
+	  if (!eventDefinitions || eventDefinitions.length !== 1) {
+	    return false;
+	  }
+
+	  return is(eventDefinitions[0], 'bpmn:CompensateEventDefinition');
+	}
+
+	function isCompensationActivity(node) {
+	  return node.isForCompensation;
+	}
+
+	function isCompensationLinked(node) {
+	  var source = isCompensationBoundary(node);
+	  var target = isCompensationActivity(node);
+
+	  // TODO(nikku): check, whether compensation association exists
+	  return source || target;
+	}
+	return noDisconnected;
+}
+
+var noDisconnectedExports = requireNoDisconnected();
+var rule_11 = /*@__PURE__*/getDefaultExportFromCjs(noDisconnectedExports);
 
 var noDuplicateSequenceFlows;
 var hasRequiredNoDuplicateSequenceFlows;
@@ -1484,7 +1915,7 @@ function requireNoDuplicateSequenceFlows () {
 	hasRequiredNoDuplicateSequenceFlows = 1;
 	const {
 	  is
-	} = require$$0$1;
+	} = require$$0;
 
 	const {
 	  annotateRule
@@ -1556,17 +1987,17 @@ function requireNoDuplicateSequenceFlows () {
 }
 
 var noDuplicateSequenceFlowsExports = requireNoDuplicateSequenceFlows();
-var rule_5 = /*@__PURE__*/getDefaultExportFromCjs(noDuplicateSequenceFlowsExports);
+var rule_12 = /*@__PURE__*/getDefaultExportFromCjs(noDuplicateSequenceFlowsExports);
 
-var subProcessBlankStartEvent;
-var hasRequiredSubProcessBlankStartEvent;
+var noGatewayJoinFork;
+var hasRequiredNoGatewayJoinFork;
 
-function requireSubProcessBlankStartEvent () {
-	if (hasRequiredSubProcessBlankStartEvent) return subProcessBlankStartEvent;
-	hasRequiredSubProcessBlankStartEvent = 1;
+function requireNoGatewayJoinFork () {
+	if (hasRequiredNoGatewayJoinFork) return noGatewayJoinFork;
+	hasRequiredNoGatewayJoinFork = 1;
 	const {
 	  is
-	} = require$$0$1;
+	} = require$$0;
 
 	const {
 	  annotateRule
@@ -1574,45 +2005,297 @@ function requireSubProcessBlankStartEvent () {
 
 
 	/**
-	 * A rule that checks that start events inside a normal sub-processes
-	 * are blank (do not have an event definition).
+	 * A rule that checks, whether a gateway forks and joins
+	 * at the same time.
 	 *
 	 * @type { import('../lib/types.js').RuleFactory }
 	 */
-	subProcessBlankStartEvent = function() {
+	noGatewayJoinFork = function() {
 
 	  function check(node, reporter) {
 
-	    if (!is(node, 'bpmn:SubProcess') || node.triggeredByEvent) {
+	    if (!is(node, 'bpmn:Gateway')) {
 	      return;
 	    }
 
-	    const flowElements = node.flowElements || [];
+	    const incoming = node.incoming || [];
+	    const outgoing = node.outgoing || [];
 
-	    flowElements.forEach(function(flowElement) {
-
-	      if (!is(flowElement, 'bpmn:StartEvent')) {
-	        return false;
-	      }
-
-	      const eventDefinitions = flowElement.eventDefinitions || [];
-
-	      if (eventDefinitions.length > 0) {
-	        reporter.report(flowElement.id, 'Start event must be blank', [ 'eventDefinitions' ]);
-	      }
-	    });
+	    if (incoming.length > 1 && outgoing.length > 1) {
+	      reporter.report(node.id, 'Gateway forks and joins');
+	    }
 	  }
 
-	  return annotateRule('sub-process-blank-start-event', {
+	  return annotateRule('no-gateway-join-fork', {
 	    check
 	  });
 
 	};
-	return subProcessBlankStartEvent;
+	return noGatewayJoinFork;
 }
 
-var subProcessBlankStartEventExports = requireSubProcessBlankStartEvent();
-var rule_6 = /*@__PURE__*/getDefaultExportFromCjs(subProcessBlankStartEventExports);
+var noGatewayJoinForkExports = requireNoGatewayJoinFork();
+var rule_13 = /*@__PURE__*/getDefaultExportFromCjs(noGatewayJoinForkExports);
+
+var noImplicitSplit;
+var hasRequiredNoImplicitSplit;
+
+function requireNoImplicitSplit () {
+	if (hasRequiredNoImplicitSplit) return noImplicitSplit;
+	hasRequiredNoImplicitSplit = 1;
+	const {
+	  isAny
+	} = require$$0;
+
+	const {
+	  annotateRule
+	} = requireHelper();
+
+
+	/**
+	 * A rule that checks that no implicit split is modeled
+	 * starting from a task.
+	 *
+	 * Users should model the parallel splitting gateway
+	 * explicitly instead.
+	 *
+	 * @type { import('../lib/types.js').RuleFactory }
+	 */
+	noImplicitSplit = function() {
+
+	  function check(node, reporter) {
+
+	    if (!isAny(node, [
+	      'bpmn:Activity',
+	      'bpmn:Event'
+	    ])) {
+	      return;
+	    }
+
+	    const outgoing = node.outgoing || [];
+
+	    const outgoingWithoutCondition = outgoing.filter((flow) => {
+	      return !hasCondition(flow) && !isDefaultFlow(node, flow);
+	    });
+
+	    if (outgoingWithoutCondition.length > 1) {
+	      reporter.report(node.id, 'Flow splits implicitly');
+	    }
+	  }
+
+	  return annotateRule('no-implicit-split', {
+	    check
+	  });
+
+	};
+
+
+	// helpers /////////////////////////////
+
+	function hasCondition(flow) {
+	  return !!flow.conditionExpression;
+	}
+
+	function isDefaultFlow(node, flow) {
+	  return node['default'] === flow;
+	}
+	return noImplicitSplit;
+}
+
+var noImplicitSplitExports = requireNoImplicitSplit();
+var rule_14 = /*@__PURE__*/getDefaultExportFromCjs(noImplicitSplitExports);
+
+var noImplicitEnd;
+var hasRequiredNoImplicitEnd;
+
+function requireNoImplicitEnd () {
+	if (hasRequiredNoImplicitEnd) return noImplicitEnd;
+	hasRequiredNoImplicitEnd = 1;
+	const {
+	  is,
+	  isAny
+	} = require$$0;
+
+	const {
+	  findParent,
+	  annotateRule
+	} = requireHelper();
+
+
+	/**
+	 * A rule that checks that an element is not an implicit end (token sink).
+	 *
+	 * @type { import('../lib/types.js').RuleFactory }
+	 */
+	noImplicitEnd = function() {
+
+	  function isLinkEvent(node) {
+	    const eventDefinitions = node.eventDefinitions || [];
+
+	    return eventDefinitions.length && eventDefinitions.every(
+	      definition => is(definition, 'bpmn:LinkEventDefinition')
+	    );
+	  }
+
+	  function isCompensationEvent(node) {
+	    const eventDefinitions = node.eventDefinitions || [];
+
+	    return eventDefinitions.length && eventDefinitions.every(
+	      definition => is(definition, 'bpmn:CompensateEventDefinition')
+	    );
+	  }
+
+	  function hasCompensationActivity(node) {
+	    const parent = findParent(node, 'bpmn:Process');
+
+	    const artifacts = parent.artifacts || [];
+
+	    return artifacts.some((element) => {
+	      if (!is(element, 'bpmn:Association')) {
+	        return false;
+	      }
+
+	      const source = element.sourceRef;
+
+	      return source.id === node.id;
+	    });
+	  }
+
+	  function isForCompensation(node) {
+	    return node.isForCompensation;
+	  }
+
+	  function isImplicitEnd(node) {
+	    const outgoing = node.outgoing || [];
+
+	    if (is(node, 'bpmn:SubProcess') && node.triggeredByEvent) {
+	      return false;
+	    }
+
+	    if (is(node, 'bpmn:IntermediateThrowEvent') && isLinkEvent(node)) {
+	      return false;
+	    }
+
+	    if (is(node.$parent, 'bpmn:AdHocSubProcess')) {
+	      return false;
+	    }
+
+	    if (is(node, 'bpmn:EndEvent')) {
+	      return false;
+	    }
+
+	    if (is(node, 'bpmn:BoundaryEvent') && isCompensationEvent(node) && hasCompensationActivity(node)) {
+	      return false;
+	    }
+
+	    if (is(node, 'bpmn:Activity') && isForCompensation(node)) {
+	      return false;
+	    }
+
+	    return outgoing.length === 0;
+	  }
+
+	  function check(node, reporter) {
+
+	    if (!isAny(node, [ 'bpmn:Event', 'bpmn:Activity', 'bpmn:Gateway' ])) {
+	      return;
+	    }
+
+	    if (isImplicitEnd(node)) {
+	      reporter.report(node.id, 'Element is an implicit end');
+	    }
+	  }
+
+	  return annotateRule('no-implicit-end', {
+	    check
+	  });
+	};
+	return noImplicitEnd;
+}
+
+var noImplicitEndExports = requireNoImplicitEnd();
+var rule_15 = /*@__PURE__*/getDefaultExportFromCjs(noImplicitEndExports);
+
+var noImplicitStart;
+var hasRequiredNoImplicitStart;
+
+function requireNoImplicitStart () {
+	if (hasRequiredNoImplicitStart) return noImplicitStart;
+	hasRequiredNoImplicitStart = 1;
+	const {
+	  is,
+	  isAny
+	} = require$$0;
+
+	const {
+	  annotateRule
+	} = requireHelper();
+
+	/**
+	 * A rule that checks that an element is not an implicit start (token spawn).
+	 *
+	 * @type { import('../lib/types.js').RuleFactory }
+	 */
+	noImplicitStart = function() {
+
+	  function isLinkEvent(node) {
+	    const eventDefinitions = node.eventDefinitions || [];
+
+	    return eventDefinitions.length && eventDefinitions.every(
+	      definition => is(definition, 'bpmn:LinkEventDefinition')
+	    );
+	  }
+
+	  function isForCompensation(node) {
+	    return node.isForCompensation;
+	  }
+
+	  function isImplicitStart(node) {
+	    const incoming = node.incoming || [];
+
+	    if (is(node, 'bpmn:Activity') && isForCompensation(node)) {
+	      return false;
+	    }
+
+	    if (is(node.$parent, 'bpmn:AdHocSubProcess')) {
+	      return false;
+	    }
+
+	    if (is(node, 'bpmn:SubProcess') && node.triggeredByEvent) {
+	      return false;
+	    }
+
+	    if (is(node, 'bpmn:IntermediateCatchEvent') && isLinkEvent(node)) {
+	      return false;
+	    }
+
+	    if (isAny(node, [ 'bpmn:StartEvent', 'bpmn:BoundaryEvent' ])) {
+	      return false;
+	    }
+
+	    return incoming.length === 0;
+	  }
+
+	  function check(node, reporter) {
+
+	    if (!isAny(node, [ 'bpmn:Event', 'bpmn:Activity', 'bpmn:Gateway' ])) {
+	      return;
+	    }
+
+	    if (isImplicitStart(node)) {
+	      reporter.report(node.id, 'Element is an implicit start');
+	    }
+	  }
+
+	  return annotateRule('no-implicit-start', {
+	    check
+	  });
+	};
+	return noImplicitStart;
+}
+
+var noImplicitStartExports = requireNoImplicitStart();
+var rule_16 = /*@__PURE__*/getDefaultExportFromCjs(noImplicitStartExports);
 
 var singleBlankStartEvent;
 var hasRequiredSingleBlankStartEvent;
@@ -1622,7 +2305,7 @@ function requireSingleBlankStartEvent () {
 	hasRequiredSingleBlankStartEvent = 1;
 	const {
 	  is
-	} = require$$0$1;
+	} = require$$0;
 
 	const {
 	  annotateRule
@@ -1672,7 +2355,384 @@ function requireSingleBlankStartEvent () {
 }
 
 var singleBlankStartEventExports = requireSingleBlankStartEvent();
-var rule_7 = /*@__PURE__*/getDefaultExportFromCjs(singleBlankStartEventExports);
+var rule_19 = /*@__PURE__*/getDefaultExportFromCjs(singleBlankStartEventExports);
+
+var singleEventDefinition;
+var hasRequiredSingleEventDefinition;
+
+function requireSingleEventDefinition () {
+	if (hasRequiredSingleEventDefinition) return singleEventDefinition;
+	hasRequiredSingleEventDefinition = 1;
+	const {
+	  is
+	} = require$$0;
+
+	const {
+	  annotateRule
+	} = requireHelper();
+
+
+	/**
+	 * A rule that verifies that an event contains maximum one event definition.
+	 *
+	 * @type { import('../lib/types.js').RuleFactory }
+	 */
+	singleEventDefinition = function() {
+
+	  function check(node, reporter) {
+
+	    if (!is(node, 'bpmn:Event')) {
+	      return;
+	    }
+
+	    const eventDefinitions = node.eventDefinitions || [];
+
+	    if (eventDefinitions.length > 1) {
+	      reporter.report(node.id, 'Event has multiple event definitions', [ 'eventDefinitions' ]);
+	    }
+	  }
+
+	  return annotateRule('single-event-definition', {
+	    check
+	  });
+
+	};
+	return singleEventDefinition;
+}
+
+var singleEventDefinitionExports = requireSingleEventDefinition();
+var rule_20 = /*@__PURE__*/getDefaultExportFromCjs(singleEventDefinitionExports);
+
+var startEventRequired;
+var hasRequiredStartEventRequired;
+
+function requireStartEventRequired () {
+	if (hasRequiredStartEventRequired) return startEventRequired;
+	hasRequiredStartEventRequired = 1;
+	const {
+	  is,
+	  isAny
+	} = require$$0;
+
+	const {
+	  annotateRule
+	} = requireHelper();
+
+
+	/**
+	 * A rule that checks for the presence of a start event per scope.
+	 *
+	 * @type { import('../lib/types.js').RuleFactory }
+	 */
+	startEventRequired = function() {
+
+	  function hasStartEvent(node) {
+	    const flowElements = node.flowElements || [];
+
+	    return (
+	      flowElements.some(node => is(node, 'bpmn:StartEvent'))
+	    );
+	  }
+
+	  function check(node, reporter) {
+
+	    if (!isAny(node, [
+	      'bpmn:Process',
+	      'bpmn:SubProcess'
+	    ]) || is(node, 'bpmn:AdHocSubProcess')) {
+	      return;
+	    }
+
+	    if (!hasStartEvent(node)) {
+	      const type = is(node, 'bpmn:SubProcess') ? 'Sub process' : 'Process';
+
+	      reporter.report(node.id, type + ' is missing start event');
+	    }
+	  }
+
+	  return annotateRule('start-event-required', {
+	    check
+	  });
+	};
+	return startEventRequired;
+}
+
+var startEventRequiredExports = requireStartEventRequired();
+var rule_21 = /*@__PURE__*/getDefaultExportFromCjs(startEventRequiredExports);
+
+var subProcessBlankStartEvent;
+var hasRequiredSubProcessBlankStartEvent;
+
+function requireSubProcessBlankStartEvent () {
+	if (hasRequiredSubProcessBlankStartEvent) return subProcessBlankStartEvent;
+	hasRequiredSubProcessBlankStartEvent = 1;
+	const {
+	  is
+	} = require$$0;
+
+	const {
+	  annotateRule
+	} = requireHelper();
+
+
+	/**
+	 * A rule that checks that start events inside a normal sub-processes
+	 * are blank (do not have an event definition).
+	 *
+	 * @type { import('../lib/types.js').RuleFactory }
+	 */
+	subProcessBlankStartEvent = function() {
+
+	  function check(node, reporter) {
+
+	    if (!is(node, 'bpmn:SubProcess') || node.triggeredByEvent) {
+	      return;
+	    }
+
+	    const flowElements = node.flowElements || [];
+
+	    flowElements.forEach(function(flowElement) {
+
+	      if (!is(flowElement, 'bpmn:StartEvent')) {
+	        return false;
+	      }
+
+	      const eventDefinitions = flowElement.eventDefinitions || [];
+
+	      if (eventDefinitions.length > 0) {
+	        reporter.report(flowElement.id, 'Start event must be blank', [ 'eventDefinitions' ]);
+	      }
+	    });
+	  }
+
+	  return annotateRule('sub-process-blank-start-event', {
+	    check
+	  });
+
+	};
+	return subProcessBlankStartEvent;
+}
+
+var subProcessBlankStartEventExports = requireSubProcessBlankStartEvent();
+var rule_22 = /*@__PURE__*/getDefaultExportFromCjs(subProcessBlankStartEventExports);
+
+var superfluousGateway;
+var hasRequiredSuperfluousGateway;
+
+function requireSuperfluousGateway () {
+	if (hasRequiredSuperfluousGateway) return superfluousGateway;
+	hasRequiredSuperfluousGateway = 1;
+	const {
+	  is
+	} = require$$0;
+
+	const {
+	  annotateRule
+	} = requireHelper();
+
+
+	/**
+	 * A rule that checks, whether a gateway has only one source and target.
+	 *
+	 * Those gateways are superfluous since they don't do anything.
+	 *
+	 * @type { import('../lib/types.js').RuleFactory }
+	 */
+	superfluousGateway = function() {
+
+	  function check(node, reporter) {
+
+	    if (!is(node, 'bpmn:Gateway')) {
+	      return;
+	    }
+
+	    const incoming = node.incoming || [];
+	    const outgoing = node.outgoing || [];
+
+	    if (incoming.length === 1 && outgoing.length === 1) {
+	      reporter.report(node.id, 'Gateway is superfluous. It only has one source and target.');
+	    }
+	  }
+
+	  return annotateRule('superfluous-gateway', {
+	    check
+	  });
+
+	};
+	return superfluousGateway;
+}
+
+var superfluousGatewayExports = requireSuperfluousGateway();
+var rule_23 = /*@__PURE__*/getDefaultExportFromCjs(superfluousGatewayExports);
+
+var superfluousLabel;
+var hasRequiredSuperfluousLabel;
+
+function requireSuperfluousLabel () {
+	if (hasRequiredSuperfluousLabel) return superfluousLabel;
+	hasRequiredSuperfluousLabel = 1;
+	const {
+	  is
+	} = require$$0;
+
+	const {
+	  annotateRule
+	} = requireHelper();
+
+
+	/**
+	 * A rule that checks that unconditional sequence flows do not
+	 * have a label.
+	 *
+	 * Labels are only meaningful on sequence flows forking out of
+	 * XOR/OR gateways, on conditional flows, and on default flows.
+	 * Anywhere else they duplicate information already conveyed by
+	 * the diagram.
+	 *
+	 * @type { import('../lib/types.js').RuleFactory }
+	 */
+	superfluousLabel = function() {
+
+	  function check(node, reporter) {
+
+	    if (!is(node, 'bpmn:SequenceFlow')) {
+	      return;
+	    }
+
+	    const name = (node.name || '').trim();
+
+	    if (!name) {
+	      return;
+	    }
+
+	    if (hasCondition(node) || isDefaultFlow(node) || isGatewayFork(node)) {
+	      return;
+	    }
+
+	    reporter.report(node.id, 'Sequence flow has superfluous label', [ 'name' ]);
+	  }
+
+	  return annotateRule('superfluous-label', {
+	    check
+	  });
+
+	};
+
+
+	// helpers /////////////////////////////
+
+	function hasCondition(flow) {
+	  return !!flow.conditionExpression;
+	}
+
+	function isDefaultFlow(flow) {
+	  const source = flow.sourceRef;
+
+	  return source && source['default'] === flow;
+	}
+
+	function isGatewayFork(flow) {
+	  const source = flow.sourceRef;
+
+	  if (!source) {
+	    return false;
+	  }
+
+	  const isDecisionGateway = (
+	    is(source, 'bpmn:ExclusiveGateway') ||
+	    is(source, 'bpmn:InclusiveGateway')
+	  );
+
+	  return isDecisionGateway && (source.outgoing || []).length > 1;
+	}
+	return superfluousLabel;
+}
+
+var superfluousLabelExports = requireSuperfluousLabel();
+var rule_24 = /*@__PURE__*/getDefaultExportFromCjs(superfluousLabelExports);
+
+var superfluousTermination;
+var hasRequiredSuperfluousTermination;
+
+function requireSuperfluousTermination () {
+	if (hasRequiredSuperfluousTermination) return superfluousTermination;
+	hasRequiredSuperfluousTermination = 1;
+	const {
+	  is,
+	  isAny
+	} = require$$0;
+
+	const {
+	  annotateRule
+	} = requireHelper();
+
+
+	/**
+	 * A rule that checks, whether a gateway has only one source and target.
+	 *
+	 * Those gateways are superfluous since they don't do anything.
+	 *
+	 * @type { import('../lib/types.js').RuleFactory }
+	 */
+	superfluousTermination = function() {
+
+	  function check(node, reporter) {
+
+	    if (!isAny(node, [ 'bpmn:Process', 'bpmn:SubProcess' ])) {
+	      return;
+	    }
+
+	    const flowElements = node.flowElements || [];
+
+	    const ends = flowElements.filter(
+	      element => is(element, 'bpmn:FlowNode') && (element.outgoing || []).length === 0
+	    );
+
+	    const terminateEnds = ends.filter(isTerminateEnd);
+
+	    if (terminateEnds.length !== 1) {
+
+	      // TODO(nikku): only detect basic cases, do not
+	      // do any kinds of elaborate flow analysis
+	      return;
+	    }
+
+	    const superfluous = ends.every(
+	      (end) => isInterruptingEventSub(end) || isTerminateEnd(end)
+	    );
+
+	    if (superfluous) {
+
+	      for (const node of terminateEnds) {
+	        reporter.report(node.id, 'Termination is superfluous.');
+	      }
+	    }
+	  }
+
+	  return annotateRule('superfluous-termination', {
+	    check
+	  });
+
+	};
+
+	function isTerminateEnd(element) {
+	  return is(element, 'bpmn:EndEvent') && (element.eventDefinitions || []).some(
+	    eventDefinition => is(eventDefinition, 'bpmn:TerminateEventDefinition')
+	  );
+	}
+
+	function isInterruptingEventSub(element) {
+	  const isEventSub = is(element, 'bpmn:SubProcess') && element.triggeredByEvent;
+
+	  return isEventSub && (element.flowElements || []).some(
+	    element => is(element, 'bpmn:StartEvent') && element.isInterrupting
+	  );
+	}
+	return superfluousTermination;
+}
+
+var superfluousTerminationExports = requireSuperfluousTermination();
+var rule_25 = /*@__PURE__*/getDefaultExportFromCjs(superfluousTerminationExports);
 
 var version = {};
 
@@ -1723,7 +2783,7 @@ var hasRequiredRule;
 function requireRule () {
 	if (hasRequiredRule) return rule;
 	hasRequiredRule = 1;
-	const { is } = require$$0$1;
+	const { is } = require$$0;
 
 	const { greaterOrEqual } = requireVersion();
 
@@ -1779,7 +2839,7 @@ var hasRequiredHistoryTimeToLive;
 function requireHistoryTimeToLive () {
 	if (hasRequiredHistoryTimeToLive) return historyTimeToLive;
 	hasRequiredHistoryTimeToLive = 1;
-	const { is } = require$$0$1;
+	const { is } = require$$0;
 
 	const { skipInNonExecutableProcess } = requireRule();
 
@@ -1808,7 +2868,7 @@ function requireHistoryTimeToLive () {
 }
 
 var historyTimeToLiveExports = requireHistoryTimeToLive();
-var rule_8 = /*@__PURE__*/getDefaultExportFromCjs(historyTimeToLiveExports);
+var rule_26 = /*@__PURE__*/getDefaultExportFromCjs(historyTimeToLiveExports);
 
 /*
  * Copyright CIB software GmbH and/or licensed to CIB software GmbH
@@ -1835,7 +2895,7 @@ function requireCustomNoOverlappingElements () {
 	hasRequiredCustomNoOverlappingElements = 1;
 	const {
 	    is
-	  } = require$$0$1;
+	  } = require$$0;
 	  
 	  
 	  /**
@@ -2011,7 +3071,7 @@ function requireCustomNoOverlappingElements () {
 }
 
 var customNoOverlappingElementsExports = requireCustomNoOverlappingElements();
-var rule_10 = /*@__PURE__*/getDefaultExportFromCjs(customNoOverlappingElementsExports);
+var rule_27 = /*@__PURE__*/getDefaultExportFromCjs(customNoOverlappingElementsExports);
 
 /*
  * Copyright CIB software GmbH and/or licensed to CIB software GmbH
@@ -2090,7 +3150,71 @@ function requireCustomConditionalFlows () {
 }
 
 var customConditionalFlowsExports = requireCustomConditionalFlows();
-var rule_12 = /*@__PURE__*/getDefaultExportFromCjs(customConditionalFlowsExports);
+var rule_28 = /*@__PURE__*/getDefaultExportFromCjs(customConditionalFlowsExports);
+
+var conditionalEvent;
+var hasRequiredConditionalEvent;
+
+function requireConditionalEvent () {
+	if (hasRequiredConditionalEvent) return conditionalEvent;
+	hasRequiredConditionalEvent = 1;
+	const {
+	  is
+	} = require$$0;
+
+	const {
+	  annotateRule,
+	  isInExecutableProcess
+	} = requireHelper();
+
+
+	/**
+	 * Ensures that a conditional event has a condition specified.
+	 *
+	 * @type { import('../lib/types.js').RuleFactory }
+	 */
+	conditionalEvent = function() {
+
+	  function check(node, reporter) {
+
+	    if (!isInExecutableProcess(node)) {
+	      return;
+	    }
+
+	    const eventDefinition = getConditionalEventDefinition(node);
+
+	    if (!eventDefinition) {
+	      return;
+	    }
+
+	    if (!hasCondition(eventDefinition)) {
+	      reporter.report(node.id, 'Conditional event is missing a condition', [ 'condition' ]);
+	    }
+	  }
+
+	  return annotateRule('conditional-event', {
+	    check
+	  });
+
+	};
+
+	function getConditionalEventDefinition(node) {
+	  if (!is(node, 'bpmn:Event')) {
+	    return;
+	  }
+
+	  const eventDefinitions = node.eventDefinitions || [];
+	  return eventDefinitions.find(def => is(def, 'bpmn:ConditionalEventDefinition'));
+	}
+
+	function hasCondition(eventDefinition) {
+	  return !!eventDefinition.condition?.body;
+	}
+	return conditionalEvent;
+}
+
+var conditionalEventExports = requireConditionalEvent();
+var rule_29 = /*@__PURE__*/getDefaultExportFromCjs(conditionalEventExports);
 
 const cache = {};
 
@@ -2123,13 +3247,31 @@ const resolver = new Resolver();
 
 const rules = {
   "ad-hoc-sub-process": "error",
-  "conditional-event": "error",
+  "conditional-flows": 0,
+  "end-event-required": "error",
   "event-based-gateway": "error",
   "event-sub-process-typed-start-event": "error",
+  "fake-join": 0,
+  "global": "warn",
+  "label-required": 0,
   "link-event": "error",
-  "no-duplicate-sequence-flows": "warn",
-  "sub-process-blank-start-event": "error",
+  "no-bpmndi": "error",
+  "no-complex-gateway": "error",
+  "no-disconnected": "error",
+  "no-duplicate-sequence-flows": "error",
+  "no-gateway-join-fork": "warn",
+  "no-implicit-split": "error",
+  "no-implicit-end": "warn",
+  "no-implicit-start": "error",
+  "no-inclusive-gateway": 0,
+  "no-overlapping-elements": 0,
   "single-blank-start-event": "error",
+  "single-event-definition": "error",
+  "start-event-required": "error",
+  "sub-process-blank-start-event": "error",
+  "superfluous-gateway": "warn",
+  "superfluous-label": "warn",
+  "superfluous-termination": "warn",
   "camunda-compat/history-time-to-live": [
     "info",
     {
@@ -2137,10 +3279,9 @@ const rules = {
       "version": "7.24"
     }
   ],
-  "no-overlapping-elements": 0,
   "local/custom-no-overlapping-elements": "warn",
-  "conditional-flows": 0,
-  "local/custom-conditional-flows": "error"
+  "local/custom-conditional-flows": "error",
+  "conditional-event": "error"
 };
 
 const config = {
@@ -2157,24 +3298,52 @@ const bundle = {
 
 cache['bpmnlint/ad-hoc-sub-process'] = rule_0;
 
-cache['bpmnlint/conditional-event'] = rule_1;
+cache['bpmnlint/end-event-required'] = rule_2;
 
-cache['bpmnlint/event-based-gateway'] = rule_2;
+cache['bpmnlint/event-based-gateway'] = rule_3;
 
-cache['bpmnlint/event-sub-process-typed-start-event'] = rule_3;
+cache['bpmnlint/event-sub-process-typed-start-event'] = rule_4;
 
-cache['bpmnlint/link-event'] = rule_4;
+cache['bpmnlint/global'] = rule_6;
 
-cache['bpmnlint/no-duplicate-sequence-flows'] = rule_5;
+cache['bpmnlint/link-event'] = rule_8;
 
-cache['bpmnlint/sub-process-blank-start-event'] = rule_6;
+cache['bpmnlint/no-bpmndi'] = rule_9;
 
-cache['bpmnlint/single-blank-start-event'] = rule_7;
+cache['bpmnlint/no-complex-gateway'] = rule_10;
 
-cache['bpmnlint-plugin-camunda-compat/history-time-to-live'] = rule_8;
+cache['bpmnlint/no-disconnected'] = rule_11;
 
-cache['bpmnlint-plugin-local/custom-no-overlapping-elements'] = rule_10;
+cache['bpmnlint/no-duplicate-sequence-flows'] = rule_12;
 
-cache['bpmnlint-plugin-local/custom-conditional-flows'] = rule_12;
+cache['bpmnlint/no-gateway-join-fork'] = rule_13;
+
+cache['bpmnlint/no-implicit-split'] = rule_14;
+
+cache['bpmnlint/no-implicit-end'] = rule_15;
+
+cache['bpmnlint/no-implicit-start'] = rule_16;
+
+cache['bpmnlint/single-blank-start-event'] = rule_19;
+
+cache['bpmnlint/single-event-definition'] = rule_20;
+
+cache['bpmnlint/start-event-required'] = rule_21;
+
+cache['bpmnlint/sub-process-blank-start-event'] = rule_22;
+
+cache['bpmnlint/superfluous-gateway'] = rule_23;
+
+cache['bpmnlint/superfluous-label'] = rule_24;
+
+cache['bpmnlint/superfluous-termination'] = rule_25;
+
+cache['bpmnlint-plugin-camunda-compat/history-time-to-live'] = rule_26;
+
+cache['bpmnlint-plugin-local/custom-no-overlapping-elements'] = rule_27;
+
+cache['bpmnlint-plugin-local/custom-conditional-flows'] = rule_28;
+
+cache['bpmnlint/conditional-event'] = rule_29;
 
 export { config, bundle as default, moddleExtensions, resolver };
