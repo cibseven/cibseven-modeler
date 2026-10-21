@@ -24,6 +24,7 @@ vi.mock('bootstrap', () => ({
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: k => k }) }))
 
 import ModalNewDiagram from '../../components/modals/ModalNewDiagram.vue'
+import { SKIP_CREATION_MODAL_KEY } from '../../constants/diagramTypes.js'
 
 const mountModal = (checkDuplicateId = () => false) =>
     mount(ModalNewDiagram, {
@@ -43,6 +44,26 @@ describe('ModalNewDiagram footer', () => {
         const wrapper = mountModal()
         const footer = wrapper.findAll('.modal-footer button').map(button => button.text())
         expect(footer).toEqual(['modalNewDiagram.cancel', 'buttons.accept'])
+        wrapper.unmount()
+    })
+})
+
+describe('ModalNewDiagram skip preference', () => {
+    // The page keeps running while the preference changes elsewhere, e.g. in another tab
+    it('shows the stored preference each time it opens', async () => {
+        localStorage.setItem(SKIP_CREATION_MODAL_KEY, 'true')
+        const wrapper = mountModal()
+        const checkbox = () => wrapper.find('#dontShowAgainModalCheck').element
+
+        localStorage.setItem(SKIP_CREATION_MODAL_KEY, 'false')
+        await open(wrapper, vi.fn())
+        expect(checkbox().checked).toBe(false)
+
+        localStorage.setItem(SKIP_CREATION_MODAL_KEY, 'true')
+        await open(wrapper, vi.fn())
+        expect(checkbox().checked).toBe(true)
+
+        localStorage.removeItem(SKIP_CREATION_MODAL_KEY)
         wrapper.unmount()
     })
 })

@@ -143,6 +143,8 @@ const _toggleModalNewDiagram = async (comp, callback, elementType) => {
     if (comp) {
         functionOnCallback = callback
         _resetField()
+        // Another tab may have changed the preference since this one loaded
+        dontShowAgain.value = localStorage.getItem(SKIP_CREATION_MODAL_KEY) === 'true'
         modalBootstrap.show()
     }
     else {
