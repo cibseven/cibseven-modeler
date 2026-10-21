@@ -564,6 +564,7 @@
 		"copyFormId": "ID de formulario de la copia",
 		"copyFormIdRequired": "La copia necesita un ID de formulario propio.",
 		"destination": "Destino",
+		"currentLocation": "ubicación actual",
 		"importTitle": "Importar a una carpeta",
 		"empty": "Esta carpeta está vacía.",
 		"emptyProjects": "Todavía no hay proyectos. Cree uno para guardar sus modelos.",

@@ -14,7 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 
 const tabManagerState = vi.hoisted(() => ({}))
@@ -26,6 +26,8 @@ const fileImportMocks = vi.hoisted(() => ({
 }))
 
 const pickerMocks = vi.hoisted(() => ({ show: vi.fn(), isShown: vi.fn() }))
+
+const newDiagramMocks = vi.hoisted(() => ({ toggle: vi.fn() }))
 
 const storeMocks = vi.hoisted(() => ({ dispatch: vi.fn() }))
 
@@ -164,7 +166,9 @@ vi.mock('../../../components/monaco/MonacoEditor.vue', () => ({
 vi.mock('../../../components/ActionButtonsList.vue', () => ({
   default: { template: '<div class="action-buttons-stub" />' },
 }))
-vi.mock('../../../components/modals/ModalNewDiagram.vue', () => ({ default: { template: '<div />' } }))
+vi.mock('../../../components/modals/ModalNewDiagram.vue', () => ({
+  default: { template: '<div />', methods: { _toggleModalNewDiagram: (...args) => newDiagramMocks.toggle(...args) } },
+}))
 vi.mock('../../../components/modals/ModalDeploy.vue', () => ({ default: { template: '<div />' } }))
 vi.mock('../../../components/messages/ToastMessage.vue', () => ({
   default: { name: 'ToastMessage', template: '<div class="toast-stub" />', methods: { _showToastTimeOut: vi.fn() } },
@@ -175,6 +179,7 @@ vi.mock('../../../components/modals/FolderPickerModal.vue', () => ({
 }))
 
 import CibsevenModeler from '../../../components/modeler/CibsevenModeler.vue'
+import { SKIP_CREATION_MODAL_KEY } from '../../../constants/diagramTypes.js'
 
 const childStubs = {}
 
@@ -648,6 +653,62 @@ describe('CibsevenModeler', () => {
       await wrapper.vm.switchTabFromTabNav(0)
 
       expect(routerMocks.replace).toHaveBeenCalledWith({ params: { diagramId: 'p1' }, query: { folder: 'invoicing' } })
+    })
+  })
+
+  /** The start page keeps the clicked create button busy until it is told the creation is under way. */
+  describe('creating a model from the start page', () => {
+    const startPage = wrapper => wrapper.findComponent({ name: 'StartPage' })
+
+    afterEach(() => {
+      localStorage.removeItem(SKIP_CREATION_MODAL_KEY)
+      vi.unstubAllGlobals()
+    })
+
+    it.each([
+      ['createNewBpmnc7Diagram', 'bpmn-c7'],
+      ['createNewDmnDiagram', 'dmn'],
+      ['createNewFormDiagram', 'form'],
+    ])('opens the name dialog for %s and then releases the button', async (event, type) => {
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      const done = vi.fn()
+
+      startPage(wrapper).vm.$emit(event, event === 'createNewFormDiagram' ? {} : 'diagram.xml', type, done)
+      await flushPromises()
+
+      expect(newDiagramMocks.toggle).toHaveBeenCalledWith(true, expect.any(Function), type)
+      expect(done).toHaveBeenCalledTimes(1)
+    })
+
+    it('opens the new tab straight away when the dialog was turned off, and then releases the button', async () => {
+      localStorage.setItem(SKIP_CREATION_MODAL_KEY, 'true')
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, text: () => Promise.resolve('<bpmn:process id="x"/>') }))
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      const done = vi.fn()
+
+      startPage(wrapper).vm.$emit('createNewBpmnc7Diagram', 'diagram.xml', 'bpmn-c7', done)
+      await flushPromises()
+
+      expect(newDiagramMocks.toggle).not.toHaveBeenCalled()
+      expect(tabManagerState.tabNavList.value).toHaveLength(1)
+      expect(done).toHaveBeenCalledTimes(1)
+    })
+
+    it('releases the button even when the new model cannot be prepared', async () => {
+      localStorage.setItem(SKIP_CREATION_MODAL_KEY, 'true')
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404 }))
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      const done = vi.fn()
+
+      await expect(wrapper.vm.createNewBpmnDiagram('diagram.xml', 'bpmn-c7', done)).rejects.toThrow()
+
+      expect(tabManagerState.tabNavList.value).toHaveLength(0)
+      expect(done).toHaveBeenCalledTimes(1)
+      errorSpy.mockRestore()
     })
   })
 })

@@ -192,6 +192,28 @@ describe('StartPage folders', () => {
       expect(labels).toContain('buttons.createDmn')
       expect(labels).toContain('buttons.createForm')
     })
+
+    /** Opening the dialog or the new tab can take a moment, so the clicked button says it is busy. */
+    it('shows the clicked button as busy until the dialog is open', async () => {
+      const wrapper = await mountStartPage()
+      await filesTable(wrapper).vm.$emit('openFolder', 'general')
+      await flushPromises()
+      const createButtons = () => wrapper.findAll('button').filter(button => button.text().startsWith('buttons.create'))
+
+      await createButtons()[1].trigger('click')
+
+      const [dmn] = wrapper.emitted('createNewDmnDiagram')
+      expect(createButtons()[1].attributes('aria-busy')).toBe('true')
+      expect(createButtons()[1].find('.spinner-border').exists()).toBe(true)
+      expect(createButtons().every(button => button.attributes('disabled') !== undefined)).toBe(true)
+
+      dmn[2]()
+      await flushPromises()
+
+      expect(createButtons()[1].attributes('aria-busy')).toBe('false')
+      expect(wrapper.find('.spinner-border').exists()).toBe(false)
+      expect(createButtons().every(button => button.attributes('disabled') === undefined)).toBe(true)
+    })
   })
 
   // A folder at the top level is a project, and creating one is the page's main action there
@@ -422,6 +444,45 @@ describe('StartPage folders', () => {
       await filesTable(wrapper).vm.$emit('moveModel', DIAGRAMS[0])
 
       expect(picker.vm.show.mock.calls[0][0].allowTopLevel).toBeUndefined()
+    })
+
+    /** Moving a model to where it already is would be no move, so its folder is not offered. */
+    it('marks the folder the model is in as its current location', async () => {
+      const wrapper = await mountStartPage()
+      const picker = wrapper.findComponent({ name: 'FolderPickerModal' })
+      picker.vm.show = vi.fn()
+
+      await filesTable(wrapper).vm.$emit('moveModel', DIAGRAMS[0])
+
+      expect(picker.vm.show.mock.calls[0][0].current).toBe('general')
+    })
+  })
+
+  describe('moving a folder', () => {
+    const openPicker = async (wrapper, folder) => {
+      const picker = wrapper.findComponent({ name: 'FolderPickerModal' })
+      picker.vm.show = vi.fn()
+      await filesTable(wrapper).vm.$emit('moveFolder', folder)
+      return picker.vm.show.mock.calls[0][0]
+    }
+
+    it('marks the folder it sits in as its current location', async () => {
+      const wrapper = await mountStartPage()
+
+      const options = await openPicker(wrapper, TREE[1])
+
+      expect(options.current).toBe('general')
+      expect(options.allowTopLevel).toBe(true)
+    })
+
+    it('marks the top level as the current location of a project', async () => {
+      const wrapper = await mountStartPage()
+
+      const options = await openPicker(wrapper, TREE[0])
+
+      expect(options.current).toBeNull()
+      // The folder itself is no destination, and neither is anything inside it
+      expect(options.folders).toEqual([])
     })
   })
 

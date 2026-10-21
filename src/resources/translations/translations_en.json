@@ -564,6 +564,7 @@
 		"copyFormId": "Form id of the copy",
 		"copyFormIdRequired": "A copy needs a form id of its own.",
 		"destination": "Destination",
+		"currentLocation": "current location",
 		"importTitle": "Import into a folder",
 		"empty": "This folder is empty.",
 		"emptyProjects": "No projects yet. Create one to store your models in.",

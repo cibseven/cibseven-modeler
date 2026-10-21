@@ -564,6 +564,7 @@
 		"copyFormId": "Form-ID der Kopie",
 		"copyFormIdRequired": "Eine Kopie braucht eine eigene Form-ID.",
 		"destination": "Ziel",
+		"currentLocation": "aktueller Ort",
 		"importTitle": "In einen Ordner importieren",
 		"empty": "Dieser Ordner ist leer.",
 		"emptyProjects": "Noch keine Projekte. Legen Sie eines an, um Modelle darin abzulegen.",
