@@ -58,18 +58,20 @@
             <div v-if="item.isDeleting" class="spinner-border spinner-border-sm text-secondary mx-auto" role="status">
                 <span class="visually-hidden">{{ $t('loading') }}...</span>
             </div>
-            <BDropdown v-else :ref="menu => menus[item.key] = menu" class="mx-auto" variant="link" no-caret right
-                toggle-class="p-1 border-0 text-reset" :label="$t('folders.actionsFor', { name: item.label })"
-                :title="$t('folders.actionsFor', { name: item.label })">
-                <template #button-content>
-                    <span class="mdi mdi-18px mdi-dots-vertical" aria-hidden="true"></span>
-                </template>
-                <BDropdownItemButton v-for="action in item.actions" :key="action.id" @click="run(item, action)">
-                    <span :class="{ 'text-danger': action.danger }">
-                        <span class="mdi me-2" :class="action.icon" aria-hidden="true"></span>{{ $t(action.label) }}
-                    </span>
-                </BDropdownItemButton>
-            </BDropdown>
+            <!-- The menu's own title is only fallback text for its button, so the tooltip sits here -->
+            <div v-else class="mx-auto" :title="$t('folders.actionsFor', { name: item.label })">
+                <BDropdown :ref="menu => menus[item.key] = menu" variant="link" no-caret right
+                    toggle-class="border-0 hovered-button" :label="$t('folders.actionsFor', { name: item.label })">
+                    <template #button-content>
+                        <span class="mdi mdi-18px mdi-dots-vertical" aria-hidden="true"></span>
+                    </template>
+                    <BDropdownItemButton v-for="action in item.actions" :key="action.id" :title="$t(action.label)" @click="run(item, action)">
+                        <span :class="{ 'text-danger': action.danger }">
+                            <span class="mdi me-2" :class="action.icon" aria-hidden="true"></span>{{ $t(action.label) }}
+                        </span>
+                    </BDropdownItemButton>
+                </BDropdown>
+            </div>
         </template>
     </FlowTable>
 </template>
@@ -203,3 +205,25 @@ const run = (item, { id, event }) => {
     else emit(event, item.source)
 }
 </script>
+
+<style scoped>
+/* Same hover and focus as the webclient's table action buttons */
+:deep(.hovered-button) {
+    margin: 0;
+    padding: 4px 8px;
+    color: var(--bs-gray-800);
+    transition: background-color 0.3s ease;
+}
+:deep(.hovered-button:hover),
+:deep(.hovered-button:focus),
+:deep(.hovered-button:focus-visible) {
+    background-color: var(--bs-gray-500) !important;
+    color: var(--bs-dark) !important;
+}
+:deep(.hovered-button:focus),
+:deep(.hovered-button:focus-visible) {
+    outline: 2px solid var(--bs-dark);
+    /* Drawn inside the button, so focusing does not change its size */
+    outline-offset: -2px !important;
+}
+</style>

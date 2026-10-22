@@ -567,7 +567,7 @@ describe('Utils', () => {
 
     describe('folderIcon', () => {
         it('tells projects, folders and user folders apart', () => {
-            expect(folderIcon({ parentId: null })).toBe('mdi-folder')
+            expect(folderIcon({ parentId: null })).toBe('mdi-briefcase')
             expect(folderIcon({ parentId: 'p' })).toBe('mdi-folder-outline')
             expect(folderIcon({ parentId: null, userFolder: true })).toBe('mdi-folder-account-outline')
         })

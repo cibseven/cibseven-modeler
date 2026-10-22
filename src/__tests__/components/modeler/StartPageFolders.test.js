@@ -142,7 +142,7 @@ describe('StartPage folders', () => {
       await flushPromises()
 
       const steps = wrapper.findAll('.breadcrumb-item')
-      expect(steps[1].find('.mdi-folder').exists()).toBe(true)
+      expect(steps[1].find('.mdi-briefcase').exists()).toBe(true)
       expect(steps[2].find('.mdi-folder-outline').exists()).toBe(true)
       expect(steps[2].find('.fw-semibold').text()).toBe('Invoicing')
     })
@@ -231,7 +231,7 @@ describe('StartPage folders', () => {
 
       expect(createButton(wrapper).text()).toBe('folders.createProject')
       expect(createButton(wrapper).classes()).toContain('btn-secondary')
-      expect(createButton(wrapper).find('.mdi-folder-plus').exists()).toBe(true)
+      expect(createButton(wrapper).find('.mdi-briefcase-plus').exists()).toBe(true)
       expect(createButton(wrapper).classes()).not.toContain('btn-sm')
     })
 
