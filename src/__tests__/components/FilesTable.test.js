@@ -35,10 +35,10 @@ const FORM = { id: 'f1', formId: 'request', type: DIAGRAM_TYPE.FORM, folderId: '
 const { BDropdown, BDropdownItemButton } = vi.hoisted(() => ({
   BDropdown: {
     name: 'BDropdown',
-    props: ['label'],
+    props: ['label', 'toggleClass'],
     methods: { hide: vi.fn() },
     // Like the real menu, a click inside it does not reach the row
-    template: '<div class="menu-stub" :aria-label="label" @click.stop><slot /></div>',
+    template: '<div class="menu-stub" :aria-label="label" :data-toggle-class="toggleClass" @click.stop><slot /></div>',
   },
   BDropdownItemButton: {
     name: 'BDropdownItemButton',
@@ -88,7 +88,7 @@ describe('FilesTable', () => {
     it('tells projects, folders and the user folder apart by their icon', () => {
       const wrapper = mountTable({ folders: [PROJECT, USER_FOLDER, SUBFOLDER], models: [] })
 
-      expect(row(wrapper, 'Billing').find('.mdi-folder').exists()).toBe(true)
+      expect(row(wrapper, 'Billing').find('.mdi-briefcase').exists()).toBe(true)
       expect(row(wrapper, 'Archive').find('.mdi-folder-outline').exists()).toBe(true)
       expect(row(wrapper, 'demo').find('.mdi-folder-account-outline').exists()).toBe(true)
     })
@@ -217,6 +217,19 @@ describe('FilesTable', () => {
       const wrapper = mountTable()
 
       expect(row(wrapper, 'Billing').find('.menu-stub').attributes('aria-label')).toBe('folders.actionsFor')
+    })
+
+    it('styles the menu button like the other table action buttons', () => {
+      const wrapper = mountTable()
+
+      expect(row(wrapper, 'Billing').find('.menu-stub').attributes('data-toggle-class').split(' ')).toContain('hovered-button')
+    })
+
+    it('gives every menu entry a tooltip', () => {
+      const wrapper = mountTable()
+
+      const titles = row(wrapper, 'Invoice.bpmn').findAll('.menu-item').map(item => item.attributes('title'))
+      expect(titles).toEqual(['folders.open', 'buttons.download', 'folders.moveTo', 'folders.copyTo', 'folders.delete'])
     })
 
     it.each([

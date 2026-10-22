@@ -247,6 +247,14 @@ describe('FolderPickerModal', () => {
         expect(labels[1].text()).toContain('Invoicing')
     })
 
+    it('frames the list at the top and bottom, which the items leave open', async () => {
+        const wrapper = mountModal(FolderPickerModal)
+
+        await open(wrapper)
+
+        expect(wrapper.find('.list-group').classes()).toEqual(expect.arrayContaining(['border-top', 'border-bottom']))
+    })
+
     /** A model cannot sit at the top level, so it is only offered when a folder may move there. */
     it('offers the top level only when it is allowed', async () => {
         const wrapper = mountModal(FolderPickerModal)

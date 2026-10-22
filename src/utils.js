@@ -335,7 +335,7 @@ export const formatDate = (date, format = null) => {
 /** A project is a folder at the top level; a user folder has its own icon wherever it shows. */
 export const folderIcon = folder => {
 	if (folder.userFolder) return 'mdi-folder-account-outline'
-	return folder.parentId ? 'mdi-folder-outline' : 'mdi-folder'
+	return folder.parentId ? 'mdi-folder-outline' : 'mdi-briefcase'
 }
 
 /** A form goes by its form id; a diagram by its name, or by its key when it has none. */

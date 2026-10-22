@@ -68,7 +68,7 @@
                         <button type="button" class="btn text-nowrap create-folder"
                             :class="currentFolderId ? 'btn-outline-secondary' : 'btn-secondary'"
                             :title="createFolderLabel" @click="handleCreateFolder">
-                            <i class="mdi me-1" :class="currentFolderId ? 'mdi-folder-plus-outline' : 'mdi-folder-plus'" aria-hidden="true"></i>{{ createFolderLabel }}
+                            <i class="mdi me-1" :class="currentFolderId ? 'mdi-folder-plus-outline' : 'mdi-briefcase-plus'" aria-hidden="true"></i>{{ createFolderLabel }}
                         </button>
                         <!-- Models are always stored in a folder -->
                         <template v-if="currentFolderId">
