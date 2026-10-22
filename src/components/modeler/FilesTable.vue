@@ -58,18 +58,20 @@
             <div v-if="item.isDeleting" class="spinner-border spinner-border-sm text-secondary mx-auto" role="status">
                 <span class="visually-hidden">{{ $t('loading') }}...</span>
             </div>
-            <BDropdown v-else :ref="menu => menus[item.key] = menu" class="mx-auto" variant="link" no-caret right
-                toggle-class="border-0 hovered-button" :label="$t('folders.actionsFor', { name: item.label })"
-                :title="$t('folders.actionsFor', { name: item.label })">
-                <template #button-content>
-                    <span class="mdi mdi-18px mdi-dots-vertical" aria-hidden="true"></span>
-                </template>
-                <BDropdownItemButton v-for="action in item.actions" :key="action.id" :title="$t(action.label)" @click="run(item, action)">
-                    <span :class="{ 'text-danger': action.danger }">
-                        <span class="mdi me-2" :class="action.icon" aria-hidden="true"></span>{{ $t(action.label) }}
-                    </span>
-                </BDropdownItemButton>
-            </BDropdown>
+            <!-- The menu's own title is only fallback text for its button, so the tooltip sits here -->
+            <div v-else class="mx-auto" :title="$t('folders.actionsFor', { name: item.label })">
+                <BDropdown :ref="menu => menus[item.key] = menu" variant="link" no-caret right
+                    toggle-class="border-0 hovered-button" :label="$t('folders.actionsFor', { name: item.label })">
+                    <template #button-content>
+                        <span class="mdi mdi-18px mdi-dots-vertical" aria-hidden="true"></span>
+                    </template>
+                    <BDropdownItemButton v-for="action in item.actions" :key="action.id" :title="$t(action.label)" @click="run(item, action)">
+                        <span :class="{ 'text-danger': action.danger }">
+                            <span class="mdi me-2" :class="action.icon" aria-hidden="true"></span>{{ $t(action.label) }}
+                        </span>
+                    </BDropdownItemButton>
+                </BDropdown>
+            </div>
         </template>
     </FlowTable>
 </template>

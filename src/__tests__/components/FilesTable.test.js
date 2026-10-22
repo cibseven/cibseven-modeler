@@ -219,6 +219,12 @@ describe('FilesTable', () => {
       expect(row(wrapper, 'Billing').find('.menu-stub').attributes('aria-label')).toBe('folders.actionsFor')
     })
 
+    it('explains the menu button with a tooltip', () => {
+      const wrapper = mountTable()
+
+      expect(row(wrapper, 'Billing').find('.menu-stub').element.parentElement.getAttribute('title')).toBe('folders.actionsFor')
+    })
+
     it('styles the menu button like the other table action buttons', () => {
       const wrapper = mountTable()
 
