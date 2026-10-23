@@ -20,7 +20,6 @@ import moment from 'moment'
 const TYPEC7 = 'bpmn-c7'
 const TYPEDMN = 'dmn'
 const TYPEFORM = 'form'
-const BPMNC7TAG = 'xmlns:camunda'
 
 export const getTimeStamp = () => {
 	const currentTime = new Date()
@@ -95,20 +94,6 @@ export const setTagValueOfXml = (resXmlExternalUrl, xmlTag, attribute, xmlProper
 	const localName = xmlTag.includes(':') ? xmlTag.split(':').pop() : xmlTag
 	doc.querySelector(`*|${localName}`)?.setAttribute(attribute, xmlPropertyValue)
 	return new XMLSerializer().serializeToString(doc)
-}
-
-export const checkCamundaVersion = (xmlString) => {
-	const xmlDoc = new DOMParser().parseFromString(xmlString, 'text/xml')
-	const attributes = xmlDoc.documentElement.attributes
-	for (let i = attributes.length - 1; i >= 0; i--) {
-		const attr = attributes[i]
-		if (!attr) break
-		if (attr.name === 'modeler:executionPlatformVersion') {
-			return TYPEC7
-		}
-		if (attr.name === BPMNC7TAG) return TYPEC7
-	}
-	return TYPEC7
 }
 
 export const getOnlyNameOfTemplate = (templateWithVersion) => {

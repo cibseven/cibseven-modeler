@@ -193,7 +193,7 @@ import * as monaco from '../../monaco-setup.js'
 import { useStore } from 'vuex'
 import { useRoute, useRouter } from 'vue-router'
 
-import { compareXML, getTimeStamp, getTagValueFromXml, getProcessKeyFromBpmn, checkCamundaVersion, generateUniqueId, setTagValueOfXml, filterTemplates, resolveTabIndexById } from '../../utils.js'
+import { compareXML, getTimeStamp, getTagValueFromXml, getProcessKeyFromBpmn, generateUniqueId, setTagValueOfXml, filterTemplates, resolveTabIndexById } from '../../utils.js'
 import Clipboard from 'diagram-js/lib/features/clipboard/Clipboard'
 import { ref, onMounted, onUnmounted, nextTick, watch, computed, inject, provide } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -621,12 +621,12 @@ const updateDiagramFromEditor = (xmlContent, tabElementIndex) => {
 	if (!modeler.value[tabElementIndex]) return
 	if (!xmlContent) return // ignore empty content — user is mid-edit; keep the editor alive
 	modeler.value[tabElementIndex]._validate(xmlContent)
-	const typeOfDiagram = checkCamundaVersion(xmlContent) ?? DIAGRAM_TYPE.DMN
+	const tab = tabNavList.value[tabElementIndex]
 
-	if (isXmlValidated.value[tabNavList.value[tabElementIndex].key].validation) {
+	if (isXmlValidated.value[tab.key].validation) {
 		editorXML.value[tabElementIndex] = xmlContent // update xml from modeler
-		tabNavList.value[tabElementIndex].canSave = true //enables save button
-		modeler.value[tabElementIndex]._saveXmlAfterUpdate(typeOfDiagram.startsWith('bpmn'), xmlContent, tabElementIndex)
+		tab.canSave = true //enables save button
+		modeler.value[tabElementIndex]._saveXmlAfterUpdate(tab.type?.startsWith('bpmn') ?? false, xmlContent, tabElementIndex)
 	}
 }
 
@@ -943,7 +943,7 @@ const _landingFolderId = async () => {
 }
 
 const _openProcessFromExternalXml = async (xml, definitionKey) => {
-	const diagramType = getTagValueFromXml(xml, 'process', 'id') ? checkCamundaVersion(xml) : DIAGRAM_TYPE.DMN
+	const diagramType = getTagValueFromXml(xml, 'process', 'id') ? DIAGRAM_TYPE.BPMN_C7 : DIAGRAM_TYPE.DMN
 	const storedKey = diagramType === DIAGRAM_TYPE.DMN ? getTagValueFromXml(xml, 'definitions', 'id') : getProcessKeyFromBpmn(xml)
 	const stored = await _findStoredModel(storedKey, definitionKey)
 	if (!stored) {

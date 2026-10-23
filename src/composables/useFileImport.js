@@ -19,7 +19,6 @@ import { useI18n } from 'vue-i18n'
 import {
   getTagValueFromXml,
   getProcessKeyFromBpmn,
-  checkCamundaVersion,
   compareXML,
   generateUniqueId,
   setTagValueOfXml,
@@ -391,7 +390,7 @@ export default function useFileImport({
       foundExternalProcessKey = getTagValueFromXml(resXmlExternalUrl, 'definitions', 'id') ?? fileName
       diagramType = DIAGRAM_TYPE.DMN
     } else if (foundExternalProcessKey) {
-      diagramType = checkCamundaVersion(resXmlExternalUrl)
+      diagramType = DIAGRAM_TYPE.BPMN_C7
     }
 
     // The loaded list only holds the folder in view, but a process key is unique across all of

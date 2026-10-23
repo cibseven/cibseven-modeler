@@ -35,6 +35,17 @@ const processServiceMocks = vi.hoisted(() => ({ fetchProcessByKey: vi.fn() }))
 
 const folderServiceMocks = vi.hoisted(() => ({ fetchUserFolder: vi.fn() }))
 
+const modelerStubMocks = vi.hoisted(() => ({ _validate: vi.fn(), _saveXmlAfterUpdate: vi.fn() }))
+
+const modelerStub = vi.hoisted(() => (name, cls) => ({
+  name,
+  template: `<div class="${cls}"><slot /></div>`,
+  methods: {
+    _validate: (...args) => modelerStubMocks._validate(...args),
+    _saveXmlAfterUpdate: (...args) => modelerStubMocks._saveXmlAfterUpdate(...args),
+  },
+}))
+
 const toastMocks = vi.hoisted(() => ({ show: vi.fn() }))
 
 const routerMocks = vi.hoisted(() => ({ route: null, replace: vi.fn() }))
@@ -136,10 +147,10 @@ vi.mock('diagram-js/lib/features/clipboard/Clipboard', () => ({
 }))
 
 vi.mock('../../../components/modeler/BpmnModeler.vue', () => ({
-  default: { name: 'BpmnModeler', template: '<div class="bpmn-modeler-stub" />' },
+  default: modelerStub('BpmnModeler', 'bpmn-modeler-stub'),
 }))
 vi.mock('../../../components/modeler/DmnModeler.vue', () => ({
-  default: { name: 'DmnModeler', template: '<div class="dmn-modeler-stub" />' },
+  default: modelerStub('DmnModeler', 'dmn-modeler-stub'),
 }))
 vi.mock('../../../components/modeler/FormModeler.vue', () => ({
   default: { name: 'FormModeler', template: '<div class="form-modeler-stub" />' },
@@ -174,7 +185,7 @@ vi.mock('../../../components/layout/TabNav.vue', () => ({
   },
 }))
 vi.mock('../../../components/monaco/MonacoEditor.vue', () => ({
-  default: { template: '<div class="monaco-editor-stub" />' },
+  default: { name: 'MonacoEditor', template: '<div class="monaco-editor-stub" />' },
 }))
 vi.mock('../../../components/ActionButtonsList.vue', () => ({
   default: { template: '<div class="action-buttons-stub" />' },
@@ -261,6 +272,30 @@ describe('CibsevenModeler', () => {
       wrapper.vm.activeTab = 0
       await flushPromises()
       expect(wrapper.find('.bpmn-modeler-stub').exists()).toBe(true)
+    })
+
+    /** The tab knows what it holds; the XML from the editor may be half typed. */
+    it.each([
+      ['bpmn-c7', 'BpmnModeler', true],
+      ['dmn', 'DmnModeler', false],
+    ])('passes an edit from the XML editor of a %s tab on with the type of the tab', async (type, modelerName, isBpmn) => {
+      tabManagerState.tabNavList.value = [
+        { id: 'x1', key: 'k1', name: 'X', type, isPropertyPanelVisible: true, isModelerVisible: true },
+      ]
+      tabManagerState.tabNavListXml.value = ['<xml/>']
+      tabManagerState.editorXML.value = ['<xml/>']
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      wrapper.vm.activeTab = 0
+      await flushPromises()
+
+      wrapper.findComponent({ name: modelerName }).vm.$emit('isValidated', { validation: true }, 0)
+      await flushPromises()
+      wrapper.findComponent({ name: 'MonacoEditor' }).vm.$emit('updateFromEditor', '<edited/>', 0)
+
+      expect(modelerStubMocks._validate).toHaveBeenCalledWith('<edited/>')
+      expect(modelerStubMocks._saveXmlAfterUpdate).toHaveBeenCalledWith(isBpmn, '<edited/>', 0)
+      expect(tabManagerState.tabNavList.value[0].canSave).toBe(true)
     })
 
     it('renders DmnModeler stub for dmn tab', async () => {
