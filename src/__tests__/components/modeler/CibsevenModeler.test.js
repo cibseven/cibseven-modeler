@@ -817,7 +817,7 @@ describe('CibsevenModeler opened from Cockpit', () => {
     expect(tabManagerState.tabNavList.value).toEqual([])
   })
 
-  /** The tab still opens; the save then asks for what is missing. */
+  /** The diagram still opens to be looked at, though saving it fails without a folder. */
   it('opens a new model without a folder when the user folder cannot be had', async () => {
     given()
     processServiceMocks.fetchProcessByKey.mockRejectedValue(notFound())
