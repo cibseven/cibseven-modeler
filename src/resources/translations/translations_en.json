@@ -446,7 +446,12 @@
 		"replaceHint": "Overwrite the existing {item} with the imported one.",
 		"renameHint": "Import as a new {item} with a different key.",
 		"skipHint": "Keep the existing {item} and discard the import.",
-		"applyToAll": "Apply this choice to all remaining conflicts"
+		"applyToAll": "Apply this choice to all remaining conflicts",
+		"bodyDeployed": "The deployed version differs from the one in the modeler. Which one do you want to open?",
+		"deployedLabel": "Deployed version",
+		"deployedHint": "Opens it in the tab of the model. The modeler keeps its version until you save.",
+		"storedLabel": "Version in the modeler",
+		"storedHint": "Opens the model as it is stored in the modeler."
 	},
 	"notFound": "Not found",
 	"modalNewDiagram": {

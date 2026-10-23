@@ -260,6 +260,17 @@ describe('useFileImport', () => {
 
             expect(deps.tabNavList.value.at(-1).folderId).toBe('invoicing')
         })
+
+        /** A definition opened from Cockpit names the folder its tab is saved into. */
+        it('opens a new tab in the folder its caller names', () => {
+            const deps = makeDeps()
+            deps.importFolderId = { value: 'invoicing' }
+            const { _addNewBpmnFromLoadedXml } = useFileImport(deps)
+
+            _addNewBpmnFromLoadedXml('bpmn-c7', bpmn('procA'), 'procA', true, 'home')
+
+            expect(deps.tabNavList.value.at(-1)).toMatchObject({ key: 'procA', folderId: 'home', isSaved: false })
+        })
     })
 
     describe('before anything has been loaded', () => {

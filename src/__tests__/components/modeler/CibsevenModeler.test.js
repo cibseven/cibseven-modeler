@@ -33,6 +33,8 @@ const storeMocks = vi.hoisted(() => ({ dispatch: vi.fn() }))
 
 const processServiceMocks = vi.hoisted(() => ({ fetchProcessByKey: vi.fn() }))
 
+const folderServiceMocks = vi.hoisted(() => ({ fetchUserFolder: vi.fn() }))
+
 const toastMocks = vi.hoisted(() => ({ show: vi.fn() }))
 
 const routerMocks = vi.hoisted(() => ({ route: null, replace: vi.fn() }))
@@ -110,6 +112,10 @@ vi.mock('../../../composables/useFileImport.js', () => ({
 vi.mock('../../../services/processService.js', () => ({
   keyExistsRemote: vi.fn().mockResolvedValue(false),
   fetchProcessByKey: (...args) => processServiceMocks.fetchProcessByKey(...args),
+}))
+
+vi.mock('../../../services/folderService.js', () => ({
+  fetchUserFolder: (...args) => folderServiceMocks.fetchUserFolder(...args),
 }))
 
 vi.mock('../../../utils.js', async (importOriginal) => {
@@ -756,6 +762,7 @@ describe('CibsevenModeler opened from Cockpit', () => {
     storeState.modeler.xml = { xmlFromExternalReturn: null, error: null }
     storeState.modeler.processes.processSelected = null
     storeState.modeler.processes.error = null
+    folderServiceMocks.fetchUserFolder.mockResolvedValue({ folder: { id: 'home', name: 'demo' } })
     window.location.hash = '#/modeler?processId=invoice%3A7%3Aabc'
   })
 
@@ -799,14 +806,28 @@ describe('CibsevenModeler opened from Cockpit', () => {
     expect(tabManagerState.tabNavList.value).toEqual([expect.objectContaining({ id: 'm2' })])
   })
 
-  it('opens a definition the modeler does not hold yet as a new model', async () => {
+  /** Without a folder the backend refuses the save. */
+  it('opens a definition the modeler does not hold yet as a new model in the user folder', async () => {
     given()
     processServiceMocks.fetchProcessByKey.mockRejectedValue(notFound())
 
     await open()
 
-    expect(fileImportMocks._addNewBpmnFromLoadedXml).toHaveBeenCalledWith('bpmn-c7', processXml(), 'invoice', true)
+    expect(fileImportMocks._addNewBpmnFromLoadedXml).toHaveBeenCalledWith('bpmn-c7', processXml(), 'invoice', true, 'home')
     expect(tabManagerState.tabNavList.value).toEqual([])
+  })
+
+  /** The tab still opens; the save then asks for what is missing. */
+  it('opens a new model without a folder when the user folder cannot be had', async () => {
+    given()
+    processServiceMocks.fetchProcessByKey.mockRejectedValue(notFound())
+    folderServiceMocks.fetchUserFolder.mockRejectedValue(new Error('boom'))
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    await open()
+
+    expect(fileImportMocks._addNewBpmnFromLoadedXml).toHaveBeenCalledWith('bpmn-c7', processXml(), 'invoice', true, null)
+    errorSpy.mockRestore()
   })
 
   /** The engine gives a definition with a long key a bare UUID as its id. */
@@ -817,7 +838,7 @@ describe('CibsevenModeler opened from Cockpit', () => {
 
     await open()
 
-    expect(fileImportMocks._addNewBpmnFromLoadedXml).toHaveBeenCalledWith('bpmn-c7', processXml(), 'invoice', true)
+    expect(fileImportMocks._addNewBpmnFromLoadedXml).toHaveBeenCalledWith('bpmn-c7', processXml(), 'invoice', true, 'home')
   })
 
   /** Opening it as new would let the user save a duplicate of a model that exists. */
@@ -858,7 +879,7 @@ describe('CibsevenModeler opened from Cockpit', () => {
       const wrapper = await open()
 
       expect(conflictModal(wrapper).props('showModal')).toBe(true)
-      expect(conflictModal(wrapper).props('modalData')).toMatchObject({ id: 'm1', processkey: 'invoice', folderId: 'archive', allowRename: false })
+      expect(conflictModal(wrapper).props('modalData')).toMatchObject({ id: 'm1', processkey: 'invoice', folderId: 'archive', source: 'deployment' })
       expect(tabManagerState.tabNavList.value).toEqual([])
     })
 

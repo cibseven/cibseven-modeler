@@ -168,9 +168,9 @@ export default function useFileImport({
   /**
    * Open a diagram that is not yet persisted in the database as a new unsaved tab.
    * autoSwitch controls whether to switch to the new tab immediately.
-   * Also returned so that CibsevenModeler can call it from the external-return flow.
+   * Also returned so that CibsevenModeler can call it from the external-return flow, which names its own folder.
    */
-  const _addNewBpmnFromLoadedXml = (diagramType, xmlToLoad, foundExternalProcessKey, autoSwitch = true) => {
+  const _addNewBpmnFromLoadedXml = (diagramType, xmlToLoad, foundExternalProcessKey, autoSwitch = true, folderId = importFolderId?.value) => {
     const keyOfTabNav = generateUniqueId()
     tabNavList.value.push({
       type: diagramType,
@@ -181,7 +181,7 @@ export default function useFileImport({
       keyOfTabNav,
       // An import opens a tab first and is stored when it is saved: without this the save
       // names no folder and the backend files it under the default one
-      folderId: importFolderId?.value,
+      folderId,
       canSave: true,
       isSaved: false,
       isModelerVisible: false,

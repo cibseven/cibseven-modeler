@@ -74,13 +74,29 @@ describe('ImportConflictModal', () => {
         expect(wrapper.find('#ic-rename').exists()).toBe(true)
     })
 
-    /** Opened from outside, nothing is imported, so there is nothing to store under a new key. */
-    it('does not offer renaming when the caller rules it out', () => {
-        const wrapper = mountModal({ ...MODAL_DATA, allowRename: false })
+    it('speaks of an import when a file is imported', () => {
+        const wrapper = mountModal(MODAL_DATA)
+
+        expect(wrapper.find('.modal-body p').text()).toBe('modalImportedFile.body')
+        expect(wrapper.find('label[for="ic-replace"]').text()).toContain('buttons.replace')
+        expect(wrapper.find('label[for="ic-skip"]').text()).toContain('buttons.skip')
+    })
+
+    /** Opened from Cockpit, nothing is imported, so there is nothing to store under a new key. */
+    it('does not offer renaming for a deployed version', () => {
+        const wrapper = mountModal({ ...MODAL_DATA, source: 'deployment' })
 
         expect(wrapper.find('#ic-rename').exists()).toBe(false)
         expect(wrapper.find('#ic-replace').exists()).toBe(true)
         expect(wrapper.find('#ic-skip').exists()).toBe(true)
+    })
+
+    it('asks which version to open for a deployed version', () => {
+        const wrapper = mountModal({ ...MODAL_DATA, source: 'deployment' })
+
+        expect(wrapper.find('.modal-body p').text()).toBe('modalImportedFile.bodyDeployed')
+        expect(wrapper.find('label[for="ic-replace"]').text()).toBe('modalImportedFile.deployedLabelmodalImportedFile.deployedHint')
+        expect(wrapper.find('label[for="ic-skip"]').text()).toBe('modalImportedFile.storedLabelmodalImportedFile.storedHint')
     })
 
     it('keeps the stored model when it is skipped', async () => {

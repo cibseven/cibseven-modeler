@@ -446,7 +446,12 @@
     "replaceHint": "Den vorhandenen {item} mit dem importierten überschreiben.",
     "renameHint": "Als neuen {item} mit einem anderen Schlüssel importieren.",
     "skipHint": "Den vorhandenen {item} behalten und den Import verwerfen.",
-    "applyToAll": "Diese Auswahl auf alle verbleibenden Konflikte anwenden"
+    "applyToAll": "Diese Auswahl auf alle verbleibenden Konflikte anwenden",
+    "bodyDeployed": "Die bereitgestellte Version weicht von der im Modeler ab. Welche möchten Sie öffnen?",
+    "deployedLabel": "Bereitgestellte Version",
+    "deployedHint": "Öffnet sie im Tab des Modells. Der Modeler behält seine Version, bis Sie speichern.",
+    "storedLabel": "Version im Modeler",
+    "storedHint": "Öffnet das Modell so, wie es im Modeler gespeichert ist."
   },
   "notFound": "Nicht gefunden",
   "modalNewDiagram": {

@@ -217,6 +217,7 @@ import useTabManager from '../../composables/useTabManager.js'
 import useFileImport from '../../composables/useFileImport.js'
 import { DIAGRAM_TYPE, SKIP_CREATION_MODAL_KEY } from '../../constants/diagramTypes.js'
 import { keyExistsRemote, fetchProcessByKey } from '../../services/processService.js'
+import { fetchUserFolder } from '../../services/folderService.js'
 
 // Provide monaco for child components (MonacoEditor, MonacoConsole)
 // This is necessary when used as a library since the host app doesn't provide monaco
@@ -931,6 +932,16 @@ const _findStoredModel = async (storedKey, definitionKey) => {
 	return null
 }
 
+// A model opened from a deployment needs a folder to be saved into, and no list is on screen to pick one from
+const _landingFolderId = async () => {
+	try {
+		return (await fetchUserFolder())?.folder?.id ?? null
+	} catch (error) {
+		console.error(error)
+		return null
+	}
+}
+
 const _openProcessFromExternalXml = async (xml, definitionKey) => {
 	const diagramType = getTagValueFromXml(xml, 'process', 'id') ? checkCamundaVersion(xml) : DIAGRAM_TYPE.DMN
 	const storedKey = diagramType === DIAGRAM_TYPE.DMN ? getTagValueFromXml(xml, 'definitions', 'id') : getProcessKeyFromBpmn(xml)
@@ -938,7 +949,7 @@ const _openProcessFromExternalXml = async (xml, definitionKey) => {
 	if (!stored) {
 		// Not in the modeler yet: opens as a new model, named as an import of the same XML would be.
 		// The definition id is no fallback name, as the engine makes it a bare UUID for long keys.
-		_addNewBpmnFromLoadedXml(diagramType, xml, storedKey ?? definitionKey, true)
+		_addNewBpmnFromLoadedXml(diagramType, xml, storedKey ?? definitionKey, true, await _landingFolderId())
 		return
 	}
 
@@ -952,10 +963,9 @@ const _openProcessFromExternalXml = async (xml, definitionKey) => {
 		openStored()
 		return
 	}
-	// The deployed version differs from the stored one: the user picks which one opens. Renaming
-	// is an import's answer; here there is nothing to store under a new key.
+	// The deployed version differs from the stored one: the user picks which one opens
 	externalKeep = openStored
-	modalData.value = { id: stored.id, name: stored.name, processkey: stored.processkey, xmlFromModeler, xmlExternalUrl: xml, diagramType: type, folderId: stored.folderId, allowRename: false }
+	modalData.value = { id: stored.id, name: stored.name, processkey: stored.processkey, xmlFromModeler, xmlExternalUrl: xml, diagramType: type, folderId: stored.folderId, source: 'deployment' }
 	showModalAcceptCancelMessage.value.type = type
 	showModalAcceptCancelMessage.value.show = true
 }
