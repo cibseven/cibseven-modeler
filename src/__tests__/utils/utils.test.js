@@ -22,6 +22,7 @@ import {
     mergeTemplates,
     getTimeStamp,
     checkBeforeAction,
+    compareXML,
     getTagValueFromXml,
     getProcessKeyFromBpmn,
     generateUniqueId,
@@ -377,6 +378,34 @@ describe('Utils', () => {
             expect(getTagValueFromXml('<xml/>', 'collaboration', 'id')).toBeNull()
 
             globalThis.DOMParser = OriginalDOMParser
+        })
+    })
+
+    describe('compareXML', () => {
+        const NS = 'xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"'
+        const shape = id => `<bpmndi:BPMNShape id="${id}_di" bpmnElement="${id}"/>`
+        const diagram = (shapes, tasks = '<bpmn:task id="a"/><bpmn:task id="b"/>') =>
+            `<bpmn:definitions ${NS}><bpmn:process id="p">${tasks}</bpmn:process>` +
+            `<bpmndi:BPMNDiagram><bpmndi:BPMNPlane bpmnElement="p">\n  ${shapes.join('\n  ')}\n</bpmndi:BPMNPlane></bpmndi:BPMNDiagram></bpmn:definitions>`
+
+        it('treats identical diagrams as equal', () => {
+            expect(compareXML(diagram([shape('a'), shape('b')]), diagram([shape('a'), shape('b')]))).toBe(true)
+        })
+
+        /** Saving reorders the layout, so a deployed diagram saved unchanged must still match. */
+        it('ignores the order of the shapes in the layout', () => {
+            expect(compareXML(diagram([shape('a'), shape('b')]), diagram([shape('b'), shape('a')]))).toBe(true)
+        })
+
+        it('sees a shape that moved', () => {
+            const moved = '<bpmndi:BPMNShape id="b_di" bpmnElement="b" isHorizontal="true"/>'
+            expect(compareXML(diagram([shape('a'), shape('b')]), diagram([shape('a'), moved]))).toBe(false)
+        })
+
+        /** Order outside the layout can matter, e.g. which listener runs first. */
+        it('keeps the order of the process itself', () => {
+            const swapped = '<bpmn:task id="b"/><bpmn:task id="a"/>'
+            expect(compareXML(diagram([shape('a'), shape('b')]), diagram([shape('a'), shape('b')], swapped))).toBe(false)
         })
     })
 

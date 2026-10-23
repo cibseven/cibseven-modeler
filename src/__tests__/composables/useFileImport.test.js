@@ -216,6 +216,8 @@ describe('useFileImport', () => {
 
             expect(m.fetchProcessByKey).toHaveBeenCalledWith('procA')
             expect(m.updateDiagramProcess).toHaveBeenCalledOnce()
+            // so that replacing it opens the tab where the model lives
+            expect(deps.modalData.value.folderId).toBe('archive')
         })
 
         /** The dialog has to say where it found it, now that "the modeler" is more than one place. */
@@ -257,6 +259,17 @@ describe('useFileImport', () => {
             await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
 
             expect(deps.tabNavList.value.at(-1).folderId).toBe('invoicing')
+        })
+
+        /** A definition opened from Cockpit names the folder its tab is saved into. */
+        it('opens a new tab in the folder its caller names', () => {
+            const deps = makeDeps()
+            deps.importFolderId = { value: 'invoicing' }
+            const { _addNewBpmnFromLoadedXml } = useFileImport(deps)
+
+            _addNewBpmnFromLoadedXml('bpmn-c7', bpmn('procA'), 'procA', true, 'home')
+
+            expect(deps.tabNavList.value.at(-1)).toMatchObject({ key: 'procA', folderId: 'home', isSaved: false })
         })
     })
 

@@ -23,17 +23,17 @@
                     <button type="button" class="btn-close" @click.prevent="dismiss" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="mb-3">{{ $t('modalImportedFile.body', { item: itemLabel }) }}</p>
+                    <p class="mb-3">{{ fromDeployment ? $t('modalImportedFile.bodyDeployed') : $t('modalImportedFile.body', { item: itemLabel }) }}</p>
 
                     <div class="form-check mb-2">
                         <input class="form-check-input" type="radio" id="ic-replace" value="replace" v-model="action">
                         <label class="form-check-label" for="ic-replace">
-                            <span class="fw-semibold">{{ $t('buttons.replace') }}</span>
-                            <span class="d-block small text-muted">{{ $t('modalImportedFile.replaceHint', { item: itemLabel }) }}</span>
+                            <span class="fw-semibold">{{ fromDeployment ? $t('modalImportedFile.deployedLabel') : $t('buttons.replace') }}</span>
+                            <span class="d-block small text-muted">{{ fromDeployment ? $t('modalImportedFile.deployedHint') : $t('modalImportedFile.replaceHint', { item: itemLabel }) }}</span>
                         </label>
                     </div>
 
-                    <div class="form-check mb-1">
+                    <div v-if="canRename" class="form-check mb-1">
                         <input class="form-check-input" type="radio" id="ic-rename" value="rename" v-model="action">
                         <label class="form-check-label" for="ic-rename">
                             <span class="fw-semibold">{{ $t('buttons.rename') }}</span>
@@ -50,8 +50,8 @@
                     <div class="form-check mb-2">
                         <input class="form-check-input" type="radio" id="ic-skip" value="skip" v-model="action">
                         <label class="form-check-label" for="ic-skip">
-                            <span class="fw-semibold">{{ $t('buttons.skip') }}</span>
-                            <span class="d-block small text-muted">{{ $t('modalImportedFile.skipHint', { item: itemLabel }) }}</span>
+                            <span class="fw-semibold">{{ fromDeployment ? $t('modalImportedFile.storedLabel') : $t('buttons.skip') }}</span>
+                            <span class="d-block small text-muted">{{ fromDeployment ? $t('modalImportedFile.storedHint') : $t('modalImportedFile.skipHint', { item: itemLabel }) }}</span>
                         </label>
                     </div>
 
@@ -116,6 +116,10 @@ const title = computed(() => {
         ? t('modalImportedFile.titleInFolder', { item: itemLabel.value, name, folder })
         : t('modalImportedFile.title', { item: itemLabel.value, name })
 })
+/** Opened from Cockpit: the choice is which version opens, not what happens to an imported file. */
+const fromDeployment = computed(() => props.modalData?.source === 'deployment')
+/** Renaming stores the incoming version under a new key, which only an import has to store. */
+const canRename = computed(() => !fromDeployment.value)
 const newKeyLabel = computed(() =>
     props.modalData?.diagramType === 'form'
         ? t('modalImportedFile.newKeyLabelForm')
@@ -159,8 +163,8 @@ const confirm = () => {
     if (props.isBatch && applyAll.value) {
         props.functionApplyAll(action.value)
     } else if (action.value === 'replace') {
-        const { id, name, processkey, xmlExternalUrl, diagramType } = props.modalData
-        props.functionAfterAccepting(xmlExternalUrl, id, name, processkey, diagramType, true, true, true)
+        const { id, name, processkey, xmlExternalUrl, diagramType, folderId } = props.modalData
+        props.functionAfterAccepting(xmlExternalUrl, id, name, processkey, diagramType, true, true, true, folderId ?? null)
     } else {
         // skip (single): keep the existing one
         props.functionAfterCanceling?.()
