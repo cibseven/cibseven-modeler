@@ -33,7 +33,7 @@
                         </label>
                     </div>
 
-                    <div class="form-check mb-1">
+                    <div v-if="canRename" class="form-check mb-1">
                         <input class="form-check-input" type="radio" id="ic-rename" value="rename" v-model="action">
                         <label class="form-check-label" for="ic-rename">
                             <span class="fw-semibold">{{ $t('buttons.rename') }}</span>
@@ -116,6 +116,8 @@ const title = computed(() => {
         ? t('modalImportedFile.titleInFolder', { item: itemLabel.value, name, folder })
         : t('modalImportedFile.title', { item: itemLabel.value, name })
 })
+/** Renaming stores the incoming version under a new key, which only an import has to store. */
+const canRename = computed(() => props.modalData?.allowRename !== false)
 const newKeyLabel = computed(() =>
     props.modalData?.diagramType === 'form'
         ? t('modalImportedFile.newKeyLabelForm')
@@ -159,8 +161,8 @@ const confirm = () => {
     if (props.isBatch && applyAll.value) {
         props.functionApplyAll(action.value)
     } else if (action.value === 'replace') {
-        const { id, name, processkey, xmlExternalUrl, diagramType } = props.modalData
-        props.functionAfterAccepting(xmlExternalUrl, id, name, processkey, diagramType, true, true, true)
+        const { id, name, processkey, xmlExternalUrl, diagramType, folderId } = props.modalData
+        props.functionAfterAccepting(xmlExternalUrl, id, name, processkey, diagramType, true, true, true, folderId ?? null)
     } else {
         // skip (single): keep the existing one
         props.functionAfterCanceling?.()

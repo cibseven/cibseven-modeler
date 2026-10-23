@@ -177,7 +177,7 @@
 		:functionApplyAll="handleApplyAll"
 		:functionAfterRenaming="handleRename"
 		:validateRenameKey="validateRenameKey"
-		@modalClosed="() => resolveConflict('skip')"
+		@modalClosed="openDiagramFromChildAndResolve"
 		@modalHidden="onConflictModalHidden">
 	</ImportConflictModal>
 	<!-- Polite live region: announces transient async states (loading, deploying, saving)
@@ -193,7 +193,7 @@ import * as monaco from '../../monaco-setup.js'
 import { useStore } from 'vuex'
 import { useRoute, useRouter } from 'vue-router'
 
-import { compareXML, getTimeStamp, getTagValueFromXml, checkCamundaVersion, generateUniqueId, setTagValueOfXml, filterTemplates, resolveTabIndexById } from '../../utils.js'
+import { compareXML, getTimeStamp, getTagValueFromXml, getProcessKeyFromBpmn, checkCamundaVersion, generateUniqueId, setTagValueOfXml, filterTemplates, resolveTabIndexById } from '../../utils.js'
 import Clipboard from 'diagram-js/lib/features/clipboard/Clipboard'
 import { ref, onMounted, onUnmounted, nextTick, watch, computed, inject, provide } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -216,7 +216,7 @@ import DropZone from '../DropZone.vue'
 import useTabManager from '../../composables/useTabManager.js'
 import useFileImport from '../../composables/useFileImport.js'
 import { DIAGRAM_TYPE, SKIP_CREATION_MODAL_KEY } from '../../constants/diagramTypes.js'
-import { keyExistsRemote } from '../../services/processService.js'
+import { keyExistsRemote, fetchProcessByKey } from '../../services/processService.js'
 
 // Provide monaco for child components (MonacoEditor, MonacoConsole)
 // This is necessary when used as a library since the host app doesn't provide monaco
@@ -328,7 +328,10 @@ watch(() => activeTab.value, async newValue => { // when the tab is selected it 
 	}
 })
 
-const handleRename = newKey => resolveConflict('rename', false, { newKey })
+const handleRename = newKey => {
+	_takeExternalKeep()
+	resolveConflict('rename', false, { newKey })
+}
 
 const validateRenameKey = newKey => {
 	if (newKey === modalData.value.processkey) return t('modalImportedFile.renameSameKey')
@@ -647,14 +650,30 @@ const openDiagramFromModal = (valueFromChild, processId, processName, processKey
 	}
 }
 
+// Set while the conflict dialog is up for a model opened from outside, e.g. from Cockpit:
+// keeping the stored version opens it, where an import would simply leave it alone
+let externalKeep = null
+
+// Every answer ends it, or a later import's dialog would open the model from outside
+const _takeExternalKeep = () => {
+	const keep = externalKeep
+	externalKeep = null
+	return keep
+}
+
 // Wrappers that resolve the pending conflict promise after the modal callback fires,
 // allowing the multi-file import loop to continue to the next file.
 // In batch mode, tab-opening is suppressed — useFileImport handles DB writes directly.
+
 const openDiagramFromModalAndResolve = (...args) => {
+	_takeExternalKeep()
 	if (!showModalAcceptCancelMessage.value.isBatch) openDiagramFromModal(...args)
 	resolveConflict('replace')
 }
-const openDiagramFromChildAndResolve = () => resolveConflict('skip')
+const openDiagramFromChildAndResolve = () => {
+	_takeExternalKeep()?.()
+	resolveConflict('skip')
+}
 const handleApplyAll = choice => resolveConflict(choice, true)
 
 //emit passed from ProcessDiagramElement to FlowModeler
@@ -898,64 +917,60 @@ const { handleFile, _addNewBpmnFromLoadedXml, resolveConflict } = useFileImport(
 	folderNameFor: folderId => startPage.value?.folderNameFor?.(folderId) ?? null,
 })
 
-const _openProcessFromExternalXml = async (xml, resExistingProcess, externalProcessKey, _decodedProcessId) => {
-	const resXmlExternalUrl = xml
-	let diagramType
-	let foundExternalProcessKey = getTagValueFromXml(resXmlExternalUrl, 'process', 'id')
-
-	if (foundExternalProcessKey) {
-		diagramType = checkCamundaVersion(resXmlExternalUrl)
-	}
-	else { // if it is not a bpmn process
-		foundExternalProcessKey = getTagValueFromXml(resXmlExternalUrl, 'definitions', 'id')
-		diagramType = DIAGRAM_TYPE.DMN
-	}
-
-	if (resExistingProcess) { // if the process exists in the modelers database
-		if (resExistingProcess.id) await store.dispatch('modeler/processes/fetchProcessById', resExistingProcess.id) // gets the xml from the database with the id
-		else {
-			await store.dispatch('modeler/processes/fetchProcessByName', resExistingProcess) // gets the xml for the collaboration process by its name
-			const foundProcess = diagrams.value.find(process => resExistingProcess === process.processkey)
-			resExistingProcess = foundProcess.id
-
-		}
-
-		const xmlFromModeler = store.state.modeler.processes.processSelected
-		const isEqual = compareXML(xmlFromModeler, resXmlExternalUrl)
-		//open existing process form modeler
-		isEqual && openDiagramFromModal(xmlFromModeler, resExistingProcess.id ?? resExistingProcess, resExistingProcess.name ?? resExistingProcess, foundExternalProcessKey, diagramType, true, false, false)
-		if (!isEqual) // if the xmls are not equal, ask the user
-		{
-			modalData.value = { id: resExistingProcess.id ?? resExistingProcess, name: resExistingProcess.name ?? resExistingProcess, processkey: foundExternalProcessKey, xmlFromModeler, xmlExternalUrl: resXmlExternalUrl, diagramType }
-			showModalAcceptCancelMessage.value.type = diagramType
-			showModalAcceptCancelMessage.value.show = true
+// The stored model of a deployed definition, whichever folder it lives in. The key the modeler stores
+// the XML under (the collaboration id of a diagram with pools) comes first: another model may well
+// carry the bare process key.
+const _findStoredModel = async (storedKey, definitionKey) => {
+	for (const key of new Set([storedKey, definitionKey].filter(Boolean))) {
+		try {
+			return await fetchProcessByKey(key)
+		} catch (error) {
+			if (error?.response?.status !== 404) throw error
 		}
 	}
-	else {
-		_addNewBpmnFromLoadedXml(diagramType, resXmlExternalUrl, externalProcessKey, true) // if the process doesnt exist in the modeler it opens a new one
-		return
-	}
+	return null
 }
 
-const _checkExistingProcessFromExternalReturn = async (decodedProcessId, externalProcessKey, type) => {
+const _openProcessFromExternalXml = async (xml, definitionKey) => {
+	const diagramType = getTagValueFromXml(xml, 'process', 'id') ? checkCamundaVersion(xml) : DIAGRAM_TYPE.DMN
+	const storedKey = diagramType === DIAGRAM_TYPE.DMN ? getTagValueFromXml(xml, 'definitions', 'id') : getProcessKeyFromBpmn(xml)
+	const stored = await _findStoredModel(storedKey, definitionKey)
+	if (!stored) {
+		// Not in the modeler yet: opens as a new model, named as an import of the same XML would be.
+		// The definition id is no fallback name, as the engine makes it a bare UUID for long keys.
+		_addNewBpmnFromLoadedXml(diagramType, xml, storedKey ?? definitionKey, true)
+		return
+	}
+
+	await store.dispatch('modeler/processes/fetchProcessById', stored.id)
+	const xmlFromModeler = store.state.modeler.processes.processSelected
+	if (!xmlFromModeler) throw store.state.modeler.processes.error ?? new Error(`Model ${stored.id} could not be loaded`)
+
+	const type = stored.type ?? diagramType
+	const openStored = () => openDiagramFromModal(xmlFromModeler, stored.id, stored.name, stored.processkey, type, true, false, false, stored.folderId)
+	if (compareXML(xmlFromModeler, xml)) {
+		openStored()
+		return
+	}
+	// The deployed version differs from the stored one: the user picks which one opens. Renaming
+	// is an import's answer; here there is nothing to store under a new key.
+	externalKeep = openStored
+	modalData.value = { id: stored.id, name: stored.name, processkey: stored.processkey, xmlFromModeler, xmlExternalUrl: xml, diagramType: type, folderId: stored.folderId, allowRename: false }
+	showModalAcceptCancelMessage.value.type = type
+	showModalAcceptCancelMessage.value.show = true
+}
+
+const _checkExistingProcessFromExternalReturn = async (decodedProcessId, definitionKey, type) => {
 	try {
-		let resExistingProcess = diagrams.value?.find(process => externalProcessKey === process.processkey)
-
-		// Check if type parameter is 'dmn' to fetch decision diagram, otherwise fetch process diagram
-		if (type === 'dmn') {
-			await store.dispatch('modeler/xml/fetchDecisionDiagram', decodedProcessId) // gets the decision xml from the database with the id
-		} else {
-			await store.dispatch('modeler/xml/fetchDiagram', decodedProcessId) // gets the process xml from the database with the id
-		}
-		
-		const xmlFromExternalReturn = store.state.modeler.xml.xmlFromExternalReturn
-		const resXmlExternalUrl = xmlFromExternalReturn.bpmn20Xml || xmlFromExternalReturn.dmnXml || xmlFromExternalReturn
-		if (!resExistingProcess) resExistingProcess = getTagValueFromXml(resXmlExternalUrl, 'collaboration', 'id')
-		//if (!resExistingProcess) resExistingProcess = getTagValueFromXml(resXmlExternalUrl, 'bpmn2:collaboration', 'id')
-		_openProcessFromExternalXml(resXmlExternalUrl, resExistingProcess, externalProcessKey)
-
+		await store.dispatch(type === 'dmn' ? 'modeler/xml/fetchDecisionDiagram' : 'modeler/xml/fetchDiagram', decodedProcessId)
+		if (store.state.modeler.xml.error) throw store.state.modeler.xml.error
+		const fromEngine = store.state.modeler.xml.xmlFromExternalReturn
+		const xml = fromEngine?.bpmn20Xml || fromEngine?.dmnXml || fromEngine
+		if (!xml || typeof xml !== 'string') throw new Error(`No diagram found for ${decodedProcessId}`)
+		await _openProcessFromExternalXml(xml, definitionKey)
 	} catch (error) {
-		console.log(error)
+		console.error(error)
+		showToastMessage({ isSuccess: false, toastText: 'toastLoadErrorFile', bodyTextAlt: error?.message ?? '' })
 	}
 }
 

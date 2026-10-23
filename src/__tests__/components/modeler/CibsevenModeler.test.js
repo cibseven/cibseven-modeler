@@ -31,6 +31,10 @@ const newDiagramMocks = vi.hoisted(() => ({ toggle: vi.fn() }))
 
 const storeMocks = vi.hoisted(() => ({ dispatch: vi.fn() }))
 
+const processServiceMocks = vi.hoisted(() => ({ fetchProcessByKey: vi.fn() }))
+
+const toastMocks = vi.hoisted(() => ({ show: vi.fn() }))
+
 const routerMocks = vi.hoisted(() => ({ route: null, replace: vi.fn() }))
 
 const startPageMocks = vi.hoisted(() => ({
@@ -46,7 +50,9 @@ const storeState = vi.hoisted(() => ({
       processes: [],
       unifiedDiagrams: [{ id: '1', name: 'Diagram 1', processkey: 'key1', type: 'bpmn-c7' }],
       processSelected: null,
+      error: null,
     },
+    xml: { xmlFromExternalReturn: null, error: null },
     forms: { forms: [], formSelected: null },
     elementTemplates: { error: null },
   },
@@ -103,6 +109,7 @@ vi.mock('../../../composables/useFileImport.js', () => ({
 
 vi.mock('../../../services/processService.js', () => ({
   keyExistsRemote: vi.fn().mockResolvedValue(false),
+  fetchProcessByKey: (...args) => processServiceMocks.fetchProcessByKey(...args),
 }))
 
 vi.mock('../../../utils.js', async (importOriginal) => {
@@ -171,9 +178,11 @@ vi.mock('../../../components/modals/ModalNewDiagram.vue', () => ({
 }))
 vi.mock('../../../components/modals/ModalDeploy.vue', () => ({ default: { template: '<div />' } }))
 vi.mock('../../../components/messages/ToastMessage.vue', () => ({
-  default: { name: 'ToastMessage', template: '<div class="toast-stub" />', methods: { _showToastTimeOut: vi.fn() } },
+  default: { name: 'ToastMessage', props: ['headerText'], template: '<div class="toast-stub" />', methods: { _showToastTimeOut: (...args) => toastMocks.show(...args) } },
 }))
-vi.mock('../../../components/modals/ImportConflictModal.vue', () => ({ default: { template: '<div />' } }))
+vi.mock('../../../components/modals/ImportConflictModal.vue', () => ({
+  default: { name: 'ImportConflictModal', props: ['showModal', 'modalData', 'functionAfterAccepting', 'functionAfterCanceling', 'functionAfterRenaming'], template: '<div />' },
+}))
 vi.mock('../../../components/modals/FolderPickerModal.vue', () => ({
   default: { name: 'FolderPickerModal', template: '<div />', methods: { show: (...args) => pickerMocks.show(...args), isShown: (...args) => pickerMocks.isShown(...args) } },
 }))
@@ -709,6 +718,185 @@ describe('CibsevenModeler', () => {
       expect(tabManagerState.tabNavList.value).toHaveLength(0)
       expect(done).toHaveBeenCalledTimes(1)
       errorSpy.mockRestore()
+    })
+  })
+})
+
+/** Cockpit's "Open BPMN file in Modeler" opens the modeler with the deployed definition's id in the URL. */
+describe('CibsevenModeler opened from Cockpit', () => {
+  const NS = 'xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:camunda="http://camunda.org/schema/1.0/bpmn"'
+  const processXml = (label = '') => `<bpmn:definitions ${NS} id="Defs"><bpmn:process id="invoice" name="${label}" isExecutable="true"/></bpmn:definitions>`
+  const COLLABORATION_XML = `<bpmn:definitions ${NS} id="Defs"><bpmn:collaboration id="Collab_1"><bpmn:participant id="P1" processRef="invoice"/></bpmn:collaboration><bpmn:process id="invoice" isExecutable="true"/></bpmn:definitions>`
+  const STORED = { id: 'm1', name: 'Invoice', processkey: 'invoice', type: 'bpmn-c7', folderId: 'archive' }
+
+  const notFound = () => Object.assign(new Error('Request failed with status code 404'), { response: { status: 404 } })
+  const toast = wrapper => wrapper.findComponent({ name: 'ToastMessage' })
+  const conflictModal = wrapper => wrapper.findComponent({ name: 'ImportConflictModal' })
+
+  /** The engine delivers `deployed`; the modeler holds `stored` for model m1. */
+  const given = ({ deployed = processXml(), stored = processXml() } = {}) => {
+    storeMocks.dispatch.mockImplementation(async action => {
+      if (action === 'modeler/xml/fetchDiagram') storeState.modeler.xml.xmlFromExternalReturn = { bpmn20Xml: deployed }
+      if (action === 'modeler/processes/fetchProcessById') storeState.modeler.processes.processSelected = stored
+    })
+  }
+
+  const open = async () => {
+    const wrapper = mountCibsevenModeler()
+    await flushPromises()
+    return wrapper
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    routerMocks.route = { params: {}, path: '/modeler', query: {} }
+    tabManagerState.tabNavList.value = []
+    tabManagerState.tabNavListXml.value = []
+    tabManagerState.editorXML.value = []
+    storeState.modeler.xml = { xmlFromExternalReturn: null, error: null }
+    storeState.modeler.processes.processSelected = null
+    storeState.modeler.processes.error = null
+    window.location.hash = '#/modeler?processId=invoice%3A7%3Aabc'
+  })
+
+  afterEach(() => {
+    window.location.hash = ''
+  })
+
+  it('opens the stored model from whichever folder it lives in, and remembers that folder', async () => {
+    given()
+    processServiceMocks.fetchProcessByKey.mockResolvedValue(STORED)
+
+    await open()
+
+    expect(processServiceMocks.fetchProcessByKey).toHaveBeenCalledWith('invoice')
+    expect(tabManagerState.tabNavList.value).toEqual([expect.objectContaining({ id: 'm1', name: 'Invoice', key: 'invoice', folderId: 'archive' })])
+    expect(fileImportMocks._addNewBpmnFromLoadedXml).not.toHaveBeenCalled()
+  })
+
+  /** Such a diagram is stored under its collaboration id, not under the process key in the URL. */
+  it('finds a diagram with pools by its collaboration id', async () => {
+    given({ deployed: COLLABORATION_XML, stored: COLLABORATION_XML })
+    processServiceMocks.fetchProcessByKey.mockImplementation(async key => {
+      if (key === 'Collab_1') return { ...STORED, id: 'm2', processkey: 'Collab_1' }
+      throw notFound()
+    })
+
+    await open()
+
+    expect(tabManagerState.tabNavList.value).toEqual([expect.objectContaining({ id: 'm2', key: 'Collab_1', folderId: 'archive' })])
+  })
+
+  /** A model of the bare process is a different one, e.g. the process before it got its pools. */
+  it('prefers the key the diagram is stored under to the process key in the URL', async () => {
+    given({ deployed: COLLABORATION_XML, stored: COLLABORATION_XML })
+    processServiceMocks.fetchProcessByKey.mockImplementation(async key =>
+      key === 'Collab_1' ? { ...STORED, id: 'm2', processkey: 'Collab_1' } : { ...STORED, id: 'other' })
+
+    await open()
+
+    expect(processServiceMocks.fetchProcessByKey.mock.calls.map(([key]) => key)).toEqual(['Collab_1'])
+    expect(tabManagerState.tabNavList.value).toEqual([expect.objectContaining({ id: 'm2' })])
+  })
+
+  it('opens a definition the modeler does not hold yet as a new model', async () => {
+    given()
+    processServiceMocks.fetchProcessByKey.mockRejectedValue(notFound())
+
+    await open()
+
+    expect(fileImportMocks._addNewBpmnFromLoadedXml).toHaveBeenCalledWith('bpmn-c7', processXml(), 'invoice', true)
+    expect(tabManagerState.tabNavList.value).toEqual([])
+  })
+
+  /** The engine gives a definition with a long key a bare UUID as its id. */
+  it('names a new model after the key in its XML, not after the definition id', async () => {
+    window.location.hash = '#/modeler?processId=6f1c2b7e-0d3a-11f0-9c4e-0242ac120002'
+    given()
+    processServiceMocks.fetchProcessByKey.mockRejectedValue(notFound())
+
+    await open()
+
+    expect(fileImportMocks._addNewBpmnFromLoadedXml).toHaveBeenCalledWith('bpmn-c7', processXml(), 'invoice', true)
+  })
+
+  /** Opening it as new would let the user save a duplicate of a model that exists. */
+  it('says so when the lookup fails, rather than opening the definition as a new model', async () => {
+    given()
+    processServiceMocks.fetchProcessByKey.mockRejectedValue(Object.assign(new Error('boom'), { response: { status: 500 } }))
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const wrapper = await open()
+
+    expect(toastMocks.show).toHaveBeenCalled()
+    expect(toast(wrapper).props('headerText')).toBe('toastLoadErrorFile.title')
+    expect(fileImportMocks._addNewBpmnFromLoadedXml).not.toHaveBeenCalled()
+    errorSpy.mockRestore()
+  })
+
+  it('says so when the engine cannot deliver the definition', async () => {
+    storeMocks.dispatch.mockImplementation(async action => {
+      if (action === 'modeler/xml/fetchDiagram') storeState.modeler.xml.error = new Error('not deployed')
+    })
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const wrapper = await open()
+
+    expect(toastMocks.show).toHaveBeenCalled()
+    expect(toast(wrapper).props('headerText')).toBe('toastLoadErrorFile.title')
+    expect(processServiceMocks.fetchProcessByKey).not.toHaveBeenCalled()
+    errorSpy.mockRestore()
+  })
+
+  describe('when the deployed version differs from the stored one', () => {
+    beforeEach(() => {
+      given({ deployed: processXml('deployed'), stored: processXml('stored') })
+      processServiceMocks.fetchProcessByKey.mockResolvedValue(STORED)
+    })
+
+    it('asks which one to open, without opening either yet', async () => {
+      const wrapper = await open()
+
+      expect(conflictModal(wrapper).props('showModal')).toBe(true)
+      expect(conflictModal(wrapper).props('modalData')).toMatchObject({ id: 'm1', processkey: 'invoice', folderId: 'archive', allowRename: false })
+      expect(tabManagerState.tabNavList.value).toEqual([])
+    })
+
+    it('opens the stored model, in its folder, when it is kept', async () => {
+      const wrapper = await open()
+
+      conflictModal(wrapper).props('functionAfterCanceling')()
+
+      expect(tabManagerState.tabNavList.value).toEqual([expect.objectContaining({ id: 'm1', folderId: 'archive' })])
+      expect(fileImportMocks.resolveConflict).toHaveBeenCalledWith('skip')
+    })
+
+    it('opens the deployed version in the stored model\'s tab and folder when it is taken', async () => {
+      const wrapper = await open()
+      const { id, name, processkey, xmlExternalUrl, diagramType, folderId } = conflictModal(wrapper).props('modalData')
+
+      conflictModal(wrapper).props('functionAfterAccepting')(xmlExternalUrl, id, name, processkey, diagramType, true, true, true, folderId)
+
+      expect(tabManagerState.tabNavList.value).toEqual([expect.objectContaining({ id: 'm1', folderId: 'archive' })])
+      expect(fileImportMocks.resolveConflict).toHaveBeenCalledWith('replace')
+    })
+
+    it('opens the stored model when the dialog is closed without an answer', async () => {
+      const wrapper = await open()
+
+      conflictModal(wrapper).vm.$emit('modalClosed')
+
+      expect(tabManagerState.tabNavList.value).toEqual([expect.objectContaining({ id: 'm1', folderId: 'archive' })])
+    })
+
+    /** Otherwise skipping a later import would open this model out of nowhere. */
+    it('forgets the model once the dialog is answered', async () => {
+      const wrapper = await open()
+
+      conflictModal(wrapper).props('functionAfterRenaming')('invoice2')
+      conflictModal(wrapper).props('functionAfterCanceling')()
+
+      expect(tabManagerState.tabNavList.value).toEqual([])
     })
   })
 })

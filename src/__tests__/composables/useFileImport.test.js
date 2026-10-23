@@ -216,6 +216,8 @@ describe('useFileImport', () => {
 
             expect(m.fetchProcessByKey).toHaveBeenCalledWith('procA')
             expect(m.updateDiagramProcess).toHaveBeenCalledOnce()
+            // so that replacing it opens the tab where the model lives
+            expect(deps.modalData.value.folderId).toBe('archive')
         })
 
         /** The dialog has to say where it found it, now that "the modeler" is more than one place. */

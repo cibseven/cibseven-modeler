@@ -416,6 +416,7 @@ export default function useFileImport({
         xmlFromModeler,
         xmlExternalUrl: resXmlExternalUrl,
         diagramType,
+        folderId: foundModelerProcess.folderId ?? null,
         folderName: folderNameFor?.(foundModelerProcess.folderId) ?? null,
       }
       const isEqual = compareXML(xmlFromModeler, resXmlExternalUrl)
