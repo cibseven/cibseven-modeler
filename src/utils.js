@@ -175,10 +175,24 @@ export const checkIfIdFromTemplateExistsInJson = (template, node) => {
 	return isFound ? null : checkId
 }
 
+// The diagram layout lists its shapes in no meaningful order, and the modeler reorders them on save
+const _LAYOUT_CONTAINERS = ['BPMNPlane', 'DMNDiagram']
+
+const _sortLayout = doc => {
+	for (const name of _LAYOUT_CONTAINERS) {
+		for (const container of Array.from(doc.getElementsByTagNameNS('*', name))) {
+			const shapes = Array.from(container.children)
+				.sort((a, b) => (a.getAttribute('id') ?? '').localeCompare(b.getAttribute('id') ?? ''))
+			container.replaceChildren(...shapes)
+		}
+	}
+	return doc
+}
+
 export const compareXML = (xml1, xml2) => {
 	const parser = new DOMParser()
-	const xmlDoc1 = parser.parseFromString(xml1, 'text/xml')
-	const xmlDoc2 = parser.parseFromString(xml2, 'text/xml')
+	const xmlDoc1 = _sortLayout(parser.parseFromString(xml1, 'text/xml'))
+	const xmlDoc2 = _sortLayout(parser.parseFromString(xml2, 'text/xml'))
 	return xmlDoc1.isEqualNode(xmlDoc2)
 }
 
