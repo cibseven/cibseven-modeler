@@ -1,12 +1,29 @@
 {
   "extends": [
-    "bpmnlint:correctness",
+    "bpmnlint:recommended",
     "plugin:camunda-compat/camunda-platform-7-24"
   ],
   "rules": {
     "no-overlapping-elements": "off",
     "local/custom-no-overlapping-elements": "warn",
     "conditional-flows": "off",
-    "local/custom-conditional-flows": "error"
+    "local/custom-conditional-flows": "error",
+    "conditional-event": "error",
+    "start-event-required": "error",
+    "end-event-required": "error",
+    "no-disconnected": "error",
+    "no-implicit-start": "error",
+    "no-bpmndi": "error",
+    "no-complex-gateway": "error",
+    "single-event-definition": "error",
+    "no-implicit-split": "error",
+    "no-duplicate-sequence-flows": "error",
+    "no-implicit-end": "warn",
+    "no-gateway-join-fork": "warn",
+    "superfluous-gateway": "warn",
+    "superfluous-termination": "warn",
+    "label-required": "off",
+    "fake-join": "off",
+    "no-inclusive-gateway": "off"
   }
 }

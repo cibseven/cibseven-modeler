@@ -48,6 +48,8 @@ npx bpmnlint-pack-config -c .bpmnlintrc -o linterConfig.js -t es
 
 Without the symlink the packer silently leaves the `local/*` rules as unresolved external imports and the resulting bundle throws at runtime. `src/__tests__/linterConfig.test.js` lints against the generated bundle and asserts its rule names match `.bpmnlintrc`, so drift between the two fails the test suite.
 
+The rule set is `bpmnlint:recommended` + `plugin:camunda-compat/camunda-platform-7-24`, with CIB severity overrides: `label-required`, `fake-join` and `no-inclusive-gateway` are off; `no-implicit-end`, `no-gateway-join-fork`, `superfluous-gateway` and `superfluous-termination` are warnings.
+
 `bpmnlint-plugin-local/` contains a customized `no-overlapping-elements` rule (adds an optional-chaining guard for DataStoreReference DI objects). The stock rule is set to `off` and the local variant to `warn`. When updating `bpmn-js-bpmnlint`, check whether the upstream bug is fixed so the custom rule can be removed.
 
 ## Publishing
