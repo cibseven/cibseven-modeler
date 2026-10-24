@@ -257,7 +257,7 @@
 	"Candidate starter": "候选发起人",
 	"Candidate starter groups": "候选发起人组",
 	"Specify more than one group as a comma separated list.": "用逗号分隔列表指定多个组。",
-	"Candidate starter users": "用逗号分隔列表指定多个用户。",
+	"Candidate starter users": "候选发起人用户",
 	"Specify more than one user as a comma separated list.": "用逗号分隔列表指定多个用户。",
 	"External task": "外部任务",
 	"Job execution": "作业执行",
