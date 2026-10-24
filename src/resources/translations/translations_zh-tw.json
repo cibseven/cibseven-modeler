@@ -1,0 +1,588 @@
+{
+	"titles": {
+		"searchIntro": "搜尋匹配的模型，上傳已建立的模型，從空白版本開始，或匯入本地檔案。",
+		"search": "搜尋流程、定義或表單模型",
+		"recent": "最近",
+		"lastSaved": "上次儲存"
+	},
+	"toastDeleteFormSucess": {
+		"title": "表單已刪除",
+		"body": "表單已成功刪除"
+	},
+	"toastDeleteFormFail": {
+		"title": "刪除表單時出錯",
+		"body": "刪除表單時發生錯誤"
+	},
+	"toastDeleteProcessSucess": {
+		"title": "流程已刪除",
+		"body": "流程已成功刪除"
+	},
+	"toastDeleteProcessFail": {
+		"title": "刪除流程時出錯",
+		"body": "刪除流程時發生錯誤"
+	},
+	"toastDownloadDiagramSuccess": {
+		"title": "下載",
+		"body": "下載已開始"
+	},
+	"toastDownloadDiagramFail": {
+		"title": "下載",
+		"body": "下載圖表時出錯"
+	},
+	"toastFileNoLongerExists": {
+		"title": "檔案不存在",
+		"body": "您嘗試載入的檔案已不存在"
+	},
+	"modalCloseNotSaved": {
+		"title": "未儲存的{item}",
+		"body": "此{item}有未儲存的更改。如果關閉，所有未儲存的更改都將丟失。"
+	},
+	"toastDeploySucessDeploy": {
+		"title": "成功",
+		"body": "部署成功",
+		"bodyCheck": "部署成功 - 開啟 "
+	},
+	"toastStartProcessSucess": {
+		"body": "流程已啟動"
+	},
+	"toastStartProcessError": {
+		"body": "啟動流程時出錯"
+	},
+	"toastDeployErrorDeploy": {
+		"title": "錯誤",
+		"body": "部署失敗"
+	},
+	"toastLoadErrorFileExtension": {
+		"title": "不是 bpmn 檔案",
+		"body": "哎呀，此檔案不是 BPMN 2.0 圖表。"
+	},
+	"toastImportNeedsFolder": {
+		"title": "匯入",
+		"body": "請先開啟資料夾：模型始終儲存在資料夾中。"
+	},
+	"toastLoadErrorFile": {
+		"title": "載入檔案時出錯。",
+		"body": "無法正確載入該檔案。"
+	},
+	"toastImportNoFolders": {
+		"title": "匯入",
+		"body": "請先建立資料夾：模型始終儲存在資料夾中。"
+	},
+	"toastImportExists": {
+		"title": "已儲存",
+		"body": "“{name}”已存在並已開啟。",
+		"bodyInFolder": "“{name}”已儲存在“{folder}”中，並從那裡開啟。"
+	},
+	"toastImportBatch": {
+		"title": "匯入完成",
+		"body": "匯入已完成。"
+	},
+	"importErrors": {
+		"empty": "檔案為空",
+		"notXml": "檔案不是有效的 XML",
+		"noDefinitions": "檔案不包含 BPMN 或 DMN 定義",
+		"lookupFailed": "無法詢問建模器該鍵是否已被佔用"
+	},
+	"importSummary": {
+		"imported": "已匯入 {count} 個",
+		"replaced": "已替換 {count} 個",
+		"upToDate": "{count} 個已是最新",
+		"skipped": "已跳過 {count} 個",
+		"failed": "{count} 個失敗"
+	},
+	"toastCantSaveFailValidationXml": {
+		"title": "校驗錯誤。",
+		"body": "XML 格式錯誤。請先修復再儲存"
+	},
+	"toastCantDownloadFailValidationXml": {
+		"title": "校驗錯誤。",
+		"body": "XML 格式錯誤。請先修復再下載"
+	},
+	"toastCantDeployFailValidationXml": {
+		"title": "校驗錯誤。",
+		"body": "XML 格式錯誤。請先修復再部署"
+	},
+	"toastCantViewModelerFailValidationXml": {
+		"title": "校驗錯誤。",
+		"body": "XML 格式錯誤。請先修復再繼續"
+	},
+	"toastSaveSuccessful": {
+		"title": "儲存成功",
+		"body": "流程已成功儲存。"
+	},
+	"toastSaveErrorDuplicateKey": {
+		"title": "流程 ID 已存在",
+		"body": "請將流程 ID 更改為唯一的 ID"
+	},
+	"toastSaveErrorMissingId": {
+		"title": "缺少表單 ID",
+		"body": "儲存前請為表單指定 ID。"
+	},
+	"toastUpdateSuccessful": {
+		"title": "更新成功",
+		"body": "流程已成功更新。"
+	},
+	"toastSomethingWentWrong": {
+		"title": "錯誤",
+		"body": "哎呀，出錯了"
+	},
+	"toastSessionLockFailed": {
+		"title": "未獲取編輯鎖",
+		"body": "圖表已儲存，但無法建立編輯鎖。其他人可能同時編輯它。"
+	},
+	"ttlFieldRequired": "此欄位為部署所必需",
+	"buttons": {
+		"accept": "接受",
+		"rename": "重新命名",
+		"replace": "替換",
+		"skip": "跳過",
+		"cancelRemaining": "取消剩餘",
+		"discardChanges": "放棄更改",
+		"filter": "選擇篩選器",
+		"saveDiagram": "儲存圖表",
+		"search": "搜尋",
+		"diagramGalery": "圖表庫",
+		"createDiagram": "新建",
+		"newDmn": "DMN",
+		"newForm": "表單",
+		"newBpmnc7": "BPMN 7",
+		"createBpmn": "建立 BPMN",
+		"createDmn": "建立 DMN",
+		"createForm": "建立表單",
+		"importFile": "匯入本地檔案",
+		"edit": "編輯",
+		"delDiagram": "刪除",
+		"prevDiagram": "預覽圖表",
+		"editor": "編輯器",
+		"diagram": "圖表",
+		"download": "下載",
+		"deploy": "部署",
+		"startProcess": "啟動流程",
+		"downloadDiagram": "下載 BPMN 圖表",
+		"cancel": "取消",
+		"searchTemplates": "搜尋模板",
+		"console": "控制檯",
+		"close": "關閉",
+		"closeTab": "關閉 {name}",
+		"continue": "繼續",
+		"delete": "刪除",
+		"copy": "複製",
+		"linkToProject": "連結到專案",
+		"moreTabs": "更多標籤頁",
+		"zoomIn": "放大",
+		"zoomOut": "縮小",
+		"resetViewport": "重置視口",
+		"minimap": "小地圖",
+		"fullscreen": "全屏",
+		"expandScript": "在完整編輯器中開啟",
+		"collapsePanel": "摺疊面板",
+		"expandPanel": "展開面板",
+		"replaceAll": "全部替換",
+		"skipAll": "全部跳過",
+		"undo": "撤銷",
+		"redo": "重做",
+		"closeAllTabs": "關閉所有標籤頁",
+		"viewXml": "檢視 XML",
+		"viewDiagram": "檢視圖表",
+		"outdatedTemplates": "過時的模板"
+	},
+	"a11y": {
+		"deploying": "正在部署…",
+		"saving": "正在儲存…"
+	},
+	"scriptEditorModal": {
+		"title": "編輯指令碼"
+	},
+	"tabs": {
+		"unsavedChanges": "未儲存的更改",
+		"closeAllTitle": "關閉所有標籤頁",
+		"closeAllBody": "部分標籤頁有未儲存的更改。所有未儲存的更改都將丟失。"
+	},
+	"deployForm": {
+		"deploymentName": {
+			"label": "部署名稱",
+			"tooltip": "部署名稱有助於在“部署”窗格中唯一標識和管理流程。它不必與流程 ID 一致"
+		},
+		"tenantID": {
+			"label": "租戶 ID",
+			"tooltip": "可選擇指定流程將部署到的租戶。每個租戶都有獨立的流程和資料環境"
+		},
+		"anotherEndpoint": {
+			"label": "部署到另一個例項",
+			"inputTitle": "例項 URL",
+			"errors": {
+				"required": "部署到另一個例項時，此欄位為必填項。",
+				"invalid": "請輸入有效的 http:// 或 https:// URL。"
+			}
+		},
+		"additionalFiles": {
+			"label": "附加檔案",
+			"tooltip": "與圖表一起在單次部署中部署的可選資源。資源名稱必須與 BPMN 或 DMN 中的引用一致（例如表單或指令碼）。",
+			"addButton": "新增檔案",
+			"remove": "移除",
+			"duplicateNameError": {
+				"title": "資源名稱重複",
+				"body": "兩個或多個資源使用相同名稱，或名稱與主圖表檔案相同。每個資源名稱必須唯一。"
+			},
+			"emptyResourceNameError": {
+				"title": "資源名稱無效",
+				"body": "每個附加檔案都必須具有非空資源名稱。"
+			}
+		},
+		"forms": {
+			"addButton": "新增表單",
+			"search": "搜尋表單...",
+			"typeToSearch": "輸入至少 3 個字元以搜尋",
+			"empty": "未找到表單",
+			"referenced": "已被引用",
+			"loadError": {
+				"title": "載入表單失敗",
+				"body": "無法載入已儲存表單的列表。"
+			},
+			"addError": {
+				"title": "新增表單失敗",
+				"body": "無法將所選表單新增到部署中。"
+			}
+		},
+		"authentication": "身份驗證",
+		"asAnotherUser": "以其他使用者身份",
+		"username": "使用者名稱",
+		"password": "密碼",
+		"token": "令牌",
+		"title": "部署圖表"
+	},
+	"authenticationOptions": {
+		"basicauth": "HTTP 基本認證"
+	},
+	"Close minimap": "關閉小地圖",
+	"Open minimap": "開啟小地圖",
+	"Version tag": "版本標籤",
+	"Documentation": "文件",
+	"Element documentation": "元素文件",
+	"History cleanup": "歷史清理",
+	"Time to live": "生存時間",
+	"Tasklist": "任務列表",
+	"Startable": "可直接使用",
+	"Candidate starter": "候選發起人",
+	"Candidate starter groups": "候選發起人組",
+	"Specify more than one group as a comma separated list.": "用逗號分隔列表指定多個組。",
+	"Candidate starter users": "用逗號分隔列表指定多個使用者。",
+	"Specify more than one user as a comma separated list.": "用逗號分隔列表指定多個使用者。",
+	"External task": "外部任務",
+	"Job execution": "作業執行",
+	"Priority": "優先順序",
+	"Template": "模板",
+	"Forms": "表單",
+	"Type": "型別",
+	"<none>": "無",
+	"Start initiator": "開始發起人",
+	"Initiator": "發起人",
+	"Asynchronous continuations": "非同步延續",
+	"Before": "之前",
+	"After": "之後",
+	"Execution listeners": "執行監聽器",
+	"Extension properties": "擴充套件屬性",
+	"<empty>": "空",
+	"Value": "值",
+	"Start: Java class": "開始：Java 類",
+	"Field injections": "欄位注入",
+	"Event type": "事件型別",
+	"Listener type": "監聽器型別",
+	"Java class": "Java 類",
+	"Create start event": "建立開始事件",
+	"Create end event": "建立結束事件",
+	"Create gateway": "建立閘道器",
+	"Create task": "建立任務",
+	"Create data object reference": "建立資料物件引用",
+	"Create data store reference": "建立資料儲存引用",
+	"Create group": "建立組",
+	"Select": "選擇",
+	"Local variable name": "區域性變數名稱",
+	"Assignment type": "賦值型別",
+	"Start typing \"${}\" to create an expression.": "開始輸入 \"${}\" 以建立表示式。",
+	"Append text notation": "追加文字標註",
+	"Set color": "設定顏色",
+	"Default": "預設",
+	"Blue": "藍色",
+	"Orange": "橙色",
+	"Green": "綠色",
+	"Red": "紅色",
+	"Purple": "紫色",
+	"Task listeners": "任務監聽器",
+	"Process variable name": "流程變數名稱",
+	"Message": "訊息",
+	"Global message reference": "全域性訊息引用",
+	"Script": "指令碼",
+	"Result variable": "結果變數",
+	"Called element": "被呼叫元素",
+	"Business key": "業務鍵",
+	"In mapping propagation": "輸入對映傳播",
+	"Propagate all variables": "傳播所有變數",
+	"In mappings": "輸入對映",
+	"Source": "源",
+	"Target": "目標",
+	"Out mapping propagation": "輸出對映傳播",
+	"Data store reference": "資料儲存引用",
+	"Collecion": "集合",
+	"Participant ID": "參與者 ID",
+	"Participant Name": "參與者名稱",
+	"Process name": "流程名稱",
+	"Executable": "可執行",
+	"Empty pool/participant (removes content)": "清空池/參與者（移除內容）",
+	"Participant multiplicity": "參與者多重性",
+	"Append task": "追加任務",
+	"Append gateway": "追加閘道器",
+	"Append end event": "追加結束事件",
+	"Append intermediate/boundary event": "追加中間/邊界事件",
+	"Sub-process (expanded)": "子流程（展開）",
+	"Change element": "更改元素",
+	"Activate create/remove space tool": "啟用建立/移除空間工具",
+	"Activate global connect tool": "啟用全域性連線工具",
+	"Activate hand tool": "啟用手形工具",
+	"Activate lasso tool": "啟用套索工具",
+	"Ad-hoc": "臨時",
+	"Add lane above": "在上方新增泳道",
+	"Add lane below": "在下方新增泳道",
+	"Append compensation activity": "追加補償活動",
+	"Business rule task": "業務規則任務",
+	"Call activity": "呼叫活動",
+	"Cancel boundary event": "取消邊界事件",
+	"Cancel end event": "取消結束事件",
+	"Change type": "更改型別",
+	"Compensation boundary event": "補償邊界事件",
+	"Compensation end event": "補償結束事件",
+	"Compensation intermediate throw event": "補償中間丟擲事件",
+	"Compensation start event": "補償開始事件",
+	"Complex gateway": "複雜閘道器",
+	"Conditional boundary event": "條件邊界事件",
+	"Conditional boundary event (non-interrupting)": "條件邊界事件（非中斷）",
+	"Conditional intermediate catch event": "條件中間捕獲事件",
+	"Conditional start event": "條件開始事件",
+	"Conditional start event (non-interrupting)": "條件開始事件（非中斷）",
+	"Connect using association": "使用關聯連線",
+	"Connect using data input association": "使用資料輸入關聯連線",
+	"Connect using sequence/message flow or association": "使用順序流/訊息流或關聯連線",
+	"Create expanded sub-process": "建立展開的子流程",
+	"Create intermediate/boundary event": "建立中間/邊界事件",
+	"Create pool/participant": "建立池/參與者",
+	"Divide into three lanes": "分為三條泳道",
+	"Divide into two lanes": "分為兩條泳道",
+	"Empty pool/participant": "清空池/參與者",
+	"End event": "結束事件",
+	"Error boundary event": "錯誤邊界事件",
+	"Error end event": "錯誤結束事件",
+	"Error start event": "錯誤開始事件",
+	"Escalation boundary event": "升級邊界事件",
+	"Escalation boundary event (non-interrupting)": "升級邊界事件（非中斷）",
+	"Escalation end event": "升級結束事件",
+	"Escalation intermediate throw event": "升級中間丟擲事件",
+	"Escalation start event": "升級開始事件",
+	"Escalation start event (non-interrupting)": "升級開始事件（非中斷）",
+	"Event sub-process": "事件子流程",
+	"Event-based gateway": "事件閘道器",
+	"Exclusive gateway": "排他閘道器",
+	"Inclusive gateway": "包容閘道器",
+	"Intermediate throw event": "中間丟擲事件",
+	"Link intermediate catch event": "連結中間捕獲事件",
+	"Link intermediate throw event": "連結中間丟擲事件",
+	"Loop": "迴圈",
+	"Manual task": "手動任務",
+	"Message boundary event": "訊息邊界事件",
+	"Message boundary event (non-interrupting)": "訊息邊界事件（非中斷）",
+	"Message end event": "訊息結束事件",
+	"Message intermediate catch event": "訊息中間捕獲事件",
+	"Message intermediate throw event": "訊息中間丟擲事件",
+	"Message start event": "訊息開始事件",
+	"Message start event (non-interrupting)": "訊息開始事件（非中斷）",
+	"Parallel gateway": "並行閘道器",
+	"Parallel multi-instance": "並行多例項",
+	"Receive task": "接收任務",
+	"Remove": "移除",
+	"Script task": "指令碼任務",
+	"Send task": "傳送任務",
+	"Sequential multi-instance": "序列多例項",
+	"Service task": "服務任務",
+	"Signal boundary event": "訊號邊界事件",
+	"Signal boundary event (non-interrupting)": "訊號邊界事件（非中斷）",
+	"Signal end event": "訊號結束事件",
+	"Signal intermediate catch event": "訊號中間捕獲事件",
+	"Signal intermediate throw event": "訊號中間丟擲事件",
+	"Signal start event": "訊號開始事件",
+	"Signal start event (non-interrupting)": "訊號開始事件（非中斷）",
+	"Start event": "開始事件",
+	"Sub-process": "子流程",
+	"Sub-process (collapsed)": "子流程（摺疊）",
+	"Task": "任務",
+	"Terminate end event": "終止結束事件",
+	"Timer boundary event": "定時器邊界事件",
+	"Timer boundary event (non-interrupting)": "定時器邊界事件（非中斷）",
+	"Timer intermediate catch event": "定時器中間捕獲事件",
+	"Timer start event": "定時器開始事件",
+	"Timer start event (non-interrupting)": "定時器開始事件（非中斷）",
+	"Transaction": "事務",
+	"User task": "使用者任務",
+	"already rendered {element}": "已渲染 {element}",
+	"diagram not part of bpmn:Definitions": "圖表不屬於 bpmn:Definitions",
+	"element required": "需要元素",
+	"element {element} referenced by {referenced}#{property} not yet drawn": "元素 {element} 被 {referenced}#{property} 引用，但尚未繪製",
+	"failed to import {element}": "匯入 {element} 失敗",
+	"flow elements must be children of pools/participants": "流程元素必須是池/參與者的子元素",
+	"more than {count} child lanes": "子泳道超過 {count} 條",
+	"no diagram to display": "沒有可顯示的圖表",
+	"no parent for {element} in {parent}": "{element} 在 {parent} 中沒有父級",
+	"no process or collaboration to display": "沒有可顯示的流程或協作",
+	"no shape type specified": "未指定形狀型別",
+	"out of bounds release": "在邊界外釋放",
+	"ID must not be empty": "ID 不能為空",
+	"dropFileToLoad": "拖放檔案以載入。",
+	"dropFileToFolder": "拖放檔案將其匯入到“{folder}”。",
+	"loading": "載入中",
+	"modal": {
+		"autoCreate": "下次自動建立（跳過此對話方塊）"
+	},
+	"modalImportedFile": {
+		"title": "{item}“{name}”已存在於建模器中",
+		"titleInFolder": "{item}“{name}”已存在於資料夾“{folder}”中",
+		"body": "是否要繼續處理匯入的{item}？",
+		"newKeyLabel": "新流程鍵（ID）",
+		"newKeyLabelForm": "新表單鍵（ID）",
+		"renameSameKey": "新鍵必須與當前鍵不同",
+		"replaceHint": "用匯入的版本覆蓋現有的{item}。",
+		"renameHint": "使用不同的鍵將匯入項作為新的{item}匯入。",
+		"skipHint": "保留現有的{item}並放棄匯入。",
+		"applyToAll": "將此選擇應用於所有剩餘衝突"
+	},
+	"notFound": "未找到",
+	"modalNewDiagram": {
+		"title": "為您的{item}輸入名稱和 ID",
+		"processName": "{item}名稱",
+		"processId": "{item} 的 ID",
+		"cancel": "稍後再做",
+		"qnameError": "ID 必須是有效的 QName",
+		"fillId": "ID 為必填項",
+		"duplicatedId": "ID 已存在"
+	},
+	"noVersions": "無版本",
+	"noTemplates": "無模板",
+	"noItems": "無專案",
+	"version": "版本",
+	"history": "歷史版本",
+	"toastLoadTemplateJson": {
+		"title": "未找到",
+		"body": "載入元素模板時出錯"
+	},
+	"modalChangeProcessVersion": {
+		"title": "選擇版本",
+		"body": "未儲存的更改將丟失。確定嗎？"
+	},
+	"modalListSelectortemplates": {
+		"title": "未找到模板",
+		"search": "搜尋模板"
+	},
+	"modalListSelectorchangeVersion": {
+		"title": "選擇歷史版本",
+		"headerVersion": "版本",
+		"headerDate": "日期",
+		"body": "未儲存的更改將丟失。確定嗎？",
+		"search": "搜尋版本"
+	},
+	"bpmnFilter": {
+		"title": "僅顯示"
+	},
+	"modalDelete": {
+		"title": "刪除 {item}",
+		"body": "確定要從建模器中刪除{item}“{name}”嗎？現有部署不會受到影響。"
+	},
+	"modalDeploy": {
+		"notExecutable": "此流程被標記為不可執行，無法啟動。"
+	},
+	"searchElementTemplates": {
+		"searchInput": "搜尋模板",
+		"others": "其他",
+		"showInternal": "顯示內部模板（同步）",
+		"showExternal": "顯示外部模板（非同步）",
+		"internalTemplatesTip": "顯示直接在 CIB seven 引擎內執行的模板。這些是基於 Java 的實現，在同一應用內同步執行。適用於輕量級場景。",
+		"externalTemplatesTip": "顯示由外部工作程式處理的模板。這些任務與引擎解耦，由遠端服務非同步處理。適用於重型操作。"
+	},
+	"items": {
+		"process": "流程",
+		"bpmn-c7": "流程",
+		"dmn": "圖表",
+		"bpmn": "流程",
+		"form": "表單"
+	},
+	"Items": {
+		"process": "流程",
+		"bpmn-c7": "流程",
+		"dmn": "圖表",
+		"form": "表單"
+	},
+	"filterElements": {
+		"dmn": "DMN",
+		"form": "表單",
+		"bpmn": "BPMN",
+		"all": "全部"
+	},
+	"bcomponents": {
+		"ariaSortNone": "未排序",
+		"ariaSortAsc": "升序排列",
+		"ariaSortDes": "降序排列"
+	},
+	"cib-header": {
+		"productName": "CIB seven 建模器"
+	},
+	"folders": {
+		"breadcrumb": "資料夾路徑",
+		"home": "主頁",
+		"create": "新建資料夾",
+		"createTitle": "新建資料夾",
+		"renameTitle": "重新命名資料夾",
+		"name": "資料夾名稱",
+		"nameRequired": "資料夾需要名稱。",
+		"nameTaken": "已存在同名資料夾。",
+		"nameTooLong": "名稱超過 255 個字元。",
+		"valueTooLong": "超過 {limit} 個字元。",
+		"moveRefused": "資料夾不能移動到自身內部。",
+		"keyTaken": "“{key}”已被佔用。",
+		"saveFailed": "無法儲存資料夾。",
+		"rename": "重新命名",
+		"move": "移動",
+		"copy": "複製",
+		"delete": "刪除",
+		"deleteTitle": "刪除資料夾",
+		"deleteBody": "刪除“{name}”及其中的所有內容？這將永久刪除 {folders} 個資料夾和 {models} 個模型。現有部署不會受到影響。",
+		"moveTitle": "移動“{name}”",
+		"moveModelTitle": "將“{name}”移動到資料夾",
+		"copyModelTitle": "將“{name}”複製到資料夾",
+		"copyKey": "副本的流程鍵",
+		"copyKeyRequired": "副本需要有自己的流程鍵。",
+		"copyFormId": "副本的表單 ID",
+		"copyFormIdRequired": "副本需要有自己的表單 ID。",
+		"destination": "目標位置",
+		"importTitle": "匯入到資料夾",
+		"empty": "此資料夾為空。",
+		"emptyHome": "尚無資料夾。建立一個資料夾來儲存您的模型。",
+		"noMatches": "任何資料夾中都沒有與“{keyword}”匹配的內容。",
+		"searchAcrossFolders": "顯示來自每個資料夾的匹配項。"
+	},
+	"toastFolderLoadFail": {
+		"title": "資料夾",
+		"body": "無法載入資料夾"
+	},
+	"toastFolderDeleteSuccess": {
+		"title": "資料夾已刪除",
+		"body": "資料夾及其中的所有內容已被移除"
+	},
+	"toastFolderDeleteFail": {
+		"title": "資料夾",
+		"body": "無法刪除資料夾"
+	},
+	"toastFolderMoveSuccess": {
+		"title": "已移動",
+		"body": "模型現在位於您選擇的資料夾中"
+	},
+	"toastFolderCopySuccess": {
+		"title": "已複製",
+		"body": "副本現在位於您選擇的資料夾中"
+	}
+}
