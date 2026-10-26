@@ -20,6 +20,7 @@ import { FormEditor } from '@bpmn-io/form-js'
 import { saveForm, updateForm } from'../services/formService.js'
 import useDiagramSave from './useDiagramSave.js'
 import useAutosave from './useAutosave.js'
+import { guardCommandStack, readOnlyDraggingModule } from '../utils/readOnly.js'
 
 export default function useForm(props, emit, canvas, propertyPanel) {
     const store = useStore()
@@ -67,7 +68,8 @@ export default function useForm(props, emit, canvas, propertyPanel) {
             container: canvas.value,
             propertiesPanel: {
                 parent: propertyPanel.value
-            }
+            },
+            additionalModules: [readOnlyDraggingModule(() => props.readOnly)]
         })
         let schemaToLoad = json || schema
         if (typeof(schemaToLoad) !== 'object') schemaToLoad = JSON.parse(schemaToLoad)
@@ -77,6 +79,7 @@ export default function useForm(props, emit, canvas, propertyPanel) {
         validateJson(json)
         emit('updateIsButtonDisabled', false, props.tabElementIndex)
         propertiesPanelComponent.value = formEditor.value.get('propertiesPanel')
+        guardCommandStack(formEditor.value.get('commandStack', false), () => props.readOnly)
 
         // Returns nothing, not even a promise: the event bus stops propagating on a return
         // value, and the properties panel subscribes behind this listener.
@@ -89,7 +92,7 @@ export default function useForm(props, emit, canvas, propertyPanel) {
             // not the user editing, so it must not turn the save button on by itself
             if (importing) return
             emit('toggleEnableSave', true, props.tabElementIndex) //enables save button
-            if (autosaveOptions?.enabled && props.tabElement.isSaved) autosave.schedule()
+            if (autosaveOptions?.enabled && props.tabElement.isSaved && !props.readOnly) autosave.schedule()
         })
     }
 
@@ -223,7 +226,7 @@ export default function useForm(props, emit, canvas, propertyPanel) {
     // import that carries it is suppressed as programmatic (see `importing`), so
     // the caller has to ask for the autosave the change handler skipped.
     const scheduleAutosave = () => {
-      if (autosaveOptions?.enabled && props.tabElement.isSaved) autosave.schedule()
+      if (autosaveOptions?.enabled && props.tabElement.isSaved && !props.readOnly) autosave.schedule()
     }
 
       return {

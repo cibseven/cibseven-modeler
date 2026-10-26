@@ -39,6 +39,7 @@ const modelerStubMocks = vi.hoisted(() => ({ _validate: vi.fn(), _saveXmlAfterUp
 
 const modelerStub = vi.hoisted(() => (name, cls) => ({
   name,
+  props: ['readOnly'],
   template: `<div class="${cls}"><slot /></div>`,
   methods: {
     _validate: (...args) => modelerStubMocks._validate(...args),
@@ -206,6 +207,7 @@ vi.mock('../../../components/modals/FolderPickerModal.vue', () => ({
 
 import CibsevenModeler from '../../../components/modeler/CibsevenModeler.vue'
 import { SKIP_CREATION_MODAL_KEY } from '../../../constants/diagramTypes.js'
+import { setProjectRights } from '../../../utils/projectRights.js'
 
 const childStubs = {}
 
@@ -296,6 +298,53 @@ describe('CibsevenModeler', () => {
       expect(modelerStubMocks._validate).toHaveBeenCalledWith('<edited/>')
       expect(modelerStubMocks._saveXmlAfterUpdate).toHaveBeenCalledWith(isBpmn, '<edited/>', 0)
       expect(tabManagerState.tabNavList.value[0].canSave).toBe(true)
+    })
+
+    describe('a model the user may only look at', () => {
+      const VIEWER = { role: 'VIEWER', restricted: true, edit: false, manageMembers: false }
+
+      afterEach(() => setProjectRights([], null))
+
+      const openedIn = async folderId => {
+        setProjectRights([{ id: 'claims', parentId: null }, { id: 'drafts', parentId: 'claims' }],
+          { projects: { claims: VIEWER } })
+        tabManagerState.tabNavList.value = [
+          { id: 'x1', key: 'k1', name: 'X', type: 'bpmn-c7', folderId, isPropertyPanelVisible: true, isModelerVisible: true },
+        ]
+        tabManagerState.tabNavListXml.value = ['<xml/>']
+        tabManagerState.editorXML.value = ['<xml/>']
+        const wrapper = mountCibsevenModeler()
+        await flushPromises()
+        wrapper.vm.activeTab = 0
+        await flushPromises()
+        return wrapper
+      }
+
+      it('opens it read-only', async () => {
+        const wrapper = await openedIn('drafts')
+
+        expect(wrapper.findComponent({ name: 'BpmnModeler' }).props('readOnly')).toBe(true)
+      })
+
+      it('ignores what is typed into its source', async () => {
+        const wrapper = await openedIn('drafts')
+        wrapper.findComponent({ name: 'BpmnModeler' }).vm.$emit('isValidated', { validation: true }, 0)
+        await flushPromises()
+
+        wrapper.findComponent({ name: 'MonacoEditor' }).vm.$emit('updateFromEditor', '<edited/>', 0)
+
+        expect(modelerStubMocks._validate).not.toHaveBeenCalled()
+        expect(modelerStubMocks._saveXmlAfterUpdate).not.toHaveBeenCalled()
+      })
+
+      /** Outside a restricted project, and for a model not yet saved anywhere, nothing changes. */
+      it('leaves models elsewhere and new ones editable', async () => {
+        const elsewhere = await openedIn('sales')
+        expect(elsewhere.findComponent({ name: 'BpmnModeler' }).props('readOnly')).toBe(false)
+
+        const unsaved = await openedIn(null)
+        expect(unsaved.findComponent({ name: 'BpmnModeler' }).props('readOnly')).toBe(false)
+      })
     })
 
     it('renders DmnModeler stub for dmn tab', async () => {
@@ -580,6 +629,36 @@ describe('CibsevenModeler', () => {
 
       expect(pickerMocks.show).not.toHaveBeenCalled()
       expect(wrapper.vm.toastText).toBe('toastImportNoFolders')
+    })
+
+    /** The options are the folders the user may add to: none means none, not "no tree to ask". */
+    it('does not import into the folder on screen when the user may add to no folder', async () => {
+      startPageMocks.folderOptions.mockReturnValue([])
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      await wrapper.vm.handleNavigateFolder('invoicing')
+
+      await wrapper.vm.importFile(drop())
+
+      expect(fileImportMocks.handleFile).not.toHaveBeenCalled()
+      expect(wrapper.vm.toastText).toBe('toastImportNoFolders')
+    })
+
+    it('asks for a folder when the model on screen lies where the user may not add', async () => {
+      startPageMocks.folderOptions.mockReturnValue([{ id: 'general', name: 'General', depth: 0 }])
+      openTab('archive')
+      tabManagerState.tabNavList.value[0].isSaved = true
+      storeMocks.dispatch.mockImplementation(async action =>
+        action === 'modeler/processes/fetchUnifiedDiagramById' ? { folderId: 'archive' } : undefined)
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+      wrapper.vm.activeTab = 0
+      await flushPromises()
+
+      await wrapper.vm.importFile(drop())
+
+      expect(fileImportMocks.handleFile).not.toHaveBeenCalled()
+      expect(pickerMocks.show).toHaveBeenCalled()
     })
 
     it('runs the same resolution for a dropped file', async () => {

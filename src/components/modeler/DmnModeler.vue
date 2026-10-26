@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 <template>
-	<div class="container modeler d-flex position-relative" ref="containerModeler">
+	<div class="container modeler d-flex position-relative" :class="{ 'read-only': props.readOnly }" ref="containerModeler">
 		<div class="d-flex flex-column align-items-between h-100">
 			<div class="d-flex flex-grow-1 overflow-auto" style="min-height: 0;">
 				<div v-show="!props.isModelerVisible" class="position-relative" :style="styleCanvas">
@@ -94,6 +94,7 @@
 import { ref, computed, onMounted, onUpdated, onBeforeUnmount, onUnmounted, watch, nextTick, inject, provide } from 'vue'
 import DmnJS from 'dmn-js/lib/Modeler'
 import { debounce } from 'min-dash'
+import { guardCommandStack } from '../../utils/readOnly.js'
 import { migrateDiagram } from '@bpmn-io/dmn-migrate'
 import camundaModdleDescriptor from 'camunda-dmn-moddle/resources/camunda.json'
 import { DmnPropertiesPanelModule, DmnPropertiesProviderModule, CamundaPropertiesProviderModule } from 'dmn-js-properties-panel'
@@ -187,6 +188,8 @@ const props = defineProps({
 	chatUnread: { type: Number, default: 0 },
 	chatOnTabChange: { type: Function, default: null },
 	chatOnMessage: { type: Function, default: null },
+	// A viewer of the project sees the model and changes nothing
+	readOnly: { type: Boolean, default: false },
 })
 
 const emit = defineEmits([
@@ -274,9 +277,11 @@ onMounted(async () => {
 	const subscribedViewers = new Set()
 	const subscribeCommandStackToViewer = (viewer) => {
 		if (viewer && !subscribedViewers.has(viewer)) {
+			// Each view of the DMN, diagram, table or expression, has a command stack of its own
+			guardCommandStack(viewer.get('commandStack', false), () => props.readOnly)
 			viewer.on('commandStack.changed', () => {
 				emit('toggleEnableSave', true, props.tabElementIndex)
-				if (autosaveOptions?.enabled && props.tabElement.isSaved) autosave.schedule()
+				if (autosaveOptions?.enabled && props.tabElement.isSaved && !props.readOnly) autosave.schedule()
 			})
 			subscribedViewers.add(viewer)
 		}

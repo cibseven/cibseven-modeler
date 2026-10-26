@@ -431,6 +431,8 @@
   "out of bounds release": "lanzamiento fuera de límites",
   "ID must not be empty": "ID no debe estar vacío",
   "dropFileToLoad": "Suelte el archivo para cargarlo",
+  "readOnlyNotice": "Solo lectura: puede ver este modelo, pero no modificarlo",
+  "readOnlyBadge": "Solo lectura",
   "dropFileToFolder": "Suelte el archivo para importarlo en «{folder}».",
   "loading": "Cargando",
   "modal": {
@@ -583,7 +585,10 @@
 		"open": "Abrir",
 		"moveTo": "Mover a…",
 		"copyTo": "Copiar a…",
-		"defaultBadge": "Predeterminada"
+		"defaultBadge": "Predeterminada",
+		"restricted": "Solo sus miembros pueden abrir este proyecto",
+		"viewerBadge": "Lector",
+		"viewerTitle": "Puede ver este proyecto, pero no modificarlo"
 	},
 	"toastFolderLoadFail": { "title": "Carpetas", "body": "No se han podido cargar las carpetas" },
 	"toastFolderDeleteSuccess": { "title": "Carpeta eliminada", "body": "La carpeta y todo su contenido se han eliminado" },

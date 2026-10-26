@@ -40,7 +40,13 @@
                 </a>
             </div>
         </template>
-        <div v-show="!props.isButtonDisabled &&  modelProperties[props.tabElement.type].canDeploy" class="btn-menu d-flex align-items-center mx-1">
+        <!-- v-if, not v-show, for read-only: d-flex sets display !important, which a v-show cannot hide -->
+        <div v-if="props.readOnly" class="btn-menu d-flex align-items-center mx-1 px-2 small text-light read-only-badge"
+            role="note" :title="$t('readOnlyNotice')">
+            <span class="mdi mdi-18px mdi-eye-outline me-1" aria-hidden="true"></span>{{ $t('readOnlyBadge') }}
+            <span class="visually-hidden">{{ $t('readOnlyNotice') }}</span>
+        </div>
+        <div v-if="!props.readOnly" v-show="!props.isButtonDisabled && modelProperties[props.tabElement.type].canDeploy" class="btn-menu d-flex align-items-center mx-1">
             <button type="button"
                 class="btn btn-outline-light border-0 btn-sm"
                 @click="canDeploy" aria-haspopup="true"
@@ -48,7 +54,7 @@
                 <span class="mdi mdi-24px mdi-rocket" aria-hidden="true"></span>
             </button>
         </div>
-        <div class="btn-menu d-flex align-items-center mx-1" v-show="!isButtonDisabled">
+        <div v-if="!props.readOnly" class="btn-menu d-flex align-items-center mx-1" v-show="!isButtonDisabled">
             <!-- A disabled button lets the hover through (Bootstrap: pointer-events none), so the group carries its title too -->
             <div class="btn-group" :title="saveTitle">
                 <button type="button"
@@ -190,8 +196,10 @@ const props = defineProps({
     tabElement: { type: Object, required: true }, 
     isButtonDisabled: { type: Boolean, required: true, default: false },
     consoleOpen: { type: Boolean, default: false },
+    // A viewer of the project can neither save nor deploy the model
+    readOnly: { type: Boolean, default: false },
     width: Number
-    }   
+    }
 )
 const extraDownloadLinks = inject('extraDownloadLinks', null)
 const BpmnFilterButtonComponent = inject('bpmnFilterButtonComponent', null)
@@ -318,6 +326,7 @@ const changeWidth = value => {
 }
 
 const _saveDiagram = async () => {
+    if (props.readOnly) return // also Ctrl+S, which comes here rather than through the button
     if (isSaving.value) return // prevent re-entry (e.g. rapid Ctrl+S)
     if (!props.canSave && !props.tabElement.changedVersion) return // only saves if button is enabled
     if (!props.isXmlValidated.validation) {

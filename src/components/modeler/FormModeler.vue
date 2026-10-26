@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 <template>
-	<div class="container modeler d-flex position-relative" ref="formContainer">
+	<div class="container modeler d-flex position-relative" :class="{ 'read-only': props.readOnly }" ref="formContainer">
 		<div class="d-flex flex-column align-items-between h-100">
 			<div class="d-flex flex-grow-1 overflow-hidden" style="min-height: 0;">
 				<div v-show="!props.isModelerVisible" class="canvas" ref="canvas" :style="styleCanvas" tabindex="0">
@@ -107,6 +107,8 @@ const props = defineProps({
 	chatUnread: { type: Number, default: 0 },
 	chatOnTabChange: { type: Function, default: null },
 	chatOnMessage: { type: Function, default: null },
+	// A viewer of the project sees the form and changes nothing
+	readOnly: { type: Boolean, default: false },
 })
 
 

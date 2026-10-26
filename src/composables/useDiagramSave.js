@@ -96,6 +96,8 @@ export default function useDiagramSave(props, emit, sessionHooks = {}) {
     functionToExecute = null,
     isAutosave = false,
   }) => {
+    // The backend refuses it too; a model the user may only look at is not even sent
+    if (props.readOnly) return false
     const keyToCompare = props.tabElement.isSaved ? storedKey : ''
     // Instant check against the loaded list…
     let duplicate = !!checkBeforeAction(newKey, keyToCompare, storeStateSlice, itemKeyField)

@@ -26,12 +26,12 @@ import useDiagramSave from '../../composables/useDiagramSave.js'
  * Mount a minimal wrapper to exercise useDiagramSave.
  * Returns { save, emitted } via expose.
  */
-function withSetup({ tabElement, tabElementIndex = 0, createSessionHook = null, autosaveHook = null } = {}) {
+function withSetup({ tabElement, tabElementIndex = 0, createSessionHook = null, autosaveHook = null, readOnly = false } = {}) {
     let composableResult
     const wrapper = mount(defineComponent({
         name: 'TestWrapper',
         setup() {
-            const props = { tabElement: ref(tabElement).value, tabElementIndex }
+            const props = { tabElement: ref(tabElement).value, tabElementIndex, readOnly }
             const emitted = []
             const emit = (event, ...args) => emitted.push({ event, args })
             const sessionHooks = createSessionHook ? { createSessionHook } : {}
@@ -65,6 +65,18 @@ function makeSaveOpts(overrides = {}) {
 
 describe('useDiagramSave', () => {
     beforeEach(() => vi.clearAllMocks())
+
+    /** Autosave and every other way to save end here, and the backend would refuse it anyway. */
+    it('sends nothing for a model the user may only look at', async () => {
+        const opts = makeSaveOpts()
+        const { save, emitted } = withSetup({ tabElement: makeTabElement({ isSaved: true }), readOnly: true })
+
+        expect(await save(opts)).toBe(false)
+        expect(opts.createFn).not.toHaveBeenCalled()
+        expect(opts.updateFn).not.toHaveBeenCalled()
+        expect(keyExistsRemote).not.toHaveBeenCalled()
+        expect(emitted).toEqual([])
+    })
 
     describe('create path (isSaved = false)', () => {
         it('calls createFn and emits success events', async () => {

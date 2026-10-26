@@ -32,6 +32,7 @@ function mountButtons(tabElement, {
     isXmlValidated = { validation: true, text: '' },
     modeler = null,
     tabElementIndex = 0,
+    readOnly = false,
     provide = {},
 } = {}) {
     return mount(ActionButtonsList, {
@@ -44,6 +45,7 @@ function mountButtons(tabElement, {
             modeler,
             tabNavList: [],
             tabNavListXml: '',
+            readOnly,
         },
         global: {
             mocks: { $t: (k) => k },
@@ -129,6 +131,42 @@ describe('ActionButtonsList', () => {
 
             await wrapper.vm._saveDiagram()
             expect(saveFn).not.toHaveBeenCalled()
+        })
+
+        /** Ctrl+S comes here rather than through the button, so the method refuses too. */
+        it('saves nothing of a model the user may only look at', async () => {
+            const saveFn = vi.fn().mockResolvedValue(undefined)
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), {
+                canSave: true,
+                readOnly: true,
+                modeler: { _saveDiagram: saveFn },
+            })
+
+            await wrapper.vm._saveDiagram()
+            expect(saveFn).not.toHaveBeenCalled()
+        })
+
+        /**
+         * Left out rather than hidden: the groups carry d-flex, whose display !important beats the
+         * inline display none of a v-show, so a hidden button stayed on screen.
+         */
+        it('offers neither saving nor deploying a model the user may only look at, and says why', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), { canSave: true, readOnly: true })
+
+            expect(wrapper.find('.save-diagram').exists()).toBe(false)
+            expect(wrapper.find('button[title="buttons.deploy"]').exists()).toBe(false)
+            const badge = wrapper.find('.read-only-badge')
+            expect(badge.attributes('role')).toBe('note')
+            expect(badge.attributes('title')).toBe('readOnlyNotice')
+            expect(badge.text()).toContain('readOnlyBadge')
+        })
+
+        it('offers saving and deploying, and no badge, when the model may be changed', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), { canSave: true })
+
+            expect(wrapper.find('.save-diagram').exists()).toBe(true)
+            expect(wrapper.find('button[title="buttons.deploy"]').exists()).toBe(true)
+            expect(wrapper.find('.read-only-badge').exists()).toBe(false)
         })
 
         it('calls modeler._saveDiagram when canSave is true and xml is valid', async () => {

@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 <template>
-	<div class="container modeler d-flex position-relative" ref="containerModeler">
+	<div class="container modeler d-flex position-relative" :class="{ 'read-only': props.readOnly }" ref="containerModeler">
 		<div class="d-flex flex-column align-items-between h-100">
 			<div class="d-flex flex-grow-1" style="min-height: 0;">
 				<div v-show="!props.isModelerVisible" class="position-relative" :style="styleCanvas">
@@ -152,6 +152,7 @@ import 'bpmn-js-bpmnlint/dist/assets/css/bpmn-js-bpmnlint.css'
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css'
 
 import { debounce } from 'min-dash'
+import { guardCommandStack } from '../../utils/readOnly.js'
 
 //import bpmn modules
 import BpmnModeler from 'bpmn-js/lib/Modeler'
@@ -287,6 +288,8 @@ const props = defineProps({
 	chatUnread: { type: Number, default: 0 },
 	chatOnTabChange: { type: Function, default: null },
 	chatOnMessage: { type: Function, default: null },
+	// A viewer of the project sees the model and changes nothing
+	readOnly: { type: Boolean, default: false },
 })
 //composables
 const {
@@ -460,6 +463,7 @@ const initializeModeler = async () => {
 			break
 	}
 	emit('setTypeOfDiagramForModeler', typeOfDiagram, props.tabElementIndex)
+	guardCommandStack(bpmnModeler.get('commandStack'), () => props.readOnly)
 
 	bpmnModeler.on('element.click', async e => {
 		_setMonacoEditorToDiv(e, divScriptTaskID)
@@ -479,7 +483,7 @@ const initializeModeler = async () => {
 		const name = info?.name || info?.id || null
 		if (name) emit('updateTabName', name, props.tabElementIndex)
 		_openCalledElementWhenCalActivity(e)
-		if (autosaveOptions?.enabled && props.tabElement.isSaved) autosave.schedule()
+		if (autosaveOptions?.enabled && props.tabElement.isSaved && !props.readOnly) autosave.schedule()
 	})
 
 	bpmnModeler.on('element.changed', async e => {
@@ -1004,6 +1008,24 @@ svg {
 }
 .djs-minimap .toggle {
 	display: none;
+}
+/* A model the user may only look at offers nothing to add, move or resize and no field to type into. The command
+   stack refuses every change anyway; this keeps the editor from suggesting otherwise, while the
+   properties stay readable and their groups can still be opened. */
+.container.modeler.read-only .djs-palette,
+.container.modeler.read-only .djs-context-pad,
+.container.modeler.read-only .fjs-palette-container,
+.container.modeler.read-only .fjs-context-pad,
+.container.modeler.read-only .fjs-row-dragger,
+.container.modeler.read-only .fjs-field-resize-handle,
+.container.modeler.read-only .bio-properties-panel-add-entry,
+.container.modeler.read-only .bio-properties-panel-remove-entry {
+	display: none !important;
+}
+.container.modeler.read-only .bio-properties-panel-entry :is(input, textarea, select, button, [contenteditable]),
+.container.modeler.read-only .dmn-decision-table-container [contenteditable],
+.container.modeler.read-only .dmn-literal-expression-container [contenteditable] {
+	pointer-events: none;
 }
 .djs-minimap {
 	position: absolute !important;

@@ -19,6 +19,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 vi.mock('../../services/folderService.js', () => ({
   fetchFolders: vi.fn(),
   fetchUserFolder: vi.fn(),
+  fetchFolderAccess: vi.fn(),
   fetchFolderContents: vi.fn(),
   createFolder: vi.fn(),
   renameFolder: vi.fn(),
@@ -30,6 +31,7 @@ import useFolders from '../../composables/useFolders.js'
 import {
   createFolder,
   deleteFolder,
+  fetchFolderAccess,
   fetchFolderContents,
   fetchFolders,
   fetchUserFolder,
@@ -374,6 +376,80 @@ describe('useFolders', () => {
       expect(folders.canSetDefault.value).toBe(false)
       expect(folders.defaultFolderId.value).toBeNull()
       expect(localStorage.length).toBe(0)
+    })
+  })
+
+  describe('project rights', () => {
+    const VIEWER = { role: 'VIEWER', restricted: true, edit: false, manageMembers: false }
+    const ADMIN = { role: 'PROJECT_ADMIN', restricted: true, edit: true, manageMembers: true }
+
+    beforeEach(() => {
+      fetchFolderAccess.mockResolvedValue({ projects: {}, movesBetweenProjects: true })
+    })
+
+    /** Without project members the backend lists no rights, and nothing changes. */
+    it('allows everything where the backend lists no rights', async () => {
+      fetchFolderAccess.mockResolvedValue({ projects: {}, movesBetweenProjects: true })
+      const folders = await loaded()
+
+      expect(folders.rightsOf('invoicing')).toBeNull()
+      expect(folders.canEdit('2024')).toBe(true)
+      expect(folders.canChange(TREE[0])).toBe(true)
+      expect(folders.movesBetweenProjects.value).toBe(true)
+    })
+
+    it('gives every folder of a project the rights of the project', async () => {
+      fetchFolderAccess.mockResolvedValue({ projects: { general: VIEWER, archive: ADMIN }, movesBetweenProjects: false })
+      const folders = await loaded()
+
+      expect(folders.projectOf('2024')).toBe('general')
+      expect(folders.rightsOf('2024')).toEqual(VIEWER)
+      expect(folders.canEdit('2024')).toBe(false)
+      expect(folders.canEdit('archive')).toBe(true)
+      expect(folders.movesBetweenProjects.value).toBe(false)
+    })
+
+    it('lets anybody start a project', async () => {
+      fetchFolderAccess.mockResolvedValue({ projects: { general: VIEWER } })
+      const folders = await loaded()
+
+      expect(folders.canEdit(null)).toBe(true)
+    })
+
+    /** Renaming or deleting a whole project is for its admins; a folder inside, for its editors. */
+    it('leaves a project to its admins and a folder inside it to its editors', async () => {
+      const EDITOR = { role: 'EDITOR', restricted: true, edit: true, manageMembers: false }
+      fetchFolderAccess.mockResolvedValue({ projects: { general: EDITOR, archive: ADMIN } })
+      const folders = await loaded()
+
+      expect(folders.canChange(TREE[0])).toBe(false)
+      expect(folders.canChange(TREE[1])).toBe(true)
+      expect(folders.canChange(TREE[2])).toBe(true)
+    })
+
+    it('offers only the folders the user may add to', async () => {
+      fetchFolderAccess.mockResolvedValue({ projects: { general: VIEWER, archive: ADMIN } })
+      const folders = await loaded()
+
+      expect(folders.flatten(null, { editableOnly: true }).map(f => f.id)).toEqual(['archive'])
+    })
+
+    it('offers only the folders of one project', async () => {
+      const folders = await loaded()
+
+      expect(folders.flatten('2024', { within: 'general' }).map(f => f.id)).toEqual(['general', 'invoicing'])
+    })
+
+    /** A backend from before project members has no such endpoint, and restricts nothing. */
+    it('restricts nothing when the rights cannot be read', async () => {
+      fetchFolderAccess.mockRejectedValue(new Error('404'))
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const folders = await loaded()
+
+      expect(folders.folders.value).toHaveLength(4)
+      expect(folders.canEdit('2024')).toBe(true)
+      expect(folders.movesBetweenProjects.value).toBe(true)
+      spy.mockRestore()
     })
   })
 })
