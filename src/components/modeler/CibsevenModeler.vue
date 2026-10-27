@@ -54,7 +54,7 @@
 			role="tabpanel" :aria-labelledby="`process${tabElement.keyOfTabNav}-tab`" tabindex="0">
 			<BpmnModeler
 				v-if="tabNavListXml[index] && waitToLoad && tabNavList[index].type === 'bpmn-c7'"
-				:tabElementIndex="index" :ref="el => modeler[index] = el" :tabElement="tabElement"
+				:tabElementIndex="index" :ref="el => modeler[index] = el" :tabElement="tabElement" :readOnly="isReadOnlyTab(tabElement)"
 				v-show="tabElement.isPropertyPanelVisible" :diagramType="tabNavList[index].type"
 				:isActiveTab="index === activeTab" :clipboard="clipboard" :xml="tabNavListXml[index]"
 				:isModelerVisible="tabNavList[index].isModelerVisible" :elementTemplateJson="elementTemplateJson"
@@ -73,11 +73,11 @@
 				@show-console-notification="showConsoleNotification">
 				<div v-if="tabElement.isModelerVisible" class="h-100">
 					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index] != null"
-						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index"></monaco-editor>
+						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index" :readOnly="isReadOnlyTab(tabElement)"></monaco-editor>
 				</div>
 				<template #menu>
 					<ActionButtonsList :tabNavListXml="tabNavListXml[index]" :tabElementIndex="index"
-						:tabElement="tabElement" :ref="el => actionButton[index] = el"
+						:tabElement="tabElement" :ref="el => actionButton[index] = el" :readOnly="isReadOnlyTab(tabElement)"
 						:isButtonDisabled="isButtonDisabled[index]" :isEditorVisible="tabElement.isEditorVisible"
 						:canSave="tabNavList[index].canSave" :modeler="modeler[index]"
 						:console-open="modeler[index]?.isConsoleOpen ?? false"
@@ -90,7 +90,7 @@
 				</template>
 			</BpmnModeler>
 			<DmnModeler v-if="tabNavListXml[index] && waitToLoad && tabNavList[index].type === 'dmn'"
-				:isActiveTab="index === activeTab" :tabElement="tabElement" :ref="el => modeler[index] = el"
+				:isActiveTab="index === activeTab" :tabElement="tabElement" :ref="el => modeler[index] = el" :readOnly="isReadOnlyTab(tabElement)"
 				:tabElementIndex="index" @isValidated="isValidated" @updateEditorXML="updateEditorXML"
 				:xml="tabNavListXml[index]" @updateIsButtonDisabled="updateIsButtonDisabled"
 				@updateDownloadLink="_updateDownloadLink"
@@ -107,11 +107,11 @@
 				>
 				<div v-if="tabElement.isModelerVisible" class="h-100">
 					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index] != null"
-						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index"></monaco-editor>
+						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index" :readOnly="isReadOnlyTab(tabElement)"></monaco-editor>
 				</div>
 				<template #menu>
 					<ActionButtonsList :tabNavListXml="tabNavListXml[index]" :tabElementIndex="index"
-						:tabElement="tabElement" :ref="el => actionButton[index] = el"
+						:tabElement="tabElement" :ref="el => actionButton[index] = el" :readOnly="isReadOnlyTab(tabElement)"
 						:isButtonDisabled="isButtonDisabled[index]" :isEditorVisible="tabElement.isEditorVisible"
 						:canSave="tabNavList[index].canSave" :modeler="modeler[index]"
 						:console-open="modeler[index]?.isConsoleOpen ?? false"
@@ -123,7 +123,7 @@
 					</ActionButtonsList>
 				</template>
 			</DmnModeler>
-			<FormModeler v-if="tabNavListXml[index] && tabNavList[index].type === 'form'" :json="tabNavListXml[index]" :isActiveTab="index === activeTab" :tabElement="tabElement" :ref="el => modeler[index] = el"
+			<FormModeler v-if="tabNavListXml[index] && tabNavList[index].type === 'form'" :json="tabNavListXml[index]" :isActiveTab="index === activeTab" :tabElement="tabElement" :ref="el => modeler[index] = el" :readOnly="isReadOnlyTab(tabElement)"
 				:tabElementIndex="index" @isValidated="isValidated" @updateEditorXML="updateEditorXML"
 				:xml="tabNavListXml[index]" @updateIsButtonDisabled="updateIsButtonDisabled"
 				@updateDownloadLink="_updateDownloadLinkForm"
@@ -138,11 +138,11 @@
 				:chat-unread="props.chatUnread" :chat-on-tab-change="props.chatOnTabChange" :chat-on-message="props.chatOnMessage">
 				<div v-if="tabElement.isModelerVisible" class="h-100">
 					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index] != null"
-						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index" language='json'></monaco-editor>
+						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index" :readOnly="isReadOnlyTab(tabElement)" language='json'></monaco-editor>
 				</div>
 				<template #menu>
 					<ActionButtonsList :tabNavListXml="tabNavListXml[index]" :tabElementIndex="index"
-						:tabElement="tabElement" :ref="el => actionButton[index] = el"
+						:tabElement="tabElement" :ref="el => actionButton[index] = el" :readOnly="isReadOnlyTab(tabElement)"
 						:isButtonDisabled="isButtonDisabled[index]" :isEditorVisible="tabElement.isEditorVisible"
 						:canSave="tabNavList[index].canSave" :modeler="modeler[index]"
 						@showToastMessage="showToastMessage" :isXmlValidated="isXmlValidated[tabElement.key]"
@@ -218,6 +218,7 @@ import useFileImport from '../../composables/useFileImport.js'
 import { DIAGRAM_TYPE, SKIP_CREATION_MODAL_KEY } from '../../constants/diagramTypes.js'
 import { keyExistsRemote, fetchProcessByKey } from '../../services/processService.js'
 import { fetchUserFolder } from '../../services/folderService.js'
+import { canEditFolder } from '../../utils/projectRights.js'
 
 // Provide monaco for child components (MonacoEditor, MonacoConsole)
 // This is necessary when used as a library since the host app doesn't provide monaco
@@ -616,9 +617,13 @@ const isValidated = (validated, tabElementIndex) => {
 }
 
 //called from monaco editor
+/** A model the user may only look at: its project gives them no more than viewing. */
+const isReadOnlyTab = tab => !!tab?.folderId && !canEditFolder(tab.folderId)
+
 const updateDiagramFromEditor = (xmlContent, tabElementIndex) => {
 	//updates xml content
 	if (!modeler.value[tabElementIndex]) return
+	if (isReadOnlyTab(tabNavList.value[tabElementIndex])) return
 	if (!xmlContent) return // ignore empty content — user is mid-edit; keep the editor alive
 	modeler.value[tabElementIndex]._validate(xmlContent)
 	const tab = tabNavList.value[tabElementIndex]
@@ -849,9 +854,10 @@ const _rememberTabFolder = (tab, folderId) => {
 
 /** A folder deleted meanwhile is no target, and the save would fail with nothing said. */
 const _isKnownFolder = folderId => {
-	const folders = startPage.value?.folderOptions?.() ?? []
-	// Nothing to check against without a tree, and then the tab is all there is to go on
-	return folders.length === 0 || folders.some(folder => folder.id === folderId)
+	// Nothing to check against without the start page, and then the tab is all there is to go on
+	if (!startPage.value?.folderOptions) return true
+	// The options are the folders the user may add to, so an empty list means there is none
+	return startPage.value.folderOptions().some(folder => folder.id === folderId)
 }
 
 // On the top level of the list a drop goes into the default folder, if the user chose one there
@@ -867,7 +873,8 @@ const importFile = async e => {
 	const dropped = { dataTransfer: { files } }
 
 	const onScreen = _isKnownFolder(targetFolderId.value) ? targetFolderId.value : null
-	const known = onScreen ?? await _storedFolderOfOpenModel() ?? _defaultDropFolderId()
+	const stored = onScreen ? null : await _storedFolderOfOpenModel()
+	const known = onScreen ?? (stored && _isKnownFolder(stored) ? stored : null) ?? _defaultDropFolderId()
 	if (known) return _runImport(dropped, known)
 
 	// The dialog on screen is already asking about a drop, and answering it would carry the

@@ -39,6 +39,11 @@
                     <span v-if="item.isDefault" class="badge rounded-pill text-bg-light border" :title="$t('folders.defaultFolder')">
                         {{ $t('folders.defaultBadge') }}
                     </span>
+                    <span v-if="item.rights?.restricted" class="mdi mdi-lock-outline text-secondary" role="img"
+                        :title="$t('folders.restricted')" :aria-label="$t('folders.restricted')"></span>
+                    <span v-if="item.rights && !item.rights.edit" class="badge rounded-pill text-bg-light border" :title="$t('folders.viewerTitle')">
+                        {{ $t('folders.viewerBadge') }}
+                    </span>
                 </div>
                 <span v-if="item.details" class="small text-muted text-truncate" :title="item.details">{{ item.details }}</span>
             </div>
@@ -87,6 +92,12 @@ const props = defineProps({
     models: { type: Array, default: () => [] },
     isDefault: { type: Function, default: () => false },
     isLocked: { type: Function, default: () => false },
+    // What the user may do where: by folder id, and for a folder itself
+    canEdit: { type: Function, default: () => true },
+    canChange: { type: Function, default: () => true },
+    rightsOf: { type: Function, default: () => null },
+    // Entries an edition adds to a folder's menu: { id, icon, label, visible(folder, rights) }
+    extraActions: { type: Array, default: () => [] },
     // Shown under a model's name, for search results from every folder
     locationOf: { type: Function, default: null },
     deletingId: { type: String, default: null },
@@ -104,6 +115,7 @@ const emit = defineEmits([
     'moveModel',
     'copyModel',
     'removeModel',
+    'extraAction',
     'update:sort',
 ])
 
@@ -136,12 +148,23 @@ const MODEL_ACTIONS = [
     action('delete', 'mdi-delete-outline', 'folders.delete', 'removeModel'),
 ]
 
+const extraActionsFor = folder => props.extraActions
+    .filter(entry => entry.visible?.(folder, props.rightsOf(folder.id)) ?? true)
+    .map(entry => ({ id: `extra:${entry.id}`, icon: entry.icon, label: entry.label, extra: entry }))
+
 const folderActions = folder => {
-    if (props.isLocked(folder)) return [OPEN_FOLDER]
+    const extra = extraActionsFor(folder)
+    if (props.isLocked(folder)) return [OPEN_FOLDER, ...extra]
+    if (!props.canChange(folder)) return [OPEN_FOLDER, ...extra]
     // Projects stay at the top level
-    if (!folder.parentId) return [OPEN_FOLDER, RENAME_FOLDER, REMOVE_FOLDER]
-    return [OPEN_FOLDER, RENAME_FOLDER, MOVE_FOLDER, REMOVE_FOLDER]
+    const move = folder.parentId ? [MOVE_FOLDER] : []
+    return [OPEN_FOLDER, RENAME_FOLDER, ...move, ...extra, REMOVE_FOLDER]
 }
+
+// Reading and copying need no more than seeing the model; moving and deleting change its folder
+const modelActions = model => props.canEdit(model.folderId)
+    ? MODEL_ACTIONS
+    : MODEL_ACTIONS.filter(entry => entry.id !== 'move' && entry.id !== 'delete')
 
 const folderRow = folder => ({
     key: `folder:${folder.id}`,
@@ -150,6 +173,8 @@ const folderRow = folder => ({
     label: folder.name,
     icon: folderIcon(folder),
     isDefault: props.isDefault(folder.id),
+    // Only a project says who it is restricted to
+    rights: folder.parentId ? null : props.rightsOf(folder.id),
     // A folder only gets an update stamp once renamed or moved
     updated: folder.updated ?? folder.created,
     updatedBy: folder.updatedBy ?? folder.createdBy,
@@ -168,7 +193,7 @@ const modelRow = model => {
         isDeleting: model.id === props.deletingId,
         updated: model.updated,
         updatedBy: model.updatedBy,
-        actions: MODEL_ACTIONS,
+        actions: modelActions(model),
     }
 }
 
@@ -199,9 +224,10 @@ const open = item => {
     else emit('openModel', item.source)
 }
 
-const run = (item, { id, event }) => {
+const run = (item, { id, event, extra }) => {
     menus[item.key]?.hide()
-    if (id === 'open') open(item)
+    if (extra) emit('extraAction', extra, item.source)
+    else if (id === 'open') open(item)
     else emit(event, item.source)
 }
 </script>

@@ -50,9 +50,10 @@ const fetchProcessByKey = key => {
 /**
  * Authoritative (database-backed) duplicate-key check, beyond the loaded/paginated
  * store list. Returns true when a diagram/form with this EXACT key already exists,
- * via the exact by-key lookups (200 = exists, 404 = not found). On any error we return
- * false so a transient failure never blocks the user; the backend's unique constraint
- * remains the final guard.
+ * via the exact by-key lookups (200 = exists, 404 = not found). A 403 exists too, in a
+ * project the user may not open: keys are unique across projects. On any other error we
+ * return false so a transient failure never blocks the user; the backend's unique
+ * constraint remains the final guard.
  *
  * @param {string} key - process key (bpmn/dmn) or form id.
  * @param {'form'|string} type - 'form' looks up forms by formId; otherwise processes by processkey.
@@ -62,8 +63,8 @@ const keyExistsRemote = async (key, type) => {
   try {
     await (type === 'form' ? fetchFormByFormId(key) : fetchProcessByKey(key)) // 404 rejects → caught below
     return true
-  } catch {
-    return false
+  } catch (error) {
+    return error?.response?.status === 403
   }
 }
 

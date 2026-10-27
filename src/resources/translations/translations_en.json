@@ -431,6 +431,8 @@
 	"out of bounds release": "out of bounds release",
 	"ID must not be empty": "ID must not be empty.",
 	"dropFileToLoad": "Drop the file to load it.",
+	"readOnlyNotice": "View only: you can look at this model, but not change it",
+	"readOnlyBadge": "View only",
 	"dropFileToFolder": "Drop the file to import it into \"{folder}\".",
 	"loading": "Loading",
 	"modal": {
@@ -583,7 +585,10 @@
 		"open": "Open",
 		"moveTo": "Move to…",
 		"copyTo": "Copy to…",
-		"defaultBadge": "Default"
+		"defaultBadge": "Default",
+		"restricted": "Only its members can open this project",
+		"viewerBadge": "Viewer",
+		"viewerTitle": "You can look at this project, but not change it"
 	},
 	"toastFolderLoadFail": { "title": "Folders", "body": "The folders could not be loaded" },
 	"toastFolderDeleteSuccess": { "title": "Folder deleted", "body": "The folder and everything in it have been removed" },

@@ -326,3 +326,23 @@ describe('useForm change listener', () => {
   })
 
 })
+
+describe('useForm read-only dragging', () => {
+  /** The editor stops a drag on a tab the user may only look at, following the tab's readOnly prop. */
+  it('builds the editor with the module that cancels drags while the tab is read-only', async () => {
+    mockFormEditor.FormEditor.mockClear()
+    const { initializeFormEditor } = withSetup({ readOnly: true })
+    await initializeFormEditor()
+
+    const [{ additionalModules }] = mockFormEditor.FormEditor.mock.calls[0]
+    const [Type] = additionalModules.map(module => module.readOnlyDragging?.[1]).filter(Boolean)
+    const listeners = {}
+    new Type({ on: (event, fn) => { listeners[event] = fn } })
+    const drake = { cancel: vi.fn() }
+    listeners['dragula.created'](drake)
+    listeners['drag.start']()
+    await flushPromises()
+
+    expect(drake.cancel).toHaveBeenCalledWith(true)
+  })
+})

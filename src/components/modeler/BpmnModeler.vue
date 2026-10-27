@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 <template>
-	<div class="container modeler d-flex position-relative" ref="containerModeler">
+	<div class="container modeler d-flex position-relative" :class="{ 'read-only': props.readOnly }" ref="containerModeler">
 		<div class="d-flex flex-column align-items-between h-100">
 			<div class="d-flex flex-grow-1" style="min-height: 0;">
 				<div v-show="!props.isModelerVisible" class="position-relative" :style="styleCanvas">
@@ -152,6 +152,7 @@ import 'bpmn-js-bpmnlint/dist/assets/css/bpmn-js-bpmnlint.css'
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css'
 
 import { debounce } from 'min-dash'
+import { guardCommandStack, guardFieldEditing } from '../../utils/readOnly.js'
 
 //import bpmn modules
 import BpmnModeler from 'bpmn-js/lib/Modeler'
@@ -287,6 +288,8 @@ const props = defineProps({
 	chatUnread: { type: Number, default: 0 },
 	chatOnTabChange: { type: Function, default: null },
 	chatOnMessage: { type: Function, default: null },
+	// A viewer of the project sees the model and changes nothing
+	readOnly: { type: Boolean, default: false },
 })
 //composables
 const {
@@ -351,7 +354,10 @@ provide('loadVersionHook', async (xml, version) => {
 })
 let typeOfDiagram = null //'bpmn-c7','dmn'
 
+let stopFieldGuard = null
+
 onMounted(async () => {
+	stopFieldGuard = guardFieldEditing(containerModeler.value, () => props.readOnly)
 	initializeModeler()
 	window.addEventListener('resize', updateParentWidth, true)
 	window.addEventListener('resize', updateParentHeight, true)
@@ -371,6 +377,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
 	autosave.cancel()
+	stopFieldGuard?.()
 	window.removeEventListener('resize', updateParentWidth, true)
 	window.removeEventListener('resize', updateParentHeight, true)
 	document.removeEventListener('fullscreenchange', onFullscreenChange)
@@ -460,6 +467,7 @@ const initializeModeler = async () => {
 			break
 	}
 	emit('setTypeOfDiagramForModeler', typeOfDiagram, props.tabElementIndex)
+	guardCommandStack(bpmnModeler.get('commandStack'), () => props.readOnly)
 
 	bpmnModeler.on('element.click', async e => {
 		_setMonacoEditorToDiv(e, divScriptTaskID)
@@ -479,7 +487,7 @@ const initializeModeler = async () => {
 		const name = info?.name || info?.id || null
 		if (name) emit('updateTabName', name, props.tabElementIndex)
 		_openCalledElementWhenCalActivity(e)
-		if (autosaveOptions?.enabled && props.tabElement.isSaved) autosave.schedule()
+		if (autosaveOptions?.enabled && props.tabElement.isSaved && !props.readOnly) autosave.schedule()
 	})
 
 	bpmnModeler.on('element.changed', async e => {

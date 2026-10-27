@@ -431,6 +431,8 @@
   "out of bounds release": "Freigabe außerhalb des zulässigen Bereichs",
   "ID must not be empty": "ID darf nicht leer sein.",
   "dropFileToLoad": "Legen Sie die Datei ab, um sie zu laden.",
+  "readOnlyNotice": "Nur ansehen: Sie können dieses Modell ansehen, aber nicht ändern",
+  "readOnlyBadge": "Nur ansehen",
   "dropFileToFolder": "Legen Sie die Datei ab, um sie in „{folder}“ zu importieren.",
   "loading": "Lädt",
   "modal": {
@@ -583,7 +585,10 @@
 		"open": "Öffnen",
 		"moveTo": "Verschieben nach…",
 		"copyTo": "Kopieren nach…",
-		"defaultBadge": "Standard"
+		"defaultBadge": "Standard",
+		"restricted": "Nur seine Mitglieder können dieses Projekt öffnen",
+		"viewerBadge": "Betrachter",
+		"viewerTitle": "Sie können dieses Projekt ansehen, aber nicht ändern"
 	},
 	"toastFolderLoadFail": { "title": "Ordner", "body": "Die Ordner konnten nicht geladen werden" },
 	"toastFolderDeleteSuccess": { "title": "Ordner gelöscht", "body": "Der Ordner und sein gesamter Inhalt wurden entfernt" },

@@ -32,6 +32,7 @@ vi.mock('../../../services/formService.js', () => ({
 vi.mock('../../../services/folderService.js', () => ({
   fetchFolders: vi.fn(),
   fetchUserFolder: vi.fn(),
+  fetchFolderAccess: vi.fn(),
   fetchFolderContents: vi.fn().mockResolvedValue({ folders: 0, diagrams: 0, forms: 0 }),
   createFolder: vi.fn().mockResolvedValue({}),
   renameFolder: vi.fn().mockResolvedValue({}),
@@ -58,7 +59,7 @@ vi.mock('@cib/common-frontend', () => ({
 
 import StartPage from '../../../components/modeler/StartPage.vue'
 
-import { copyFormToFolder, copyProcessToFolder, fetchFolders, fetchUserFolder, moveFormToFolder, moveProcessToFolder } from '../../../services/folderService.js'
+import { copyFormToFolder, copyProcessToFolder, fetchFolderAccess, fetchFolders, fetchUserFolder, moveFormToFolder, moveProcessToFolder } from '../../../services/folderService.js'
 
 enableAutoUnmount(afterEach)
 
@@ -75,7 +76,7 @@ const DIAGRAMS = [
   { id: 'p1', name: 'Process One', processkey: 'process-one', type: DIAGRAM_TYPE.BPMN_C7, folderId: 'general' },
 ]
 
-async function mountStartPage(props = {}) {
+async function mountStartPage(props = {}, provide = {}) {
   // The keys stand in for the texts; warning about each one only writes to the console, and a
   // warning that lands after a test has ended fails the run
   const i18n = createI18n({ legacy: false, locale: 'en', messages: { en: {} }, missingWarn: false, fallbackWarn: false })
@@ -84,10 +85,11 @@ async function mountStartPage(props = {}) {
     props: { diagrams: DIAGRAMS, hasMore: false, ...props },
     global: {
       plugins: [i18n],
+      provide,
       stubs: {
         FilesTable: {
           name: 'FilesTable',
-          props: ['folders', 'models', 'isDefault', 'isLocked', 'locationOf', 'deletingId'],
+          props: ['folders', 'models', 'isDefault', 'isLocked', 'locationOf', 'deletingId', 'canEdit', 'canChange', 'rightsOf', 'extraActions'],
           template: '<div class="files-table-stub" />',
         },
         ConfirmModal: { name: 'ConfirmModal', template: '<div class="confirm-modal-stub" />' },
@@ -106,6 +108,7 @@ describe('StartPage folders', () => {
     // A default folder kept by one test would decide where the next one starts
     localStorage.clear()
     fetchFolders.mockResolvedValue(TREE)
+    fetchFolderAccess.mockResolvedValue({ projects: {}, movesBetweenProjects: true })
   })
 
   describe('browsing', () => {
@@ -689,6 +692,107 @@ describe('StartPage folders', () => {
       expect(rows.map(folder => folder.name)).toEqual(['demo', 'General'])
       expect(isLocked(rows[0])).toBe(true)
       expect(isLocked(rows[1])).toBe(false)
+    })
+  })
+  describe('project rights', () => {
+    const VIEWER = { role: 'VIEWER', restricted: true, edit: false, manageMembers: false }
+    const EDITOR = { role: 'EDITOR', restricted: true, edit: true, manageMembers: false }
+    const PROJECTS = [
+      { id: 'general', parentId: null, name: 'General' },
+      { id: 'invoicing', parentId: 'general', name: 'Invoicing' },
+      { id: 'sales', parentId: null, name: 'Sales' },
+      { id: 'leads', parentId: 'sales', name: 'Leads' },
+    ]
+
+    beforeEach(() => {
+      fetchFolders.mockResolvedValue(PROJECTS)
+      fetchUserFolder.mockResolvedValue(null)
+    })
+
+    const picked = async (wrapper, event, item) => {
+      const picker = wrapper.findComponent({ name: 'FolderPickerModal' })
+      picker.vm.show = vi.fn()
+      await filesTable(wrapper).vm.$emit(event, item)
+      return picker.vm.show.mock.calls[0][0].folders.map(folder => folder.id)
+    }
+
+    /** A viewer of the project on screen has nothing to create or import there. */
+    it('offers a viewer nothing to create or import', async () => {
+      fetchFolderAccess.mockResolvedValue({ projects: { general: VIEWER } })
+      const wrapper = await mountStartPage()
+
+      await filesTable(wrapper).vm.$emit('openFolder', 'general')
+      await flushPromises()
+
+      const labels = wrapper.findAll('button').map(button => button.text())
+      expect(labels).not.toContain('buttons.import')
+      expect(labels).not.toContain('buttons.createBpmn')
+      expect(labels).not.toContain('folders.create')
+    })
+
+    it('lets anybody start a project at the top level', async () => {
+      fetchFolderAccess.mockResolvedValue({ projects: { general: VIEWER } })
+      const wrapper = await mountStartPage()
+
+      expect(wrapper.findAll('button').map(button => button.text())).toContain('folders.createProject')
+    })
+
+    it('hands the table what the user may do where', async () => {
+      fetchFolderAccess.mockResolvedValue({ projects: { general: VIEWER } })
+      const wrapper = await mountStartPage()
+
+      expect(filesTable(wrapper).props('canEdit')('invoicing')).toBe(false)
+      expect(filesTable(wrapper).props('canEdit')('leads')).toBe(true)
+      expect(filesTable(wrapper).props('rightsOf')('invoicing')).toEqual(VIEWER)
+    })
+
+    /** Moving into another project would change who sees it on both sides. */
+    it('keeps a folder and a model inside their project when the backend asks for it', async () => {
+      fetchFolderAccess.mockResolvedValue({ projects: { general: EDITOR, sales: EDITOR }, movesBetweenProjects: false })
+      const wrapper = await mountStartPage()
+
+      expect(await picked(wrapper, 'moveFolder', PROJECTS[1])).toEqual(['general'])
+      expect(await picked(wrapper, 'moveModel', { ...DIAGRAMS[0], folderId: 'invoicing' })).toEqual(['general', 'invoicing'])
+    })
+
+    it('moves anywhere the user may add to when the backend allows it', async () => {
+      fetchFolderAccess.mockResolvedValue({ projects: { general: EDITOR, sales: VIEWER } })
+      const wrapper = await mountStartPage()
+
+      expect(await picked(wrapper, 'moveModel', DIAGRAMS[0])).toEqual(['general', 'invoicing'])
+    })
+
+    /** The source keeps its model, so a copy may go into any project the user adds to. */
+    it('copies into every project the user may add to', async () => {
+      fetchFolderAccess.mockResolvedValue({ projects: { general: VIEWER, sales: EDITOR }, movesBetweenProjects: false })
+      const wrapper = await mountStartPage()
+
+      expect(await picked(wrapper, 'copyModel', DIAGRAMS[0])).toEqual(['sales', 'leads'])
+      expect(wrapper.vm.folderOptions().map(folder => folder.id)).toEqual(['sales', 'leads'])
+    })
+
+    it('does not drop files into a default folder the user may only look at', async () => {
+      fetchUserFolder.mockResolvedValue({ folder: { id: 'demo', name: 'demo' } })
+      localStorage.setItem('cibseven-modeler.defaultFolder.demo', 'invoicing')
+      fetchFolderAccess.mockResolvedValue({ projects: { general: VIEWER } })
+      const wrapper = await mountStartPage({ initialFolderId: '' })
+
+      expect(wrapper.vm.defaultDropFolderId()).toBeNull()
+    })
+
+    /** An edition adds entries such as the members of a project, and decides what they do. */
+    it('hands an added entry the folder and a way to read the tree again', async () => {
+      const run = vi.fn()
+      const entry = { id: 'members', label: 'projectMembers.menu', run }
+      const wrapper = await mountStartPage({}, { extraFolderActions: [entry] })
+
+      expect(filesTable(wrapper).props('extraActions')).toEqual([entry])
+      await filesTable(wrapper).vm.$emit('extraAction', entry, PROJECTS[0])
+      expect(run).toHaveBeenCalledWith(PROJECTS[0], expect.objectContaining({ rights: null }))
+
+      fetchFolders.mockClear()
+      await run.mock.calls[0][1].reload()
+      expect(fetchFolders).toHaveBeenCalled()
     })
   })
 })

@@ -94,6 +94,18 @@ describe('useMonacoEditor', () => {
       expect(monaco.editor.create).toHaveBeenCalled()
       expect(monaco._model.onDidChangeContent).toHaveBeenCalled()
     })
+
+    /** The source of a model the user may only look at can be read, not typed into. */
+    it('opens the source read-only for a model that may not be changed, and hands the editor back', () => {
+      const monaco = createMockMonaco()
+      const composable = useMonacoEditor(monaco, createMockProps({ readOnly: true }), createMockEmit())
+      const container = document.createElement('div')
+
+      const editor = composable.createMonacoEditorEditable(container)
+
+      expect(monaco.editor.create).toHaveBeenCalledWith(container, expect.objectContaining({ readOnly: true }))
+      expect(editor).toBe(monaco._editor)
+    })
   })
 
   describe('addLineWithError', () => {

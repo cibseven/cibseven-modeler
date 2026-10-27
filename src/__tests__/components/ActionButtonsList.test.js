@@ -32,6 +32,7 @@ function mountButtons(tabElement, {
     isXmlValidated = { validation: true, text: '' },
     modeler = null,
     tabElementIndex = 0,
+    readOnly = false,
     provide = {},
 } = {}) {
     return mount(ActionButtonsList, {
@@ -44,6 +45,7 @@ function mountButtons(tabElement, {
             modeler,
             tabNavList: [],
             tabNavListXml: '',
+            readOnly,
         },
         global: {
             mocks: { $t: (k) => k },
@@ -131,6 +133,42 @@ describe('ActionButtonsList', () => {
             expect(saveFn).not.toHaveBeenCalled()
         })
 
+        /** Ctrl+S comes here rather than through the button, so the method refuses too. */
+        it('saves nothing of a model the user may only look at', async () => {
+            const saveFn = vi.fn().mockResolvedValue(undefined)
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), {
+                canSave: true,
+                readOnly: true,
+                modeler: { _saveDiagram: saveFn },
+            })
+
+            await wrapper.vm._saveDiagram()
+            expect(saveFn).not.toHaveBeenCalled()
+        })
+
+        /**
+         * Left out rather than hidden: the groups carry d-flex, whose display !important beats the
+         * inline display none of a v-show, so a hidden button stayed on screen.
+         */
+        it('offers neither saving nor deploying a model the user may only look at, and says why', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), { canSave: true, readOnly: true })
+
+            expect(wrapper.find('.save-diagram').exists()).toBe(false)
+            expect(wrapper.find('button[title="buttons.deploy"]').exists()).toBe(false)
+            const badge = wrapper.find('.read-only-badge')
+            expect(badge.attributes('role')).toBe('note')
+            expect(badge.attributes('title')).toBe('readOnlyNotice')
+            expect(badge.text()).toContain('readOnlyBadge')
+        })
+
+        it('offers saving and deploying, and no badge, when the model may be changed', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), { canSave: true })
+
+            expect(wrapper.find('.save-diagram').exists()).toBe(true)
+            expect(wrapper.find('button[title="buttons.deploy"]').exists()).toBe(true)
+            expect(wrapper.find('.read-only-badge').exists()).toBe(false)
+        })
+
         it('calls modeler._saveDiagram when canSave is true and xml is valid', async () => {
             const saveFn = vi.fn().mockResolvedValue(undefined)
             const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), {
@@ -201,16 +239,17 @@ describe('ActionButtonsList', () => {
     })
 
     describe('undo / redo buttons', () => {
-        it('hides undo and redo buttons when isButtonDisabled is true', () => {
+        it('leaves out undo, redo, save and deploy when isButtonDisabled is true', () => {
             const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), {
                 isButtonDisabled: true,
                 modeler: { _undo: vi.fn(), _redo: vi.fn() },
             })
 
-            expect(undoButton(wrapper).exists()).toBe(true)
-            expect(redoButton(wrapper).exists()).toBe(true)
-            expect(undoButton(wrapper).isVisible()).toBe(false)
-            expect(redoButton(wrapper).isVisible()).toBe(false)
+            // Not rendered at all: on a d-flex element a v-show could not hide them
+            expect(undoButton(wrapper).exists()).toBe(false)
+            expect(redoButton(wrapper).exists()).toBe(false)
+            expect(wrapper.find('.save-diagram').exists()).toBe(false)
+            expect(wrapper.find('button[title="buttons.deploy"]').exists()).toBe(false)
         })
 
         it('shows undo and redo buttons when isButtonDisabled is false', () => {

@@ -47,9 +47,11 @@ const mockMonacoEditor = {
   }
 }
 
+const editorStub = vi.hoisted(() => ({ updateOptions: vi.fn() }))
+
 vi.mock('../../composables/useMonacoEditor.js', () => ({
   default: () => ({
-    createMonacoEditorEditable: vi.fn()
+    createMonacoEditorEditable: vi.fn(() => editorStub)
   })
 }))
 
@@ -247,6 +249,16 @@ describe('MonacoEditor', () => {
       expect(wrapper.find('.editor').exists()).toBe(true)
       wrapper.unmount()
       expect(wrapper.vm).toBeDefined()
+    })
+  })
+
+  /** The rights may arrive after the editor is open. */
+  describe('read-only', () => {
+    it('follows the rights of the model once the editor is open', async () => {
+      const wrapper = mountMonacoEditor({ readOnly: false })
+      await wrapper.setProps({ readOnly: true })
+
+      expect(editorStub.updateOptions).toHaveBeenCalledWith({ readOnly: true })
     })
   })
 })

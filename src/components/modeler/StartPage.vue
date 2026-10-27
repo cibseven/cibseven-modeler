@@ -65,13 +65,13 @@
                     </div>
                     <div class="col-12 col-xl-7 d-flex flex-wrap gap-2 justify-content-xl-end">
                         <!-- At the top level a folder is a project, and creating one is all there is to do -->
-                        <button type="button" class="btn text-nowrap create-folder"
+                        <button v-if="canEditHere" type="button" class="btn text-nowrap create-folder"
                             :class="currentFolderId ? 'btn-outline-secondary' : 'btn-secondary'"
                             :title="createFolderLabel" @click="handleCreateFolder">
                             <i class="mdi me-1" :class="currentFolderId ? 'mdi-folder-plus-outline' : 'mdi-briefcase-plus'" aria-hidden="true"></i>{{ createFolderLabel }}
                         </button>
                         <!-- Models are always stored in a folder -->
-                        <template v-if="currentFolderId">
+                        <template v-if="currentFolderId && canEditHere">
                             <button type="button" class="btn btn-outline-secondary text-nowrap" :title="$t('buttons.importFile')"
                                 @click="handleOpenFileInput">
                                 <i class="mdi mdi-upload me-1" aria-hidden="true"></i>{{ $t('buttons.import') }}
@@ -131,11 +131,13 @@
                     <!-- A search lists models from every folder, so it shows no folders of its own -->
                     <FilesTable v-else :folders="isSearching ? [] : currentChildren" :models="filteredDashboardElements"
                         :isDefault="folderState.isDefault" :isLocked="folderState.isLocked"
+                        :canEdit="folderState.canEdit" :canChange="folderState.canChange" :rightsOf="folderState.rightsOf"
+                        :extraActions="extraFolderActions"
                         :locationOf="isSearching ? folderPathFor : null" :deletingId="deletingId" v-model:sort="tableSort"
                         @openFolder="navigateTo" @renameFolder="handleRenameFolder"
                         @moveFolder="handleMoveFolder" @removeFolder="handleRemoveFolder"
                         @openModel="openModel" @downloadModel="handleDownloadDiagram" @moveModel="handleMoveModel"
-                        @copyModel="handleCopyModel" @removeModel="confirmRemoveModel">
+                        @copyModel="handleCopyModel" @removeModel="confirmRemoveModel" @extraAction="runExtraAction">
                     </FilesTable>
                     <div v-if="isLoadingMore" class="d-flex align-items-center justify-content-center py-2">
                         <div class="spinner-border spinner-border-sm text-secondary" role="status">
@@ -163,7 +165,7 @@
 
 <script setup>
 
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, inject, onMounted, ref, watch } from 'vue'
 import { debounce } from 'min-dash'
 import { fetchProcessById, deleteProcessById } from '../../services/processService'
 import { fetchFormById, deleteFormById } from '../../services/formService'
@@ -187,6 +189,8 @@ import { getPlugin } from '../../plugins/pluginsConfig.js'
 import { folderIcon, modelName } from '../../utils'
 
 const startPageTool = getPlugin('start-page-tools')
+// What an edition adds to a folder's menu: { id, icon, label, visible(folder, rights), run(folder, { reload }) }
+const extraFolderActions = inject('extraFolderActions', [])
 const functionAfterAccepting = ref(null)
 const { t } = useI18n()
 const store = useStore()
@@ -235,6 +239,20 @@ const folderPickerModal = ref(null)
 const folderDeleteBody = ref('')
 const folderState = useFolders()
 const { breadcrumb, currentChildren, currentFolderId, canSetDefault } = folderState
+
+// A viewer of the project on screen gets nothing to create, import or rename here
+const canEditHere = computed(() => folderState.canEdit(currentFolderId.value))
+
+/** Where a folder or a model may go: anywhere the user may add, or only inside its own project. */
+const moveScope = folderId => folderState.movesBetweenProjects.value
+    ? { editableOnly: true }
+    : { editableOnly: true, within: folderState.projectOf(folderId) }
+
+/** The edition's entry decides what happens; what it changed may be who sees what, so the tree is read again. */
+const runExtraAction = (entry, folder) => entry.run?.(folder, {
+    rights: folderState.rightsOf(folder.id),
+    reload: () => folderState.load()
+})
 
 // The place on screen, the top level included, is what the star sets as the start of a visit
 const isDefaultHere = computed(() => folderState.isDefault(currentFolderId.value))
@@ -296,7 +314,7 @@ const startFolder = () => {
 /** Where a file dropped on the top level goes; none when the default is the top level itself. */
 const defaultDropFolderId = () => {
     const preferred = folderState.defaultFolderId.value
-    return preferred && _exists(preferred) ? preferred : null
+    return preferred && _exists(preferred) && folderState.canEdit(preferred) ? preferred : null
 }
 
 onMounted(async () => {
@@ -511,7 +529,7 @@ const handleRenameFolder = folder => {
 const handleMoveFolder = folder => {
     folderPickerModal.value?.show({
         // Leaving out the folder leaves out its subtree, which is where it may not go
-        folders: folderState.flatten(folder.id),
+        folders: folderState.flatten(folder.id, moveScope(folder.id)),
         title: t('folders.moveTitle', { name: folder.name }),
         allowTopLevel: true,
         current: folder.parentId ?? null,
@@ -554,7 +572,7 @@ const deleteFolderWithId = async folderId => {
 
 const handleMoveModel = item => {
     folderPickerModal.value?.show({
-        folders: folderState.flatten(),
+        folders: folderState.flatten(null, moveScope(item.folderId)),
         title: t('folders.moveModelTitle', { name: modelName(item) }),
         current: item.folderId,
         accept: async folderId => {
@@ -571,8 +589,9 @@ const handleCopyModel = item => {
     // A copy is a new model and what identifies it has to be its own: the engine resolves a
     // process by key, and a form is referenced by its form id
     const isForm = item.type === DIAGRAM_TYPE.FORM
+    // A copy may go into any project the user adds to: the source keeps its model
     folderPickerModal.value?.show({
-        folders: folderState.flatten(),
+        folders: folderState.flatten(null, { editableOnly: true }),
         title: t('folders.copyModelTitle', { name: modelName(item) }),
         requireKey: true,
         keyLabel: isForm ? 'folders.copyFormId' : 'folders.copyKey',
@@ -595,8 +614,8 @@ const folderPathFor = folderId =>
 
 const folderNameFor = folderId => folderState.pathOf(folderId).at(-1)?.name ?? null
 
-/** The tree as a picker takes it, for a dialog the modeler shows outside this page. */
-const folderOptions = () => folderState.flatten()
+/** The folders a file may be imported into, for a dialog the modeler shows outside this page. */
+const folderOptions = () => folderState.flatten(null, { editableOnly: true })
 
 defineExpose({
     _toggleIsLoading,

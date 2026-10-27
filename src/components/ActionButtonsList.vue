@@ -18,29 +18,34 @@
     <div class="d-flex flex-wrap flex-row-reverse m-0 px-1 justify-content-end align-items-center"
         style="z-index: 11;" >
         <!-- Right section: save, deploy, download as svg, normal download -->
-        <div v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
+        <!-- v-if throughout: d-flex sets display !important, which a v-show cannot override -->
+        <div v-if="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
             <a @click="canBeDownloaded" :href="downloadLink" :download="downloadName" :name="downloadName"
                 :title="$t('buttons.downloadDiagram')" :aria-label="$t('buttons.downloadDiagram')"
-                class="btn btn-outline-light border-0 btn-sm"
-                :class="{ disabled: props.isButtonDisabled }">
+                class="btn btn-outline-light border-0 btn-sm">
                 <span class="mdi mdi-24px mdi-download" aria-hidden="true"></span>
             </a>
         </div>
-        <template v-if="extraDownloadLinks?.[props.tabElementIndex]">
+        <template v-if="!props.isButtonDisabled && extraDownloadLinks?.[props.tabElementIndex]">
             <div v-for="(link, i) in extraDownloadLinks[props.tabElementIndex]" :key="i"
-                v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
+                class="btn-menu d-flex align-items-center mx-1">
                 <a @click="canBeDownloaded"
                     :href="link.href"
                     :download="link.download"
                     :title="$t(link.titleKey)"
                     :aria-label="$t(link.titleKey)"
                     class="btn btn-outline-light border-0 btn-sm"
-                    :class="{ disabled: props.isButtonDisabled || link.disabled }">
+                    :class="{ disabled: link.disabled }">
                     <span :class="`mdi mdi-24px ${link.icon}`" aria-hidden="true"></span>
                 </a>
             </div>
         </template>
-        <div v-show="!props.isButtonDisabled &&  modelProperties[props.tabElement.type].canDeploy" class="btn-menu d-flex align-items-center mx-1">
+        <div v-if="props.readOnly" class="btn-menu d-flex align-items-center mx-1 px-2 small text-light read-only-badge"
+            role="note" :title="$t('readOnlyNotice')">
+            <span class="mdi mdi-18px mdi-eye-outline me-1" aria-hidden="true"></span>{{ $t('readOnlyBadge') }}
+            <span class="visually-hidden">{{ $t('readOnlyNotice') }}</span>
+        </div>
+        <div v-if="!props.readOnly && !props.isButtonDisabled && modelProperties[props.tabElement.type].canDeploy" class="btn-menu d-flex align-items-center mx-1">
             <button type="button"
                 class="btn btn-outline-light border-0 btn-sm"
                 @click="canDeploy" aria-haspopup="true"
@@ -48,7 +53,7 @@
                 <span class="mdi mdi-24px mdi-rocket" aria-hidden="true"></span>
             </button>
         </div>
-        <div class="btn-menu d-flex align-items-center mx-1" v-show="!isButtonDisabled">
+        <div v-if="!props.readOnly && !props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
             <!-- A disabled button lets the hover through (Bootstrap: pointer-events none), so the group carries its title too -->
             <div class="btn-group" :title="saveTitle">
                 <button type="button"
@@ -84,7 +89,7 @@
         </div>
 
         <!-- Undo/Redo buttons -->
-        <div class="btn-menu d-flex align-items-center mx-1" v-show="!props.isButtonDisabled">
+        <div class="btn-menu d-flex align-items-center mx-1" v-if="!props.isButtonDisabled">
             <button type="button"
                 class="btn btn-outline-light border-0 btn-sm"
                 :title="`${$t('buttons.redo')} (Ctrl+Y)`"
@@ -93,7 +98,7 @@
                 <span class="mdi mdi-24px mdi-redo-variant" aria-hidden="true"></span>
             </button>
         </div>
-        <div class="btn-menu d-flex align-items-center mx-1" v-show="!props.isButtonDisabled">
+        <div class="btn-menu d-flex align-items-center mx-1" v-if="!props.isButtonDisabled">
             <button type="button"
                 class="btn btn-outline-light border-0 btn-sm"
                 :title="`${$t('buttons.undo')} (Ctrl+Z)`"
@@ -110,8 +115,7 @@
 
         <!-- Left section: filters, xml, console -->
         <div
-            v-if="BpmnFilterButtonComponent && isBpmnTab"
-            v-show="!props.isButtonDisabled"
+            v-if="BpmnFilterButtonComponent && isBpmnTab && !props.isButtonDisabled"
             class="btn-menu d-flex align-items-center mx-1"
         >
             <component
@@ -124,11 +128,10 @@
                 classesOff="mdi mdi-24px mdi-filter"
             />
         </div>
-        <div v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
+        <div v-if="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
             <button type="button"
                 class="btn btn-outline-light border-0 btn-sm"
                 :class="{ active: props.tabElement.isEditorVisible }"
-                :disabled="props.isButtonDisabled"
                 :title="props.tabElement.isEditorVisible ? $t('buttons.viewDiagram') : $t('buttons.viewXml')"
                 :aria-label="props.tabElement.isEditorVisible ? $t('buttons.viewDiagram') : $t('buttons.viewXml')"
                 :aria-pressed="props.tabElement.isEditorVisible"
@@ -190,8 +193,10 @@ const props = defineProps({
     tabElement: { type: Object, required: true }, 
     isButtonDisabled: { type: Boolean, required: true, default: false },
     consoleOpen: { type: Boolean, default: false },
+    // A viewer of the project can neither save nor deploy the model
+    readOnly: { type: Boolean, default: false },
     width: Number
-    }   
+    }
 )
 const extraDownloadLinks = inject('extraDownloadLinks', null)
 const BpmnFilterButtonComponent = inject('bpmnFilterButtonComponent', null)
@@ -318,6 +323,7 @@ const changeWidth = value => {
 }
 
 const _saveDiagram = async () => {
+    if (props.readOnly) return // also Ctrl+S, which comes here rather than through the button
     if (isSaving.value) return // prevent re-entry (e.g. rapid Ctrl+S)
     if (!props.canSave && !props.tabElement.changedVersion) return // only saves if button is enabled
     if (!props.isXmlValidated.validation) {

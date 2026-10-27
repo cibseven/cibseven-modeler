@@ -264,6 +264,62 @@ describe('FilesTable', () => {
     })
   })
 
+  describe('project rights', () => {
+    const VIEWER = { role: 'VIEWER', restricted: true, edit: false, manageMembers: false }
+    const viewing = { canEdit: () => false, canChange: () => false, rightsOf: () => VIEWER }
+
+    it('offers only opening what the user may not change', () => {
+      const wrapper = mountTable({ folders: [PROJECT, SUBFOLDER], ...viewing })
+
+      expect(menuOf(wrapper, 'Billing')).toEqual(['folders.open'])
+      expect(menuOf(wrapper, 'Archive')).toEqual(['folders.open'])
+    })
+
+    /** Reading and copying need no more than seeing the model. */
+    it('offers a viewer to open, download and copy a model', () => {
+      const wrapper = mountTable(viewing)
+
+      expect(menuOf(wrapper, 'Invoice.bpmn')).toEqual(['folders.open', 'buttons.download', 'folders.copyTo'])
+    })
+
+    it('marks a restricted project, and one the user may only look at', () => {
+      const wrapper = mountTable({ folders: [PROJECT, SUBFOLDER], ...viewing })
+
+      expect(row(wrapper, 'Billing').find('.mdi-lock-outline').attributes('aria-label')).toBe('folders.restricted')
+      expect(row(wrapper, 'Billing').text()).toContain('folders.viewerBadge')
+      // The folders inside carry the project's rights without repeating them
+      expect(row(wrapper, 'Archive').find('.mdi-lock-outline').exists()).toBe(false)
+    })
+
+    it('marks nothing where the backend lists no rights', () => {
+      const wrapper = mountTable()
+
+      expect(row(wrapper, 'Billing').find('.mdi-lock-outline').exists()).toBe(false)
+      expect(row(wrapper, 'Billing').text()).not.toContain('folders.viewerBadge')
+    })
+
+    /** An edition adds its own entries, such as the members of a project, before deleting. */
+    it('offers the entries an edition adds where they apply, and reports them', async () => {
+      const members = { id: 'members', icon: 'mdi-account-multiple-outline', label: 'projectMembers.menu',
+        visible: (folder, rights) => !folder.parentId && rights === VIEWER }
+      const wrapper = mountTable({ folders: [PROJECT, SUBFOLDER], extraActions: [members], rightsOf: () => VIEWER })
+
+      expect(menuOf(wrapper, 'Billing')).toEqual(['folders.open', 'folders.rename', 'projectMembers.menu', 'folders.delete'])
+      expect(menuOf(wrapper, 'Archive')).not.toContain('projectMembers.menu')
+
+      await row(wrapper, 'Billing').findAll('.menu-item').find(item => item.text() === 'projectMembers.menu').trigger('click')
+
+      expect(wrapper.emitted('extraAction')).toEqual([[members, PROJECT]])
+    })
+
+    it('offers the added entries also on a locked folder', () => {
+      const wrapper = mountTable({ isLocked: folder => !!folder.userFolder,
+        extraActions: [{ id: 'members', icon: 'mdi-account', label: 'projectMembers.menu' }] })
+
+      expect(menuOf(wrapper, 'demo')).toEqual(['folders.open', 'projectMembers.menu'])
+    })
+  })
+
   describe('opening', () => {
     it('opens a folder by its name', async () => {
       const wrapper = mountTable()

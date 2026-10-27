@@ -61,6 +61,12 @@ describe('processService', () => {
             expect(await keyExistsRemote('proc-1', 'bpmn-c7')).toBe(false)
         })
 
+        // Keys are unique across projects, so one in a project the user may not open is taken too
+        it('returns true when the lookup 403s (exists in a project the user may not open)', async () => {
+            m.get.mockRejectedValueOnce(Object.assign(new Error('forbidden'), { response: { status: 403 } }))
+            expect(await keyExistsRemote('form-a', 'form')).toBe(true)
+        })
+
         it('returns false for an empty key without calling the backend', async () => {
             expect(await keyExistsRemote('', 'form')).toBe(false)
             expect(m.get).not.toHaveBeenCalled()

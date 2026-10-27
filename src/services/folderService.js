@@ -29,6 +29,11 @@ const fetchUserFolder = () => {
   return getAxios().post(foldersPath() + '/user-folder')
 }
 
+// What the user may do in each project, and whether anything may move from one project to another
+const fetchFolderAccess = () => {
+  return getAxios().get(foldersPath() + '/access')
+}
+
 // What a folder holds through its whole subtree, for the delete warning
 const fetchFolderContents = id => {
   return getAxios().get(foldersPath() + '/' + id + '/contents')
@@ -74,6 +79,7 @@ const moveFormToFolder = (id, folderId) => {
 export {
   fetchFolders,
   fetchUserFolder,
+  fetchFolderAccess,
   fetchFolderContents,
   createFolder,
   renameFolder,

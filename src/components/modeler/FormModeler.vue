@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 <template>
-	<div class="container modeler d-flex position-relative" ref="formContainer">
+	<div class="container modeler d-flex position-relative" :class="{ 'read-only': props.readOnly }" ref="formContainer">
 		<div class="d-flex flex-column align-items-between h-100">
 			<div class="d-flex flex-grow-1 overflow-hidden" style="min-height: 0;">
 				<div v-show="!props.isModelerVisible" class="canvas" ref="canvas" :style="styleCanvas" tabindex="0">
@@ -74,6 +74,7 @@ import useForm from '../../composables/useForm'
 
 import { ref, onMounted, onBeforeUnmount, computed, onUpdated, watch, nextTick, inject, provide } from 'vue'
 import { getPlugin } from '../../plugins/pluginsConfig'
+import { guardFieldEditing } from '../../utils/readOnly.js'
 
 const formTool = getPlugin('form-tools')
 const AutosaveIndicatorComponent = inject('autosaveIndicatorComponent', null)
@@ -107,6 +108,8 @@ const props = defineProps({
 	chatUnread: { type: Number, default: 0 },
 	chatOnTabChange: { type: Function, default: null },
 	chatOnMessage: { type: Function, default: null },
+	// A viewer of the project sees the form and changes nothing
+	readOnly: { type: Boolean, default: false },
 })
 
 
@@ -135,7 +138,10 @@ provide('loadVersionHook', async (schema, version) => {
 })
 const { updateParentHeight, updateParentWidth,  parentWidth, changeWidth, canvasWidth, isVisiblePropertyPanel, togglePropertiesPanel } = usePropertiesPanel(props, emit, formContainer, resizableDiv, propertiesPanelComponent, propertyPanel)
 
+let stopFieldGuard = null
+
 onMounted(async() => {
+	stopFieldGuard = guardFieldEditing(formContainer.value, () => props.readOnly)
     initializeFormEditor(props.tabElement.id)
 	window.addEventListener('resize', updateParentWidth, true)
 	window.addEventListener('resize', updateParentHeight, true)
@@ -144,6 +150,7 @@ onMounted(async() => {
 })
 
 onBeforeUnmount(() => {
+	stopFieldGuard?.()
 	window.removeEventListener('resize', updateParentWidth, true)
 	window.removeEventListener('resize', updateParentHeight, true)
 })
