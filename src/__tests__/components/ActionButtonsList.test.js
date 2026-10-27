@@ -239,16 +239,17 @@ describe('ActionButtonsList', () => {
     })
 
     describe('undo / redo buttons', () => {
-        it('hides undo and redo buttons when isButtonDisabled is true', () => {
+        it('leaves out undo, redo, save and deploy when isButtonDisabled is true', () => {
             const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), {
                 isButtonDisabled: true,
                 modeler: { _undo: vi.fn(), _redo: vi.fn() },
             })
 
-            expect(undoButton(wrapper).exists()).toBe(true)
-            expect(redoButton(wrapper).exists()).toBe(true)
-            expect(undoButton(wrapper).isVisible()).toBe(false)
-            expect(redoButton(wrapper).isVisible()).toBe(false)
+            // Not rendered at all: on a d-flex element a v-show could not hide them
+            expect(undoButton(wrapper).exists()).toBe(false)
+            expect(redoButton(wrapper).exists()).toBe(false)
+            expect(wrapper.find('.save-diagram').exists()).toBe(false)
+            expect(wrapper.find('button[title="buttons.deploy"]').exists()).toBe(false)
         })
 
         it('shows undo and redo buttons when isButtonDisabled is false', () => {

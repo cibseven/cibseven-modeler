@@ -152,7 +152,7 @@ import 'bpmn-js-bpmnlint/dist/assets/css/bpmn-js-bpmnlint.css'
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css'
 
 import { debounce } from 'min-dash'
-import { guardCommandStack } from '../../utils/readOnly.js'
+import { guardCommandStack, guardFieldEditing } from '../../utils/readOnly.js'
 
 //import bpmn modules
 import BpmnModeler from 'bpmn-js/lib/Modeler'
@@ -354,7 +354,10 @@ provide('loadVersionHook', async (xml, version) => {
 })
 let typeOfDiagram = null //'bpmn-c7','dmn'
 
+let stopFieldGuard = null
+
 onMounted(async () => {
+	stopFieldGuard = guardFieldEditing(containerModeler.value, () => props.readOnly)
 	initializeModeler()
 	window.addEventListener('resize', updateParentWidth, true)
 	window.addEventListener('resize', updateParentHeight, true)
@@ -374,6 +377,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
 	autosave.cancel()
+	stopFieldGuard?.()
 	window.removeEventListener('resize', updateParentWidth, true)
 	window.removeEventListener('resize', updateParentHeight, true)
 	document.removeEventListener('fullscreenchange', onFullscreenChange)
@@ -1008,24 +1012,6 @@ svg {
 }
 .djs-minimap .toggle {
 	display: none;
-}
-/* A model the user may only look at offers nothing to add, move or resize and no field to type into. The command
-   stack refuses every change anyway; this keeps the editor from suggesting otherwise, while the
-   properties stay readable and their groups can still be opened. */
-.container.modeler.read-only .djs-palette,
-.container.modeler.read-only .djs-context-pad,
-.container.modeler.read-only .fjs-palette-container,
-.container.modeler.read-only .fjs-context-pad,
-.container.modeler.read-only .fjs-row-dragger,
-.container.modeler.read-only .fjs-field-resize-handle,
-.container.modeler.read-only .bio-properties-panel-add-entry,
-.container.modeler.read-only .bio-properties-panel-remove-entry {
-	display: none !important;
-}
-.container.modeler.read-only .bio-properties-panel-entry :is(input, textarea, select, button, [contenteditable]),
-.container.modeler.read-only .dmn-decision-table-container [contenteditable],
-.container.modeler.read-only .dmn-literal-expression-container [contenteditable] {
-	pointer-events: none;
 }
 .djs-minimap {
 	position: absolute !important;

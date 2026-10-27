@@ -74,6 +74,7 @@ import useForm from '../../composables/useForm'
 
 import { ref, onMounted, onBeforeUnmount, computed, onUpdated, watch, nextTick, inject, provide } from 'vue'
 import { getPlugin } from '../../plugins/pluginsConfig'
+import { guardFieldEditing } from '../../utils/readOnly.js'
 
 const formTool = getPlugin('form-tools')
 const AutosaveIndicatorComponent = inject('autosaveIndicatorComponent', null)
@@ -137,7 +138,10 @@ provide('loadVersionHook', async (schema, version) => {
 })
 const { updateParentHeight, updateParentWidth,  parentWidth, changeWidth, canvasWidth, isVisiblePropertyPanel, togglePropertiesPanel } = usePropertiesPanel(props, emit, formContainer, resizableDiv, propertiesPanelComponent, propertyPanel)
 
+let stopFieldGuard = null
+
 onMounted(async() => {
+	stopFieldGuard = guardFieldEditing(formContainer.value, () => props.readOnly)
     initializeFormEditor(props.tabElement.id)
 	window.addEventListener('resize', updateParentWidth, true)
 	window.addEventListener('resize', updateParentHeight, true)
@@ -146,6 +150,7 @@ onMounted(async() => {
 })
 
 onBeforeUnmount(() => {
+	stopFieldGuard?.()
 	window.removeEventListener('resize', updateParentWidth, true)
 	window.removeEventListener('resize', updateParentHeight, true)
 })

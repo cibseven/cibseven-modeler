@@ -94,7 +94,7 @@
 import { ref, computed, onMounted, onUpdated, onBeforeUnmount, onUnmounted, watch, nextTick, inject, provide } from 'vue'
 import DmnJS from 'dmn-js/lib/Modeler'
 import { debounce } from 'min-dash'
-import { guardCommandStack } from '../../utils/readOnly.js'
+import { guardCommandStack, guardFieldEditing } from '../../utils/readOnly.js'
 import { migrateDiagram } from '@bpmn-io/dmn-migrate'
 import camundaModdleDescriptor from 'camunda-dmn-moddle/resources/camunda.json'
 import { DmnPropertiesPanelModule, DmnPropertiesProviderModule, CamundaPropertiesProviderModule } from 'dmn-js-properties-panel'
@@ -245,7 +245,10 @@ const { updateParentHeight, updateParentWidth, parentWidth, parentHeight } = use
 const canvasWidth = ref(0)
 const changeWidth = value => { canvasWidth.value = value }
 
+let stopFieldGuard = null
+
 onMounted(async () => {
+	stopFieldGuard = guardFieldEditing(containerModeler.value, () => props.readOnly)
 	dmnModeler = new DmnJS({
 		drd: {
 			propertiesPanel: { parent: dmnProperties.value },
@@ -376,6 +379,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
 	autosave.cancel()
+	stopFieldGuard?.()
 	window.removeEventListener('resize', updateParentWidth, true)
 	window.removeEventListener('resize', updateParentHeight, true)
 	document.removeEventListener('fullscreenchange', onFullscreenChange)

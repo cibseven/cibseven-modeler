@@ -25,7 +25,7 @@ import {
   moveFolder,
   renameFolder
 } from '../services/folderService'
-import { setProjectRights } from '../utils/projectRights.js'
+import { canEditFolder, rightsOfFolder, setProjectRights } from '../utils/projectRights.js'
 
 /**
  * The folder a user is looking at and the folders around it. The whole tree arrives in one call
@@ -106,11 +106,11 @@ export default function useFolders() {
   /** The project a folder lies in: the folder at the top level above it, a project being its own. */
   const projectOf = folderId => pathOf(folderId)[0]?.id ?? null
 
-  /** Null where the backend restricts nothing, and then everything is allowed. */
-  const rightsOf = folderId => access.value.projects?.[projectOf(folderId)] ?? null
+  // The same answers the open tabs get, from the rights load() hands over
+  const rightsOf = rightsOfFolder
 
   /** Folders and models inside a project are up to its editors; anybody may start a project. */
-  const canEdit = folderId => !folderId || (rightsOf(folderId)?.edit ?? true)
+  const canEdit = canEditFolder
 
   /** Renaming or deleting a whole project is up to its admins, a folder inside it to its editors. */
   const canChange = folder => folder.parentId

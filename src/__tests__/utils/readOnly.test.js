@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 import { describe, it, expect, vi } from 'vitest'
-import { guardCommandStack, readOnlyDraggingModule } from '../../utils/readOnly.js'
+import { guardCommandStack, guardFieldEditing, readOnlyDraggingModule } from '../../utils/readOnly.js'
 
 const stack = () => ({ execute: vi.fn(() => 'done'), canExecute: vi.fn(() => true) })
 
@@ -119,5 +119,74 @@ describe('readOnlyDraggingModule', () => {
     await Promise.resolve()
 
     expect(drake.cancel).not.toHaveBeenCalled()
+  })
+})
+
+describe('guardFieldEditing', () => {
+  // A properties panel entry with a text field, a select and a checkbox, and a search box outside it
+  const panel = () => {
+    const container = document.createElement('div')
+    container.innerHTML = `
+      <div class="bio-properties-panel-entry">
+        <input class="text" type="text"><select class="choice"><option>a</option></select><input class="box" type="checkbox">
+      </div>
+      <input class="outside" type="text">`
+    document.body.appendChild(container)
+    return container
+  }
+  const fire = (target, type, init = {}) => {
+    const event = type === 'keydown'
+      ? new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...init })
+      : new Event(type, { bubbles: true, cancelable: true })
+    target.dispatchEvent(event)
+    return event.defaultPrevented
+  }
+
+  it('keeps the keyboard from changing a field while the model may only be looked at', () => {
+    const container = panel()
+    guardFieldEditing(container, () => true)
+
+    expect(fire(container.querySelector('.text'), 'beforeinput')).toBe(true)
+    expect(fire(container.querySelector('.choice'), 'keydown', { key: 'ArrowDown' })).toBe(true)
+    expect(fire(container.querySelector('.choice'), 'keydown', { key: 'b' })).toBe(true)
+    expect(fire(container.querySelector('.box'), 'keydown', { key: ' ' })).toBe(true)
+    container.remove()
+  })
+
+  /** The values stay readable: focus can move on, and a text field reacts to keys that type nothing. */
+  it('lets the keyboard move through the fields', () => {
+    const container = panel()
+    guardFieldEditing(container, () => true)
+
+    expect(fire(container.querySelector('.choice'), 'keydown', { key: 'Tab' })).toBe(false)
+    expect(fire(container.querySelector('.box'), 'keydown', { key: 'Escape' })).toBe(false)
+    expect(fire(container.querySelector('.text'), 'keydown', { key: 'ArrowLeft' })).toBe(false)
+    container.remove()
+  })
+
+  it('leaves alone what is outside the fields, and everything while the model may be changed', () => {
+    const container = panel()
+    let readOnly = true
+    guardFieldEditing(container, () => readOnly)
+
+    expect(fire(container.querySelector('.outside'), 'beforeinput')).toBe(false)
+    readOnly = false
+    expect(fire(container.querySelector('.text'), 'beforeinput')).toBe(false)
+    expect(fire(container.querySelector('.choice'), 'keydown', { key: 'ArrowDown' })).toBe(false)
+    container.remove()
+  })
+
+  it('stops guarding once removed', () => {
+    const container = panel()
+    const stop = guardFieldEditing(container, () => true)
+
+    stop()
+
+    expect(fire(container.querySelector('.text'), 'beforeinput')).toBe(false)
+    container.remove()
+  })
+
+  it('does nothing without a container', () => {
+    expect(() => guardFieldEditing(null, () => true)()).not.toThrow()
   })
 })

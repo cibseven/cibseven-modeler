@@ -39,5 +39,8 @@ const projectOf = folderId => {
   return current
 }
 
+/** The rights in the project a folder lies in; null where the backend restricts nothing. */
+export const rightsOfFolder = folderId => state.projects[projectOf(folderId)] ?? null
+
 /** Whether a model in this folder may be changed; a model without a folder is a new one. */
-export const canEditFolder = folderId => !folderId || (state.projects[projectOf(folderId)]?.edit ?? true)
+export const canEditFolder = folderId => !folderId || (rightsOfFolder(folderId)?.edit ?? true)

@@ -14,6 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+// The look that goes with the guards below, for all three editors
+import '../assets/css/readOnly.css'
 
 /**
  * Every change of a bpmn-js, dmn-js or form-js editor goes through its command stack: the canvas,
@@ -49,4 +51,31 @@ export const readOnlyDraggingModule = isReadOnly => {
   }
   ReadOnlyDragging.$inject = ['eventBus']
   return { __init__: ['readOnlyDragging'], readOnlyDragging: ['type', ReadOnlyDragging] }
+}
+
+// Fields of the properties panels and the DMN tables and expressions, which the keyboard can still reach
+const FIELDS = '.bio-properties-panel-entry, .dmn-decision-table-container, .dmn-literal-expression-container'
+// Leaving a field stays possible; any other key may pick another option or tick a box
+const LEAVING_KEYS = new Set(['Tab', 'Escape'])
+const isChoice = target => target.tagName === 'SELECT' || target.type === 'checkbox' || target.type === 'radio'
+
+/**
+ * Keeps the keyboard from changing a field while isReadOnly() holds. The command stack refuses the
+ * change anyway, but the field would show what was typed until it is drawn again. Fields can still
+ * be focused, read and copied from. Returns what removes the listeners again.
+ */
+export const guardFieldEditing = (container, isReadOnly) => {
+  if (typeof container?.addEventListener !== 'function') return () => {}
+  const inField = event => isReadOnly() && !!event.target?.closest?.(FIELDS)
+  // Typing, deleting, pasting, cutting and dropping all announce themselves as beforeinput
+  const onBeforeInput = event => { if (inField(event)) event.preventDefault() }
+  const onKeyDown = event => {
+    if (inField(event) && isChoice(event.target) && !LEAVING_KEYS.has(event.key)) event.preventDefault()
+  }
+  container.addEventListener('beforeinput', onBeforeInput, true)
+  container.addEventListener('keydown', onKeyDown, true)
+  return () => {
+    container.removeEventListener('beforeinput', onBeforeInput, true)
+    container.removeEventListener('keydown', onKeyDown, true)
+  }
 }
