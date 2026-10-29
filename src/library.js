@@ -15,10 +15,6 @@
  *  limitations under the License.
  */
 
-// Import CSS to ensure it is bundled with the package
-import './assets/css/main.css'
-import './assets/css/custom-bootstrap.css'
-
 // Export modeler components
 import CibsevenModeler from './components/modeler/CibsevenModeler.vue'
 import BpmnModeler from './components/modeler/BpmnModeler.vue'

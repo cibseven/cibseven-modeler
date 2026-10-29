@@ -26,7 +26,7 @@
                     <fieldset>
                         <legend class="form-label fs-6">{{ $t('folders.destination') }}</legend>
                         <!-- The global list style drops the outer item borders; the scroll box frames the list instead -->
-                        <div class="list-group border-top border-bottom overflow-auto" style="max-height: 40vh">
+                        <div class="list-group overflow-auto" style="max-height: 40vh">
                             <div v-if="allowTopLevel" class="list-group-item d-flex align-items-center gap-2"
                                 :class="{ 'text-body-secondary': isCurrent('') }">
                                 <input :id="`${optionId}-top-level`" type="radio" class="form-check-input m-0"

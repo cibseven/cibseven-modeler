@@ -247,12 +247,14 @@ describe('FolderPickerModal', () => {
         expect(labels[1].text()).toContain('Invoicing')
     })
 
-    it('frames the list at the top and bottom, which the items leave open', async () => {
+    it('leaves the frame to the list items, so the top and bottom borders are not doubled', async () => {
         const wrapper = mountModal(FolderPickerModal)
 
         await open(wrapper)
 
-        expect(wrapper.find('.list-group').classes()).toEqual(expect.arrayContaining(['border-top', 'border-bottom']))
+        const classes = wrapper.find('.list-group').classes()
+        expect(classes).not.toContain('border-top')
+        expect(classes).not.toContain('border-bottom')
     })
 
     /** A model cannot sit at the top level, so it is only offered when a folder may move there. */

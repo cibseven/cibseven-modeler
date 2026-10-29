@@ -223,6 +223,11 @@ defineExpose({
 
 </script>
 <style scoped>
+.canvas {
+	flex: 1;
+	height: 100%;
+}
+
 /* form-js sizes its properties panel to a fixed 300px (plus its own 1px border),
    which is wider than the host area — the panel width minus the 24px collapse
    strip and the border — and left the panel with a horizontal scrollbar. Let it

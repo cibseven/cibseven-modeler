@@ -137,6 +137,7 @@ defineExpose({
     border-left: none !important;
     border-bottom: 2px solid var(--bs-light) !important;
     cursor: pointer;
+    font-weight: 500;
 }
 
 .dashboard.active {
