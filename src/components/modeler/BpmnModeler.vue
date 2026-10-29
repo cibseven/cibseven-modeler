@@ -1007,7 +1007,7 @@ defineExpose({
    diagram-js's .djs-palette/.djs-minimap with bpmn-js — DmnModeler.vue and FormModeler.vue
    rely on these rules too, not just this component's own tree. Scoping this block previously
    broke DMN/Form styling since Vue's scoped CSS only reaches a component's own render tree. */
-svg {
+.container.modeler svg {
 	outline: none;
 }
 .djs-minimap .toggle {
@@ -1061,16 +1061,17 @@ svg {
 	width: 100% !important;
 }
 
-input[name="historyTimeToLive"].is-invalid {
+.container.modeler input[name="historyTimeToLive"].is-invalid {
 	border-color: #dc3545 !important;
 	background-color: #fee !important;
 }
 
 
-.canvas {
+.container.modeler .canvas {
 	position: relative;
 	width: 450px;
 	outline: none;
+	background-color: var(--bs-light);
 }
 
 .container.modeler {
