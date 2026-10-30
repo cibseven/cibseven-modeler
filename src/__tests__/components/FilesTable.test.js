@@ -167,7 +167,7 @@ describe('FilesTable', () => {
       const wrapper = mountTable()
 
       const header = wrapper.findAll('thead th')[1]
-      expect(header.attributes('aria-sort')).toBe('bcomponents.ariaSortDesc')
+      expect(header.attributes('aria-sort')).toBe('descending')
     })
   })
 
