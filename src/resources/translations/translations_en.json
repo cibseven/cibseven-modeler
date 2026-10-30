@@ -526,11 +526,6 @@
 		"bpmn": "BPMN",
 		"all": "All"
 	},
-	"bcomponents": {
-		"ariaSortNone": "Not sorted",
-		"ariaSortAsc": "Sorted ascending",
-		"ariaSortDes": "Sorted descending"
-	},
 	"cib-header": {
 		"productName": "CIB seven Modeler"
 	},
