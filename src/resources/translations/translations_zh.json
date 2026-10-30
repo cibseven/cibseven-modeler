@@ -1,0 +1,564 @@
+{
+	"titles": {
+		"searchIntro": "搜索匹配的模型，上传已创建的模型，从空白版本开始，或导入本地文件。",
+		"search": "搜索流程、定义或表单模型",
+		"recent": "最近",
+		"lastSaved": "上次保存"
+	},
+	"toastDeleteFormSucess": {
+		"title": "表单已删除",
+		"body": "表单已成功删除"
+	},
+	"toastDeleteFormFail": {
+		"title": "删除表单时出错",
+		"body": "删除表单时发生错误"
+	},
+	"toastDeleteProcessSucess": {
+		"title": "流程已删除",
+		"body": "流程已成功删除"
+	},
+	"toastDeleteProcessFail": {
+		"title": "删除流程时出错",
+		"body": "删除流程时发生错误"
+	},
+	"toastDownloadDiagramSuccess": { "title": "下载", "body": "下载已开始" },
+	"toastDownloadDiagramFail": { "title": "下载", "body": "下载图表时出错" },
+	"toastFileNoLongerExists": {
+		"title": "文件不存在",
+		"body": "您尝试加载的文件已不存在"
+	},
+	"modalCloseNotSaved": {
+		"title": "未保存的{item}",
+		"body": "此{item}有未保存的更改。如果关闭，所有未保存的更改都将丢失。"
+	},
+	"toastDeploySucessDeploy": {
+		"title": "成功",
+		"body": "部署成功",
+		"bodyCheck": "部署成功 - 打开 "
+	},
+	"toastStartProcessSucess": {
+		"body": "流程已启动"
+	},
+	"toastStartProcessError": {
+		"body": "启动流程时出错"
+	},
+	"toastDeployErrorDeploy": {
+		"title": "错误",
+		"body": "部署失败"
+	},
+	"toastLoadErrorFileExtension": {
+		"title": "不是 bpmn 文件",
+		"body": "哎呀，此文件不是 BPMN 2.0 图表。"
+	},
+	"toastImportNeedsFolder": { "title": "导入", "body": "请先打开文件夹：模型始终存储在文件夹中。" },
+	"toastLoadErrorFile": {
+		"title": "加载文件时出错。",
+		"body": "无法正确加载该文件。"
+	},
+	"toastImportNoFolders": {
+		"title": "导入",
+		"body": "请先创建文件夹：模型始终存储在文件夹中。"
+	},
+	"toastImportExists": {
+		"title": "已存储",
+		"body": "“{name}”已存在并已打开。",
+		"bodyInFolder": "“{name}”已存储在“{folder}”中，并从那里打开。"
+	},
+	"toastImportBatch": {
+		"title": "导入完成",
+		"body": "导入已完成。"
+	},
+	"importErrors": {
+		"empty": "文件为空",
+		"notXml": "文件不是有效的 XML",
+		"noDefinitions": "文件不包含 BPMN 或 DMN 定义",
+		"lookupFailed": "无法询问建模器该键是否已被占用"
+	},
+	"importSummary": {
+		"imported": "已导入 {count} 个",
+		"replaced": "已替换 {count} 个",
+		"upToDate": "{count} 个已是最新",
+		"skipped": "已跳过 {count} 个",
+		"failed": "{count} 个失败"
+	},
+	"toastCantSaveFailValidationXml": {
+		"title": "校验错误。",
+		"body": "XML 格式错误。请先修复再保存"
+	},
+	"toastCantDownloadFailValidationXml": {
+		"title": "校验错误。",
+		"body": "XML 格式错误。请先修复再下载"
+	},
+	"toastCantDeployFailValidationXml": {
+		"title": "校验错误。",
+		"body": "XML 格式错误。请先修复再部署"
+	},
+	"toastCantViewModelerFailValidationXml": {
+		"title": "校验错误。",
+		"body": "XML 格式错误。请先修复再继续"
+	},
+	"toastSaveSuccessful": {
+		"title": "保存成功",
+		"body": "流程已成功保存。"
+	},
+	"toastSaveErrorDuplicateKey": {
+		"title": "流程 ID 已存在",
+		"body": "请将流程 ID 更改为唯一的 ID"
+	},
+	"toastSaveErrorMissingId": {
+		"title": "缺少表单 ID",
+		"body": "保存前请为表单指定 ID。"
+	},
+	"toastUpdateSuccessful": {
+		"title": "更新成功",
+		"body": "流程已成功更新。"
+	},
+	"toastSomethingWentWrong": {
+		"title": "错误",
+		"body": "哎呀，出错了"
+	},
+	"toastSessionLockFailed": {
+		"title": "未获取编辑锁",
+		"body": "图表已保存，但无法创建编辑锁。其他人可能同时编辑它。"
+	},
+	"ttlFieldRequired": "此字段为部署所必需",
+	"buttons": {
+		"accept": "接受",
+		"rename": "重命名",
+		"replace": "替换",
+		"skip": "跳过",
+		"cancelRemaining": "取消剩余",
+		"discardChanges": "放弃更改",
+		"filter": "选择筛选器",
+		"saveDiagram": "保存图表",
+		"search": "搜索",
+		"diagramGalery": "图表库",
+		"createDiagram": "新建",
+		"newDmn": "DMN",
+		"newForm": "表单",
+		"newBpmnc7": "BPMN 7",
+		"createBpmn": "创建 BPMN",
+		"createDmn": "创建 DMN",
+		"createForm": "创建表单",
+		"importFile": "导入本地文件",
+		"edit": "编辑",
+		"delDiagram": "删除",
+		"prevDiagram": "预览图表",
+		"editor": "编辑器",
+		"diagram": "图表",
+		"download": "下载",
+		"deploy": "部署",
+		"startProcess": "启动流程",
+		"downloadDiagram": "下载 BPMN 图表",
+		"cancel": "取消",
+		"searchTemplates": "搜索模板",
+		"console": "控制台",
+		"close": "关闭",
+		"closeTab": "关闭 {name}",
+		"continue": "继续",
+		"delete": "删除",
+		"copy": "复制",
+		"linkToProject": "链接到项目",
+		"moreTabs": "更多标签页",
+		"zoomIn": "放大",
+		"zoomOut": "缩小",
+		"resetViewport": "重置视口",
+		"minimap": "小地图",
+		"fullscreen": "全屏",
+		"expandScript": "在完整编辑器中打开",
+		"collapsePanel": "折叠面板",
+		"expandPanel": "展开面板",
+		"replaceAll": "全部替换",
+		"skipAll": "全部跳过",
+		"undo": "撤销",
+		"redo": "重做",
+		"closeAllTabs": "关闭所有标签页",
+		"viewXml": "查看 XML",
+		"viewDiagram": "查看图表",
+		"outdatedTemplates": "过时的模板"
+	},
+	"a11y": {
+		"deploying": "正在部署…",
+		"saving": "正在保存…"
+	},
+	"scriptEditorModal": {
+		"title": "编辑脚本"
+	},
+	"tabs": {
+		"unsavedChanges": "未保存的更改",
+		"closeAllTitle": "关闭所有标签页",
+		"closeAllBody": "部分标签页有未保存的更改。所有未保存的更改都将丢失。"
+	},
+	"deployForm": {
+		"deploymentName": {
+			"label": "部署名称",
+			"tooltip": "部署名称有助于在“部署”窗格中唯一标识和管理流程。它不必与流程 ID 一致"
+		},
+		"tenantID": {
+			"label": "租户 ID",
+			"tooltip": "可选择指定流程将部署到的租户。每个租户都有独立的流程和数据环境"
+		},
+		"anotherEndpoint": {
+			"label": "部署到另一个实例",
+			"inputTitle": "实例 URL",
+			"errors": {
+				"required": "部署到另一个实例时，此字段为必填项。",
+				"invalid": "请输入有效的 http:// 或 https:// URL。"
+			}
+		},
+		"additionalFiles": {
+			"label": "附加文件",
+			"tooltip": "与图表一起在单次部署中部署的可选资源。资源名称必须与 BPMN 或 DMN 中的引用一致（例如表单或脚本）。",
+			"addButton": "添加文件",
+			"remove": "移除",
+			"duplicateNameError": {
+				"title": "资源名称重复",
+				"body": "两个或多个资源使用相同名称，或名称与主图表文件相同。每个资源名称必须唯一。"
+			},
+			"emptyResourceNameError": {
+				"title": "资源名称无效",
+				"body": "每个附加文件都必须具有非空资源名称。"
+			}
+		},
+		"forms": {
+			"addButton": "添加表单",
+			"search": "搜索表单...",
+			"typeToSearch": "输入至少 3 个字符以搜索",
+			"empty": "未找到表单",
+			"referenced": "已被引用",
+			"loadError": {
+				"title": "加载表单失败",
+				"body": "无法加载已保存表单的列表。"
+			},
+			"addError": {
+				"title": "添加表单失败",
+				"body": "无法将所选表单添加到部署中。"
+			}
+		},
+		"authentication": "身份验证",
+		"asAnotherUser": "以其他用户身份",
+		"username": "用户名",
+		"password": "密码",
+		"token": "令牌",
+		"title": "部署图表"
+	},
+	"authenticationOptions": {
+		"basicauth": "HTTP 基本认证"
+	},
+	"Close minimap": "关闭小地图",
+	"Open minimap": "打开小地图",
+	"Version tag": "版本标签",
+	"Documentation": "文档",
+	"Element documentation": "元素文档",
+	"History cleanup": "历史清理",
+	"Time to live": "生存时间",
+	"Tasklist": "任务列表",
+	"Startable": "可启动",
+	"Candidate starter": "候选发起人",
+	"Candidate starter groups": "候选发起人组",
+	"Specify more than one group as a comma separated list.": "用逗号分隔列表指定多个组。",
+	"Candidate starter users": "候选发起人用户",
+	"Specify more than one user as a comma separated list.": "用逗号分隔列表指定多个用户。",
+	"External task": "外部任务",
+	"Job execution": "作业执行",
+	"Priority": "优先级",
+	"Template": "模板",
+	"Forms": "表单",
+	"Type": "类型",
+	"<none>": "无",
+	"Start initiator": "开始发起人",
+	"Initiator": "发起人",
+	"Asynchronous continuations": "异步延续",
+	"Before": "之前",
+	"After": "之后",
+	"Execution listeners": "执行监听器",
+	"Extension properties": "扩展属性",
+	"<empty>": "空",
+	"Value": "值",
+	"Start: Java class": "开始：Java 类",
+	"Field injections": "字段注入",
+	"Event type": "事件类型",
+	"Listener type": "监听器类型",
+	"Java class": "Java 类",
+	"Create start event": "创建开始事件",
+	"Create end event": "创建结束事件",
+	"Create gateway": "创建网关",
+	"Create task": "创建任务",
+	"Create data object reference": "创建数据对象引用",
+	"Create data store reference": "创建数据存储引用",
+	"Create group": "创建组",
+	"Select": "选择",
+	"Local variable name": "局部变量名称",
+	"Assignment type": "赋值类型",
+	"Start typing \"${}\" to create an expression.": "开始输入 \"${}\" 以创建表达式。",
+	"Append text notation": "追加文本标注",
+	"Set color": "设置颜色",
+	"Default": "默认",
+	"Blue": "蓝色",
+	"Orange": "橙色",
+	"Green": "绿色",
+	"Red": "红色",
+	"Purple": "紫色",
+	"Task listeners": "任务监听器",
+	"Process variable name": "流程变量名称",
+	"Message": "消息",
+	"Global message reference": "全局消息引用",
+	"Script": "脚本",
+	"Result variable": "结果变量",
+	"Called element": "被调用元素",
+	"Business key": "业务键",
+	"In mapping propagation": "输入映射传播",
+	"Propagate all variables": "传播所有变量",
+	"In mappings": "输入映射",
+	"Source": "源",
+	"Target": "目标",
+	"Out mapping propagation": "输出映射传播",
+	"Data store reference": "数据存储引用",
+	"Collecion": "集合",
+	"Participant ID": "参与者 ID",
+	"Participant Name": "参与者名称",
+	"Process name": "流程名称",
+	"Executable": "可执行",
+	"Empty pool/participant (removes content)": "清空池/参与者（移除内容）",
+	"Participant multiplicity": "参与者多重性",
+	"Append task": "追加任务",
+	"Append gateway": "追加网关",
+	"Append end event": "追加结束事件",
+	"Append intermediate/boundary event": "追加中间/边界事件",
+	"Sub-process (expanded)": "子流程（展开）",
+	"Change element": "更改元素",
+	"Activate create/remove space tool": "激活创建/移除空间工具",
+	"Activate global connect tool": "激活全局连接工具",
+	"Activate hand tool": "激活手形工具",
+	"Activate lasso tool": "激活套索工具",
+	"Ad-hoc": "临时",
+	"Add lane above": "在上方添加泳道",
+	"Add lane below": "在下方添加泳道",
+	"Append compensation activity": "追加补偿活动",
+	"Business rule task": "业务规则任务",
+	"Call activity": "调用活动",
+	"Cancel boundary event": "取消边界事件",
+	"Cancel end event": "取消结束事件",
+	"Change type": "更改类型",
+	"Compensation boundary event": "补偿边界事件",
+	"Compensation end event": "补偿结束事件",
+	"Compensation intermediate throw event": "补偿中间抛出事件",
+	"Compensation start event": "补偿开始事件",
+	"Complex gateway": "复杂网关",
+	"Conditional boundary event": "条件边界事件",
+	"Conditional boundary event (non-interrupting)": "条件边界事件（非中断）",
+	"Conditional intermediate catch event": "条件中间捕获事件",
+	"Conditional start event": "条件开始事件",
+	"Conditional start event (non-interrupting)": "条件开始事件（非中断）",
+	"Connect using association": "使用关联连接",
+	"Connect using data input association": "使用数据输入关联连接",
+	"Connect using sequence/message flow or association": "使用顺序流/消息流或关联连接",
+	"Create expanded sub-process": "创建展开的子流程",
+	"Create intermediate/boundary event": "创建中间/边界事件",
+	"Create pool/participant": "创建池/参与者",
+	"Divide into three lanes": "分为三条泳道",
+	"Divide into two lanes": "分为两条泳道",
+	"Empty pool/participant": "清空池/参与者",
+	"End event": "结束事件",
+	"Error boundary event": "错误边界事件",
+	"Error end event": "错误结束事件",
+	"Error start event": "错误开始事件",
+	"Escalation boundary event": "升级边界事件",
+	"Escalation boundary event (non-interrupting)": "升级边界事件（非中断）",
+	"Escalation end event": "升级结束事件",
+	"Escalation intermediate throw event": "升级中间抛出事件",
+	"Escalation start event": "升级开始事件",
+	"Escalation start event (non-interrupting)": "升级开始事件（非中断）",
+	"Event sub-process": "事件子流程",
+	"Event-based gateway": "事件网关",
+	"Exclusive gateway": "排他网关",
+	"Inclusive gateway": "包容网关",
+	"Intermediate throw event": "中间抛出事件",
+	"Link intermediate catch event": "链接中间捕获事件",
+	"Link intermediate throw event": "链接中间抛出事件",
+	"Loop": "循环",
+	"Manual task": "手动任务",
+	"Message boundary event": "消息边界事件",
+	"Message boundary event (non-interrupting)": "消息边界事件（非中断）",
+	"Message end event": "消息结束事件",
+	"Message intermediate catch event": "消息中间捕获事件",
+	"Message intermediate throw event": "消息中间抛出事件",
+	"Message start event": "消息开始事件",
+	"Message start event (non-interrupting)": "消息开始事件（非中断）",
+	"Parallel gateway": "并行网关",
+	"Parallel multi-instance": "并行多实例",
+	"Receive task": "接收任务",
+	"Remove": "移除",
+	"Script task": "脚本任务",
+	"Send task": "发送任务",
+	"Sequential multi-instance": "串行多实例",
+	"Service task": "服务任务",
+	"Signal boundary event": "信号边界事件",
+	"Signal boundary event (non-interrupting)": "信号边界事件（非中断）",
+	"Signal end event": "信号结束事件",
+	"Signal intermediate catch event": "信号中间捕获事件",
+	"Signal intermediate throw event": "信号中间抛出事件",
+	"Signal start event": "信号开始事件",
+	"Signal start event (non-interrupting)": "信号开始事件（非中断）",
+	"Start event": "开始事件",
+	"Sub-process": "子流程",
+	"Sub-process (collapsed)": "子流程（折叠）",
+	"Task": "任务",
+	"Terminate end event": "终止结束事件",
+	"Timer boundary event": "定时器边界事件",
+	"Timer boundary event (non-interrupting)": "定时器边界事件（非中断）",
+	"Timer intermediate catch event": "定时器中间捕获事件",
+	"Timer start event": "定时器开始事件",
+	"Timer start event (non-interrupting)": "定时器开始事件（非中断）",
+	"Transaction": "事务",
+	"User task": "用户任务",
+	"already rendered {element}": "已渲染 {element}",
+	"diagram not part of bpmn:Definitions": "图表不属于 bpmn:Definitions",
+	"element required": "需要元素",
+	"element {element} referenced by {referenced}#{property} not yet drawn": "元素 {element} 被 {referenced}#{property} 引用，但尚未绘制",
+	"failed to import {element}": "导入 {element} 失败",
+	"flow elements must be children of pools/participants": "流程元素必须是池/参与者的子元素",
+	"more than {count} child lanes": "子泳道超过 {count} 条",
+	"no diagram to display": "没有可显示的图表",
+	"no parent for {element} in {parent}": "{element} 在 {parent} 中没有父级",
+	"no process or collaboration to display": "没有可显示的流程或协作",
+	"no shape type specified": "未指定形状类型",
+	"out of bounds release": "在边界外释放",
+	"ID must not be empty": "ID 不能为空",
+	"dropFileToLoad": "拖放文件以加载。",
+	"dropFileToFolder": "拖放文件将其导入到“{folder}”。",
+	"loading": "加载中",
+	"modal": {
+		"autoCreate": "下次自动创建（跳过此对话框）"
+	},
+	"modalImportedFile": {
+		"title": "{item}“{name}”已存在于建模器中",
+		"titleInFolder": "{item}“{name}”已存在于文件夹“{folder}”中",
+		"body": "是否要继续处理导入的{item}？",
+		"newKeyLabel": "新流程键（ID）",
+		"newKeyLabelForm": "新表单键（ID）",
+		"renameSameKey": "新键必须与当前键不同",
+		"replaceHint": "用导入的版本覆盖现有的{item}。",
+		"renameHint": "使用不同的键将导入项作为新的{item}导入。",
+		"skipHint": "保留现有的{item}并放弃导入。",
+		"applyToAll": "将此选择应用于所有剩余冲突"
+	},
+	"notFound": "未找到",
+	"modalNewDiagram": {
+		"title": "为您的{item}输入名称和 ID",
+		"processName": "{item}名称",
+		"processId": "{item} 的 ID",
+		"cancel": "稍后再做",
+		"qnameError": "ID 必须是有效的 QName",
+		"fillId": "ID 为必填项",
+		"duplicatedId": "ID 已存在"
+	},
+	"noVersions": "无版本",
+	"noTemplates": "无模板",
+	"noItems": "无项目",
+	"version": "版本",
+	"history": "历史版本",
+	"toastLoadTemplateJson": {
+		"title": "未找到",
+		"body": "加载元素模板时出错"
+	},
+	"modalChangeProcessVersion": {
+		"title": "选择版本",
+		"body": "未保存的更改将丢失。确定吗？"
+	},
+	"modalListSelectortemplates": {
+		"title": "未找到模板",
+		"search": "搜索模板"
+	},
+	"modalListSelectorchangeVersion": {
+		"title": "选择历史版本",
+		"headerVersion": "版本",
+		"headerDate": "日期",
+		"body": "未保存的更改将丢失。确定吗？",
+		"search": "搜索版本"
+	},
+	"bpmnFilter": {
+		"title": "仅显示"
+	},
+	"modalDelete": {
+		"title": "删除 {item}",
+		"body": "确定要从建模器中删除{item}“{name}”吗？现有部署不会受到影响。"
+	},
+	"modalDeploy": {
+		"notExecutable": "此流程被标记为不可执行，无法启动。"
+	},
+	"searchElementTemplates": {
+		"searchInput": "搜索模板",
+		"others": "其他",
+		"showInternal": "显示内部模板（同步）",
+		"showExternal": "显示外部模板（异步）",
+		"internalTemplatesTip": "显示直接在 CIB seven 引擎内执行的模板。这些是基于 Java 的实现，在同一应用内同步运行。适用于轻量级场景。",
+		"externalTemplatesTip": "显示由外部工作程序处理的模板。这些任务与引擎解耦，由远程服务异步处理。适用于重型操作。"
+	},
+	"items": {
+		"process": "流程",
+		"bpmn-c7": "流程",
+		"dmn": "图表",
+		"bpmn": "流程",
+		"form": "表单"
+	},
+	"Items": {
+		"process": "流程",
+		"bpmn-c7": "流程",
+		"dmn": "图表",
+		"form": "表单"
+	},
+	"filterElements": {
+		"dmn": "DMN",
+		"form": "表单",
+		"bpmn": "BPMN",
+		"all": "全部"
+	},
+	"bcomponents": {
+		"ariaSortNone": "未排序",
+		"ariaSortAsc": "升序排列",
+		"ariaSortDes": "降序排列"
+	},
+	"cib-header": {
+		"productName": "CIB seven 建模器"
+	},
+	"folders": {
+		"breadcrumb": "文件夹路径",
+		"home": "主页",
+		"create": "新建文件夹",
+		"createTitle": "新建文件夹",
+		"renameTitle": "重命名文件夹",
+		"name": "文件夹名称",
+		"nameRequired": "文件夹需要名称。",
+		"nameTaken": "已存在同名文件夹。",
+		"nameTooLong": "名称超过 255 个字符。",
+		"valueTooLong": "超过 {limit} 个字符。",
+		"moveRefused": "文件夹不能移动到自身内部。",
+		"keyTaken": "“{key}”已被占用。",
+		"saveFailed": "无法保存文件夹。",
+		"rename": "重命名",
+		"move": "移动",
+		"copy": "复制",
+		"delete": "删除",
+		"deleteTitle": "删除文件夹",
+		"deleteBody": "删除“{name}”及其中的所有内容？这将永久删除 {folders} 个文件夹和 {models} 个模型。现有部署不会受到影响。",
+		"moveTitle": "移动“{name}”",
+		"moveModelTitle": "将“{name}”移动到文件夹",
+		"copyModelTitle": "将“{name}”复制到文件夹",
+		"copyKey": "副本的流程键",
+		"copyKeyRequired": "副本需要有自己的流程键。",
+		"copyFormId": "副本的表单 ID",
+		"copyFormIdRequired": "副本需要有自己的表单 ID。",
+		"destination": "目标位置",
+		"importTitle": "导入到文件夹",
+		"empty": "此文件夹为空。",
+		"emptyHome": "尚无文件夹。创建一个文件夹来存储您的模型。",
+		"noMatches": "任何文件夹中都没有与“{keyword}”匹配的内容。",
+		"searchAcrossFolders": "显示来自每个文件夹的匹配项。"
+	},
+	"toastFolderLoadFail": { "title": "文件夹", "body": "无法加载文件夹" },
+	"toastFolderDeleteSuccess": { "title": "文件夹已删除", "body": "文件夹及其中的所有内容已被移除" },
+	"toastFolderDeleteFail": { "title": "文件夹", "body": "无法删除文件夹" },
+	"toastFolderMoveSuccess": { "title": "已移动", "body": "模型现在位于您选择的文件夹中" },
+	"toastFolderCopySuccess": { "title": "已复制", "body": "副本现在位于您选择的文件夹中" }
+}
