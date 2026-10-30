@@ -196,10 +196,11 @@ export default {
       return 'sortable'
     },
     getAriaSort(field) {
+      if (field.sortable === false) return null
       if ((field.sortKey ?? field.key) === this.sortKey) {
-        return this.$t(`bcomponents.${this.sortOrder === 1 ? 'ariaSortAsc' : 'ariaSortDes'}`)
+        return this.sortOrder === 1 ? 'ascending' : 'descending'
       }
-      return this.$t('bcomponents.ariaSortNone')
+      return 'none'
     },
     getRowClass(item) {
       const trClass = typeof this.tbodyTrClass === 'function' ? this.tbodyTrClass(item) : this.tbodyTrClass

@@ -191,6 +191,19 @@ describe('CibsevenTable', () => {
       expect(sortIcon.exists()).toBe(true)
     })
 
+    it('renders valid aria-sort tokens and omits aria-sort on non-sortable columns', async () => {
+      const wrapper = mountTable()
+      const headers = wrapper.findAll('th')
+      const ariaSort = () => headers.map(th => th.attributes('aria-sort'))
+      expect(ariaSort()).toEqual(['none', 'none', undefined])
+
+      await headers[0].trigger('click')
+      expect(ariaSort()).toEqual(['ascending', 'none', undefined])
+
+      await headers[0].trigger('click')
+      expect(ariaSort()).toEqual(['descending', 'none', undefined])
+    })
+
     it('sorts in ascending order initially', async () => {
       const wrapper = mountTable()
       const headers = wrapper.findAll('th')
