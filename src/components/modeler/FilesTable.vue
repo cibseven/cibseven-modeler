@@ -29,21 +29,24 @@
         </template>
 
         <template #cell(name)="{ item }">
-            <div class="name-cell w-100">
-                <span class="mdi mdi-18px text-secondary" :class="item.icon" aria-hidden="true"></span>
-                <div class="d-flex align-items-center gap-2" style="min-width: 0">
-                    <button type="button" class="btn btn-link p-0 border-0 text-start text-reset text-decoration-none text-truncate"
-                        :title="item.label" @click.stop="open(item)">{{ item.label }}</button>
-                    <span v-if="item.isDefault" class="badge rounded-pill text-bg-light border" :title="$t('folders.defaultFolder')">
-                        {{ $t('folders.defaultBadge') }}
-                    </span>
-                    <span v-if="item.rights?.restricted" class="mdi mdi-lock-outline text-secondary" role="img"
-                        :title="$t('folders.restricted')" :aria-label="$t('folders.restricted')"></span>
-                    <span v-if="item.rights && !item.rights.edit" class="badge rounded-pill text-bg-light border" :title="$t('folders.viewerTitle')">
-                        {{ $t('folders.viewerBadge') }}
-                    </span>
+            <!-- The icon has a column of its own, so the line under the name starts where the name does -->
+            <div class="d-flex gap-2 w-100" style="min-width: 0">
+                <span class="mdi mdi-18px lh-1 align-self-start text-secondary" :class="item.icon" aria-hidden="true"></span>
+                <div class="d-flex flex-column flex-grow-1" style="min-width: 0">
+                    <div class="d-flex align-items-center gap-2" style="min-width: 0">
+                        <button type="button" class="btn btn-link p-0 border-0 text-start text-reset text-decoration-none text-truncate"
+                            :title="item.label" @click.stop="open(item)">{{ item.label }}</button>
+                        <span v-if="item.isDefault" class="badge rounded-pill text-bg-light border" :title="$t('folders.defaultFolder')">
+                            {{ $t('folders.defaultBadge') }}
+                        </span>
+                        <span v-if="item.rights?.restricted" class="mdi mdi-lock-outline text-secondary" role="img"
+                            :title="$t('folders.restricted')" :aria-label="$t('folders.restricted')"></span>
+                        <span v-if="item.rights && !item.rights.edit" class="badge rounded-pill text-bg-light border" :title="$t('folders.viewerTitle')">
+                            {{ $t('folders.viewerBadge') }}
+                        </span>
+                    </div>
+                    <span v-if="item.details" class="small text-muted text-truncate" :title="item.details">{{ item.details }}</span>
                 </div>
-                <span v-if="item.details" class="name-details small text-muted text-truncate" :title="item.details">{{ item.details }}</span>
             </div>
         </template>
 
@@ -256,17 +259,6 @@ const run = (item, { id, event, extra }) => {
 </script>
 
 <style scoped>
-/* Icon and name share the first row, centered on each other; the line below goes in the name's column */
-.name-cell {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    column-gap: 0.5rem;
-    align-items: center;
-}
-.name-details {
-    grid-column: 2;
-}
-
 /* Same hover and focus as the webclient's table action buttons */
 :deep(.hovered-button) {
     margin: 0;
