@@ -40,6 +40,7 @@ const { BDropdown, BDropdownItemButton, Dropdown, dispose } = vi.hoisted(() => {
     BDropdown: {
       name: 'BDropdown',
       props: ['label', 'toggleClass'],
+      emits: ['shown'],
       // Like the real menu, it sets up its Bootstrap dropdown on its toggle button
       data: () => ({ dropdownInstance: { dispose } }),
       methods: { hide: vi.fn() },
@@ -173,6 +174,14 @@ describe('FilesTable', () => {
       expect(labels(wrapper)).toEqual(['Approval.dmn', 'Invoice.bpmn', 'request.form'])
     })
 
+    it('sets every header in bold, like the other tables', () => {
+      const wrapper = mountTable()
+
+      const sortable = wrapper.findAll('thead th button')
+      expect(sortable).toHaveLength(3)
+      sortable.forEach(button => expect(button.classes()).toContain('fw-bold'))
+    })
+
     it('reports the order to assistive technology on the header', async () => {
       const wrapper = mountTable()
 
@@ -221,6 +230,16 @@ describe('FilesTable', () => {
       await wrapper.setProps({ models: [PROCESS, DECISION] })
       expect(Dropdown).toHaveBeenCalledTimes(4)
       expect(Dropdown.mock.calls[3]).toEqual([row(wrapper, 'Approval.dmn').find('.menu-toggle').element, fixed])
+    })
+
+    it('closes the other menus when one opens', async () => {
+      const wrapper = mountTable({ models: [PROCESS] })
+      BDropdown.methods.hide.mockClear()
+
+      await wrapper.findAllComponents(BDropdown)[0].vm.$emit('shown')
+
+      // Three rows: the two other menus are closed
+      expect(BDropdown.methods.hide).toHaveBeenCalledTimes(2)
     })
 
     it('draws the menu icons in the secondary color, except the one for deleting', () => {

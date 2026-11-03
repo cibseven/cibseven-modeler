@@ -20,7 +20,7 @@
         @external-sort="onSort" @click="open">
         <!-- Reachable by keyboard; the click bubbles to the header cell, which sorts -->
         <template v-for="field in sortableFields" :key="field.key" #[`header(${field.key})`]>
-            <button type="button" class="btn btn-link p-0 border-0 fw-semibold text-reset text-decoration-none text-start">
+            <button type="button" class="btn btn-link p-0 border-0 fw-bold text-reset text-decoration-none text-start">
                 {{ $t(`folders.${field.label}`) }}
             </button>
         </template>
@@ -65,7 +65,7 @@
             </div>
             <!-- The menu's own title is only fallback text for its button, so the tooltip sits here -->
             <div v-else class="mx-auto" :title="$t('folders.actionsFor', { name: item.label })">
-                <BDropdown :ref="menu => menus[item.key] = menu" variant="link" no-caret right
+                <BDropdown :ref="menu => menus[item.key] = menu" variant="link" no-caret right @shown="closeOtherMenus(item.key)"
                     toggle-class="border-0 hovered-button" :label="$t('folders.actionsFor', { name: item.label })">
                     <template #button-content>
                         <span class="mdi mdi-18px mdi-dots-vertical" aria-hidden="true"></span>
@@ -148,6 +148,11 @@ const placeMenus = () => Object.values(menus).forEach(menu => {
 })
 onMounted(placeMenus)
 onUpdated(placeMenus)
+
+// One menu at a time: BDropdown keeps the click on its button to itself, so the other menus never see it
+const closeOtherMenus = key => Object.entries(menus).forEach(([other, menu]) => {
+    if (other !== key) menu?.hide()
+})
 
 const action = (id, icon, label, event) => ({ id, icon, label, event, danger: id === 'delete' })
 const OPEN_FOLDER = action('open', 'mdi-folder-open-outline', 'folders.open', 'openFolder')
