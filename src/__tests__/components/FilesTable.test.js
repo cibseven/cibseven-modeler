@@ -32,20 +32,30 @@ const DECISION = { id: 'd1', name: 'Approval', processkey: 'approval', type: DIA
 const FORM = { id: 'f1', formId: 'request', type: DIAGRAM_TYPE.FORM, folderId: 'sub', updated: '2026-10-11T10:00:00Z', updatedBy: 'carl' }
 
 // The menus are the shared ones; what matters here is which entries a row offers
-const { BDropdown, BDropdownItemButton } = vi.hoisted(() => ({
-  BDropdown: {
-    name: 'BDropdown',
-    props: ['label', 'toggleClass'],
-    methods: { hide: vi.fn() },
-    // Like the real menu, a click inside it does not reach the row
-    template: '<div class="menu-stub" :aria-label="label" :data-toggle-class="toggleClass" @click.stop><slot /></div>',
-  },
-  BDropdownItemButton: {
-    name: 'BDropdownItemButton',
-    emits: ['click'],
-    template: '<button type="button" class="menu-item" @click="$emit(\'click\')"><slot /></button>',
-  },
-}))
+const { BDropdown, BDropdownItemButton, Dropdown, dispose } = vi.hoisted(() => {
+  const dispose = vi.fn()
+  return {
+    dispose,
+    Dropdown: vi.fn(),
+    BDropdown: {
+      name: 'BDropdown',
+      props: ['label', 'toggleClass'],
+      // Like the real menu, it sets up its Bootstrap dropdown on its toggle button
+      data: () => ({ dropdownInstance: { dispose } }),
+      methods: { hide: vi.fn() },
+      // Like the real menu, a click inside it does not reach the row
+      template: '<div class="menu-stub" :aria-label="label" :data-toggle-class="toggleClass" @click.stop>'
+        + '<span ref="toggleButton" class="menu-toggle"></span><slot /></div>',
+    },
+    BDropdownItemButton: {
+      name: 'BDropdownItemButton',
+      emits: ['click'],
+      template: '<button type="button" class="menu-item" @click="$emit(\'click\')"><slot /></button>',
+    },
+  }
+})
+
+vi.mock('bootstrap', () => ({ Dropdown }))
 
 vi.mock('@cib/common-frontend', async () => {
   const actual = await vi.importActual('@cib/common-frontend')
@@ -195,6 +205,30 @@ describe('FilesTable', () => {
 
       expect(menuOf(wrapper, 'Invoice.bpmn'))
         .toEqual(['folders.open', 'buttons.download', 'folders.moveTo', 'folders.copyTo', 'folders.delete'])
+    })
+
+    /** The list scrolls, and a menu opened near its end would otherwise be cut off. */
+    it('places every menu against the window, once, also those of rows added later', async () => {
+      Dropdown.mockClear()
+      dispose.mockClear()
+      const fixed = { popperConfig: { strategy: 'fixed' } }
+      const wrapper = mountTable({ models: [PROCESS] })
+      const toggles = () => wrapper.findAll('.menu-toggle').map(toggle => toggle.element)
+
+      expect(dispose).toHaveBeenCalledTimes(3)
+      expect(Dropdown.mock.calls).toEqual(toggles().map(toggle => [toggle, fixed]))
+
+      await wrapper.setProps({ models: [PROCESS, DECISION] })
+      expect(Dropdown).toHaveBeenCalledTimes(4)
+      expect(Dropdown.mock.calls[3]).toEqual([row(wrapper, 'Approval.dmn').find('.menu-toggle').element, fixed])
+    })
+
+    it('draws the menu icons in the secondary color, except the one for deleting', () => {
+      const wrapper = mountTable()
+
+      const secondary = row(wrapper, 'Invoice.bpmn').findAll('.menu-item')
+        .filter(item => item.find('.mdi-18px.text-secondary').exists()).map(item => item.text())
+      expect(secondary).toEqual(['folders.open', 'buttons.download', 'folders.moveTo', 'folders.copyTo'])
     })
 
     it('shows only deleting as dangerous', () => {

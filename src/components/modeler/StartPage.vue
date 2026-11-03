@@ -17,17 +17,20 @@
 <template>
 
     <div class="d-flex flex-column h-100 bg-light">
-        <div class="container d-flex flex-wrap align-items-center justify-content-between gap-2 mt-4 mb-3">
+        <!-- No side padding: the title and the host's tools line up with the edges of the block below -->
+        <div class="container d-flex flex-wrap align-items-center justify-content-between gap-2 px-0 mt-4 mb-3">
             <h4 class="fw-normal mb-0">{{ $t('titles.searchIntro') }}</h4>
             <!-- Tools of the host lead elsewhere, so they stay out of the folder's actions -->
             <component v-if="startPageTool" :is="startPageTool"></component>
         </div>
         <!-- One block for search, folders and files, like the lists of the webclient -->
         <div class="d-flex flex-column container bg-white border rounded shadow-sm p-0 mb-3" style="min-height: 0">
-            <div class="container pt-4">
+            <!-- Same 1rem inset as the list below, so search, breadcrumb and table share their edges -->
+            <div class="container px-3 pt-4">
                 <div class="row align-items-center g-2 pb-2">
                     <div class="col-12 col-xl-5">
-                        <div class="d-flex align-items-center border rounded start-page-search">
+                        <!-- form-control for the theme's input border; the field inside draws none of its own -->
+                        <div class="form-control d-flex align-items-center p-0 start-page-search">
                             <button
                                 @click.stop="handleSearch"
                                 type="button"
@@ -109,7 +112,7 @@
                         </ol>
                     </nav>
                     <button v-if="canSetDefault" type="button" class="btn btn-light border-0 d-inline-flex align-items-center gap-2 default-folder"
-                        :title="defaultLabel" :aria-disabled="isFallbackHere ? 'true' : null" @click="toggleDefault">
+                        :class="{ 'text-secondary': !isDefaultHere }" :title="defaultLabel" :aria-disabled="isFallbackHere ? 'true' : null" @click="toggleDefault">
                         <i class="mdi mdi-18px" :class="isDefaultHere ? 'mdi-star' : 'mdi-star-outline'" aria-hidden="true"></i>{{ defaultText }}
                     </button>
                 </div>

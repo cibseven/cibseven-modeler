@@ -45,7 +45,7 @@
                         {{ $t('folders.viewerBadge') }}
                     </span>
                 </div>
-                <span v-if="item.details" class="small text-muted text-truncate" :title="item.details">{{ item.details }}</span>
+                <span v-if="item.details" class="row-details small text-muted text-truncate" :title="item.details">{{ item.details }}</span>
             </div>
         </template>
 
@@ -72,7 +72,8 @@
                     </template>
                     <BDropdownItemButton v-for="action in item.actions" :key="action.id" :title="$t(action.label)" @click="run(item, action)">
                         <span :class="{ 'text-danger': action.danger }">
-                            <span class="mdi me-2" :class="action.icon" aria-hidden="true"></span>{{ $t(action.label) }}
+                            <span class="mdi mdi-18px me-2" :class="[action.icon, { 'text-secondary': !action.danger }]"
+                                aria-hidden="true"></span>{{ $t(action.label) }}
                         </span>
                     </BDropdownItemButton>
                 </BDropdown>
@@ -82,7 +83,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, onUpdated } from 'vue'
+import { Dropdown } from 'bootstrap'
 import { BDropdown, BDropdownItemButton, FlowTable } from '@cib/common-frontend'
 import { folderIcon, formatDate, modelName, toMoment } from '../../utils'
 import { DIAGRAM_FILE_EXT, DIAGRAM_ICON, DIAGRAM_TYPE } from '../../constants/diagramTypes.js'
@@ -134,6 +136,18 @@ const onSort = ({ sortBy, sortDesc }) => emit('update:sort', {
 })
 
 const menus = {}
+
+// The list scrolls, and would cut off a menu opened near its end, so the menus are placed against the window.
+// BDropdown takes no popper settings yet, so each new menu's Bootstrap dropdown is set up again once it is mounted.
+const placedMenus = new WeakSet()
+const placeMenus = () => Object.values(menus).forEach(menu => {
+    if (!menu?.dropdownInstance || placedMenus.has(menu)) return
+    menu.dropdownInstance.dispose()
+    menu.dropdownInstance = new Dropdown(menu.$refs.toggleButton, { popperConfig: { strategy: 'fixed' } })
+    placedMenus.add(menu)
+})
+onMounted(placeMenus)
+onUpdated(placeMenus)
 
 const action = (id, icon, label, event) => ({ id, icon, label, event, danger: id === 'delete' })
 const OPEN_FOLDER = action('open', 'mdi-folder-open-outline', 'folders.open', 'openFolder')
@@ -233,6 +247,11 @@ const run = (item, { id, event, extra }) => {
 </script>
 
 <style scoped>
+/* Starts under the name, past the 18px icon and the gap after it */
+.row-details {
+    padding-left: calc(18px + 0.5rem);
+}
+
 /* Same hover and focus as the webclient's table action buttons */
 :deep(.hovered-button) {
     margin: 0;
