@@ -615,6 +615,14 @@ describe('StartPage folders', () => {
         expect(star(wrapper).attributes('title')).toBe('folders.setDefault')
       })
 
+      it('offers setting the default in the secondary color, and shows a default without it', async () => {
+        const wrapper = await mountStartPage({ initialFolderId: 'general' })
+        expect(star(wrapper).classes()).toContain('text-secondary')
+
+        await star(wrapper).trigger('click')
+        expect(star(wrapper).classes()).not.toContain('text-secondary')
+      })
+
       /** The user folder is the default when nothing else is chosen, so there is nothing to unset. */
       it('shows the user folder as the default, without a way to unset it', async () => {
         const wrapper = await mountStartPage()
