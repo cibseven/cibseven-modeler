@@ -30,8 +30,7 @@
             <div class="container px-3 pt-4">
                 <div class="row align-items-center g-2 pb-2">
                     <div class="col-12 col-xl-5">
-                        <!-- form-control for the theme's input border; the field inside draws none of its own -->
-                        <div class="form-control d-flex align-items-center p-0 start-page-search">
+                        <div class="d-flex align-items-center border rounded start-page-search">
                             <button
                                 @click.stop="handleSearch"
                                 type="button"
