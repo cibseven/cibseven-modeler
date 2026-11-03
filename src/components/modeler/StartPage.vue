@@ -17,8 +17,9 @@
 <template>
 
     <div class="d-flex flex-column h-100 bg-light">
-        <!-- No side padding: the title and the host's tools line up with the edges of the block below -->
-        <div class="container d-flex flex-wrap align-items-center justify-content-between gap-2 px-0 mt-4 mb-3">
+        <!-- The title and the host's tools line up with the edges of the block below; on a phone, where that block
+             fills the width, with its content -->
+        <div class="container d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 px-sm-0 mt-4 mb-3">
             <h4 class="fw-normal mb-0">{{ $t('titles.searchIntro') }}</h4>
             <!-- Tools of the host lead elsewhere, so they stay out of the folder's actions -->
             <component v-if="startPageTool" :is="startPageTool"></component>

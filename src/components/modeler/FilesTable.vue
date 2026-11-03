@@ -29,13 +29,11 @@
         </template>
 
         <template #cell(name)="{ item }">
-            <div class="d-flex flex-column w-100" style="min-width: 0">
+            <div class="name-cell w-100">
+                <span class="mdi mdi-18px text-secondary" :class="item.icon" aria-hidden="true"></span>
                 <div class="d-flex align-items-center gap-2" style="min-width: 0">
-                    <button type="button" class="btn btn-link p-0 border-0 text-start text-reset text-decoration-none d-inline-flex align-items-center gap-2"
-                        style="min-width: 0" :title="item.label" @click.stop="open(item)">
-                        <span class="mdi mdi-18px text-secondary" :class="item.icon" aria-hidden="true"></span>
-                        <span class="text-truncate">{{ item.label }}</span>
-                    </button>
+                    <button type="button" class="btn btn-link p-0 border-0 text-start text-reset text-decoration-none text-truncate"
+                        :title="item.label" @click.stop="open(item)">{{ item.label }}</button>
                     <span v-if="item.isDefault" class="badge rounded-pill text-bg-light border" :title="$t('folders.defaultFolder')">
                         {{ $t('folders.defaultBadge') }}
                     </span>
@@ -45,7 +43,7 @@
                         {{ $t('folders.viewerBadge') }}
                     </span>
                 </div>
-                <span v-if="item.details" class="row-details small text-muted text-truncate" :title="item.details">{{ item.details }}</span>
+                <span v-if="item.details" class="name-details small text-muted text-truncate" :title="item.details">{{ item.details }}</span>
             </div>
         </template>
 
@@ -83,7 +81,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUpdated } from 'vue'
+import { computed, onBeforeUnmount, onMounted, onUpdated } from 'vue'
 import { Dropdown } from 'bootstrap'
 import { BDropdown, BDropdownItemButton, FlowTable } from '@cib/common-frontend'
 import { folderIcon, formatDate, modelName, toMoment } from '../../utils'
@@ -139,15 +137,21 @@ const menus = {}
 
 // The list scrolls, and would cut off a menu opened near its end, so the menus are placed against the window.
 // BDropdown takes no popper settings yet, so each new menu's Bootstrap dropdown is set up again once it is mounted.
+// Without its toggle button a menu keeps the dropdown it has: cut off at the end of the list, but working.
 const placedMenus = new WeakSet()
 const placeMenus = () => Object.values(menus).forEach(menu => {
-    if (!menu?.dropdownInstance || placedMenus.has(menu)) return
+    const toggle = menu?.$refs?.toggleButton
+    if (!menu?.dropdownInstance || !toggle || placedMenus.has(menu)) return
     menu.dropdownInstance.dispose()
-    menu.dropdownInstance = new Dropdown(menu.$refs.toggleButton, { popperConfig: { strategy: 'fixed' } })
+    menu.dropdownInstance = new Dropdown(toggle, { popperConfig: { strategy: 'fixed' } })
     placedMenus.add(menu)
 })
 onMounted(placeMenus)
 onUpdated(placeMenus)
+// Bootstrap keeps every dropdown it creates until it is disposed
+onBeforeUnmount(() => Object.values(menus).forEach(menu => {
+    if (placedMenus.has(menu)) menu.dropdownInstance?.dispose()
+}))
 
 // One menu at a time: BDropdown keeps the click on its button to itself, so the other menus never see it
 const closeOtherMenus = key => Object.entries(menus).forEach(([other, menu]) => {
@@ -252,9 +256,15 @@ const run = (item, { id, event, extra }) => {
 </script>
 
 <style scoped>
-/* Starts under the name, past the 18px icon and the gap after it */
-.row-details {
-    padding-left: calc(18px + 0.5rem);
+/* Icon and name share the first row, centered on each other; the line below goes in the name's column */
+.name-cell {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 0.5rem;
+    align-items: center;
+}
+.name-details {
+    grid-column: 2;
 }
 
 /* Same hover and focus as the webclient's table action buttons */

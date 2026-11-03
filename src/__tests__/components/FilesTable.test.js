@@ -32,21 +32,24 @@ const DECISION = { id: 'd1', name: 'Approval', processkey: 'approval', type: DIA
 const FORM = { id: 'f1', formId: 'request', type: DIAGRAM_TYPE.FORM, folderId: 'sub', updated: '2026-10-11T10:00:00Z', updatedBy: 'carl' }
 
 // The menus are the shared ones; what matters here is which entries a row offers
-const { BDropdown, BDropdownItemButton, Dropdown, dispose } = vi.hoisted(() => {
+const { BDropdown, BDropdownItemButton, Dropdown, dispose, stubMenu } = vi.hoisted(() => {
   const dispose = vi.fn()
+  // Lets a test render menus without the toggle button the table looks for
+  const stubMenu = { withToggle: true }
   return {
     dispose,
-    Dropdown: vi.fn(),
+    stubMenu,
+    Dropdown: vi.fn(function () { this.dispose = vi.fn() }),
     BDropdown: {
       name: 'BDropdown',
       props: ['label', 'toggleClass'],
       emits: ['shown'],
       // Like the real menu, it sets up its Bootstrap dropdown on its toggle button
-      data: () => ({ dropdownInstance: { dispose } }),
+      data: () => ({ dropdownInstance: { dispose }, withToggle: stubMenu.withToggle }),
       methods: { hide: vi.fn() },
       // Like the real menu, a click inside it does not reach the row
       template: '<div class="menu-stub" :aria-label="label" :data-toggle-class="toggleClass" @click.stop>'
-        + '<span ref="toggleButton" class="menu-toggle"></span><slot /></div>',
+        + '<span v-if="withToggle" ref="toggleButton" class="menu-toggle"></span><slot /></div>',
     },
     BDropdownItemButton: {
       name: 'BDropdownItemButton',
@@ -230,6 +233,31 @@ describe('FilesTable', () => {
       await wrapper.setProps({ models: [PROCESS, DECISION] })
       expect(Dropdown).toHaveBeenCalledTimes(4)
       expect(Dropdown.mock.calls[3]).toEqual([row(wrapper, 'Approval.dmn').find('.menu-toggle').element, fixed])
+    })
+
+    /** Should the shared menu rename its button, the menus keep working, only cut off as before. */
+    it('keeps the dropdown of a menu whose toggle button it cannot find', () => {
+      Dropdown.mockClear()
+      dispose.mockClear()
+      stubMenu.withToggle = false
+      try {
+        mountTable({ models: [PROCESS] })
+      } finally {
+        stubMenu.withToggle = true
+      }
+
+      expect(dispose).not.toHaveBeenCalled()
+      expect(Dropdown).not.toHaveBeenCalled()
+    })
+
+    it('disposes the dropdowns it set up when the table goes away', () => {
+      const wrapper = mountTable({ folders: [], models: [PROCESS] })
+      const instance = wrapper.findComponent(BDropdown).vm.dropdownInstance
+      instance.dispose = vi.fn()
+
+      wrapper.unmount()
+
+      expect(instance.dispose).toHaveBeenCalled()
     })
 
     it('closes the other menus when one opens', async () => {
