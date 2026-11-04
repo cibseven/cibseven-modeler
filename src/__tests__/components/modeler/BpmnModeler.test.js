@@ -14,7 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 
 const bpmnInstance = vi.hoisted(() => {
@@ -140,6 +140,7 @@ vi.mock('../../../composables/useMonacoEditor.js', () => ({
 }))
 
 import BpmnModeler from '../../../components/modeler/BpmnModeler.vue'
+import { getPlugin } from '../../../plugins/pluginsConfig'
 import { defaultTabElement } from '../../helpers/modelerTestUtils.js'
 
 const mockMonaco = {
@@ -316,6 +317,30 @@ describe('BpmnModeler', () => {
       mountBpmnModeler()
       await flushPromises()
       expect(BpmnJS).toHaveBeenCalled()
+    })
+  })
+
+  describe('bpmn-tools slot', () => {
+    const BpmnToolStub = { name: 'BpmnToolStub', props: ['tabElement'], template: '<div class="bpmn-tool-stub" />' }
+
+    afterEach(() => {
+      getPlugin.mockReturnValue(null)
+    })
+
+    it('hands the plugin the tab', async () => {
+      getPlugin.mockReturnValue(BpmnToolStub)
+      const wrapper = mountBpmnModeler()
+      await flushPromises()
+
+      expect(wrapper.findComponent(BpmnToolStub).props('tabElement')).toStrictEqual(defaultTabElement)
+    })
+
+    it('is not rendered on a read-only tab, as the tools change the diagram', async () => {
+      getPlugin.mockReturnValue(BpmnToolStub)
+      const wrapper = mountBpmnModeler({ readOnly: true })
+      await flushPromises()
+
+      expect(wrapper.findComponent(BpmnToolStub).exists()).toBe(false)
     })
   })
 })

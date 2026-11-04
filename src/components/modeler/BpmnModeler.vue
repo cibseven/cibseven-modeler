@@ -119,7 +119,7 @@
 		<ElementTemplatesModal ref="elementTemplatesModal" :tabElement="tabElement"
 		@applyTemplateToTask="applyTemplateToTask"></ElementTemplatesModal>
 		<ScriptEditorModal ref="scriptEditorModal" />
-		<!-- Extension point for plugins
+		<!-- Extension point for plugins. Not on a read-only tab: the tools change the diagram.
 		     Available props for plugin components:
 		       get-bpmn-modeler  — () => bpmnModeler        Raw bpmn-js Modeler instance. Access services via .get('eventBus'), .get('commandStack'), etc.
 		       tab-element       — Object                   Current tab descriptor: { id, key, name, type, version, isSaved, ... }
@@ -129,7 +129,7 @@
 		       get-element-templates — () => Array          Returns the live element templates array currently loaded in the modeler.
 		       get-modeler-config    — () => Object         Returns the config.modeler section from the app config (e.g. filterBpmn, excludeTemplates). -->
 		<component
-			v-if="bpmnTool && props.isActiveTab"
+			v-if="bpmnTool && props.isActiveTab && !props.readOnly"
 			:is="bpmnTool"
 			:get-bpmn-modeler="() => bpmnModeler"
 			:tab-element="props.tabElement"

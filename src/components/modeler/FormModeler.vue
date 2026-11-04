@@ -46,13 +46,13 @@
 				</template>
 			</MenuActionButtons>
 		</div>
-		<!-- Extension point for plugins
+		<!-- Extension point for plugins. Not on a read-only tab: the tools change the form.
 		     Available props for plugin components:
 		       apply-schema       — (schema) => void        Imports a schema object into the editor and enables Save.
 		       get-current-schema — () => String|null       The editor's current schema as JSON; its `id` is the form id.
 		       tab-element        — Object                  Current tab descriptor: { id, key, name, type, version, isSaved, ... } -->
 		<component
-			v-if="formTool && props.isActiveTab"
+			v-if="formTool && props.isActiveTab && !props.readOnly"
 			:is="formTool"
 			:apply-schema="applySchema"
 			:get-current-schema="getCurrentSchemaJson"
