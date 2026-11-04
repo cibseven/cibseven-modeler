@@ -378,5 +378,13 @@ describe('FormModeler', () => {
 
       expect(wrapper.findComponent(FormToolStub).exists()).toBe(false)
     })
+
+    it('is not rendered on a read-only tab, as the tools change the form', async () => {
+      getPlugin.mockReturnValue(FormToolStub)
+      const wrapper = mountFormModeler({ readOnly: true })
+      await flushPromises()
+
+      expect(wrapper.findComponent(FormToolStub).exists()).toBe(false)
+    })
   })
 })
