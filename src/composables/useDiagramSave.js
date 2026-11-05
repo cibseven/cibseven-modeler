@@ -40,13 +40,19 @@ export default function useDiagramSave(props, emit, sessionHooks = {}) {
    * through the autosave status otherwise: a silent failure would leave the indicator on
    * the last successful time and let the user believe the work is saved.
    */
-  const _reportFailure = (isAutosave) => {
+  const _reportFailure = (isAutosave, error = null) => {
     if (isAutosave) {
       if (autosaveHook) autosaveHook(props.tabElement, { state: 'failed' })
     } else {
-      emit('showToastMessage', { isSuccess: false, toastText: 'toastSomethingWentWrong' })
+      emit('showToastMessage', { isSuccess: false, toastText: _failureToast(error) })
     }
   }
+
+  // The backend refuses a key the folder has, also one the checks here could not see: a tab
+  // that does not know its folder, a save meanwhile, or a database that keeps keys unique across folders
+  const _failureToast = error =>
+    ['ExistingProcessKeyException', 'ExistingFormIdException'].includes(error?.response?.data?.type)
+      ? 'toastSaveErrorDuplicateKey' : 'toastSomethingWentWrong'
 
   const _createSessionSafely = async (response, blob, sessionResponse, isAutosave = false) => {
     if (createSessionHook && sessionResponse?.message === 'NO_SESSION') {
@@ -99,12 +105,15 @@ export default function useDiagramSave(props, emit, sessionHooks = {}) {
     // The backend refuses it too; a model the user may only look at is not even sent
     if (props.readOnly) return false
     const keyToCompare = props.tabElement.isSaved ? storedKey : ''
+    // A key is unique within a folder, so only the models in the one this is saved in count
+    const folderId = props.tabElement.folderId ?? null
+    const inFolder = (storeStateSlice ?? []).filter(item => item.folderId === folderId)
     // Instant check against the loaded list…
-    let duplicate = !!checkBeforeAction(newKey, keyToCompare, storeStateSlice, itemKeyField)
+    let duplicate = !!checkBeforeAction(newKey, keyToCompare, inFolder, itemKeyField)
     // …then an authoritative backend check, but only when the key is new/changed
-    // (covers ids that exist on a not-yet-loaded page; the DB constraint is the final guard).
+    // (covers ids that exist on a not-yet-loaded page; the backend refuses it as the final guard).
     if (!duplicate && newKey && newKey !== keyToCompare) {
-      duplicate = await keyExistsRemote(newKey, itemKeyField === 'formId' ? 'form' : 'process')
+      duplicate = await keyExistsRemote(newKey, itemKeyField === 'formId' ? 'form' : 'process', folderId)
     }
 
     if (duplicate) {
@@ -130,7 +139,7 @@ export default function useDiagramSave(props, emit, sessionHooks = {}) {
         if (functionToExecute) functionToExecute(xml)
         return true
       } catch (error) {
-        _reportFailure(isAutosave)
+        _reportFailure(isAutosave, error)
         console.error(error)
         return false
       }
@@ -151,7 +160,7 @@ export default function useDiagramSave(props, emit, sessionHooks = {}) {
         if (functionToExecute) functionToExecute(xml)
         return true
       } catch (error) {
-        emit('showToastMessage', { isSuccess: false, toastText: 'toastSomethingWentWrong' })
+        emit('showToastMessage', { isSuccess: false, toastText: _failureToast(error) })
         console.error(error)
         return false
       }

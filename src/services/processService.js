@@ -43,29 +43,48 @@ const getUnifiedDiagramById = id => {
   return getAxios().get(getModelerServicePath() + '/unified-diagrams/' + id)
 }
 
-const fetchProcessByKey = key => {
-  return getAxios().get(getModelerServicePath() + '/process/find-by-key', { params: { key } })
+/**
+ * The diagram with this key in the folder given. Without a folder, the latest among those the
+ * user may see: a key is unique only within a folder, so several folders may hold it.
+ */
+const fetchProcessByKey = (key, folderId = null) => {
+  const params = folderId ? { key, folderId } : { key }
+  return getAxios().get(getModelerServicePath() + '/process/find-by-key', { params })
 }
 
 /**
  * Authoritative (database-backed) duplicate-key check, beyond the loaded/paginated
- * store list. Returns true when a diagram/form with this EXACT key already exists,
- * via the exact by-key lookups (200 = exists, 404 = not found). A 403 exists too, in a
- * project the user may not open: keys are unique across projects. On any other error we
- * return false so a transient failure never blocks the user; the backend's unique
- * constraint remains the final guard.
+ * store list. A key is unique within a folder, so only the folder the model goes into
+ * is asked: true when a diagram/form with this EXACT key is already there (200), false
+ * when not (404). On any other error we return false so a transient failure never
+ * blocks the user; the backend refuses the save itself as the final guard.
  *
  * @param {string} key - process key (bpmn/dmn) or form id.
  * @param {'form'|string} type - 'form' looks up forms by formId; otherwise processes by processkey.
+ * @param {string|null} folderId - the folder the model is saved in; without one nothing can collide.
  */
-const keyExistsRemote = async (key, type) => {
-  if (!key) return false
+const keyExistsRemote = async (key, type, folderId) => {
+  if (!key || !folderId) return false
   try {
-    await (type === 'form' ? fetchFormByFormId(key) : fetchProcessByKey(key)) // 404 rejects → caught below
+    await (type === 'form' ? fetchFormByFormId(key, folderId) : fetchProcessByKey(key, folderId)) // 404 rejects → caught below
     return true
-  } catch (error) {
-    return error?.response?.status === 403
+  } catch {
+    return false
   }
+}
+
+/**
+ * Whether another model has the key, in any folder and any project, including those hidden
+ * from the user; the answer names none of them. The engine keeps one definition per process
+ * key and resolves a form reference by form id, so deploying either replaces the other.
+ *
+ * @param {string|null} id - the model to leave out, when it is saved.
+ */
+const keyInUseElsewhere = async (key, type, id = null) => {
+  if (!key) return false
+  const params = type === 'form' ? { formId: key } : { key }
+  if (id) params.id = id
+  return (await getAxios().get(getModelerServicePath() + (type === 'form' ? '/form' : '/process') + '/key-in-use', { params })) === true
 }
 
 const fetchProcessByName = name => {
@@ -119,6 +138,7 @@ export {
   getUnifiedDiagrams,
   getUnifiedDiagramById,
   keyExistsRemote,
+  keyInUseElsewhere,
   fetchProcessByKey,
   fetchProcessByName,
   fetchProcessById,

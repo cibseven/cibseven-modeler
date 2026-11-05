@@ -288,6 +288,24 @@ describe('FolderPickerModal', () => {
         expect(wrapper.find('button.btn-primary').attributes('disabled')).toBeDefined()
     })
 
+    /** A copy keeps its key elsewhere, but beside the original it needs one of its own (CIB7-2277). */
+    it('suggests the key for the folder chosen until the user types one', async () => {
+        const wrapper = mountModal(FolderPickerModal)
+        const keyFor = folderId => folderId === 'invoicing' ? 'invoice-copy' : 'invoice'
+        await open(wrapper, { requireKey: true, defaultKey: 'invoice', keyFor })
+        const key = () => wrapper.find('input[type="text"]').element.value
+
+        expect(key()).toBe('invoice')
+        await wrapper.findAll('input[type="radio"]')[1].setValue()
+        await flushPromises()
+        expect(key()).toBe('invoice-copy')
+
+        await wrapper.find('input[type="text"]').setValue('mine')
+        await wrapper.findAll('input[type="radio"]')[0].setValue()
+        await flushPromises()
+        expect(key()).toBe('mine')
+    })
+
     it('passes the chosen folder on', async () => {
         const accept = vi.fn().mockResolvedValue()
         const wrapper = mountModal(FolderPickerModal)

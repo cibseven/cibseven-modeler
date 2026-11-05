@@ -20,6 +20,8 @@ import { mount, flushPromises } from '@vue/test-utils'
 const m = vi.hoisted(() => ({
     fetchForms: vi.fn(),
     fetchFormById: vi.fn(),
+    fetchFormsByFormId: vi.fn(),
+    keyInUseElsewhere: vi.fn(),
     modalShow: vi.fn(),
 }))
 
@@ -35,6 +37,10 @@ vi.mock('../../services/deployService', () => ({
 vi.mock('../../services/formService', () => ({
     fetchForms: m.fetchForms,
     fetchFormById: m.fetchFormById,
+    fetchFormsByFormId: m.fetchFormsByFormId,
+}))
+vi.mock('../../services/processService', () => ({
+    keyInUseElsewhere: m.keyInUseElsewhere,
 }))
 vi.mock('min-dash', () => ({ debounce: fn => fn }))
 
@@ -60,12 +66,12 @@ const FORM_CONTENT = { id: 'invoice-form', components: [], schemaVersion: 4 }
 
 // --- helpers ---
 
-function mountModal({ type = 'bpmn-c7', diagram = BPMN_NO_REF } = {}) {
+function mountModal({ type = 'bpmn-c7', diagram = BPMN_NO_REF, folderId = null, isSaved = false } = {}) {
     return mount(ModalDeploy, {
         props: {
             diagram,
             showModal: false,
-            tabNavList: { type, id: 'tab-1', name: 'My Process' },
+            tabNavList: { type, id: 'tab-1', name: 'My Process', folderId, isSaved },
         },
         global: { mocks: { $t: k => k } },
     })
@@ -87,6 +93,8 @@ describe('ModalDeploy — form picker', () => {
         vi.clearAllMocks()
         m.fetchForms.mockResolvedValue([])
         m.fetchFormById.mockResolvedValue(FORM_CONTENT)
+        m.fetchFormsByFormId.mockResolvedValue([])
+        m.keyInUseElsewhere.mockResolvedValue(false)
     })
 
     describe('panel visibility', () => {
@@ -200,29 +208,28 @@ describe('ModalDeploy — form picker', () => {
 
     describe('auto-add on modal open', () => {
         it('auto-adds forms matching camunda:formRef on modal open', async () => {
-            m.fetchForms.mockResolvedValue(FORM_LIST)
+            m.fetchFormsByFormId.mockResolvedValue(FORM_LIST)
             const wrapper = mountModal({ diagram: BPMN_WITH_REF })
             await openModal(wrapper)
 
-            expect(m.fetchForms).toHaveBeenCalledWith(0, 1, 'invoice-form')
+            expect(m.fetchFormsByFormId).toHaveBeenCalledWith('invoice-form')
             expect(wrapper.find('[title="invoice-form.form"]').exists()).toBe(true)
         })
 
-        it('does not call fetchForms when the BPMN has no formRef attributes', async () => {
+        it('does not look forms up when the BPMN has no formRef attributes', async () => {
             const wrapper = mountModal({ diagram: BPMN_NO_REF })
             await openModal(wrapper)
-            expect(m.fetchForms).not.toHaveBeenCalled()
+            expect(m.fetchFormsByFormId).not.toHaveBeenCalled()
         })
 
         it('silently skips auto-add when the form is not found in the modeler', async () => {
-            m.fetchForms.mockResolvedValue([]) // no match
             const wrapper = mountModal({ diagram: BPMN_WITH_REF })
             await openModal(wrapper)
             expect(wrapper.find('[title="invoice-form.form"]').exists()).toBe(false)
         })
 
         it('resets the resource list on each modal open', async () => {
-            m.fetchForms.mockResolvedValue(FORM_LIST)
+            m.fetchFormsByFormId.mockResolvedValue(FORM_LIST)
             const wrapper = mountModal({ diagram: BPMN_WITH_REF })
 
             await openModal(wrapper)
@@ -230,9 +237,91 @@ describe('ModalDeploy — form picker', () => {
 
             // Open again — list should not accumulate
             await wrapper.setProps({ showModal: false })
-            m.fetchForms.mockResolvedValue(FORM_LIST)
             await openModal(wrapper)
             expect(wrapper.findAll('[title="invoice-form.form"]')).toHaveLength(1)
+        })
+
+        /** A form id repeats across folders: the form beside the diagram is the one it means (CIB7-2277). */
+        it('adds the form in the folder of the diagram when several have the form id, and says so', async () => {
+            m.fetchFormsByFormId.mockResolvedValue([
+                { id: 'f2', formId: 'invoice-form', folderId: 'archive' },
+                { id: 'f1', formId: 'invoice-form', folderId: 'sales' },
+            ])
+            const wrapper = mountModal({ diagram: BPMN_WITH_REF, folderId: 'sales' })
+            await openModal(wrapper)
+
+            expect(m.fetchFormById).toHaveBeenCalledWith('f1')
+            expect(m.fetchFormById).not.toHaveBeenCalledWith('f2')
+            expect(wrapper.text()).toContain('deployForm.forms.ambiguous')
+        })
+
+        it('adds the latest form and warns of nothing when only one has the form id', async () => {
+            m.fetchFormsByFormId.mockResolvedValue([{ id: 'f2', formId: 'invoice-form', folderId: 'archive' }])
+            const wrapper = mountModal({ diagram: BPMN_WITH_REF, folderId: 'sales' })
+            await openModal(wrapper)
+
+            expect(m.fetchFormById).toHaveBeenCalledWith('f2')
+            expect(wrapper.text()).not.toContain('deployForm.forms.ambiguous')
+        })
+    })
+
+    describe('another model with the key', () => {
+        it('warns when another model uses the process key, leaving a model not saved yet out', async () => {
+            m.keyInUseElsewhere.mockResolvedValue(true)
+            const wrapper = mountModal({ diagram: BPMN_NO_REF })
+            await openModal(wrapper)
+
+            expect(m.keyInUseElsewhere).toHaveBeenCalledWith('proc', 'process', null)
+            expect(wrapper.text()).toContain('deployForm.keyInUse.process')
+        })
+
+        it('asks about the form id of a form, leaving the saved form itself out', async () => {
+            m.keyInUseElsewhere.mockResolvedValue(true)
+            const wrapper = mountModal({ type: 'form', diagram: JSON.stringify({ id: 'invoice-form' }), isSaved: true })
+            await openModal(wrapper)
+
+            expect(m.keyInUseElsewhere).toHaveBeenCalledWith('invoice-form', 'form', 'tab-1')
+            expect(wrapper.text()).toContain('deployForm.keyInUse.form')
+        })
+
+        /** A DMN model has no process key, so its warning speaks of the decisions it deploys. */
+        it('warns about a DMN model in its own words', async () => {
+            m.keyInUseElsewhere.mockResolvedValue(true)
+            const dmn = '<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="invoice-rules"><decision id="d1"/></definitions>'
+            const wrapper = mountModal({ type: 'dmn', diagram: dmn })
+            await openModal(wrapper)
+
+            expect(m.keyInUseElsewhere).toHaveBeenCalledWith('invoice-rules', 'process', null)
+            expect(wrapper.text()).toContain('deployForm.keyInUse.decision')
+            expect(wrapper.text()).not.toContain('deployForm.keyInUse.process')
+        })
+
+        /** An answer slower than the user belongs to the opening that asked, not to the next one. */
+        it('drops the answer of an earlier opening', async () => {
+            let answerFirst
+            m.keyInUseElsewhere.mockReturnValueOnce(new Promise(resolve => { answerFirst = resolve }))
+            m.fetchFormsByFormId.mockReturnValueOnce(new Promise(() => {}))
+            const wrapper = mountModal({ diagram: BPMN_WITH_REF })
+            await openModal(wrapper)
+
+            await wrapper.setProps({ showModal: false })
+            m.fetchFormsByFormId.mockResolvedValue([])
+            await openModal(wrapper)
+            answerFirst(true)
+            await flushPromises()
+
+            expect(wrapper.text()).not.toContain('deployForm.keyInUse')
+        })
+
+        it('says nothing when no other model has it, or when there is no answer', async () => {
+            const wrapper = mountModal({ diagram: BPMN_NO_REF })
+            await openModal(wrapper)
+            expect(wrapper.text()).not.toContain('deployForm.keyInUse')
+
+            await wrapper.setProps({ showModal: false })
+            m.keyInUseElsewhere.mockRejectedValue(new Error('network'))
+            await openModal(wrapper)
+            expect(wrapper.text()).not.toContain('deployForm.keyInUse')
         })
     })
 })

@@ -31,7 +31,7 @@ const newDiagramMocks = vi.hoisted(() => ({ toggle: vi.fn() }))
 
 const storeMocks = vi.hoisted(() => ({ dispatch: vi.fn() }))
 
-const processServiceMocks = vi.hoisted(() => ({ fetchProcessByKey: vi.fn() }))
+const processServiceMocks = vi.hoisted(() => ({ fetchProcessByKey: vi.fn(), keyExistsRemote: vi.fn() }))
 
 const folderServiceMocks = vi.hoisted(() => ({ fetchUserFolder: vi.fn() }))
 
@@ -122,7 +122,7 @@ vi.mock('../../../composables/useFileImport.js', () => ({
 }))
 
 vi.mock('../../../services/processService.js', () => ({
-  keyExistsRemote: vi.fn().mockResolvedValue(false),
+  keyExistsRemote: (...args) => processServiceMocks.keyExistsRemote(...args),
   fetchProcessByKey: (...args) => processServiceMocks.fetchProcessByKey(...args),
 }))
 
@@ -1032,6 +1032,24 @@ describe('CibsevenModeler opened from Cockpit', () => {
       conflictModal(wrapper).props('functionAfterCanceling')()
 
       expect(tabManagerState.tabNavList.value).toEqual([])
+    })
+  })
+  /** A key is unique within a folder, so a new diagram only collides with the models of its own (CIB7-2277). */
+  describe('the duplicate check of a new diagram', () => {
+    afterEach(() => { storeState.modeler.processes.processes = [] })
+
+    it('counts only the models in the folder the new diagram goes into', async () => {
+      storeState.modeler.processes.processes = [{ id: 'p9', processkey: 'invoice', folderId: 'archive' }]
+      processServiceMocks.keyExistsRemote.mockResolvedValue(false)
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+
+      await wrapper.vm.handleNavigateFolder('invoicing')
+      expect(await wrapper.vm.checkDuplicateId('invoice', 'bpmn-c7')).toBe(false)
+      expect(processServiceMocks.keyExistsRemote).toHaveBeenCalledWith('invoice', 'bpmn-c7', 'invoicing')
+
+      await wrapper.vm.handleNavigateFolder('archive')
+      expect(await wrapper.vm.checkDuplicateId('invoice', 'bpmn-c7')).toBe(true)
     })
   })
 })

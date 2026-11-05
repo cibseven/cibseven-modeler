@@ -297,28 +297,32 @@ describe('StartPage folders', () => {
       return picker.vm.show.mock.calls[0][0]
     }
 
-    it('asks a diagram for a process key of its own', async () => {
+    /** A key is unique within a folder: a copy elsewhere keeps it, one beside the original needs its own (CIB7-2277). */
+    it('suggests the key of a diagram for another folder and a new one beside it', async () => {
       const wrapper = await mountStartPage()
 
       const options = await openPicker(wrapper, DIAGRAMS[0])
 
       expect(options.keyLabel).toBe('folders.copyKey')
-      expect(options.defaultKey).toBe('process-one-copy')
-      await options.accept('invoicing', 'process-one-copy')
-      expect(copyProcessToFolder).toHaveBeenCalledWith('p1', 'invoicing', 'process-one-copy', 'Process One')
+      expect(options.defaultKey).toBe('process-one')
+      expect(options.keyFor('invoicing')).toBe('process-one')
+      expect(options.keyFor('general')).toBe('process-one-copy')
+      await options.accept('invoicing', 'process-one')
+      expect(copyProcessToFolder).toHaveBeenCalledWith('p1', 'invoicing', 'process-one', 'Process One')
     })
 
-    /** A form is referenced by its form id, so its copy needs one rather than a process key. */
-    it('asks a form for a form id of its own', async () => {
+    /** A form is referenced by its form id, so its copy is asked for one rather than a process key. */
+    it('suggests the form id of a form the same way', async () => {
       const form = { id: 'f1', formId: 'invoice-form', type: DIAGRAM_TYPE.FORM, folderId: 'general' }
       const wrapper = await mountStartPage({ diagrams: [form] })
 
       const options = await openPicker(wrapper, form)
 
       expect(options.keyLabel).toBe('folders.copyFormId')
-      expect(options.defaultKey).toBe('invoice-form-copy')
-      await options.accept('invoicing', 'invoice-form-copy')
-      expect(copyFormToFolder).toHaveBeenCalledWith('f1', 'invoicing', 'invoice-form-copy')
+      expect(options.defaultKey).toBe('invoice-form')
+      expect(options.keyFor('general')).toBe('invoice-form-copy')
+      await options.accept('invoicing', 'invoice-form')
+      expect(copyFormToFolder).toHaveBeenCalledWith('f1', 'invoicing', 'invoice-form')
       expect(copyProcessToFolder).not.toHaveBeenCalled()
     })
   })

@@ -30,6 +30,7 @@ import {
     fetchForms,
     fetchFormById,
     fetchFormByFormId,
+    fetchFormsByFormId,
     saveForm,
     updateForm,
     deleteFormById,
@@ -140,6 +141,35 @@ describe('formService', () => {
             } catch (error) {
                 expect(error).toBeDefined()
             }
+        })
+
+        // A form id is unique only within a folder, so a lookup may name the folder to look in
+        it('looks in the folder given', async () => {
+            m.get.mockResolvedValue({})
+
+            await fetchFormByFormId('contact-form', 'sales')
+
+            expect(m.get).toHaveBeenCalledWith('/api/modeler/form/find-by-formid', {
+                params: { formId: 'contact-form', folderId: 'sales' }
+            })
+        })
+    })
+
+    describe('fetchFormsByFormId', () => {
+        it('lists every visible form with the form id', async () => {
+            const forms = [{ id: 'f2', formId: 'contact-form' }, { id: 'f1', formId: 'contact-form' }]
+            m.get.mockResolvedValue(forms)
+
+            expect(await fetchFormsByFormId('contact-form')).toEqual(forms)
+            expect(m.get).toHaveBeenCalledWith('/api/modeler/form/find-all-by-formid', {
+                params: { formId: 'contact-form' }
+            })
+        })
+
+        it('answers an empty list when there is no answer', async () => {
+            m.get.mockResolvedValue(undefined)
+
+            expect(await fetchFormsByFormId('contact-form')).toEqual([])
         })
     })
 

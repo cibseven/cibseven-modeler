@@ -54,7 +54,7 @@
                     <div v-if="requireKey" class="mt-3">
                         <label class="form-label" :for="keyId">{{ $t(keyLabel) }}</label>
                         <input :id="keyId" type="text" maxlength="100" class="form-control form-control-sm" v-model="key"
-                            @input="error = ''" @keyup.enter="handleAccept">
+                            @input="error = ''; keyEdited = true" @keyup.enter="handleAccept">
                     </div>
                     <div v-if="error" tabindex="-1" role="alert" aria-live="assertive" aria-atomic="true"
                         class="d-block invalid-feedback">{{ error }}</div>
@@ -72,7 +72,7 @@
 
 <script setup>
 import * as bootstrap from 'bootstrap'
-import { computed, onMounted, ref, useId } from 'vue'
+import { computed, onMounted, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { folderErrorMessage } from '../../utils/folderErrors.js'
 
@@ -95,6 +95,10 @@ const runAfterClose = ref(false)
 // Where the item already is: listed, but not a choice. null is the top level, undefined is none
 const current = ref(undefined)
 const shown = ref(false)
+// The key to suggest for a folder, when it depends on the one chosen
+let keyFor = null
+// Once the user typed a key, choosing another folder leaves it alone
+const keyEdited = ref(false)
 let modalBootstrap = null
 let onAccept = null
 // One click is one answer: the button stays clickable while the dialog fades out
@@ -104,6 +108,10 @@ let accepting = false
 const isChosen = computed(() => selected.value !== null)
 
 const isCurrent = id => current.value !== undefined && id === (current.value ?? '')
+
+watch(selected, folderId => {
+    if (keyFor && !keyEdited.value && folderId !== null) key.value = keyFor(folderId === '' ? null : folderId)
+})
 
 onMounted(() => {
     if (!modalRoot.value) return
@@ -148,12 +156,14 @@ const handleAccept = async () => {
  *   reports itself elsewhere
  * @param {string|null} [options.current] the item's current location, shown but disabled;
  *   null is the top level
+ * @param {Function} [options.keyFor] (folderId) => the key to suggest once that folder is chosen,
+ *   until the user types one
  */
 const show = ({ folders, title: dialogTitle, allowTopLevel: topLevel = false,
         requireKey: needsKey = false, defaultKey = '', accept, selected: preselected = null,
         runAfterClose: afterClose = false, current: currentLocation = undefined,
         keyLabel: label = 'folders.copyKey',
-        keyRequired: required = 'folders.copyKeyRequired' }) => {
+        keyRequired: required = 'folders.copyKeyRequired', keyFor: suggestKey = null }) => {
     options.value = folders ?? []
     title.value = dialogTitle
     allowTopLevel.value = topLevel
@@ -161,6 +171,8 @@ const show = ({ folders, title: dialogTitle, allowTopLevel: topLevel = false,
     runAfterClose.value = afterClose
     keyLabel.value = label
     keyRequired.value = required
+    keyFor = suggestKey
+    keyEdited.value = false
     key.value = defaultKey
     current.value = currentLocation
     // Only a folder still in the tree can be offered as the choice already made

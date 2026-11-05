@@ -102,8 +102,8 @@
 		"body": "The process has been successfully saved."
 	},
 	"toastSaveErrorDuplicateKey": {
-		"title": "Process ID already exists",
-		"body": "Change the process ID to a unique one"
+		"title": "Process ID already exists in this folder",
+		"body": "Change the process ID, or save the model in another folder"
 	},
 	"toastSaveErrorMissingId": {
 		"title": "Missing form ID",
@@ -225,12 +225,18 @@
 				"body": "Every additional file must have a non-empty resource name."
 			}
 		},
+		"keyInUse": {
+			"process": "Another model in the modeler uses this process key. Deploying adds a new version to the process it deployed.",
+			"decision": "Another DMN model in the modeler uses this key. Deploying adds a new version to the decisions it deployed.",
+			"form": "Another form in the modeler uses this form id. Deploying adds a new version to the form it deployed."
+		},
 		"forms": {
 			"addButton": "Add form",
 			"search": "Search forms...",
 			"typeToSearch": "Type at least 3 characters to search",
 			"empty": "No forms found",
 			"referenced": "Referenced",
+			"ambiguous": "Several forms use the form id {formIds}. The closest one was added (same folder first, then same project): check that it is the right one.",
 			"loadError": {
 				"title": "Failed to load forms",
 				"body": "The list of saved forms could not be loaded."
@@ -550,7 +556,7 @@
 		"nameTooLong": "The name is longer than 255 characters.",
 		"valueTooLong": "That is longer than {limit} characters.",
 		"moveRefused": "A folder cannot be moved into itself.",
-		"keyTaken": "\"{key}\" is already taken.",
+		"keyTaken": "\"{key}\" is already used in this folder.",
 		"saveFailed": "The folder could not be saved.",
 		"rename": "Rename",
 		"move": "Move",
@@ -562,9 +568,9 @@
 		"moveModelTitle": "Move \"{name}\" to a folder",
 		"copyModelTitle": "Copy \"{name}\" to a folder",
 		"copyKey": "Process key of the copy",
-		"copyKeyRequired": "A copy needs a process key of its own.",
+		"copyKeyRequired": "A copy needs a process key.",
 		"copyFormId": "Form id of the copy",
-		"copyFormIdRequired": "A copy needs a form id of its own.",
+		"copyFormIdRequired": "A copy needs a form id.",
 		"destination": "Destination",
 		"currentLocation": "current location",
 		"importTitle": "Import into a folder",
