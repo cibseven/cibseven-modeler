@@ -39,10 +39,7 @@
 							:class="['btn btn-sm btn-light border text-secondary search-elements', { active: isSearchOpen }]">
 							<span class="mdi mdi-18px mdi-magnify" aria-hidden="true"></span>
 						</button>
-						<button @click="toggleFullscreen" class="btn btn-sm btn-light border text-secondary"
-							:title="isFullscreen ? $t('buttons.exitFullscreen') : $t('buttons.fullscreen')"
-							:aria-label="isFullscreen ? $t('buttons.exitFullscreen') : $t('buttons.fullscreen')"
-							:aria-pressed="isFullscreen">
+						<button @click="toggleFullscreen" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.fullscreen')" :aria-label="$t('buttons.fullscreen')" :aria-pressed="isFullscreen">
 							<span :class="['mdi', 'mdi-18px', isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen']" aria-hidden="true"></span>
 						</button>
 					</div>
@@ -227,7 +224,6 @@ const consolePanel = ref(null)
 //variables for the list selector component
 const listSelector = ref(null)
 const TYPEC7 = 'bpmn-c7'
-const CANVAS_CONTROL_BTN_CLASS = 'btn btn-sm bg-white text-secondary border border-secondary shadow-sm canvas-control-btn d-inline-flex align-items-center justify-content-center p-1'
 const propertiesPanelComponent = ref(null)
 const isVisiblePropertyPanel = ref(true)
 const resizableDiv = ref(null)
@@ -687,7 +683,7 @@ const _createMonacoEditor = (scriptDivId, textArea, scriptFormat = null) => {
 	divMonaco.style.overflow = 'hidden'
 
 	const expandBtn = document.createElement('button')
-	expandBtn.className = `${CANVAS_CONTROL_BTN_CLASS} position-absolute`
+	expandBtn.className = 'btn btn-sm btn-light border position-absolute'
 	expandBtn.style.bottom = '4px'
 	expandBtn.style.right = '4px'
 	expandBtn.style.zIndex = '10'
@@ -1088,44 +1084,6 @@ defineExpose({
 	margin: 0;
 	padding: 0;
 
-}
-
-/* Canvas controls use Bootstrap classes; custom rules cover sizing and interaction states. */
-.canvas-control-btn {
-	width: 2.25rem;
-	height: 2.25rem;
-	line-height: 1;
-}
-
-.canvas-control-btn:hover:not(:disabled):not(.disabled) {
-	background-color: var(--bs-gray-200) !important;
-	border-color: var(--bs-gray-600) !important;
-	color: var(--bs-secondary) !important;
-}
-
-.canvas-control-btn:focus-visible:not(:disabled):not(.disabled) {
-	background-color: var(--bs-gray-200) !important;
-	border-color: var(--bs-gray-600) !important;
-	color: var(--bs-secondary) !important;
-	outline: 2px solid var(--bs-dark);
-	outline-offset: 2px;
-	box-shadow: 0 0 0 1px var(--bs-white), var(--bs-box-shadow-sm) !important;
-}
-
-.canvas-control-btn:active:not(:disabled):not(.disabled) {
-	background-color: var(--bs-gray-200) !important;
-	border-color: var(--bs-gray-600) !important;
-	color: var(--bs-secondary) !important;
-	box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.12) !important;
-}
-
-.canvas-control-btn:disabled,
-.canvas-control-btn.disabled {
-	background-color: var(--bs-white) !important;
-	border-color: var(--bs-gray-500) !important;
-	color: var(--bs-gray-600) !important;
-	cursor: not-allowed;
-	opacity: 1;
 }
 
 /* Force palette to always display 2 columns */

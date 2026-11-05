@@ -42,10 +42,7 @@
 							<span class="mdi mdi-18px mdi-magnify" aria-hidden="true"></span>
 						</button>
 						</template>
-						<button @click="toggleFullscreen" class="btn btn-sm btn-light border text-secondary"
-							:title="isFullscreen ? $t('buttons.exitFullscreen') : $t('buttons.fullscreen')"
-							:aria-label="isFullscreen ? $t('buttons.exitFullscreen') : $t('buttons.fullscreen')"
-							:aria-pressed="isFullscreen">
+						<button @click="toggleFullscreen" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.fullscreen')" :aria-label="$t('buttons.fullscreen')" :aria-pressed="isFullscreen">
 							<span :class="['mdi', 'mdi-18px', isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen']" aria-hidden="true"></span>
 						</button>
 					</div>

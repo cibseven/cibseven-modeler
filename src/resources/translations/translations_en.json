@@ -169,7 +169,6 @@
 		"resetViewport": "Reset viewport",
 		"minimap": "Minimap",
 		"fullscreen": "Fullscreen",
-		"exitFullscreen": "Exit fullscreen",
 		"searchElements": "Search elements (Ctrl+F)",
 		"expandScript": "Open in full editor",
 		"collapsePanel": "Collapse panel",
