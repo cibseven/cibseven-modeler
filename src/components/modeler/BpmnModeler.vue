@@ -1114,6 +1114,13 @@ defineExpose({
 	background-color: var(--bs-primary);
 }
 
+/* Force palette to always display 2 columns */
+.djs-palette {
+	width: 94px !important;
+	border-radius: 0.25rem !important;
+	border-color: var(--bs-gray-500) !important;
+}
+
 /* The icon buttons on the canvas: no gray after a click, and the toggled one filled, without a ring.
    #8092A6 is the theme's $gray-650, which has no CSS variable. */
 .canvas-controls .btn {
@@ -1141,12 +1148,6 @@ defineExpose({
 	--popup-border-color: var(--bs-gray-500);
 }
 
-/* Force palette to always display 2 columns */
-.djs-palette {
-	width: 94px !important;
-	border-radius: 0.25rem !important;
-	border-color: var(--bs-gray-500) !important;
-}
 .container.modeler .djs-palette .entry {
 	font-size: 1.5rem;
 	border-radius: 0.25rem;
