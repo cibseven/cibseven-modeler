@@ -39,6 +39,14 @@ describe('TabNavItem accessibility', () => {
         expect(tab.attributes('tabindex')).toBe('0')
     })
 
+    it('marks unsaved changes with a labelled dot, and only then', () => {
+        const dot = mountItem({ tabNavList: { type: 'bpmn-c7', canSave: true } }).find('.unsaved-dot')
+        expect(dot.exists()).toBe(true)
+        expect(dot.attributes('role')).toBe('img')
+        expect(dot.attributes('aria-label')).toBe('tabs.unsavedChanges')
+        expect(mountItem().find('.unsaved-dot').exists()).toBe(false)
+    })
+
     it('aria-selected reflects whether the tab is the active one', () => {
         expect(mountItem({ activeTab: 0, index: 0 }).find('[role="tab"]').attributes('aria-selected')).toBe('true')
         expect(mountItem({ activeTab: 1, index: 0 }).find('[role="tab"]').attributes('aria-selected')).toBe('false')

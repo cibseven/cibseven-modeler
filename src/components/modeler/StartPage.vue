@@ -69,24 +69,30 @@
                     <div class="col-12 col-xl-7 d-flex flex-wrap gap-2 justify-content-xl-end">
                         <!-- At the top level a folder is a project, and creating one is all there is to do -->
                         <button v-if="canEditHere" type="button" class="btn text-nowrap create-folder"
-                            :class="currentFolderId ? 'btn-outline-secondary' : 'btn-secondary'"
+                            :class="currentFolderId ? 'btn-light border' : 'btn-secondary'"
                             :title="createFolderLabel" @click="handleCreateFolder">
                             <i class="mdi me-1" :class="currentFolderId ? 'mdi-folder-plus-outline' : 'mdi-briefcase-plus'" aria-hidden="true"></i>{{ createFolderLabel }}
                         </button>
                         <!-- Models are always stored in a folder -->
                         <template v-if="currentFolderId && canEditHere">
-                            <button type="button" class="btn btn-outline-secondary text-nowrap" :title="$t('buttons.importFile')"
+                            <button type="button" class="btn btn-light border text-nowrap" :title="$t('buttons.importFile')"
                                 @click="handleOpenFileInput">
                                 <i class="mdi mdi-upload me-1" aria-hidden="true"></i>{{ $t('buttons.import') }}
                             </button>
-                            <button v-for="button in createButtons" :key="button.type" type="button"
-                                class="btn btn-secondary text-nowrap" :title="$t(button.label)"
-                                :disabled="creatingType !== null" :aria-busy="creatingType === button.type"
-                                @click="button.handler">
-                                <span v-if="creatingType === button.type" class="spinner-border spinner-border-sm me-1"
-                                    aria-hidden="true"></span>
-                                <i v-else class="mdi me-1" :class="DIAGRAM_ICON[button.type]" aria-hidden="true"></i>{{ $t(button.label) }}
-                            </button>
+                            <div class="dropdown">
+                                <button type="button" class="btn btn-secondary dropdown-toggle text-nowrap create-model"
+                                    data-bs-toggle="dropdown" aria-expanded="false"
+                                    :disabled="creatingType !== null" :aria-busy="creatingType !== null">
+                                    <span v-if="creatingType !== null" class="spinner-border spinner-border-sm me-1"
+                                        aria-hidden="true"></span>{{ $t('buttons.createDiagram') }}
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-end">
+                                    <button v-for="button in createButtons" :key="button.type" type="button"
+                                        class="dropdown-item" :disabled="creatingType !== null" @click="button.handler">
+                                        <i class="mdi me-2" :class="DIAGRAM_ICON[button.type]" aria-hidden="true"></i>{{ $t(button.label) }}
+                                    </button>
+                                </div>
+                            </div>
                         </template>
                     </div>
                 </div>
@@ -660,5 +666,31 @@ defineExpose({
 
 .start-page-search .dropdown-toggle.show {
     background-color: var(--bs-gray-200) !important;
+}
+
+/* Focus anywhere in it outlines the whole box, as the webclient's search fields (.search-field) do,
+   instead of a ring on the field or the button alone */
+.start-page-search:focus-within {
+    border-color: var(--bs-gray-800) !important;
+    outline: 2px solid var(--bs-gray-800);
+    outline-offset: -1px;
+}
+
+/* !important: the host's focus ring for inputs and buttons is, and the box draws this one already */
+.start-page-search .start-page-search-field:focus,
+.start-page-search .btn:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.start-page-search .btn-link:focus-visible {
+    color: var(--bs-dark) !important;
+}
+
+/* The focused type filter keeps its edge to the field, as dark and wide as the outline around it;
+   the inset shadow doubles the 1px border without moving the label */
+.start-page-search .start-page-search-segment:focus-visible {
+    border-left-color: var(--bs-gray-800) !important;
+    box-shadow: inset 1px 0 0 var(--bs-gray-800) !important;
 }
 </style>

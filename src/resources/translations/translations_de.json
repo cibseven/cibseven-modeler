@@ -192,7 +192,10 @@
   "tabs": {
     "unsavedChanges": "Ungespeicherte Änderungen",
     "closeAllTitle": "Alle Tabs schließen",
-    "closeAllBody": "Einige Tabs haben ungespeicherte Änderungen. Alle ungespeicherten Änderungen gehen verloren."
+    "closeAllBody": "Einige Tabs haben ungespeicherte Änderungen. Alle ungespeicherten Änderungen gehen verloren.",
+    "leaveTitle": "Modeler verlassen?",
+    "leaveBody": "Einige Tabs haben ungespeicherte Änderungen. Wenn Sie den Modeler verlassen, gehen alle ungespeicherten Änderungen verloren.",
+    "leaveAccept": "Verlassen"
   },
   "deployForm": {
     "deploymentName": {

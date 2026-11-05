@@ -20,7 +20,7 @@
 			<div class="d-flex flex-grow-1 overflow-auto" style="min-height: 0;">
 				<div v-show="!props.isModelerVisible" class="position-relative" :style="styleCanvas">
 					<div class="canvas h-100 w-100" ref="canvas" tabindex="0"></div>
-					<div class="position-absolute top-0 end-0 d-flex flex-column gap-1 m-2" style="z-index: 10;">
+					<div class="canvas-controls position-absolute top-0 end-0 d-flex flex-column gap-1 m-2" style="z-index: 10;">
 						<!-- These work on the diagram (DRD) canvas; decision tables and literal expressions have none -->
 						<template v-if="isDrdShowing">
 						<button @click="zoomIn" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomIn')" :aria-label="$t('buttons.zoomIn')">
@@ -42,7 +42,7 @@
 							<span class="mdi mdi-18px mdi-magnify" aria-hidden="true"></span>
 						</button>
 						</template>
-						<button @click="toggleFullscreen" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.fullscreen')" :aria-label="$t('buttons.fullscreen')" :aria-pressed="isFullscreen">
+						<button @click="toggleFullscreen" :class="['btn btn-sm btn-light border text-secondary', { active: isFullscreen }]" :title="$t('buttons.fullscreen')" :aria-label="$t('buttons.fullscreen')" :aria-pressed="isFullscreen">
 							<span :class="['mdi', 'mdi-18px', isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen']" aria-hidden="true"></span>
 						</button>
 					</div>
@@ -79,7 +79,7 @@
 							<component v-if="AutosaveIndicatorComponent" :is="AutosaveIndicatorComponent" :tab-element="props.tabElement" />
 							<component v-if="VersionButtonComponent && processHistoryListComp?.length > 0"
 								:is="VersionButtonComponent" :history-list="processHistoryListComp" :active-version="activeVersion" />
-							<component v-if="CompareButtonComponent && processHistoryListComp?.length > 1"
+							<component v-if="CompareButtonComponent && processHistoryListComp?.length > 1" class="compare-snapshots"
 								:is="CompareButtonComponent" :history-list="processHistoryListComp" type="dmn" />
 						</div>
 					</template>
