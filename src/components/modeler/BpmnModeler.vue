@@ -162,7 +162,6 @@ import ScopedTemplateGroupsModule from './element-templates/ScopedGroupsModule.j
 import ElementTemplateChooserModule from '@bpmn-io/element-template-chooser'
 import ElementTemplateIconRendererModule from './element-templates/IconRendererModule.js'
 import MakeRoomOnExpandBehaviorModule from './behaviors/MakeRoomOnExpandBehavior.js'
-import CenteredContextPadModule from './context-pad/CenteredContextPadModule.js'
 import CamundaModdleDescriptors from 'camunda-bpmn-moddle/resources/camunda.json'
 import { customTranslate, translateValue } from "../../i18n.js"
 import lintModule from 'bpmn-js-bpmnlint'
@@ -560,7 +559,6 @@ const initializeCamunda7Modeler = () => {
 			customTranslateModule,
 			camundaPlatformBehaviors,
 			MakeRoomOnExpandBehaviorModule,
-			CenteredContextPadModule,
 			{ clipboard: ['value', props.clipboard] },
 			...extraBpmnModules,
 			lintModule
@@ -1169,13 +1167,6 @@ defineExpose({
 	border-radius: 0.3rem;
 	box-shadow: var(--bs-box-shadow);
 }
-/* CenteredContextPadModule anchors it at the middle of the element's top (or bottom) edge */
-.container.modeler .djs-context-pad.djs-context-pad-centered {
-	transform: translate(-50%, -100%);
-}
-.container.modeler .djs-context-pad.djs-context-pad-centered.djs-context-pad-below {
-	transform: translateX(-50%);
-}
 .container.modeler .djs-context-pad .group {
 	display: flex;
 	flex-wrap: wrap;
@@ -1199,19 +1190,13 @@ defineExpose({
 	box-shadow: none;
 }
 
-/* The hand of the hand tool and of dragging the canvas. Chrome draws its own grab cursors as small
-   bitmaps, pixelated on a scaled display and white without an outline on the light canvas; these are
-   vector hands with an outline, in two sizes for sharp scaling. diagram-js sets the class on <body>. */
+/* Chrome's own grab cursors are white without an outline on the light canvas (diagram-js sets these on <body>) */
 body.djs-cursor-grab {
 	cursor: url("../../assets/images/cursors/hand-open.svg") 12 12, grab;
-	cursor: -webkit-image-set(url("../../assets/images/cursors/hand-open.svg") 1x, url("../../assets/images/cursors/hand-open@2x.svg") 2x) 12 12, grab;
-	cursor: image-set(url("../../assets/images/cursors/hand-open.svg") 1x, url("../../assets/images/cursors/hand-open@2x.svg") 2x) 12 12, grab;
 }
 
 body.djs-cursor-grabbing {
 	cursor: url("../../assets/images/cursors/hand-closed.svg") 12 12, grabbing;
-	cursor: -webkit-image-set(url("../../assets/images/cursors/hand-closed.svg") 1x, url("../../assets/images/cursors/hand-closed@2x.svg") 2x) 12 12, grabbing;
-	cursor: image-set(url("../../assets/images/cursors/hand-closed.svg") 1x, url("../../assets/images/cursors/hand-closed@2x.svg") 2x) 12 12, grabbing;
 }
 
 .container.modeler .djs-popup {
