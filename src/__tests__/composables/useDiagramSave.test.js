@@ -211,14 +211,24 @@ describe('useDiagramSave', () => {
     })
 
     describe('duplicate key validation', () => {
-        it('returns false and emits duplicate key toast when key already exists', async () => {
-            const storeStateSlice = [{ processkey: 'existing-key' }]
-            const { save, emitted } = withSetup({ tabElement: makeTabElement() })
+        it('returns false and emits duplicate key toast when the folder has the key already', async () => {
+            const storeStateSlice = [{ processkey: 'existing-key', folderId: 'sales' }]
+            const { save, emitted } = withSetup({ tabElement: makeTabElement({ folderId: 'sales' }) })
             const result = await save(makeSaveOpts({ newKey: 'existing-key', storedKey: '', storeStateSlice, itemKeyField: 'processkey' }))
 
             expect(result).toBe(false)
             const toast = emitted.find(e => e.event === 'showToastMessage')
             expect(toast.args[0].toastText).toBe('toastSaveErrorDuplicateKey')
+        })
+
+        // A key is unique within a folder only (CIB7-2277)
+        it('saves a key that only another folder has', async () => {
+            const storeStateSlice = [{ processkey: 'existing-key', folderId: 'archive' }]
+            const { save } = withSetup({ tabElement: makeTabElement({ folderId: 'sales' }) })
+            const result = await save(makeSaveOpts({ newKey: 'existing-key', storedKey: '', storeStateSlice, itemKeyField: 'processkey' }))
+
+            expect(result).toBe(true)
+            expect(keyExistsRemote).toHaveBeenCalledWith('existing-key', 'process', 'sales')
         })
 
         it('allows save when key matches the currently stored key (update same key)', async () => {
@@ -231,10 +241,10 @@ describe('useDiagramSave', () => {
 
         it('emits duplicate toast when the key exists on the backend but not in the loaded list', async () => {
             keyExistsRemote.mockResolvedValueOnce(true)
-            const { save, emitted } = withSetup({ tabElement: makeTabElement() })
+            const { save, emitted } = withSetup({ tabElement: makeTabElement({ folderId: 'sales' }) })
             const result = await save(makeSaveOpts({ newKey: 'remote-dup', storedKey: '', storeStateSlice: [], itemKeyField: 'processkey' }))
 
-            expect(keyExistsRemote).toHaveBeenCalledWith('remote-dup', 'process')
+            expect(keyExistsRemote).toHaveBeenCalledWith('remote-dup', 'process', 'sales')
             expect(result).toBe(false)
             expect(emitted.find(e => e.event === 'showToastMessage').args[0].toastText).toBe('toastSaveErrorDuplicateKey')
         })

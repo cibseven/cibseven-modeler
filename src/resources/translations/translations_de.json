@@ -102,8 +102,8 @@
     "body": "Der Prozess wurde erfolgreich gespeichert."
   },
   "toastSaveErrorDuplicateKey": {
-    "title": "Die Prozess-ID existiert bereits.",
-    "body": "Geben Sie eine eindeutige Prozess-ID ein."
+    "title": "Die Prozess-ID existiert in diesem Ordner bereits.",
+    "body": "Ändern Sie die Prozess-ID oder speichern Sie das Modell in einem anderen Ordner."
   },
   "toastSaveErrorMissingId": {
     "title": "Fehlende Formular-ID",
@@ -225,12 +225,17 @@
         "body": "Jede zusätzliche Datei muss einen nicht leeren Ressourcennamen haben."
       }
     },
+    "keyInUse": {
+      "process": "Ein anderes Modell im Modeler verwendet diesen Process Key. Das Deployment legt eine neue Version des Prozesses an, den jenes deployt hat.",
+      "form": "Ein anderes Formular im Modeler verwendet diese Form-ID. Das Deployment legt eine neue Version des Formulars an, das jenes deployt hat."
+    },
     "forms": {
       "addButton": "Formular hinzufügen",
       "search": "Formulare suchen...",
       "typeToSearch": "Mindestens 3 Zeichen eingeben, um zu suchen",
       "empty": "Keine Formulare gefunden",
       "referenced": "Referenziert",
+      "ambiguous": "Mehrere Formulare verwenden die Form-ID {formIds}. Hinzugefügt wurde das nächstgelegene (zuerst derselbe Ordner, dann dasselbe Projekt): Prüfen Sie, ob es das richtige ist.",
       "loadError": {
         "title": "Formulare konnten nicht geladen werden",
         "body": "Die Liste der gespeicherten Formulare konnte nicht geladen werden."
@@ -550,7 +555,7 @@
 		"nameTooLong": "Der Name ist länger als 255 Zeichen.",
 		"valueTooLong": "Das ist länger als {limit} Zeichen.",
 		"moveRefused": "Ein Ordner kann nicht in sich selbst verschoben werden.",
-		"keyTaken": "„{key}“ ist bereits vergeben.",
+		"keyTaken": "„{key}“ ist in diesem Ordner bereits vergeben.",
 		"saveFailed": "Der Ordner konnte nicht gespeichert werden.",
 		"rename": "Umbenennen",
 		"move": "Verschieben",
@@ -562,9 +567,9 @@
 		"moveModelTitle": "„{name}“ in einen Ordner verschieben",
 		"copyModelTitle": "„{name}“ in einen Ordner kopieren",
 		"copyKey": "Process Key der Kopie",
-		"copyKeyRequired": "Eine Kopie braucht einen eigenen Process Key.",
+		"copyKeyRequired": "Eine Kopie braucht einen Process Key.",
 		"copyFormId": "Form-ID der Kopie",
-		"copyFormIdRequired": "Eine Kopie braucht eine eigene Form-ID.",
+		"copyFormIdRequired": "Eine Kopie braucht eine Form-ID.",
 		"destination": "Ziel",
 		"currentLocation": "aktueller Ort",
 		"importTitle": "In einen Ordner importieren",

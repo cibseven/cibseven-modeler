@@ -589,9 +589,8 @@ const handleMoveModel = item => {
 }
 
 const handleCopyModel = item => {
-    // A copy is a new model and what identifies it has to be its own: the engine resolves a
-    // process by key, and a form is referenced by its form id
     const isForm = item.type === DIAGRAM_TYPE.FORM
+    const ownKey = isForm ? item.formId : item.processkey
     // A copy may go into any project the user adds to: the source keeps its model
     folderPickerModal.value?.show({
         folders: folderState.flatten(null, { editableOnly: true }),
@@ -599,7 +598,9 @@ const handleCopyModel = item => {
         requireKey: true,
         keyLabel: isForm ? 'folders.copyFormId' : 'folders.copyKey',
         keyRequired: isForm ? 'folders.copyFormIdRequired' : 'folders.copyKeyRequired',
-        defaultKey: `${isForm ? item.formId : item.processkey}-copy`,
+        defaultKey: ownKey,
+        // A key is unique within a folder: a copy elsewhere keeps it, only one beside the original needs its own
+        keyFor: folderId => folderId === (item.folderId ?? null) ? `${ownKey}-copy` : ownKey,
         accept: async (folderId, key) => {
             if (isForm) await copyFormToFolder(item.id, folderId, key)
             else await copyProcessToFolder(item.id, folderId, key, item.name)

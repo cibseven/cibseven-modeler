@@ -99,12 +99,15 @@ export default function useDiagramSave(props, emit, sessionHooks = {}) {
     // The backend refuses it too; a model the user may only look at is not even sent
     if (props.readOnly) return false
     const keyToCompare = props.tabElement.isSaved ? storedKey : ''
+    // A key is unique within a folder, so only the models in the one this is saved in count
+    const folderId = props.tabElement.folderId ?? null
+    const inFolder = (storeStateSlice ?? []).filter(item => item.folderId === folderId)
     // Instant check against the loaded list…
-    let duplicate = !!checkBeforeAction(newKey, keyToCompare, storeStateSlice, itemKeyField)
+    let duplicate = !!checkBeforeAction(newKey, keyToCompare, inFolder, itemKeyField)
     // …then an authoritative backend check, but only when the key is new/changed
-    // (covers ids that exist on a not-yet-loaded page; the DB constraint is the final guard).
+    // (covers ids that exist on a not-yet-loaded page; the backend refuses it as the final guard).
     if (!duplicate && newKey && newKey !== keyToCompare) {
-      duplicate = await keyExistsRemote(newKey, itemKeyField === 'formId' ? 'form' : 'process')
+      duplicate = await keyExistsRemote(newKey, itemKeyField === 'formId' ? 'form' : 'process', folderId)
     }
 
     if (duplicate) {

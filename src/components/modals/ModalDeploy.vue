@@ -25,6 +25,15 @@
 				</div>
 				<div class="modal-body">
 
+					<div v-if="keyUsedElsewhere" class="alert alert-warning py-2 small" role="status">
+						<span class="mdi mdi-alert-outline me-1" aria-hidden="true"></span>
+						{{ $t(props.tabNavList.type === 'form' ? 'deployForm.keyInUse.form' : 'deployForm.keyInUse.process') }}
+					</div>
+					<div v-if="ambiguousFormRefs.length" class="alert alert-warning py-2 small" role="status">
+						<span class="mdi mdi-alert-outline me-1" aria-hidden="true"></span>
+						{{ $t('deployForm.forms.ambiguous', { formIds: ambiguousFormRefs.join(', ') }) }}
+					</div>
+
 					<!-- Diagram deployment details -->
 					<div>
 						<div class="mb-3">
@@ -260,7 +269,9 @@
 import * as bootstrap from 'bootstrap'
 
 import { deployProcess, startProcess } from '../../services/deployService'
-import { fetchForms, fetchFormById } from '../../services/formService'
+import { fetchForms, fetchFormById, fetchFormsByFormId } from '../../services/formService'
+import { keyInUseElsewhere } from '../../services/processService'
+import { projectOfFolder } from '../../utils/projectRights.js'
 import { debounce } from 'min-dash'
 import { ref, computed, onMounted, watch, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -297,6 +308,10 @@ const formPickerLoading = ref(false)
 const formPickerAddingId = ref(null)
 const formPickerSearch = ref('')
 const detectedFormRefs = ref([])
+// Form ids the BPMN references that several visible forms have; the closest one was added
+const ambiguousFormRefs = ref([])
+// Another model has this key, maybe in a project hidden from the user, so nothing names it
+const keyUsedElsewhere = ref(false)
 
 // Auth info
 const useCustomEndpoint = ref(false)
@@ -587,19 +602,45 @@ const addFormResource = async (form) => {
 	}
 }
 
+/**
+ * The form a reference means when several have its form id: the one beside the diagram, then
+ * one in its project, then the latest change. Only forms the user may see are offered.
+ */
+const _formForReference = (candidates, folderId) => {
+	if (!folderId) return candidates[0]
+	return candidates.find(form => form.folderId === folderId)
+		?? candidates.find(form => projectOfFolder(form.folderId) === projectOfFolder(folderId))
+		?? candidates[0]
+}
+
 const _autoAddReferencedForms = async () => {
 	if (!isBpmn.value) return
 	detectedFormRefs.value = getFormRefsFromBpmn(props.diagram)
 	if (!detectedFormRefs.value.length) return
 	for (const ref of detectedFormRefs.value) {
 		try {
-			const forms = await fetchForms(0, 1, ref)
-			const match = (forms ?? []).find(f => f.formId === ref)
+			const candidates = await fetchFormsByFormId(ref)
+			if (candidates.length > 1) ambiguousFormRefs.value.push(ref)
+			const match = _formForReference(candidates, props.tabNavList.folderId)
 			if (!match || addedFormIds.value.has(match.formId)) continue
 			const content = await fetchFormById(match.id)
 			const blob = new Blob([JSON.stringify(content)], { type: 'application/json' })
 			additionalDeploymentResources.value.push({ resourceName: `${match.formId}.form`, blob })
 		} catch { /* silently skip — form may not exist in the modeler */ }
+	}
+}
+
+/**
+ * A key may repeat across folders, but the engine keeps one definition per key: deploying adds a
+ * version to what another model deployed. Said, not refused; without an answer nothing is said.
+ */
+const _checkKeyInUse = async () => {
+	const type = props.tabNavList.type === 'form' ? 'form' : 'process'
+	const ownId = props.tabNavList.isSaved ? props.tabNavList.id : null
+	try {
+		keyUsedElsewhere.value = await keyInUseElsewhere(_getProcessKeyForDeployName(), type, ownId)
+	} catch {
+		keyUsedElsewhere.value = false
 	}
 }
 
@@ -610,10 +651,13 @@ const _showModalComp = () => {
 	formPickerList.value = []
 	formPickerSearch.value = ''
 	detectedFormRefs.value = []
+	ambiguousFormRefs.value = []
+	keyUsedElsewhere.value = false
 	checkIfProcessStartable()
 	disableDeployButton.value = false
 	modalBootstrap.show()
 	_autoAddReferencedForms()
+	_checkKeyInUse()
 }
 
 </script>

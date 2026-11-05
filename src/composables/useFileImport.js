@@ -244,10 +244,11 @@ export default function useFileImport({
 
   const _openFormFromImportedFile = async (jsonExternal, isBatch = false) => {
     const jsonId = JSON.parse(jsonExternal)?.id
-    // The loaded list only holds the folder in view, but a form id is unique across all of
-    // them, so a form that is not on screen still collides
-    let foundForm = forms.value?.find(form => form.formId === jsonId)
-    if (!foundForm) foundForm = await _findFormRemotely(jsonId)
+    // A form id is unique within a folder, so only a form in the one the import goes into
+    // collides; the loaded list may not hold all of it, so the backend is asked too
+    const folderId = importFolderId?.value ?? null
+    let foundForm = forms.value?.find(form => form.formId === jsonId && form.folderId === folderId)
+    if (!foundForm) foundForm = await _findFormRemotely(jsonId, folderId)
 
     if (foundForm) {
       let jsonFromEditor = _checkIfFormOpenInTab(jsonId)
@@ -346,12 +347,14 @@ export default function useFileImport({
   }
 
   /**
-   * The stored diagram with that key, or null. Asked of the backend by exact key rather than
-   * searched: the key is what the unique constraint is on, so a near match is not a conflict.
+   * The stored diagram with that key in the folder, or null. Asked of the backend by exact key
+   * rather than searched: key and folder are what the unique constraint is on, so a near match
+   * is not a conflict. Without a folder the backend picks one, and refuses a key it holds already.
    */
-  const _findProcessRemotely = async key => {
+  const _findProcessRemotely = async (key, folderId) => {
+    if (!folderId) return null
     try {
-      return await fetchProcessByKey(key)
+      return await fetchProcessByKey(key, folderId)
     } catch (e) {
       // Only a 404 answers the question. Reading any other failure as "nothing there" would
       // import a second diagram under a key the database then refuses
@@ -360,9 +363,10 @@ export default function useFileImport({
     }
   }
 
-  const _findFormRemotely = async formId => {
+  const _findFormRemotely = async (formId, folderId) => {
+    if (!folderId) return null
     try {
-      return await fetchFormByFormId(formId)
+      return await fetchFormByFormId(formId, folderId)
     } catch (e) {
       if (e?.response?.status === 404) return null
       throw new Error(t('importErrors.lookupFailed'), { cause: e })
@@ -393,10 +397,11 @@ export default function useFileImport({
       diagramType = DIAGRAM_TYPE.BPMN_C7
     }
 
-    // The loaded list only holds the folder in view, but a process key is unique across all of
-    // them, so a diagram that is not on screen still collides
-    let foundModelerProcess = processes.value?.find(process => process.processkey === foundExternalProcessKey)
-    if (!foundModelerProcess) foundModelerProcess = await _findProcessRemotely(foundExternalProcessKey)
+    // A process key is unique within a folder, so only a diagram in the one the import goes into
+    // collides; the loaded list may not hold all of it, so the backend is asked too
+    const folderId = importFolderId?.value ?? null
+    let foundModelerProcess = processes.value?.find(process => process.processkey === foundExternalProcessKey && process.folderId === folderId)
+    if (!foundModelerProcess) foundModelerProcess = await _findProcessRemotely(foundExternalProcessKey, folderId)
 
     if (foundModelerProcess) {
       let xmlFromModeler = _checkIfProcessOpenInTab(foundExternalProcessKey)

@@ -102,8 +102,8 @@
     "body": "El proceso ha sido guardado correctamente."
   },
   "toastSaveErrorDuplicateKey": {
-    "title": "ID de proceso ya existe",
-    "body": "Modifique la ID del proceso a una única"
+    "title": "El ID de proceso ya existe en esta carpeta",
+    "body": "Cambie el ID del proceso o guarde el modelo en otra carpeta"
   },
   "toastSaveErrorMissingId": {
     "title": "Falta el ID del formulario",
@@ -225,12 +225,17 @@
         "body": "Cada archivo adicional debe tener un nombre de recurso no vacío."
       }
     },
+    "keyInUse": {
+      "process": "Otro modelo del modelador usa esta clave de proceso. El despliegue añade una nueva versión al proceso que aquel desplegó.",
+      "form": "Otro formulario del modelador usa este ID de formulario. El despliegue añade una nueva versión al formulario que aquel desplegó."
+    },
     "forms": {
       "addButton": "Añadir formulario",
       "search": "Buscar formularios...",
       "typeToSearch": "Escribe al menos 3 caracteres para buscar",
       "empty": "No se encontraron formularios",
       "referenced": "Referenciado",
+      "ambiguous": "Varios formularios usan el ID de formulario {formIds}. Se añadió el más cercano (primero la misma carpeta, luego el mismo proyecto): compruebe que sea el correcto.",
       "loadError": {
         "title": "No se pudieron cargar los formularios",
         "body": "No se pudo cargar la lista de formularios guardados."
@@ -550,7 +555,7 @@
 		"nameTooLong": "El nombre supera los 255 caracteres.",
 		"valueTooLong": "Eso supera los {limit} caracteres.",
 		"moveRefused": "Una carpeta no se puede mover dentro de sí misma.",
-		"keyTaken": "«{key}» ya está en uso.",
+		"keyTaken": "«{key}» ya está en uso en esta carpeta.",
 		"saveFailed": "No se ha podido guardar la carpeta.",
 		"rename": "Renombrar",
 		"move": "Mover",
@@ -562,9 +567,9 @@
 		"moveModelTitle": "Mover «{name}» a una carpeta",
 		"copyModelTitle": "Copiar «{name}» en una carpeta",
 		"copyKey": "Clave de proceso de la copia",
-		"copyKeyRequired": "La copia necesita una clave de proceso propia.",
+		"copyKeyRequired": "La copia necesita una clave de proceso.",
 		"copyFormId": "ID de formulario de la copia",
-		"copyFormIdRequired": "La copia necesita un ID de formulario propio.",
+		"copyFormIdRequired": "La copia necesita un ID de formulario.",
 		"destination": "Destino",
 		"currentLocation": "ubicación actual",
 		"importTitle": "Importar a una carpeta",
