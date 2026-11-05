@@ -1190,15 +1190,6 @@ defineExpose({
 	box-shadow: none;
 }
 
-/* Chrome's own grab cursors are white without an outline on the light canvas (diagram-js sets these on <body>) */
-body.djs-cursor-grab {
-	cursor: url("../../assets/images/cursors/hand-open.svg") 12 12, grab;
-}
-
-body.djs-cursor-grabbing {
-	cursor: url("../../assets/images/cursors/hand-closed.svg") 12 12, grabbing;
-}
-
 .container.modeler .djs-popup {
 	border-radius: 0.3rem;
 	box-shadow: var(--bs-box-shadow);
