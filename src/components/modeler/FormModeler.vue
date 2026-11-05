@@ -40,7 +40,7 @@
 						<component v-if="VersionButtonComponent && formHistoryListComp?.length > 0"
 							:is="VersionButtonComponent" :history-list="formHistoryListComp"
 							:active-version="activeVersion" content-field="formSchema" />
-						<component v-if="CompareButtonComponent && formHistoryListComp?.length > 1" class="compare-snapshots"
+						<component v-if="CompareButtonComponent && formHistoryListComp?.length > 1"
 							:is="CompareButtonComponent" :history-list="formHistoryListComp" type="form" />
 					</div>
 				</template>

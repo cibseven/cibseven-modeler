@@ -74,11 +74,6 @@ const style = computed(() => {
     color: var(--bs-dark);
 }
 
-/* 1.5rem from the snapshot button, which keeps 0.25rem of it */
-.menu-action-bar .compare-snapshots {
-    margin-left: 1.25rem !important;
-}
-
 .menu-action-bar .menu-divider {
     width: 1px;
     height: 1.5rem;
