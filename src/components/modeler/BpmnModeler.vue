@@ -1090,104 +1090,6 @@ defineExpose({
 
 }
 
-.bts-notifications {
-	/*leaves space for de action buttons*/
-	margin-bottom: 50px;
-}
-
-/* Off: regular $gray-800 text without a background; on: regular white on the theme's $blue-highlight */
-.container.modeler .bts-toggle-mode {
-	background-color: transparent;
-	color: var(--bs-gray-800);
-	font-weight: 400;
-	border: var(--bs-border-width, 1px) solid transparent;
-	border-radius: 0.375rem;
-}
-
-.container.modeler .bjs-container.simulation .bts-toggle-mode {
-	background-color: var(--bs-blue-highlight, #4395FF);
-	color: var(--bs-white);
-	border-color: var(--bs-blue-highlight, #4395FF);
-}
-
-.container.modeler .bts-toggle-mode:hover {
-	background-color: transparent;
-	border-color: var(--bs-gray-800);
-	color: var(--bs-gray-800);
-}
-
-.container.modeler .bjs-container.simulation .bts-toggle-mode:hover {
-	background-color: #2b78e8;
-	color: var(--bs-white);
-}
-
-.container.modeler .bjs-container.simulation .djs-container,
-.container.modeler .bjs-container.simulation.paused .djs-container {
-	box-shadow: inset 0px 0px 0px 4px var(--bs-blue-highlight, #4395FF); /* border colour around*/
-}
-
-.container.modeler .bts-context-pad {
-	background-color: var(--bs-secondary);
-	border: var(--bs-border-width, 1px) solid var(--bs-secondary);
-	border-radius: var(--bs-border-radius, 0.25rem);
-	color: #fff;
-}
-
-.container.modeler .bts-context-pad:not(.disabled):hover,
-.container.modeler .bts-context-pad:not(.disabled):focus-visible {
-	background-color: var(--bs-secondary);
-	border-color: var(--bs-secondary);
-	color: #fff;
-	filter: brightness(0.92);
-	opacity: 1;
-}
-
-.container.modeler .bts-context-pad.disabled {
-	background-color: var(--bs-secondary);
-	border-color: var(--bs-secondary);
-	color: #fff;
-	opacity: 0.65;
-}
-
-.container.modeler .bts-set-animation-speed {
-	background-color: transparent;
-	overflow: visible;
-	padding: 0.25rem;
-	gap: 0.5rem;
-}
-
-.container.modeler .bts-set-animation-speed > .bts-icon {
-	color: var(--bs-secondary);
-}
-
-.container.modeler .bts-set-animation-speed .bts-animation-speed-buttons {
-	gap: 0.5rem;
-	margin-left: 0.5rem;
-}
-
-.container.modeler .bts-set-animation-speed .bts-animation-speed-button {
-	background-color: transparent;
-	color: var(--bs-secondary);
-	border: none;
-	border-radius: 50%;
-	width: 1.75rem;
-	height: 1.75rem;
-	padding: 0;
-	align-items: center;
-}
-
-.container.modeler .bts-set-animation-speed .bts-animation-speed-button.active {
-	background-color: var(--bs-secondary);
-	border: none;
-	color: #fff;
-}
-
-.container.modeler .bts-set-animation-speed .bts-animation-speed-button:not(.active):hover {
-	background-color: transparent;
-	border: none;
-	color: var(--bs-secondary);
-}
-
 /* Canvas controls use Bootstrap classes; custom rules cover sizing and interaction states. */
 .canvas-control-btn {
 	width: 2.25rem;
@@ -1195,42 +1097,13 @@ defineExpose({
 	line-height: 1;
 }
 
-/* Token simulation palette buttons are rendered by bpmn-js-token-simulation (no Bootstrap classes). */
-.container.modeler .bts-palette .bts-entry {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 2.125rem;
-	height: 2.125rem;
-	margin-bottom: 0.375rem;
-	padding: 0.25rem;
-	background-color: var(--bs-white);
-	color: var(--bs-secondary);
-	border: var(--bs-border-width) solid var(--bs-gray-600);
-	border-radius: var(--bs-border-radius);
-	box-shadow: var(--bs-box-shadow-sm);
-	line-height: 1;
-	box-sizing: border-box;
-	cursor: pointer;
-}
-
-.container.modeler .bts-palette .bts-entry:last-child {
-	margin-bottom: 0;
-}
-
-.container.modeler .bts-palette .bts-entry:first-child {
-	margin-top: 0.25rem;
-}
-
-.canvas-control-btn:hover:not(:disabled):not(.disabled),
-.container.modeler .bts-palette .bts-entry:not(.disabled):hover {
+.canvas-control-btn:hover:not(:disabled):not(.disabled) {
 	background-color: var(--bs-gray-200) !important;
 	border-color: var(--bs-gray-600) !important;
 	color: var(--bs-secondary) !important;
 }
 
-.canvas-control-btn:focus-visible:not(:disabled):not(.disabled),
-.container.modeler .bts-palette .bts-entry:not(.disabled):focus-visible {
+.canvas-control-btn:focus-visible:not(:disabled):not(.disabled) {
 	background-color: var(--bs-gray-200) !important;
 	border-color: var(--bs-gray-600) !important;
 	color: var(--bs-secondary) !important;
@@ -1239,8 +1112,7 @@ defineExpose({
 	box-shadow: 0 0 0 1px var(--bs-white), var(--bs-box-shadow-sm) !important;
 }
 
-.canvas-control-btn:active:not(:disabled):not(.disabled),
-.container.modeler .bts-palette .bts-entry:not(.disabled):active {
+.canvas-control-btn:active:not(:disabled):not(.disabled) {
 	background-color: var(--bs-gray-200) !important;
 	border-color: var(--bs-gray-600) !important;
 	color: var(--bs-secondary) !important;
@@ -1248,19 +1120,12 @@ defineExpose({
 }
 
 .canvas-control-btn:disabled,
-.canvas-control-btn.disabled,
-.container.modeler .bts-palette .bts-entry.disabled {
+.canvas-control-btn.disabled {
 	background-color: var(--bs-white) !important;
 	border-color: var(--bs-gray-500) !important;
 	color: var(--bs-gray-600) !important;
 	cursor: not-allowed;
 	opacity: 1;
-}
-
-.container.modeler .bts-palette .bts-entry.active {
-	background-color: var(--bs-white);
-	border-color: var(--bs-gray-600);
-	color: var(--bs-secondary);
 }
 
 /* Force palette to always display 2 columns */
@@ -1274,84 +1139,6 @@ defineExpose({
    which it does only in short windows; keep them clear of the one forced above */
 .container.modeler .djs-palette-shown .bjs-breadcrumbs {
 	left: 140px;
-}
-
-.container.modeler .bts-log .bts-header {
-	background-color: #fff;
-	color: #000;
-	border-bottom: var(--bs-border-width, 1px) solid var(--bs-border-color);
-	height: auto;
-	padding: 0.6rem;
-	font-weight: 700;
-	align-items: center;
-}
-
-.container.modeler .bts-log .bts-header .bts-icon {
-	color: var(--bs-secondary);
-}
-
-.container.modeler .bts-log .bts-close {
-	color: var(--bs-secondary);
-}
-
-.container.modeler .bts-log .bts-entry:not(.placeholder) {
-	background-color: var(--bs-gray-400);
-	border: var(--bs-border-width, 1px) solid var(--bs-border-color);
-	border-radius: var(--bs-border-radius, 0.25rem);
-	color: #000;
-}
-
-.container.modeler .bts-log .bts-entry:not(.placeholder) .bts-icon,
-.container.modeler .bts-log .bts-entry:not(.placeholder) .bts-icon [class^="bpmn-icon-"]:before,
-.container.modeler .bts-log .bts-entry:not(.placeholder) .bts-icon [class*=" bpmn-icon-"]:before {
-	color: var(--bs-secondary);
-}
-
-/* The rows look alike, as designed; the icon keeps telling a finished process from a warning */
-.container.modeler .bts-log .bts-entry.success,
-.container.modeler .bts-log .bts-entry.warning {
-	background-color: var(--bs-gray-400);
-	color: #000;
-}
-.container.modeler .bts-entry.success .bts-icon,
-.container.modeler .bts-entry.success .bts-icon [class*="bpmn-icon-"]:before,
-.container.modeler .bts-notification.success .bts-icon,
-.container.modeler .bts-notification.success .bts-icon [class*="bpmn-icon-"]:before {
-	color: var(--bs-success) !important;
-}
-.container.modeler .bts-entry.warning .bts-icon,
-.container.modeler .bts-entry.warning .bts-icon [class*="bpmn-icon-"]:before,
-.container.modeler .bts-notification.warning .bts-icon,
-.container.modeler .bts-notification.warning .bts-icon [class*="bpmn-icon-"]:before {
-	color: var(--bs-danger) !important;
-}
-
-/* The log and the notifications are white cards; the log's scope badges only label, since a click on
-   one filtered the simulation down to that scope, which looked as if the process was switched off */
-.container.modeler .bts-log {
-	background-color: var(--bs-white);
-	border: 1px solid var(--bs-gray-500);
-	border-radius: 0.3rem;
-	box-shadow: var(--bs-box-shadow);
-	overflow: hidden;
-}
-.container.modeler .bts-log .bts-scope {
-	pointer-events: none;
-	cursor: default;
-}
-.container.modeler .bts-notifications .bts-notification,
-.container.modeler .bts-notifications .bts-notification.info,
-.container.modeler .bts-notifications .bts-notification.success,
-.container.modeler .bts-notifications .bts-notification.warning {
-	background-color: var(--bs-white);
-	color: var(--bs-dark);
-	border: 1px solid var(--bs-gray-500);
-	border-radius: 0.3rem;
-	box-shadow: var(--bs-box-shadow-sm);
-	font-size: 0.875rem;
-}
-.container.modeler .bts-notifications .bts-notification .bts-icon {
-	color: var(--bs-secondary);
 }
 
 .bjs-container .bjsl-button-warning {
@@ -1414,13 +1201,6 @@ defineExpose({
 .bjs-container .bjsl-issues .warning .icon,
 .bjs-container .bjsl-issues .icon.warning {
 	--icon-color: var(--bs-warning);
-}
-
-/* bpmnlint puts the process's own issues 150px from the left, on the "Token Simulation" toggle
-   (20px to about 177px); 3rem further right it stands clear of it. Only that marker opens its
-   issues to the bottom right. */
-.bjs-container .bjsl-overlay.bjsl-issues-bottom-right {
-	margin-left: 3rem;
 }
 
 /* Lint summary button (bpmn-js-bpmnlint) */
