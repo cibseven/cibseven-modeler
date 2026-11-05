@@ -284,6 +284,18 @@ describe('ModalDeploy — form picker', () => {
             expect(wrapper.text()).toContain('deployForm.keyInUse.form')
         })
 
+        /** A DMN model has no process key, so its warning speaks of the decisions it deploys. */
+        it('warns about a DMN model in its own words', async () => {
+            m.keyInUseElsewhere.mockResolvedValue(true)
+            const dmn = '<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="invoice-rules"><decision id="d1"/></definitions>'
+            const wrapper = mountModal({ type: 'dmn', diagram: dmn })
+            await openModal(wrapper)
+
+            expect(m.keyInUseElsewhere).toHaveBeenCalledWith('invoice-rules', 'process', null)
+            expect(wrapper.text()).toContain('deployForm.keyInUse.decision')
+            expect(wrapper.text()).not.toContain('deployForm.keyInUse.process')
+        })
+
         /** An answer slower than the user belongs to the opening that asked, not to the next one. */
         it('drops the answer of an earlier opening', async () => {
             let answerFirst

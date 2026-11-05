@@ -227,6 +227,7 @@
     },
     "keyInUse": {
       "process": "Otro modelo del modelador usa esta clave de proceso. El despliegue añade una nueva versión al proceso que aquel desplegó.",
+      "decision": "Otro modelo DMN del modelador usa esta clave. El despliegue añade una nueva versión a las decisiones que aquel desplegó.",
       "form": "Otro formulario del modelador usa este ID de formulario. El despliegue añade una nueva versión al formulario que aquel desplegó."
     },
     "forms": {

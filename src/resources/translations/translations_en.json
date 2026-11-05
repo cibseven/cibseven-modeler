@@ -227,6 +227,7 @@
 		},
 		"keyInUse": {
 			"process": "Another model in the modeler uses this process key. Deploying adds a new version to the process it deployed.",
+			"decision": "Another DMN model in the modeler uses this key. Deploying adds a new version to the decisions it deployed.",
 			"form": "Another form in the modeler uses this form id. Deploying adds a new version to the form it deployed."
 		},
 		"forms": {

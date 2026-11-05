@@ -27,7 +27,7 @@
 
 					<div v-if="keyUsedElsewhere" class="alert alert-warning py-2 small" role="status">
 						<span class="mdi mdi-alert-outline me-1" aria-hidden="true"></span>
-						{{ $t(props.tabNavList.type === 'form' ? 'deployForm.keyInUse.form' : 'deployForm.keyInUse.process') }}
+						{{ $t(keyInUseText) }}
 					</div>
 					<div v-if="ambiguousFormRefs.length" class="alert alert-warning py-2 small" role="status">
 						<span class="mdi mdi-alert-outline me-1" aria-hidden="true"></span>
@@ -312,6 +312,11 @@ const detectedFormRefs = ref([])
 const ambiguousFormRefs = ref([])
 // Another model has this key, maybe in a project hidden from the user, so nothing names it
 const keyUsedElsewhere = ref(false)
+// A DMN model has no process key: the warning names what the engine deploys from it
+const keyInUseText = computed(() => {
+	if (props.tabNavList?.type === 'form') return 'deployForm.keyInUse.form'
+	return props.tabNavList?.type === 'dmn' ? 'deployForm.keyInUse.decision' : 'deployForm.keyInUse.process'
+})
 
 // Auth info
 const useCustomEndpoint = ref(false)

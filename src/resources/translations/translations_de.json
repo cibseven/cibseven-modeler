@@ -227,6 +227,7 @@
     },
     "keyInUse": {
       "process": "Ein anderes Modell im Modeler verwendet diesen Process Key. Das Deployment legt eine neue Version des Prozesses an, den jenes deployt hat.",
+      "decision": "Ein anderes DMN-Modell im Modeler verwendet diesen Key. Das Deployment legt eine neue Version der Entscheidungen an, die jenes deployt hat.",
       "form": "Ein anderes Formular im Modeler verwendet diese Form-ID. Das Deployment legt eine neue Version des Formulars an, das jenes deployt hat."
     },
     "forms": {
