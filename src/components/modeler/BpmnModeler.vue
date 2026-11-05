@@ -166,6 +166,7 @@ import ElementTemplateChooserModule from '@bpmn-io/element-template-chooser'
 import ElementTemplateIconRendererModule from './element-templates/IconRendererModule.js'
 import MakeRoomOnExpandBehaviorModule from './behaviors/MakeRoomOnExpandBehavior.js'
 import AnimationSpeedWordingModule from './token-simulation/AnimationSpeedWordingModule.js'
+import { withoutResult } from '../../utils/diagramEvents.js'
 import CamundaModdleDescriptors from 'camunda-bpmn-moddle/resources/camunda.json'
 import { customTranslate, translateValue } from "../../i18n.js"
 import lintModule from 'bpmn-js-bpmnlint'
@@ -474,7 +475,7 @@ const initializeModeler = async () => {
 	emit('setTypeOfDiagramForModeler', typeOfDiagram, props.tabElementIndex)
 	guardCommandStack(bpmnModeler.get('commandStack'), () => props.readOnly)
 
-	bpmnModeler.on('element.click', async e => {
+	bpmnModeler.on('element.click', withoutResult(async e => {
 		_setMonacoEditorToDiv(e, divScriptTaskID)
 		_detectListenerFromUserTask(e, 'TaskListener')
 		_detectListenerFromUserTask(e, 'ExecutionListener')
@@ -483,7 +484,7 @@ const initializeModeler = async () => {
 			if (e.element.id) addCustomizeTemplateButton(e)
 		}
 		_openCalledElementWhenCalActivity(e)
-	})
+	}))
 
 	bpmnModeler.on('commandStack.changed', e => {
 		emit('toggleEnableSave', true, props.tabElementIndex) //enables save button
@@ -495,7 +496,7 @@ const initializeModeler = async () => {
 		if (autosaveOptions?.enabled && props.tabElement.isSaved && !props.readOnly) autosave.schedule()
 	})
 
-	bpmnModeler.on('element.changed', async e => {
+	bpmnModeler.on('element.changed', withoutResult(async e => {
 		await nextTick()
 		_setMonacoEditorToDiv(e, divScriptTaskID)
 		_detectListenerFromUserTask(e, 'TaskListener')
@@ -507,7 +508,7 @@ const initializeModeler = async () => {
 		}
 		_openCalledElementWhenCalActivity(e)
 		_setupDiagramFunctions()
-	})
+	}))
 
 	bpmnModeler.on('commandStack.element.updateProperties.postExecute', e => {
 		_detectListenerFromUserTask(e, 'TaskListener')

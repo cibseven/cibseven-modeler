@@ -332,4 +332,18 @@ describe('DmnModeler', () => {
       expect(wrapper.vm.togglePropertiesPanel).toBeDefined()
     })
   })
+
+  // diagram-js stops an event at a listener that returns a value, which would leave out the listeners after it
+  describe('diagram event listeners', () => {
+    it('hand nothing back to views.changed or propertiesPanel.detach, so the events go on', async () => {
+      mountDmnModeler()
+      await flushPromises()
+      const viewsChanged = dmnInstance.instance.on.mock.calls.filter(([name]) => name === 'views.changed').at(-1)[1]
+      const detach = dmnInstance.viewer.on.mock.calls.filter(([name]) => name === 'propertiesPanel.detach').at(-1)[1]
+
+      expect(viewsChanged({ activeView: { type: 'drd', element: { id: 'Definitions_1' } } })).toBeUndefined()
+      expect(detach()).toBeUndefined()
+      await flushPromises()
+    })
+  })
 })
