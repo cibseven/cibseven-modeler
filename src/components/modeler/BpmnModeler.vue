@@ -165,6 +165,7 @@ import ScopedTemplateGroupsModule from './element-templates/ScopedGroupsModule.j
 import ElementTemplateChooserModule from '@bpmn-io/element-template-chooser'
 import ElementTemplateIconRendererModule from './element-templates/IconRendererModule.js'
 import MakeRoomOnExpandBehaviorModule from './behaviors/MakeRoomOnExpandBehavior.js'
+import AnimationSpeedWordingModule from './token-simulation/AnimationSpeedWordingModule.js'
 import CamundaModdleDescriptors from 'camunda-bpmn-moddle/resources/camunda.json'
 import { customTranslate, translateValue } from "../../i18n.js"
 import lintModule from 'bpmn-js-bpmnlint'
@@ -563,6 +564,7 @@ const initializeCamunda7Modeler = () => {
 			customTranslateModule,
 			camundaPlatformBehaviors,
 			MakeRoomOnExpandBehaviorModule,
+			AnimationSpeedWordingModule,
 			{ clipboard: ['value', props.clipboard] },
 			...extraBpmnModules,
 			lintModule
@@ -1092,36 +1094,35 @@ defineExpose({
 	margin-bottom: 50px;
 }
 
+/* Off: regular $gray-800 text without a background; on: regular white on the theme's $blue-highlight */
 .container.modeler .bts-toggle-mode {
 	background-color: transparent;
-	color: var(--bs-dark);
+	color: var(--bs-gray-800);
+	font-weight: 400;
 	border: var(--bs-border-width, 1px) solid transparent;
 	border-radius: 0.375rem;
 }
 
 .container.modeler .bjs-container.simulation .bts-toggle-mode {
-	background-color: #4395ff;
-	color: #fff;
-	border-color: #4395ff;
+	background-color: var(--bs-blue-highlight, #4395FF);
+	color: var(--bs-white);
+	border-color: var(--bs-blue-highlight, #4395FF);
 }
 
 .container.modeler .bts-toggle-mode:hover {
 	background-color: transparent;
-	border-color: var(--bs-dark);
-	color: var(--bs-dark);
+	border-color: var(--bs-gray-800);
+	color: var(--bs-gray-800);
 }
 
 .container.modeler .bjs-container.simulation .bts-toggle-mode:hover {
 	background-color: #2b78e8;
-	color: #fff;
+	color: var(--bs-white);
 }
 
-.container.modeler .bjs-container.simulation .djs-container {
-	box-shadow: inset 0px 0px 0px 4px #4395ff; /* border colour around*/
-}
-
+.container.modeler .bjs-container.simulation .djs-container,
 .container.modeler .bjs-container.simulation.paused .djs-container {
-	box-shadow: inset 0px 0px 0px 4px #4395ff;
+	box-shadow: inset 0px 0px 0px 4px var(--bs-blue-highlight, #4395FF); /* border colour around*/
 }
 
 .container.modeler .bts-context-pad {
@@ -1305,10 +1306,51 @@ defineExpose({
 	color: var(--bs-secondary);
 }
 
+/* The rows look alike, as designed; the icon keeps telling a finished process from a warning */
 .container.modeler .bts-log .bts-entry.success,
 .container.modeler .bts-log .bts-entry.warning {
 	background-color: var(--bs-gray-400);
 	color: #000;
+}
+.container.modeler .bts-entry.success .bts-icon,
+.container.modeler .bts-entry.success .bts-icon [class*="bpmn-icon-"]:before,
+.container.modeler .bts-notification.success .bts-icon,
+.container.modeler .bts-notification.success .bts-icon [class*="bpmn-icon-"]:before {
+	color: var(--bs-success) !important;
+}
+.container.modeler .bts-entry.warning .bts-icon,
+.container.modeler .bts-entry.warning .bts-icon [class*="bpmn-icon-"]:before,
+.container.modeler .bts-notification.warning .bts-icon,
+.container.modeler .bts-notification.warning .bts-icon [class*="bpmn-icon-"]:before {
+	color: var(--bs-danger) !important;
+}
+
+/* The log and the notifications are white cards; the log's scope badges only label, since a click on
+   one filtered the simulation down to that scope, which looked as if the process was switched off */
+.container.modeler .bts-log {
+	background-color: var(--bs-white);
+	border: 1px solid var(--bs-gray-500);
+	border-radius: 0.3rem;
+	box-shadow: var(--bs-box-shadow);
+	overflow: hidden;
+}
+.container.modeler .bts-log .bts-scope {
+	pointer-events: none;
+	cursor: default;
+}
+.container.modeler .bts-notifications .bts-notification,
+.container.modeler .bts-notifications .bts-notification.info,
+.container.modeler .bts-notifications .bts-notification.success,
+.container.modeler .bts-notifications .bts-notification.warning {
+	background-color: var(--bs-white);
+	color: var(--bs-dark);
+	border: 1px solid var(--bs-gray-500);
+	border-radius: 0.3rem;
+	box-shadow: var(--bs-box-shadow-sm);
+	font-size: 0.875rem;
+}
+.container.modeler .bts-notifications .bts-notification .bts-icon {
+	color: var(--bs-secondary);
 }
 
 .bjs-container .bjsl-button-warning {
@@ -1373,6 +1415,12 @@ defineExpose({
 	--icon-color: var(--bs-warning);
 }
 
+/* bpmnlint puts the process's own issues 150px from the left, on the "Token Simulation" toggle
+   (20px to about 177px); 3rem further right it stands clear of it. Only that marker opens its
+   issues to the bottom right. */
+.bjs-container .bjsl-overlay.bjsl-issues-bottom-right {
+	margin-left: 3rem;
+}
 
 /* Lint summary button (bpmn-js-bpmnlint) */
 .bjs-container .bjsl-button {

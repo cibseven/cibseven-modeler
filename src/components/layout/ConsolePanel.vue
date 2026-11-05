@@ -15,9 +15,9 @@
    limitations under the License.
 -->
 <template>
-    <div :class="shouldRenderConsoleClass" class="flex-column position-relative" style="z-index: 1;">
+    <div :class="shouldRenderConsoleClass" class="console-panel flex-column border position-relative" style="z-index: 1;">
         <div ref="parent" :class="{ 'collapsible-content ': !isResizing }"
-            class="d-flex flex-column resizable-component bg-light" :style="style">
+            class="d-flex flex-column resizable-component" :style="style">
             <div class="align-self-end d-flex align-items-center flex-shrink-0 pe-2 pt-3 gap-3">
                 <button type="button" :title="$t('buttons.copy')" class="btn btn-link btn-sm text-secondary text-decoration-none border-0 p-0 lh-1" @click="emit('copy-line')">
                     <span class="mdi mdi-18px mdi-content-copy" aria-hidden="true"></span>
@@ -123,7 +123,12 @@ defineExpose({ isOpen, toggleConsole, _changeHeight, _resetPropertiesPanelHeight
 </script>
 
 <style scoped>
+.console-panel {
+    --bs-border-color: var(--bs-gray-500);
+}
+
 .resizable-component {
+    background-color: var(--bs-gray-100);
     position: relative;
     max-width: none;
     width: 100%;
