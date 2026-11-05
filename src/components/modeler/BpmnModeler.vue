@@ -15,25 +15,31 @@
    limitations under the License.
 -->
 <template>
-	<div class="container modeler d-flex position-relative" ref="containerModeler">
+	<div class="container modeler d-flex position-relative" :class="{ 'read-only': props.readOnly }" ref="containerModeler">
 		<div class="d-flex flex-column align-items-between h-100">
 			<div class="d-flex flex-grow-1" style="min-height: 0;">
 				<div v-show="!props.isModelerVisible" class="position-relative" :style="styleCanvas">
 					<div class="canvas h-100 w-100" ref="canvas" tabindex="0"></div>
 					<div class="position-absolute top-0 end-0 d-flex flex-column gap-1 m-2" style="z-index: 10;">
-						<button @click="zoomIn" :class="CANVAS_CONTROL_BTN_CLASS" :title="$t('buttons.zoomIn')" :aria-label="$t('buttons.zoomIn')">
+						<button @click="zoomIn" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomIn')" :aria-label="$t('buttons.zoomIn')">
 							<span class="mdi mdi-18px mdi-magnify-plus-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="zoomOut" :class="CANVAS_CONTROL_BTN_CLASS" :title="$t('buttons.zoomOut')" :aria-label="$t('buttons.zoomOut')">
+						<button @click="zoomOut" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomOut')" :aria-label="$t('buttons.zoomOut')">
 							<span class="mdi mdi-18px mdi-magnify-minus-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="resetViewport" :class="CANVAS_CONTROL_BTN_CLASS" :title="$t('buttons.resetViewport')" :aria-label="$t('buttons.resetViewport')">
+						<button @click="resetViewport" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.resetViewport')" :aria-label="$t('buttons.resetViewport')">
 							<span class="mdi mdi-18px mdi-fit-to-screen-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="toggleMinimap" :class="CANVAS_CONTROL_BTN_CLASS" :title="$t('buttons.minimap')" :aria-label="$t('buttons.minimap')" :aria-pressed="isMinimapOpen">
+						<button @click="toggleMinimap" :title="$t('buttons.minimap')" :aria-label="$t('buttons.minimap')" :aria-pressed="isMinimapOpen"
+							:class="['btn btn-sm btn-light border text-secondary', { active: isMinimapOpen }]">
 							<span class="mdi mdi-18px mdi-map-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="toggleFullscreen" :class="CANVAS_CONTROL_BTN_CLASS"
+						<!-- .stop: the search closes on any click that reaches the page, this one included -->
+						<button @click.stop="toggleSearch" :title="$t('buttons.searchElements')" :aria-label="$t('buttons.searchElements')" :aria-pressed="isSearchOpen"
+							:class="['btn btn-sm btn-light border text-secondary search-elements', { active: isSearchOpen }]">
+							<span class="mdi mdi-18px mdi-magnify" aria-hidden="true"></span>
+						</button>
+						<button @click="toggleFullscreen" class="btn btn-sm btn-light border text-secondary"
 							:title="isFullscreen ? $t('buttons.exitFullscreen') : $t('buttons.fullscreen')"
 							:aria-label="isFullscreen ? $t('buttons.exitFullscreen') : $t('buttons.fullscreen')"
 							:aria-pressed="isFullscreen">
@@ -66,8 +72,10 @@
 				<template #leftButtons>
 					<slot name="menu" />
 				</template>
-				<template #rightButtons>
+					<template #rightButtons>
 					<div class="d-flex align-items-center">
+						<!-- The autosave time sits with the snapshot it relates to -->
+						<component v-if="AutosaveIndicatorComponent" :is="AutosaveIndicatorComponent" :tab-element="props.tabElement" />
 						<component v-if="VersionButtonComponent && processHistoryListComp?.length > 0"
 							:is="VersionButtonComponent" :history-list="processHistoryListComp" :active-version="activeVersion" />
 						<component v-if="CompareButtonComponent && processHistoryListComp?.length > 1"
@@ -114,7 +122,7 @@
 		<ElementTemplatesModal ref="elementTemplatesModal" :tabElement="tabElement"
 		@applyTemplateToTask="applyTemplateToTask"></ElementTemplatesModal>
 		<ScriptEditorModal ref="scriptEditorModal" />
-		<!-- Extension point for plugins
+		<!-- Extension point for plugins. Not on a read-only tab: the tools change the diagram.
 		     Available props for plugin components:
 		       get-bpmn-modeler  — () => bpmnModeler        Raw bpmn-js Modeler instance. Access services via .get('eventBus'), .get('commandStack'), etc.
 		       tab-element       — Object                   Current tab descriptor: { id, key, name, type, version, isSaved, ... }
@@ -124,7 +132,7 @@
 		       get-element-templates — () => Array          Returns the live element templates array currently loaded in the modeler.
 		       get-modeler-config    — () => Object         Returns the config.modeler section from the app config (e.g. filterBpmn, excludeTemplates). -->
 		<component
-			v-if="bpmnTool && props.isActiveTab"
+			v-if="bpmnTool && props.isActiveTab && !props.readOnly"
 			:is="bpmnTool"
 			:get-bpmn-modeler="() => bpmnModeler"
 			:tab-element="props.tabElement"
@@ -147,6 +155,7 @@ import 'bpmn-js-bpmnlint/dist/assets/css/bpmn-js-bpmnlint.css'
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css'
 
 import { debounce } from 'min-dash'
+import { guardCommandStack, guardFieldEditing } from '../../utils/readOnly.js'
 
 //import bpmn modules
 import BpmnModeler from 'bpmn-js/lib/Modeler'
@@ -155,6 +164,7 @@ import { ElementTemplatesPropertiesProviderModule } from 'bpmn-js-element-templa
 import ScopedTemplateGroupsModule from './element-templates/ScopedGroupsModule.js'
 import ElementTemplateChooserModule from '@bpmn-io/element-template-chooser'
 import ElementTemplateIconRendererModule from './element-templates/IconRendererModule.js'
+import MakeRoomOnExpandBehaviorModule from './behaviors/MakeRoomOnExpandBehavior.js'
 import CamundaModdleDescriptors from 'camunda-bpmn-moddle/resources/camunda.json'
 import { customTranslate, translateValue } from "../../i18n.js"
 import lintModule from 'bpmn-js-bpmnlint'
@@ -184,10 +194,11 @@ import ScriptEditorModal from '../modals/ScriptEditorModal.vue'
 // Specific imports
 import { getHeadersForSelector } from './SelectorHeaders'
 
-import { onMounted, onBeforeUnmount, inject, provide, ref, onUpdated, watch, computed, nextTick, watchEffect } from 'vue'
+import { onMounted, onBeforeUnmount, onUnmounted, inject, provide, ref, onUpdated, watch, computed, nextTick, watchEffect } from 'vue'
 import { getPlugin } from '../../plugins/pluginsConfig'
 //composables
 import useModeler from '../../composables/useModeler.js'
+import useAutosave from '../../composables/useAutosave.js'
 import useCustomizedTemplateModal from '../../composables/customizedTemplateModal.js'
 import usePropertiesPanel from '../../composables/usePropertiesPanel'
 import useMonacoEditor from '../../composables/useMonacoEditor.js'
@@ -201,6 +212,9 @@ const bpmnTool = getPlugin('bpmn-tools')
 const monaco = inject('monaco')
 const extraBpmnModules = inject('extraBpmnModules', [])
 const bpmnModelerInitHook = inject('bpmnModelerInitHook', null)
+const autosaveOptions = inject('autosaveOptions', null)
+const AutosaveIndicatorComponent = inject('autosaveIndicatorComponent', null)
+const autosave = useAutosave(() => _saveDiagram(true), autosaveOptions)
 const divScriptTaskID = 'bio-properties-panel-scriptValue'
 const canvasWidth = ref(0)
 const canvasHeight = ref(44)
@@ -278,6 +292,8 @@ const props = defineProps({
 	chatUnread: { type: Number, default: 0 },
 	chatOnTabChange: { type: Function, default: null },
 	chatOnMessage: { type: Function, default: null },
+	// A viewer of the project sees the model and changes nothing
+	readOnly: { type: Boolean, default: false },
 })
 //composables
 const {
@@ -316,6 +332,7 @@ let isScriptTaskUpdate = false
 let currentScriptBpmnElement = null
 
 const isMinimapOpen = ref(false)
+const isSearchOpen = ref(false)
 const isFullscreen = ref(false)
 const selectedElement = ref(null)
 const BPMN_ROOT_TYPES = new Set(['bpmn:Process', 'bpmn:Collaboration', 'bpmn:Participant'])
@@ -325,6 +342,8 @@ const zoomIn = () => { const c = bpmnModeler.get('canvas'); c.zoom(c.zoom() + ZO
 const zoomOut = () => { const c = bpmnModeler.get('canvas'); c.zoom(c.zoom() - ZOOM_STEP) }
 const resetViewport = () => { bpmnModeler.get('canvas').zoom('fit-viewport') }
 const toggleMinimap = () => { bpmnModeler.get('minimap').toggle(); isMinimapOpen.value = !isMinimapOpen.value }
+// The same search as Ctrl+F; its state follows the search pad, which also closes on Escape or a pick
+const toggleSearch = () => { bpmnModeler.get('searchPad').toggle() }
 const toggleFullscreen = async () => {
 	if (!document.fullscreenElement) await document.documentElement.requestFullscreen()
 	else await document.exitFullscreen()
@@ -339,7 +358,10 @@ provide('loadVersionHook', async (xml, version) => {
 })
 let typeOfDiagram = null //'bpmn-c7','dmn'
 
+let stopFieldGuard = null
+
 onMounted(async () => {
+	stopFieldGuard = guardFieldEditing(containerModeler.value, () => props.readOnly)
 	initializeModeler()
 	window.addEventListener('resize', updateParentWidth, true)
 	window.addEventListener('resize', updateParentHeight, true)
@@ -358,7 +380,17 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+	autosave.cancel()
+	stopFieldGuard?.()
+	window.removeEventListener('resize', updateParentWidth, true)
+	window.removeEventListener('resize', updateParentHeight, true)
 	document.removeEventListener('fullscreenchange', onFullscreenChange)
+})
+
+// Destroy after children unmount so they detach their listeners first (avoids null.off).
+onUnmounted(() => {
+	bpmnModeler?.destroy()
+	bpmnModeler = null
 })
 
 onUpdated(() => {
@@ -439,6 +471,7 @@ const initializeModeler = async () => {
 			break
 	}
 	emit('setTypeOfDiagramForModeler', typeOfDiagram, props.tabElementIndex)
+	guardCommandStack(bpmnModeler.get('commandStack'), () => props.readOnly)
 
 	bpmnModeler.on('element.click', async e => {
 		_setMonacoEditorToDiv(e, divScriptTaskID)
@@ -458,6 +491,7 @@ const initializeModeler = async () => {
 		const name = info?.name || info?.id || null
 		if (name) emit('updateTabName', name, props.tabElementIndex)
 		_openCalledElementWhenCalActivity(e)
+		if (autosaveOptions?.enabled && props.tabElement.isSaved && !props.readOnly) autosave.schedule()
 	})
 
 	bpmnModeler.on('element.changed', async e => {
@@ -528,6 +562,7 @@ const initializeCamunda7Modeler = () => {
 			BpmnColorPickerModule,
 			customTranslateModule,
 			camundaPlatformBehaviors,
+			MakeRoomOnExpandBehaviorModule,
 			{ clipboard: ['value', props.clipboard] },
 			...extraBpmnModules,
 			lintModule
@@ -589,6 +624,8 @@ const _setupTTLMonitoring = () => {
 		})
 	}
 	bpmnModeler.get('eventBus').on(['selection.changed', 'propertiesPanel.updated'], checkTTL)
+	bpmnModeler.get('eventBus').on('searchPad.opened', () => { isSearchOpen.value = true })
+	bpmnModeler.get('eventBus').on('searchPad.closed', () => { isSearchOpen.value = false })
 
 	bpmnModeler.get('eventBus').on('selection.changed', ({ newSelection }) => {
 		const el = newSelection.length === 1 ? newSelection[0] : null
@@ -618,7 +655,7 @@ const _validate = async xml => {
 	validate(bpmnModeler, xml)
 }
 
-const _saveDiagram = async () => await saveProcess(bpmnModeler, typeOfDiagram, _setupDiagramFunctions, _updatetemplatesListButton)
+const _saveDiagram = async (isAutosave = false) => await saveProcess(bpmnModeler, typeOfDiagram, _setupDiagramFunctions, _updatetemplatesListButton, isAutosave)
 
 const _mapScriptLanguage = scriptFormat => {
 	// CIBseven script task languages: Groovy, JavaScript, JRuby (ruby), Jython (python).
@@ -969,7 +1006,12 @@ defineExpose({
 </script>
 
 <style>
-svg {
+/* Unscoped on purpose: bpmn-js, dmn-js, and form-js properties panels all render the same
+   @bpmn-io/properties-panel markup (.bio-properties-panel-*), and dmn-js's DRD view shares
+   diagram-js's .djs-palette/.djs-minimap with bpmn-js — DmnModeler.vue and FormModeler.vue
+   rely on these rules too, not just this component's own tree. Scoping this block previously
+   broke DMN/Form styling since Vue's scoped CSS only reaches a component's own render tree. */
+.container.modeler svg {
 	outline: none;
 }
 .djs-minimap .toggle {
@@ -1023,16 +1065,17 @@ svg {
 	width: 100% !important;
 }
 
-input[name="historyTimeToLive"].is-invalid {
+.container.modeler input[name="historyTimeToLive"].is-invalid {
 	border-color: #dc3545 !important;
 	background-color: #fee !important;
 }
 
 
-.canvas {
+.container.modeler .canvas {
 	position: relative;
 	width: 450px;
 	outline: none;
+	background-color: var(--bs-light);
 }
 
 .container.modeler {
@@ -1225,6 +1268,12 @@ input[name="historyTimeToLive"].is-invalid {
 	border-color: var(--bs-gray-500) !important;
 }
 
+/* bpmn-js only moves the breadcrumbs past a two-column palette when diagram-js marks it as one,
+   which it does only in short windows; keep them clear of the one forced above */
+.container.modeler .djs-palette-shown .bjs-breadcrumbs {
+	left: 140px;
+}
+
 .container.modeler .bts-log .bts-header {
 	background-color: #fff;
 	color: #000;
@@ -1346,7 +1395,10 @@ input[name="historyTimeToLive"].is-invalid {
 	color: var(--bs-dark) !important;
 }
 
-.bjs-container .bjs-powered-by {
+</style>
+
+<style scoped>
+.container.modeler :deep(.bjs-container .bjs-powered-by) {
 	bottom: 1.125rem !important;
 	right: 0rem !important;
 }

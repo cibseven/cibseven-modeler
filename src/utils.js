@@ -19,7 +19,7 @@ import moment from 'moment'
 
 const TYPEC7 = 'bpmn-c7'
 const TYPEDMN = 'dmn'
-const BPMNC7TAG = 'xmlns:camunda'
+const TYPEFORM = 'form'
 
 export const getTimeStamp = () => {
 	const currentTime = new Date()
@@ -96,20 +96,6 @@ export const setTagValueOfXml = (resXmlExternalUrl, xmlTag, attribute, xmlProper
 	return new XMLSerializer().serializeToString(doc)
 }
 
-export const checkCamundaVersion = (xmlString) => {
-	const xmlDoc = new DOMParser().parseFromString(xmlString, 'text/xml')
-	const attributes = xmlDoc.documentElement.attributes
-	for (let i = attributes.length - 1; i >= 0; i--) {
-		const attr = attributes[i]
-		if (!attr) break
-		if (attr.name === 'modeler:executionPlatformVersion') {
-			return TYPEC7
-		}
-		if (attr.name === BPMNC7TAG) return TYPEC7
-	}
-	return TYPEC7
-}
-
 export const getOnlyNameOfTemplate = (templateWithVersion) => {
 	const parts = templateWithVersion.split('-')
 	return parts.slice(0, -1).join('-')
@@ -174,10 +160,24 @@ export const checkIfIdFromTemplateExistsInJson = (template, node) => {
 	return isFound ? null : checkId
 }
 
+// The diagram layout lists its shapes in no meaningful order, and the modeler reorders them on save
+const _LAYOUT_CONTAINERS = ['BPMNPlane', 'DMNDiagram']
+
+const _sortLayout = doc => {
+	for (const name of _LAYOUT_CONTAINERS) {
+		for (const container of Array.from(doc.getElementsByTagNameNS('*', name))) {
+			const shapes = Array.from(container.children)
+				.sort((a, b) => (a.getAttribute('id') ?? '').localeCompare(b.getAttribute('id') ?? ''))
+			container.replaceChildren(...shapes)
+		}
+	}
+	return doc
+}
+
 export const compareXML = (xml1, xml2) => {
 	const parser = new DOMParser()
-	const xmlDoc1 = parser.parseFromString(xml1, 'text/xml')
-	const xmlDoc2 = parser.parseFromString(xml2, 'text/xml')
+	const xmlDoc1 = _sortLayout(parser.parseFromString(xml1, 'text/xml'))
+	const xmlDoc2 = _sortLayout(parser.parseFromString(xml2, 'text/xml'))
 	return xmlDoc1.isEqualNode(xmlDoc2)
 }
 
@@ -278,6 +278,7 @@ export const filterTemplates = (templates, config) => {
 				return true // Exact match by ID
 			}
 
+			if (!template.name) return false
 			const splitName = template.name.split('-').map(part => part.trim())
 
 			if (splitName.length > 1) {
@@ -312,19 +313,34 @@ export const addHtmlErrorsToConsole = error => {
 	return error
 }
 
-export const formatDate = (date, format = null) => {
-	if (!date) return ''
-	format = format || localStorage.getItem('cibseven:preferences:formatDefault') || 'LL HH:mm'
-	let d
+export const toMoment = date => {
+	if (!date) return null
 	if (Array.isArray(date)) {
 		// Java LocalDateTime serializes as [year, month(1-indexed), day, hour, min, sec, nanoseconds]
 		// Moment expects                   [year, month(0-indexed), day, hour, min, sec, milliseconds]
-		const [year, month, day, hour, min, sec, nanos] = date
-		d = moment([year, month - 1, day, hour, min, sec, Math.floor(nanos / 1_000_000)])
-	} else {
-		d = moment(date)
+		// Jackson leaves out trailing fields that are zero
+		const [year, month, day, hour = 0, min = 0, sec = 0, nanos = 0] = date
+		return moment([year, month - 1, day, hour, min, sec, Math.floor(nanos / 1_000_000)])
 	}
-	return d.isValid() ? d.format(format) : ''
+	return moment(date)
+}
+
+export const formatDate = (date, format = null) => {
+	const d = toMoment(date)
+	if (!d?.isValid()) return ''
+	return d.format(format || localStorage.getItem('cibseven:preferences:formatDefault') || 'LL HH:mm')
+}
+
+/** A project is a folder at the top level; a user folder has its own icon wherever it shows. */
+export const folderIcon = folder => {
+	if (folder.userFolder) return 'mdi-folder-account-outline'
+	return folder.parentId ? 'mdi-folder-outline' : 'mdi-briefcase'
+}
+
+/** A form goes by its form id; a diagram by its name, or by its key when it has none. */
+export const modelName = item => {
+	if (item.type === TYPEFORM) return item.formId ?? ''
+	return item.name && item.name !== 'undefined' ? item.name : (item.processkey ?? '')
 }
 
 export const formatFileSize = (bytes) => {

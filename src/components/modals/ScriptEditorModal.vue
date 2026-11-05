@@ -25,11 +25,11 @@
   >
     <div ref="editorEl" class="w-100" style="height: 70vh"></div>
     <template #modal-footer>
-      <button type="button" class="btn btn-primary" @click="accept">
-        {{ $t('buttons.accept') }}
-      </button>
       <button type="button" class="btn btn-secondary" @click="cancel">
         {{ $t('buttons.cancel') }}
+      </button>
+      <button type="button" class="btn btn-primary" @click="accept">
+        {{ $t('buttons.accept') }}
       </button>
     </template>
   </BModal>

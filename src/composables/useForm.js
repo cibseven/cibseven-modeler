@@ -19,6 +19,8 @@ import { useStore } from 'vuex'
 import { FormEditor } from '@bpmn-io/form-js'
 import { saveForm, updateForm } from'../services/formService.js'
 import useDiagramSave from './useDiagramSave.js'
+import useAutosave from './useAutosave.js'
+import { guardCommandStack, readOnlyDraggingModule } from '../utils/readOnly.js'
 
 export default function useForm(props, emit, canvas, propertyPanel) {
     const store = useStore()
@@ -28,15 +30,27 @@ export default function useForm(props, emit, canvas, propertyPanel) {
     const checkSessionHook = inject('checkFormSessionHook', null)
     const createSessionHook = inject('createFormSessionHook', null)
     const closeSessionHook = inject('closeFormSessionHook', null)
+    const fetchSnapshotsHook = inject('fetchFormSnapshotsHook', null)
+    const autosaveOptions = inject('autosaveOptions', null)
+    const autosaveHook = inject('autosaveHook', null)
+    const autosave = useAutosave(() => save(true), autosaveOptions)
+    const formHistoryListComp = ref(null)
+    const activeVersion = ref(-1) // the actual selected version of the form
+    // The id of the stored form: a tab created in this session only gets one when it is saved
+    const formEntityId = ref(props.tabElement.id)
 
     let json = null
+    // Set while a schema is loaded into the editor, see the 'changed' handler
+    let importing = false
     if (!props.json) return
 
     onMounted(async()=> {
+      formHistoryListComp.value = await getFormHistoryList()
       if (checkSessionHook) await checkSessionHook(props.tabElement, props.tabElementIndex, false)
     })
 
     onBeforeUnmount(async()=> {
+      autosave.cancel()
       if (closeSessionHook) await closeSessionHook(props.tabElement.sessionId, props.tabElement.type)
     })
 
@@ -54,7 +68,8 @@ export default function useForm(props, emit, canvas, propertyPanel) {
             container: canvas.value,
             propertiesPanel: {
                 parent: propertyPanel.value
-            }
+            },
+            additionalModules: [readOnlyDraggingModule(() => props.readOnly)]
         })
         let schemaToLoad = json || schema
         if (typeof(schemaToLoad) !== 'object') schemaToLoad = JSON.parse(schemaToLoad)
@@ -64,14 +79,20 @@ export default function useForm(props, emit, canvas, propertyPanel) {
         validateJson(json)
         emit('updateIsButtonDisabled', false, props.tabElementIndex)
         propertiesPanelComponent.value = formEditor.value.get('propertiesPanel')
+        guardCommandStack(formEditor.value.get('commandStack', false), () => props.readOnly)
 
-        formEditor.value.on("changed", async () => {
+        // Returns nothing, not even a promise: the event bus stops propagating on a return
+        // value, and the properties panel subscribes behind this listener.
+        formEditor.value.on("changed", () => {
             if (!formEditor.value) return
             json = formEditor.value?.getSchema()
             emit('updateEditorXML', JSON.stringify(json, null, 2),  props.tabElementIndex)
             validateJson(json)
-            emit('toggleEnableSave', true, props.tabElementIndex) //enables save button		
-
+            // form-js reports an import as a change, unlike bpmn-js: loading a schema is
+            // not the user editing, so it must not turn the save button on by itself
+            if (importing) return
+            emit('toggleEnableSave', true, props.tabElementIndex) //enables save button
+            if (autosaveOptions?.enabled && props.tabElement.isSaved && !props.readOnly) autosave.schedule()
         })
     }
 
@@ -95,7 +116,7 @@ export default function useForm(props, emit, canvas, propertyPanel) {
 
     const { save: _sharedSave } = useDiagramSave(props, emit, { checkSessionHook, createSessionHook })
 
-    const save = async () => {
+    const save = async (isAutosave = false) => {
       // The form id is the backend key (unique & not-null). Never save without one,
       // otherwise the request fails with a confusing constraint error.
       const newFormId = json?.id
@@ -106,8 +127,11 @@ export default function useForm(props, emit, canvas, propertyPanel) {
 
       let sessionResponse = null
       if (checkSessionHook) {
-        const result = await checkSessionHook(props.tabElement, props.tabElementIndex, true)
-        if (!result.forceSave) return false
+        const result = await checkSessionHook(props.tabElement, props.tabElementIndex, !isAutosave, { silent: isAutosave })
+        if (!result.forceSave) {
+          if (isAutosave && autosaveHook) autosaveHook(props.tabElement, { state: 'skipped', reason: 'locked' })
+          return false
+        }
         sessionResponse = result.sessionResponse
       }
 
@@ -122,12 +146,28 @@ export default function useForm(props, emit, canvas, propertyPanel) {
         blob: json,
         storeStateSlice: store.state.modeler?.forms?.forms,
         itemKeyField: 'formId',
-        createFn: () => saveForm(newFormId, json),
+        createFn: () => saveForm(newFormId, json, props.tabElement.folderId),
         updateFn: () => updateForm(props.tabElement.id, newFormId, json),
         toTabPayload: response => ({ processId: response.id, processName: response.formId, processKey: response.formId, type: 'form' }),
         sessionResponse,
+        afterSave: async response => {
+          // A form saved for the first time is only now a stored form with a history
+          if (response?.id) formEntityId.value = response.id
+          await getFormHistoryList()
+        },
+        isAutosave,
       })
     }
+
+    // Only the enterprise edition keeps a history, so without the hook there is none
+    const getFormHistoryList = async () => {
+      if (!fetchSnapshotsHook || !formEntityId.value) return null
+      formHistoryListComp.value = await fetchSnapshotsHook(formEntityId.value)
+      activeVersion.value = formHistoryListComp.value?.[0]?.version ?? -1
+      return formHistoryListComp.value
+    }
+
+    const changeActiveVersion = version => { activeVersion.value = version }
 
     const destroyFormJs = () => {
       if (formEditor.value) formEditor.value.destroy()
@@ -139,7 +179,13 @@ export default function useForm(props, emit, canvas, propertyPanel) {
       // Update the closure schema so a later destroy/re-init (restartFormJs on tab
       // switch) reloads THIS content instead of the stale snapshot captured at setup.
       json = parsed
-      if (formEditor.value) await formEditor.value.importSchema(parsed)
+      importing = true
+      try {
+        if (formEditor.value) await formEditor.value.importSchema(parsed)
+      } finally {
+        await nextTick()
+        importing = false
+      }
       validateJson(parsed)
     }
 
@@ -176,7 +222,14 @@ export default function useForm(props, emit, canvas, propertyPanel) {
       return json?.id
     }
 
-      return { 
+    // A schema applied through the tools slot is an edit like any other, but the
+    // import that carries it is suppressed as programmatic (see `importing`), so
+    // the caller has to ask for the autosave the change handler skipped.
+    const scheduleAutosave = () => {
+      if (autosaveOptions?.enabled && props.tabElement.isSaved && !props.readOnly) autosave.schedule()
+    }
+
+      return {
         initializeFormEditor,
         importJson,
         saveXmlAfterUpdate,
@@ -184,6 +237,11 @@ export default function useForm(props, emit, canvas, propertyPanel) {
         restartFormJs,
         destroyFormJs,
         getFormId,
+        scheduleAutosave,
+        getFormHistoryList,
+        changeActiveVersion,
+        formHistoryListComp,
+        activeVersion,
         formEditor,
         propertiesPanelComponent,
     }

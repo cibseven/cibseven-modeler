@@ -19,6 +19,9 @@
         <div class="d-flex flex-row justify-content-start align-items-center">
             <slot name="leftButtons"></slot>
         </div>
+        <div class="d-flex align-items-center px-2 text-truncate">
+            <slot name="centerContent"></slot>
+        </div>
         <div class="d-flex align-items-center px-2">
             <slot name="rightButtons"></slot>
         </div>

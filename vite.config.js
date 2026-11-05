@@ -21,6 +21,7 @@ import path from 'node:path'
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import vueDevTools from 'vite-plugin-vue-devtools'
 const backendUrl = 'http://localhost:8091'
 
 // https://flaviocopes.com/fix-dirname-not-defined-es-module-scope/
@@ -32,6 +33,7 @@ export default defineConfig({
   base: '/',
   plugins: [
     vue(),
+    vueDevTools(),
   ],
   assetsInclude: ['**/*.bpmn', '**/*.dmn'],
   resolve: {

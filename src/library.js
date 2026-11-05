@@ -15,10 +15,6 @@
  *  limitations under the License.
  */
 
-// Import CSS to ensure it is bundled with the package
-import './assets/css/main.css'
-import './assets/css/custom-bootstrap.css'
-
 // Export modeler components
 import CibsevenModeler from './components/modeler/CibsevenModeler.vue'
 import BpmnModeler from './components/modeler/BpmnModeler.vue'
@@ -44,14 +40,14 @@ export { default as ConfirmModal } from './components/modals/ConfirmModal.vue'
 export { default as ImportConflictModal } from './components/modals/ImportConflictModal.vue'
 export { default as ModalDeploy } from './components/modals/ModalDeploy.vue'
 export { default as ModalNewDiagram } from './components/modals/ModalNewDiagram.vue'
+export { default as FolderNameModal } from './components/modals/FolderNameModal.vue'
+export { default as FolderPickerModal } from './components/modals/FolderPickerModal.vue'
 export { default as ScriptEditorModal } from './components/modals/ScriptEditorModal.vue'
-export { default as DiagramListItem } from './components/modeler/DiagramListItem.vue'
+export { default as FilesTable } from './components/modeler/FilesTable.vue'
 export { default as StartPage } from './components/modeler/StartPage.vue'
 export { default as MonacoConsole } from './components/monaco/MonacoConsole.vue'
 export { default as MonacoEditor } from './components/monaco/MonacoEditor.vue'
-export { default as AddElementTemplateModal } from './components/templates/AddElementTemplateModal.vue'
-export { default as CategorizedTemplateView } from './components/templates/CategorizedTemplateView.vue'
-export { default as TemplateManagement } from './components/templates/TemplateManagement.vue'
+export { categorizeTemplates, applicableTaskTypes, UNCATEGORIZED_TASK_TYPE, UNCATEGORIZED_GROUP_NAME } from './components/templates/elementTemplateUtils.js'
 
 export { default as store, createModelerStore } from './store.js'
 export { i18n, setLocale, messages, createI18n } from './i18n.js'

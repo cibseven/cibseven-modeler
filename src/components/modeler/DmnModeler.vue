@@ -15,12 +15,14 @@
    limitations under the License.
 -->
 <template>
-	<div class="container modeler d-flex position-relative" ref="containerModeler">
+	<div class="container modeler d-flex position-relative" :class="{ 'read-only': props.readOnly }" ref="containerModeler">
 		<div class="d-flex flex-column align-items-between h-100">
 			<div class="d-flex flex-grow-1 overflow-auto" style="min-height: 0;">
 				<div v-show="!props.isModelerVisible" class="position-relative" :style="styleCanvas">
 					<div class="canvas h-100 w-100" ref="canvas" tabindex="0"></div>
 					<div class="position-absolute top-0 end-0 d-flex flex-column gap-1 m-2" style="z-index: 10;">
+						<!-- These work on the diagram (DRD) canvas; decision tables and literal expressions have none -->
+						<template v-if="isDrdShowing">
 						<button @click="zoomIn" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomIn')" :aria-label="$t('buttons.zoomIn')">
 							<span class="mdi mdi-18px mdi-magnify-plus-outline" aria-hidden="true"></span>
 						</button>
@@ -31,9 +33,15 @@
 							<span class="mdi mdi-18px mdi-fit-to-screen-outline" aria-hidden="true"></span>
 						</button>
 						<button @click="toggleMinimap" :title="$t('buttons.minimap')" :aria-label="$t('buttons.minimap')" :aria-pressed="isMinimapOpen"
-							:class="['btn btn-sm border', isMinimapOpen ? 'btn-secondary text-white' : 'btn-light text-secondary']">
+							:class="['btn btn-sm btn-light border text-secondary', { active: isMinimapOpen }]">
 							<span class="mdi mdi-18px mdi-map-outline" aria-hidden="true"></span>
 						</button>
+						<!-- .stop: the search closes on any click that reaches the page, this one included -->
+						<button @click.stop="toggleSearch" :title="$t('buttons.searchElements')" :aria-label="$t('buttons.searchElements')" :aria-pressed="isSearchOpen"
+							:class="['btn btn-sm btn-light border text-secondary search-elements', { active: isSearchOpen }]">
+							<span class="mdi mdi-18px mdi-magnify" aria-hidden="true"></span>
+						</button>
+						</template>
 						<button @click="toggleFullscreen" class="btn btn-sm btn-light border text-secondary"
 							:title="isFullscreen ? $t('buttons.exitFullscreen') : $t('buttons.fullscreen')"
 							:aria-label="isFullscreen ? $t('buttons.exitFullscreen') : $t('buttons.fullscreen')"
@@ -70,6 +78,8 @@
 					</template>
 					<template #rightButtons>
 						<div class="d-flex align-items-center">
+							<!-- The autosave time sits with the snapshot it relates to -->
+							<component v-if="AutosaveIndicatorComponent" :is="AutosaveIndicatorComponent" :tab-element="props.tabElement" />
 							<component v-if="VersionButtonComponent && processHistoryListComp?.length > 0"
 								:is="VersionButtonComponent" :history-list="processHistoryListComp" :active-version="activeVersion" />
 							<component v-if="CompareButtonComponent && processHistoryListComp?.length > 1"
@@ -84,9 +94,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUpdated, onBeforeUnmount, watch, nextTick, inject, provide } from 'vue'
+import { ref, computed, onMounted, onUpdated, onBeforeUnmount, onUnmounted, watch, nextTick, inject, provide } from 'vue'
 import DmnJS from 'dmn-js/lib/Modeler'
 import { debounce } from 'min-dash'
+import { guardCommandStack, guardFieldEditing } from '../../utils/readOnly.js'
 import { migrateDiagram } from '@bpmn-io/dmn-migrate'
 import camundaModdleDescriptor from 'camunda-dmn-moddle/resources/camunda.json'
 import { DmnPropertiesPanelModule, DmnPropertiesProviderModule, CamundaPropertiesProviderModule } from 'dmn-js-properties-panel'
@@ -108,6 +119,7 @@ import ConsolePanel from '../layout/ConsolePanel.vue'
 import MonacoConsole from '../monaco/MonacoConsole.vue'
 import MonacoThemeScope from '../layout/MonacoThemeScoped.vue'
 import useModeler from '../../composables/useModeler.js'
+import useAutosave from '../../composables/useAutosave.js'
 import usePropertiesPanel from '../../composables/usePropertiesPanel.js'
 import { getTagValueFromXml } from '../../utils.js'
 
@@ -126,6 +138,7 @@ let dmnModeler = null
 let canvasFocusHandler = null
 
 const isMinimapOpen = ref(false)
+const isSearchOpen = ref(false)
 const isFullscreen = ref(false)
 const selectedElement = ref(null)
 
@@ -152,6 +165,11 @@ const toggleMinimap = () => {
 	viewer.get('minimap').toggle()
 	isMinimapOpen.value = !isMinimapOpen.value
 }
+// The same search as Ctrl+F; its state follows the search pad, which also closes on Escape or a pick
+const toggleSearch = () => {
+	const viewer = dmnModeler?.getActiveViewer()
+	try { viewer?.get('searchPad').toggle() } catch { /* not the diagram view */ }
+}
 const toggleFullscreen = async () => {
 	if (!document.fullscreenElement) await document.documentElement.requestFullscreen()
 	else await document.exitFullscreen()
@@ -173,6 +191,8 @@ const props = defineProps({
 	chatUnread: { type: Number, default: 0 },
 	chatOnTabChange: { type: Function, default: null },
 	chatOnMessage: { type: Function, default: null },
+	// A viewer of the project sees the model and changes nothing
+	readOnly: { type: Boolean, default: false },
 })
 
 const emit = defineEmits([
@@ -212,6 +232,9 @@ const onConsolePanelVisibility = open => { isConsoleOpen.value = open }
 
 const VersionButtonComponent = inject('versionButtonComponent', null)
 const CompareButtonComponent = inject('compareButtonComponent', null)
+const autosaveOptions = inject('autosaveOptions', null)
+const AutosaveIndicatorComponent = inject('autosaveIndicatorComponent', null)
+const autosave = useAutosave(() => _saveDiagram(true), autosaveOptions)
 
 provide('loadVersionHook', async (xml, version) => {
 	const migratedXml = await migrateDiagram(xml)
@@ -225,7 +248,10 @@ const { updateParentHeight, updateParentWidth, parentWidth, parentHeight } = use
 const canvasWidth = ref(0)
 const changeWidth = value => { canvasWidth.value = value }
 
+let stopFieldGuard = null
+
 onMounted(async () => {
+	stopFieldGuard = guardFieldEditing(containerModeler.value, () => props.readOnly)
 	dmnModeler = new DmnJS({
 		drd: {
 			propertiesPanel: { parent: dmnProperties.value },
@@ -257,8 +283,11 @@ onMounted(async () => {
 	const subscribedViewers = new Set()
 	const subscribeCommandStackToViewer = (viewer) => {
 		if (viewer && !subscribedViewers.has(viewer)) {
+			// Each view of the DMN, diagram, table or expression, has a command stack of its own
+			guardCommandStack(viewer.get('commandStack', false), () => props.readOnly)
 			viewer.on('commandStack.changed', () => {
 				emit('toggleEnableSave', true, props.tabElementIndex)
+				if (autosaveOptions?.enabled && props.tabElement.isSaved && !props.readOnly) autosave.schedule()
 			})
 			subscribedViewers.add(viewer)
 		}
@@ -286,6 +315,8 @@ onMounted(async () => {
 			if (!props.isModelerVisible) togglePropertiesPanel(true)
 			observerDecisionTables?.disconnect()
 		})
+		viewer.on('searchPad.opened', () => { isSearchOpen.value = true })
+		viewer.on('searchPad.closed', () => { isSearchOpen.value = false })
 		drdListenersRegistered = true
 		return true
 	}
@@ -350,6 +381,8 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+	autosave.cancel()
+	stopFieldGuard?.()
 	window.removeEventListener('resize', updateParentWidth, true)
 	window.removeEventListener('resize', updateParentHeight, true)
 	document.removeEventListener('fullscreenchange', onFullscreenChange)
@@ -357,6 +390,12 @@ onBeforeUnmount(() => {
 		canvas.value.removeEventListener('focus', canvasFocusHandler)
 	}
 	if (observerDecisionTables) observerDecisionTables.disconnect()
+})
+
+// Destroy after children unmount so they detach their listeners first (avoids null.off).
+onUnmounted(() => {
+	dmnModeler?.destroy()
+	dmnModeler = null
 })
 
 onUpdated(() => {
@@ -385,7 +424,9 @@ watch(() => props.isModelerVisible, async newValue => {
 
 watch(() => props.isActiveTab, async newValue => {
 	if (newValue && propertiesPanelComponent.value) {
-		propertiesPanelComponent.value.attachTo(dmnProperties.value)
+		// Only the diagram has a properties panel; attaching it on a decision table would bring
+		// the diagram's canvas controls back over the table
+		if (dmnModeler?.getActiveView()?.type === 'drd') propertiesPanelComponent.value.attachTo(dmnProperties.value)
 		await nextTick()
 		emit('resizeTabNav', resDiv.value?._changeWidth() ?? canvasWidth.value)
 	} else if (propertiesPanelComponent.value) {
@@ -448,7 +489,7 @@ const createObserver = divToObserve => {
 }
 
 
-const _saveDiagram = () => saveDecisionTable(dmnModeler, props.tabElement.type)
+const _saveDiagram = (isAutosave = false) => saveDecisionTable(dmnModeler, props.tabElement.type, isAutosave)
 
 const _saveXmlAfterUpdate = (isBpmn, updatedXml, tabElementIndex) => {
 	saveXmlAfterUpdate(false, updatedXml, tabElementIndex, dmnModeler)
@@ -520,5 +561,12 @@ defineExpose({
 :deep(.dmn-decision-table-container [contenteditable="true"]:focus) {
   outline: none !important;
   box-shadow: inset 0 -2px 0 0 rgba(0,0,0,0.06);
+}
+/* dmn-js-shared renders the same .bjs-powered-by badge as bpmn-js (both with
+   position: absolute; bottom: 15px; right: 15px inline) — nudge it flush to the
+   corner to match BpmnModeler.vue's override. */
+:deep(.bjs-powered-by) {
+  bottom: 1.125rem !important;
+  right: 0rem !important;
 }
 </style>

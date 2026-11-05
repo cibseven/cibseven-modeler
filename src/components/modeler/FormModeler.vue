@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 <template>
-	<div class="container modeler d-flex position-relative" ref="formContainer">
+	<div class="container modeler d-flex position-relative" :class="{ 'read-only': props.readOnly }" ref="formContainer">
 		<div class="d-flex flex-column align-items-between h-100">
 			<div class="d-flex flex-grow-1 overflow-hidden" style="min-height: 0;">
 				<div v-show="!props.isModelerVisible" class="canvas" ref="canvas" :style="styleCanvas" tabindex="0">
@@ -33,14 +33,30 @@
 				<template #leftButtons>
 					<slot name="menu" />
 				</template>
+				<template #rightButtons>
+					<div class="d-flex align-items-center">
+						<!-- The autosave time sits with the snapshot it relates to -->
+						<component v-if="AutosaveIndicatorComponent" :is="AutosaveIndicatorComponent" :tab-element="props.tabElement" />
+						<component v-if="VersionButtonComponent && formHistoryListComp?.length > 0"
+							:is="VersionButtonComponent" :history-list="formHistoryListComp"
+							:active-version="activeVersion" content-field="formSchema" />
+						<component v-if="CompareButtonComponent && formHistoryListComp?.length > 1"
+							:is="CompareButtonComponent" :history-list="formHistoryListComp" type="form" />
+					</div>
+				</template>
 			</MenuActionButtons>
 		</div>
-		<!-- Extension point for plugins -->
+		<!-- Extension point for plugins. Not on a read-only tab: the tools change the form.
+		     Available props for plugin components:
+		       apply-schema       — (schema) => void        Imports a schema object into the editor and enables Save.
+		       get-current-schema — () => String|null       The editor's current schema as JSON; its `id` is the form id.
+		       tab-element        — Object                  Current tab descriptor: { id, key, name, type, version, isSaved, ... } -->
 		<component
-			v-if="formTool"
+			v-if="formTool && props.isActiveTab && !props.readOnly"
 			:is="formTool"
 			:apply-schema="applySchema"
 			:get-current-schema="getCurrentSchemaJson"
+			:tab-element="props.tabElement"
 		/>
 	</div>
 </template>
@@ -56,10 +72,14 @@ import PropertiesPanel from '../layout/PropertiesPanel.vue'
 import usePropertiesPanel from '../../composables/usePropertiesPanel'
 import useForm from '../../composables/useForm'
 
-import { ref, onMounted, computed, onUpdated, watch, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, onUpdated, watch, nextTick, inject, provide } from 'vue'
 import { getPlugin } from '../../plugins/pluginsConfig'
+import { guardFieldEditing } from '../../utils/readOnly.js'
 
 const formTool = getPlugin('form-tools')
+const AutosaveIndicatorComponent = inject('autosaveIndicatorComponent', null)
+const VersionButtonComponent = inject('versionButtonComponent', null)
+const CompareButtonComponent = inject('compareButtonComponent', null)
 
 const resizableDiv = ref(null)
 const formContainer = ref(null)
@@ -88,6 +108,8 @@ const props = defineProps({
 	chatUnread: { type: Number, default: 0 },
 	chatOnTabChange: { type: Function, default: null },
 	chatOnMessage: { type: Function, default: null },
+	// A viewer of the project sees the form and changes nothing
+	readOnly: { type: Boolean, default: false },
 })
 
 
@@ -103,15 +125,34 @@ const emit = defineEmits([
 	'updateIsButtonDisabled',
 	'updateStoredLocalStorageTabNavList',
 ])
-const { initializeFormEditor, save, importJson, propertiesPanelComponent, saveXmlAfterUpdate, restartFormJs, destroyFormJs, getFormId, formEditor } = useForm(props, emit, canvas, propertyPanel)
+const { initializeFormEditor, save, importJson, propertiesPanelComponent, saveXmlAfterUpdate, restartFormJs, destroyFormJs, getFormId, formEditor,
+	formHistoryListComp, activeVersion, changeActiveVersion, scheduleAutosave } = useForm(props, emit, canvas, propertyPanel)
+
+// Restoring loads the snapshot into the editor and becomes the newest version once it is
+// saved, so saving waits for an edit, as it does after loading a diagram version
+provide('loadVersionHook', async (schema, version) => {
+	await importJson(schema)
+	emit('toggleVersionNotSaved', true, props.tabElementIndex)
+	emit('toggleEnableSave', false, props.tabElementIndex)
+	changeActiveVersion(version)
+})
 const { updateParentHeight, updateParentWidth,  parentWidth, changeWidth, canvasWidth, isVisiblePropertyPanel, togglePropertiesPanel } = usePropertiesPanel(props, emit, formContainer, resizableDiv, propertiesPanelComponent, propertyPanel)
 
+let stopFieldGuard = null
+
 onMounted(async() => {
+	stopFieldGuard = guardFieldEditing(formContainer.value, () => props.readOnly)
     initializeFormEditor(props.tabElement.id)
 	window.addEventListener('resize', updateParentWidth, true)
 	window.addEventListener('resize', updateParentHeight, true)
 	await nextTick()
 	emit('resizeTabNav', canvasWidth.value)
+})
+
+onBeforeUnmount(() => {
+	stopFieldGuard?.()
+	window.removeEventListener('resize', updateParentWidth, true)
+	window.removeEventListener('resize', updateParentHeight, true)
 })
 
 onUpdated(() => {
@@ -143,9 +184,10 @@ const _validate = async json => {
  * Applies a schema object to the form editor.
  * Can be used by plugins via the tools slot.
  */
-const applySchema = (schema) => {
-	importJson(JSON.stringify(schema, null, 2))
+const applySchema = async (schema) => {
+	await importJson(JSON.stringify(schema, null, 2))
 	emit('toggleEnableSave', true, props.tabElementIndex)
+	scheduleAutosave()
 }
 
 /**
@@ -180,3 +222,22 @@ defineExpose({
 })
 
 </script>
+<style scoped>
+.canvas {
+	flex: 1;
+	height: 100%;
+}
+
+/* form-js sizes its properties panel to a fixed 300px (plus its own 1px border),
+   which is wider than the host area — the panel width minus the 24px collapse
+   strip and the border — and left the panel with a horizontal scrollbar. Let it
+   fill whatever width it is given instead. */
+:deep(.fjs-properties-container) {
+	box-sizing: border-box;
+	width: 100%;
+}
+
+:deep(.fjs-powered-by) {
+	padding-right: 12px;
+}
+</style>

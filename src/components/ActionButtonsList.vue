@@ -18,29 +18,34 @@
     <div class="d-flex flex-wrap flex-row-reverse m-0 px-1 justify-content-end align-items-center"
         style="z-index: 11;" >
         <!-- Right section: save, deploy, download as svg, normal download -->
-        <div v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
+        <!-- v-if throughout: d-flex sets display !important, which a v-show cannot override -->
+        <div v-if="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
             <a @click="canBeDownloaded" :href="downloadLink" :download="downloadName" :name="downloadName"
                 :title="$t('buttons.downloadDiagram')" :aria-label="$t('buttons.downloadDiagram')"
-                class="btn btn-outline-light border-0 btn-sm"
-                :class="{ disabled: props.isButtonDisabled }">
+                class="btn btn-outline-light border-0 btn-sm">
                 <span class="mdi mdi-24px mdi-download" aria-hidden="true"></span>
             </a>
         </div>
-        <template v-if="extraDownloadLinks?.[props.tabElementIndex]">
+        <template v-if="!props.isButtonDisabled && extraDownloadLinks?.[props.tabElementIndex]">
             <div v-for="(link, i) in extraDownloadLinks[props.tabElementIndex]" :key="i"
-                v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
+                class="btn-menu d-flex align-items-center mx-1">
                 <a @click="canBeDownloaded"
                     :href="link.href"
                     :download="link.download"
                     :title="$t(link.titleKey)"
                     :aria-label="$t(link.titleKey)"
                     class="btn btn-outline-light border-0 btn-sm"
-                    :class="{ disabled: props.isButtonDisabled || link.disabled }">
+                    :class="{ disabled: link.disabled }">
                     <span :class="`mdi mdi-24px ${link.icon}`" aria-hidden="true"></span>
                 </a>
             </div>
         </template>
-        <div v-show="!props.isButtonDisabled &&  modelProperties[props.tabElement.type].canDeploy" class="btn-menu d-flex align-items-center mx-1">
+        <div v-if="props.readOnly" class="btn-menu d-flex align-items-center mx-1 px-2 small text-light read-only-badge"
+            role="note" :title="$t('readOnlyNotice')">
+            <span class="mdi mdi-18px mdi-eye-outline me-1" aria-hidden="true"></span>{{ $t('readOnlyBadge') }}
+            <span class="visually-hidden">{{ $t('readOnlyNotice') }}</span>
+        </div>
+        <div v-if="!props.readOnly && !props.isButtonDisabled && modelProperties[props.tabElement.type].canDeploy" class="btn-menu d-flex align-items-center mx-1">
             <button type="button"
                 class="btn btn-outline-light border-0 btn-sm"
                 @click="canDeploy" aria-haspopup="true"
@@ -48,15 +53,34 @@
                 <span class="mdi mdi-24px mdi-rocket" aria-hidden="true"></span>
             </button>
         </div>
-        <div class="btn-menu d-flex align-items-center mx-1" v-show="!isButtonDisabled">
-            <button type="button"
-                class="btn btn-outline-light border-0 btn-sm"
-                :title="$t('buttons.saveDiagram')"
-                :aria-label="$t('buttons.saveDiagram')"
-                :aria-busy="isSaving"
-                :disabled="(!props.canSave && !props.tabElement.changedVersion) || isSaving" @click="_saveDiagram">
-                <span class="mdi mdi-24px" :class="isSaving ? 'mdi-loading mdi-spin' : 'mdi-content-save-outline'" aria-hidden="true"></span>
-            </button>
+        <div v-if="!props.readOnly && !props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
+            <!-- A disabled button lets the hover through (Bootstrap: pointer-events none), so the group carries its title too -->
+            <div class="btn-group" :title="saveTitle">
+                <button type="button"
+                    class="btn btn-outline-light border-0 btn-sm rounded save-diagram"
+                    :title="saveTitle"
+                    :aria-label="saveTitle"
+                    :aria-busy="isSaving"
+                    :disabled="(!props.canSave && !props.tabElement.changedVersion) || isSaving" @click="_saveDiagram">
+                    <span class="mdi mdi-24px" :class="saveIcon" aria-hidden="true"></span>
+                </button>
+                <!-- What saving offers beyond the button, e.g. autosave, comes from the host as a menu -->
+                <template v-if="AutosaveToggleComponent">
+                    <button type="button"
+                        class="btn btn-outline-light border-0 btn-sm rounded px-0"
+                        data-bs-toggle="dropdown" aria-expanded="false"
+                        :title="$t('buttons.saveOptions')" :aria-label="$t('buttons.saveOptions')">
+                        <span class="mdi mdi-18px mdi-chevron-down" aria-hidden="true"></span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <component
+                            :is="AutosaveToggleComponent"
+                            :tab-element="props.tabElement"
+                            :is-saving="isSaving"
+                        />
+                    </div>
+                </template>
+            </div>
         </div>
 
         <!-- Separator -->
@@ -65,7 +89,7 @@
         </div>
 
         <!-- Undo/Redo buttons -->
-        <div class="btn-menu d-flex align-items-center mx-1" v-show="!props.isButtonDisabled">
+        <div class="btn-menu d-flex align-items-center mx-1" v-if="!props.isButtonDisabled">
             <button type="button"
                 class="btn btn-outline-light border-0 btn-sm"
                 :title="`${$t('buttons.redo')} (Ctrl+Y)`"
@@ -74,7 +98,7 @@
                 <span class="mdi mdi-24px mdi-redo-variant" aria-hidden="true"></span>
             </button>
         </div>
-        <div class="btn-menu d-flex align-items-center mx-1" v-show="!props.isButtonDisabled">
+        <div class="btn-menu d-flex align-items-center mx-1" v-if="!props.isButtonDisabled">
             <button type="button"
                 class="btn btn-outline-light border-0 btn-sm"
                 :title="`${$t('buttons.undo')} (Ctrl+Z)`"
@@ -91,8 +115,7 @@
 
         <!-- Left section: filters, xml, console -->
         <div
-            v-if="BpmnFilterButtonComponent && isBpmnTab"
-            v-show="!props.isButtonDisabled"
+            v-if="BpmnFilterButtonComponent && isBpmnTab && !props.isButtonDisabled"
             class="btn-menu d-flex align-items-center mx-1"
         >
             <component
@@ -105,11 +128,10 @@
                 classesOff="mdi mdi-24px mdi-filter"
             />
         </div>
-        <div v-show="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
+        <div v-if="!props.isButtonDisabled" class="btn-menu d-flex align-items-center mx-1">
             <button type="button"
                 class="btn btn-outline-light border-0 btn-sm"
                 :class="{ active: props.tabElement.isEditorVisible }"
-                :disabled="props.isButtonDisabled"
                 :title="props.tabElement.isEditorVisible ? $t('buttons.viewDiagram') : $t('buttons.viewXml')"
                 :aria-label="props.tabElement.isEditorVisible ? $t('buttons.viewDiagram') : $t('buttons.viewXml')"
                 :aria-pressed="props.tabElement.isEditorVisible"
@@ -171,11 +193,15 @@ const props = defineProps({
     tabElement: { type: Object, required: true }, 
     isButtonDisabled: { type: Boolean, required: true, default: false },
     consoleOpen: { type: Boolean, default: false },
+    // A viewer of the project can neither save nor deploy the model
+    readOnly: { type: Boolean, default: false },
     width: Number
-    }   
+    }
 )
 const extraDownloadLinks = inject('extraDownloadLinks', null)
 const BpmnFilterButtonComponent = inject('bpmnFilterButtonComponent', null)
+const AutosaveToggleComponent = inject('autosaveToggleComponent', null)
+const autosaveOptions = inject('autosaveOptions', null)
 const config = inject('config', {})
 const announce = inject('announce', () => {})
 const isBpmnTab = computed(() => props.tabElement.type.startsWith('bpmn'))
@@ -192,6 +218,15 @@ const emit = defineEmits([
 const isOutdatedTemplateWarning = ref(false)
 
 const isSaving = ref(false)
+// The save button tells whether autosave is on, so the state shows without opening the menu
+const saveIcon = computed(() => {
+    if (isSaving.value) return 'mdi-loading mdi-spin'
+    return autosaveOptions?.enabled ? 'mdi-content-save-check-outline' : 'mdi-content-save-outline'
+})
+const saveTitle = computed(() => {
+    if (!AutosaveToggleComponent || !autosaveOptions) return t('buttons.saveDiagram')
+    return `${t('buttons.saveDiagram')} – ${t(autosaveOptions.enabled ? 'buttons.autosaveOn' : 'buttons.autosaveOff')}`
+})
 
 const downloadName = ref()
 const downloadLink = ref('#')
@@ -229,7 +264,7 @@ onMounted(() => {
 
 //prevents or allows the download of the bpmn file
 const canBeDownloaded = async e => {
-    let fileNameFromProcessId = null
+    let fileNameFromProcessId
     if (props.tabElement.type === DIAGRAM_TYPE.DMN) {
         fileNameFromProcessId = await _getTagValueFromXml('definitions', 'id')
     }
@@ -288,6 +323,7 @@ const changeWidth = value => {
 }
 
 const _saveDiagram = async () => {
+    if (props.readOnly) return // also Ctrl+S, which comes here rather than through the button
     if (isSaving.value) return // prevent re-entry (e.g. rapid Ctrl+S)
     if (!props.canSave && !props.tabElement.changedVersion) return // only saves if button is enabled
     if (!props.isXmlValidated.validation) {
@@ -313,10 +349,8 @@ const _toggleOutDatedTemplateBtn = comp => isOutdatedTemplateWarning.value = com
 const _getTagValueFromXml = (mainTag, valueTag) => props.modeler._getTagValueFromXml(mainTag, valueTag)
 
 const _downloadFileWithProcessId = type => {
-    let foundProcessId = null
     try {
-        foundProcessId = props.modeler._getElementRegistryFromModeler(type) // same method name in bpmnmodeler and dmnmodeler
-        return foundProcessId
+        return props.modeler._getElementRegistryFromModeler(type) // same method name in bpmnmodeler and dmnmodeler
     } catch (error) {
 
         emit('showToastMessage', { isSuccess: false, toastText: 'toastLoadErrorFile' })

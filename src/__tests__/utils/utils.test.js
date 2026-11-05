@@ -22,12 +22,17 @@ import {
     mergeTemplates,
     getTimeStamp,
     checkBeforeAction,
+    compareXML,
     getTagValueFromXml,
     getProcessKeyFromBpmn,
     generateUniqueId,
     checkJSON,
     getFormRefsFromBpmn,
     resolveTabIndexById,
+    folderIcon,
+    formatDate,
+    modelName,
+    toMoment,
 } from '../../utils.js'
 
 describe('Utils', () => {
@@ -358,7 +363,7 @@ describe('Utils', () => {
             const mockEl = { getAttribute: vi.fn((attr) => attr === 'id' ? 'my-process' : null) }
             const mockDoc = { querySelector: vi.fn(() => mockEl) }
             const OriginalDOMParser = globalThis.DOMParser
-            globalThis.DOMParser = vi.fn(() => ({ parseFromString: () => mockDoc }))
+            globalThis.DOMParser = vi.fn(function () { return { parseFromString: () => mockDoc } })
 
             expect(getTagValueFromXml('<xml/>', 'process', 'id')).toBe('my-process')
 
@@ -368,11 +373,39 @@ describe('Utils', () => {
         it('Returns null when tag does not exist', () => {
             const mockDoc = { querySelector: vi.fn(() => null) }
             const OriginalDOMParser = globalThis.DOMParser
-            globalThis.DOMParser = vi.fn(() => ({ parseFromString: () => mockDoc }))
+            globalThis.DOMParser = vi.fn(function () { return { parseFromString: () => mockDoc } })
 
             expect(getTagValueFromXml('<xml/>', 'collaboration', 'id')).toBeNull()
 
             globalThis.DOMParser = OriginalDOMParser
+        })
+    })
+
+    describe('compareXML', () => {
+        const NS = 'xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"'
+        const shape = id => `<bpmndi:BPMNShape id="${id}_di" bpmnElement="${id}"/>`
+        const diagram = (shapes, tasks = '<bpmn:task id="a"/><bpmn:task id="b"/>') =>
+            `<bpmn:definitions ${NS}><bpmn:process id="p">${tasks}</bpmn:process>` +
+            `<bpmndi:BPMNDiagram><bpmndi:BPMNPlane bpmnElement="p">\n  ${shapes.join('\n  ')}\n</bpmndi:BPMNPlane></bpmndi:BPMNDiagram></bpmn:definitions>`
+
+        it('treats identical diagrams as equal', () => {
+            expect(compareXML(diagram([shape('a'), shape('b')]), diagram([shape('a'), shape('b')]))).toBe(true)
+        })
+
+        /** Saving reorders the layout, so a deployed diagram saved unchanged must still match. */
+        it('ignores the order of the shapes in the layout', () => {
+            expect(compareXML(diagram([shape('a'), shape('b')]), diagram([shape('b'), shape('a')]))).toBe(true)
+        })
+
+        it('sees a shape that moved', () => {
+            const moved = '<bpmndi:BPMNShape id="b_di" bpmnElement="b" isHorizontal="true"/>'
+            expect(compareXML(diagram([shape('a'), shape('b')]), diagram([shape('a'), moved]))).toBe(false)
+        })
+
+        /** Order outside the layout can matter, e.g. which listener runs first. */
+        it('keeps the order of the process itself', () => {
+            const swapped = '<bpmn:task id="b"/><bpmn:task id="a"/>'
+            expect(compareXML(diagram([shape('a'), shape('b')]), diagram([shape('a'), shape('b')], swapped))).toBe(false)
         })
     })
 
@@ -381,7 +414,7 @@ describe('Utils', () => {
             const mockEl = { getAttribute: vi.fn(() => 'collab-id') }
             const mockDoc = { querySelector: vi.fn(() => mockEl) }
             const OriginalDOMParser = globalThis.DOMParser
-            globalThis.DOMParser = vi.fn(() => ({ parseFromString: () => mockDoc }))
+            globalThis.DOMParser = vi.fn(function () { return { parseFromString: () => mockDoc } })
 
             expect(getProcessKeyFromBpmn('<xml/>')).toBe('collab-id')
 
@@ -392,7 +425,7 @@ describe('Utils', () => {
             const mockProcess = { getAttribute: vi.fn(() => 'process-id') }
             const mockDoc = { querySelector: vi.fn((sel) => sel.includes('collaboration') ? null : mockProcess) }
             const OriginalDOMParser = globalThis.DOMParser
-            globalThis.DOMParser = vi.fn(() => ({ parseFromString: () => mockDoc }))
+            globalThis.DOMParser = vi.fn(function () { return { parseFromString: () => mockDoc } })
 
             expect(getProcessKeyFromBpmn('<xml/>')).toBe('process-id')
 
@@ -402,7 +435,7 @@ describe('Utils', () => {
         it('Returns null when neither tag is present', () => {
             const mockDoc = { querySelector: vi.fn(() => null) }
             const OriginalDOMParser = globalThis.DOMParser
-            globalThis.DOMParser = vi.fn(() => ({ parseFromString: () => mockDoc }))
+            globalThis.DOMParser = vi.fn(function () { return { parseFromString: () => mockDoc } })
 
             expect(getProcessKeyFromBpmn('<xml/>')).toBeNull()
 
@@ -530,6 +563,57 @@ describe('Utils', () => {
 
         it('returns empty array for invalid XML', () => {
             expect(getFormRefsFromBpmn('not xml <<>>')).toEqual([])
+        })
+    })
+
+    describe('toMoment', () => {
+        it('reads a Java LocalDateTime array, whose month starts at 1', () => {
+            const date = toMoment([2026, 10, 12, 9, 30, 15, 500_000_000])
+            expect(date.format('YYYY-MM-DD HH:mm:ss.SSS')).toBe('2026-10-12 09:30:15.500')
+        })
+
+        /** Jackson leaves out trailing zero fields, so a full minute has no seconds or nanos. */
+        it('reads an array without seconds or nanos', () => {
+            expect(toMoment([2026, 10, 12, 9, 30]).format('YYYY-MM-DD HH:mm:ss')).toBe('2026-10-12 09:30:00')
+        })
+
+        it('reads text and epoch milliseconds', () => {
+            expect(toMoment('2026-10-12T09:30:00').isValid()).toBe(true)
+            expect(toMoment(0)).toBeNull()
+            expect(toMoment(1_000).valueOf()).toBe(1_000)
+        })
+
+        it('has nothing for a missing date', () => {
+            expect(toMoment(null)).toBeNull()
+            expect(formatDate(null)).toBe('')
+            expect(formatDate('not a date')).toBe('')
+        })
+
+        it('formats with the given pattern', () => {
+            expect(formatDate([2026, 10, 12, 9, 30], 'DD.MM.YYYY HH:mm')).toBe('12.10.2026 09:30')
+        })
+    })
+
+    describe('folderIcon', () => {
+        it('tells projects, folders and user folders apart', () => {
+            expect(folderIcon({ parentId: null })).toBe('mdi-briefcase')
+            expect(folderIcon({ parentId: 'p' })).toBe('mdi-folder-outline')
+            expect(folderIcon({ parentId: null, userFolder: true })).toBe('mdi-folder-account-outline')
+        })
+    })
+
+    describe('modelName', () => {
+        it('names a form by its form id', () => {
+            expect(modelName({ type: 'form', formId: 'request', name: 'ignored' })).toBe('request')
+        })
+
+        it('names a diagram by its name', () => {
+            expect(modelName({ type: 'bpmn-c7', name: 'Invoice', processkey: 'invoice' })).toBe('Invoice')
+        })
+
+        /** Older diagrams were stored with the text "undefined" as their name. */
+        it.each([undefined, '', 'undefined'])('falls back to the key when the name is %j', name => {
+            expect(modelName({ type: 'dmn', name, processkey: 'approval' })).toBe('approval')
         })
     })
 })

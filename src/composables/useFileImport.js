@@ -19,14 +19,13 @@ import { useI18n } from 'vue-i18n'
 import {
   getTagValueFromXml,
   getProcessKeyFromBpmn,
-  checkCamundaVersion,
   compareXML,
   generateUniqueId,
   setTagValueOfXml,
 } from '../utils.js'
 import { DIAGRAM_TYPE } from '../constants/diagramTypes.js'
-import { saveDiagramProcess, updateDiagramProcess, getUnifiedDiagrams } from '../services/processService.js'
-import { saveForm, updateForm } from '../services/formService.js'
+import { saveDiagramProcess, updateDiagramProcess, fetchProcessByKey } from '../services/processService.js'
+import { saveForm, updateForm, fetchFormByFormId } from '../services/formService.js'
 
 /**
  * Encapsulates file drag-and-drop / file-input handling and the conflict-resolution
@@ -40,7 +39,7 @@ import { saveForm, updateForm } from '../services/formService.js'
  * @param {import('vue').ComputedRef} deps.processes  - computed list of BPMN/DMN processes
  * @param {import('vue').ComputedRef} deps.forms      - computed list of forms
  * @param {function} deps.showToastMessage            - (toastInfo) => void
- * @param {function} deps.openDiagramFromChild        - (xml, id, name, key, type, isSaved, canSave, replaceXml) => void
+ * @param {function} deps.openDiagramFromChild        - (xml, id, name, key, type, isSaved, canSave, replaceXml, folderId) => void
  * @param {import('vue').Ref} deps.showModalAcceptCancelMessage - reactive: { show, type, isBatch }
  * @param {import('vue').Ref} deps.modalData          - reactive modal payload
  * @param {import('vue').Ref} deps.modelerTabNav      - ref to TabNav component instance
@@ -63,6 +62,10 @@ export default function useFileImport({
   onBatchComplete,
   nextModalHiddenPromise,
   updateDiagramXml,
+  // The folder the import goes into, pinned by the caller for as long as it runs
+  importFolderId,
+  // (folderId) => folder name, so a conflict can say where the model it found lives
+  folderNameFor,
 }) {
   const { t } = useI18n()
 
@@ -87,6 +90,21 @@ export default function useFileImport({
     if (applyAll) _batchPolicy.value = choice
     _conflictResolve.value?.({ choice, payload })
     _conflictResolve.value = null
+  }
+
+  /**
+   * What is stored is what opens, and it stays in its own folder. Without this the import of a
+   * file that is already there looks like it went nowhere, least of all into the folder asked for.
+   */
+  const _sayItIsAlreadyStored = (name, folderId) => {
+    const folder = folderNameFor?.(folderId)
+    showToastMessage({
+      isSuccess: true,
+      toastText: 'toastImportExists',
+      bodyTextAlt: folder
+        ? t('toastImportExists.bodyInFolder', { name, folder })
+        : t('toastImportExists.body', { name }),
+    })
   }
 
   /** Returns the current XML for the tab matching processKey, or null if not open.
@@ -149,9 +167,9 @@ export default function useFileImport({
   /**
    * Open a diagram that is not yet persisted in the database as a new unsaved tab.
    * autoSwitch controls whether to switch to the new tab immediately.
-   * Also returned so that CibsevenModeler can call it from the external-return flow.
+   * Also returned so that CibsevenModeler can call it from the external-return flow, which names its own folder.
    */
-  const _addNewBpmnFromLoadedXml = (diagramType, xmlToLoad, foundExternalProcessKey, autoSwitch = true) => {
+  const _addNewBpmnFromLoadedXml = (diagramType, xmlToLoad, foundExternalProcessKey, autoSwitch = true, folderId = importFolderId?.value) => {
     const keyOfTabNav = generateUniqueId()
     tabNavList.value.push({
       type: diagramType,
@@ -160,6 +178,9 @@ export default function useFileImport({
       id: foundExternalProcessKey,
       key: foundExternalProcessKey,
       keyOfTabNav,
+      // An import opens a tab first and is stored when it is saved: without this the save
+      // names no folder and the backend files it under the default one
+      folderId,
       canSave: true,
       isSaved: false,
       isModelerVisible: false,
@@ -175,7 +196,7 @@ export default function useFileImport({
   const _autoSaveProcess = async (xml, processKey, diagramType) => {
     try {
       const blob = new Blob([xml], { type: 'text/xml' })
-      const response = await saveDiagramProcess(processKey, processKey, blob, diagramType)
+      const response = await saveDiagramProcess(processKey, processKey, blob, diagramType, importFolderId?.value)
       if (response?.id) {
         const idx = tabNavList.value.findIndex(
           t => t.key === processKey && !t.isSaved && t.type !== DIAGRAM_TYPE.FORM
@@ -192,7 +213,7 @@ export default function useFileImport({
   /** Save a newly imported Form file to the database and mark its tab as saved. */
   const _autoSaveForm = async (jsonString, formId) => {
     try {
-      const response = await saveForm(formId, JSON.parse(jsonString))
+      const response = await saveForm(formId, JSON.parse(jsonString), importFolderId?.value)
       if (response?.id) {
         const idx = tabNavList.value.findIndex(
           t => t.key === formId && !t.isSaved && t.type === DIAGRAM_TYPE.FORM
@@ -223,7 +244,10 @@ export default function useFileImport({
 
   const _openFormFromImportedFile = async (jsonExternal, isBatch = false) => {
     const jsonId = JSON.parse(jsonExternal)?.id
-    const foundForm = forms.value.find(form => form.formId === jsonId)
+    // The loaded list only holds the folder in view, but a form id is unique across all of
+    // them, so a form that is not on screen still collides
+    let foundForm = forms.value?.find(form => form.formId === jsonId)
+    if (!foundForm) foundForm = await _findFormRemotely(jsonId)
 
     if (foundForm) {
       let jsonFromEditor = _checkIfFormOpenInTab(jsonId)
@@ -239,6 +263,7 @@ export default function useFileImport({
         xmlFromModeler: jsonFromEditor,
         xmlExternalUrl: jsonExternal,
         diagramType: DIAGRAM_TYPE.FORM,
+        folderName: folderNameFor?.(foundForm.folderId) ?? null,
       }
       const isEqual = _canonicalFormJson(jsonFromEditor) === _canonicalFormJson(jsonExternal)
 
@@ -266,10 +291,13 @@ export default function useFileImport({
       } else {
         if (!isBatch) {
           if (foundTabIndex > -1) {
+            // The stored form knows the folder a tab kept from before does not
+            tabNavList.value[foundTabIndex].folderId = foundForm.folderId
             modelerTabNav.value.selectTab(foundTabIndex)
           } else {
-            openDiagramFromChild(jsonExternal, foundForm.id, jsonId, jsonId, DIAGRAM_TYPE.FORM, true, false, false)
+            openDiagramFromChild(jsonExternal, foundForm.id, jsonId, jsonId, DIAGRAM_TYPE.FORM, true, false, false, foundForm.folderId)
           }
+          _sayItIsAlreadyStored(jsonId, foundForm.folderId)
         }
         return 'unchanged'
       }
@@ -294,9 +322,17 @@ export default function useFileImport({
           return 'unchanged'
         } else {
           const { choice } = await _awaitConflictModal(DIAGRAM_TYPE.FORM, isBatch)
-          if (isBatch && choice === 'replace') {
+          if (choice === 'replace') {
             const idx = tabNavList.value.findIndex(t => t.key === jsonId && t.type === DIAGRAM_TYPE.FORM)
-            if (idx > -1) tabNavListXml.value[idx] = jsonExternal
+            if (idx > -1) {
+              // Overwrite the unsaved tab with the imported content through the editor:
+              // updateDiagramXml -> _validate re-imports it. cansave=null leaves the tab
+              // in its unsaved state (a re-import doesn't persist it to the DB).
+              updateDiagramXml?.(jsonExternal, idx, null, DIAGRAM_TYPE.FORM)
+              await nextTick()
+              if (!isBatch) await switchTabFromTabNav(idx)
+            }
+            return 'replaced'
           }
         }
       } else {
@@ -309,20 +345,44 @@ export default function useFileImport({
     }
   }
 
+  /**
+   * The stored diagram with that key, or null. Asked of the backend by exact key rather than
+   * searched: the key is what the unique constraint is on, so a near match is not a conflict.
+   */
+  const _findProcessRemotely = async key => {
+    try {
+      return await fetchProcessByKey(key)
+    } catch (e) {
+      // Only a 404 answers the question. Reading any other failure as "nothing there" would
+      // import a second diagram under a key the database then refuses
+      if (e?.response?.status === 404) return null
+      throw new Error(t('importErrors.lookupFailed'), { cause: e })
+    }
+  }
+
+  const _findFormRemotely = async formId => {
+    try {
+      return await fetchFormByFormId(formId)
+    } catch (e) {
+      if (e?.response?.status === 404) return null
+      throw new Error(t('importErrors.lookupFailed'), { cause: e })
+    }
+  }
+
   // A valid extension is not enough: an empty or malformed file (no <definitions>)
   // would otherwise open as a broken tab that only fails later with a console-only
   // "no definitions loaded" on save. Reject it here so handleFile surfaces a load error.
-  const _isParseableDiagram = xml => {
-    if (!xml || !xml.trim()) return false
+  const _diagramProblem = xml => {
+    if (!xml || !xml.trim()) return t('importErrors.empty')
     const doc = new DOMParser().parseFromString(xml, 'application/xml')
-    if (doc.querySelector('parsererror')) return false
-    return !!doc.querySelector('*|definitions')
+    if (doc.querySelector('parsererror')) return t('importErrors.notXml')
+    if (!doc.querySelector('*|definitions')) return t('importErrors.noDefinitions')
+    return null
   }
 
   const _openProcessFromImportedFile = async (resXmlExternalUrl, fileName, fileNameWithExtension, isBatch = false) => {
-    if (!_isParseableDiagram(resXmlExternalUrl)) {
-      throw new Error(`Invalid diagram file (no BPMN/DMN definitions): ${fileNameWithExtension}`)
-    }
+    const problem = _diagramProblem(resXmlExternalUrl)
+    if (problem) throw new Error(problem)
     let foundExternalProcessKey = getProcessKeyFromBpmn(resXmlExternalUrl) ?? fileName
     let diagramType = null
 
@@ -330,16 +390,13 @@ export default function useFileImport({
       foundExternalProcessKey = getTagValueFromXml(resXmlExternalUrl, 'definitions', 'id') ?? fileName
       diagramType = DIAGRAM_TYPE.DMN
     } else if (foundExternalProcessKey) {
-      diagramType = checkCamundaVersion(resXmlExternalUrl)
+      diagramType = DIAGRAM_TYPE.BPMN_C7
     }
 
-    let foundModelerProcess = processes.value.find(process => process.processkey === foundExternalProcessKey)
-    if (!foundModelerProcess) {
-      try {
-        const results = await getUnifiedDiagrams(0, 1, foundExternalProcessKey, '')
-        foundModelerProcess = results?.find(p => p.processkey === foundExternalProcessKey) ?? null
-      } catch { /* fall through to new-process path */ }
-    }
+    // The loaded list only holds the folder in view, but a process key is unique across all of
+    // them, so a diagram that is not on screen still collides
+    let foundModelerProcess = processes.value?.find(process => process.processkey === foundExternalProcessKey)
+    if (!foundModelerProcess) foundModelerProcess = await _findProcessRemotely(foundExternalProcessKey)
 
     if (foundModelerProcess) {
       let xmlFromModeler = _checkIfProcessOpenInTab(foundExternalProcessKey)
@@ -358,10 +415,15 @@ export default function useFileImport({
         xmlFromModeler,
         xmlExternalUrl: resXmlExternalUrl,
         diagramType,
+        folderId: foundModelerProcess.folderId ?? null,
+        folderName: folderNameFor?.(foundModelerProcess.folderId) ?? null,
       }
       const isEqual = compareXML(xmlFromModeler, resXmlExternalUrl)
       if (isEqual) {
-        if (!isBatch) openDiagramFromChild(resXmlExternalUrl, foundModelerProcess.id, foundModelerProcess.name, foundExternalProcessKey, diagramType, true, false, false)
+        if (!isBatch) {
+          openDiagramFromChild(resXmlExternalUrl, foundModelerProcess.id, foundModelerProcess.name, foundExternalProcessKey, diagramType, true, false, false, foundModelerProcess.folderId)
+          _sayItIsAlreadyStored(foundModelerProcess.name ?? foundExternalProcessKey, foundModelerProcess.folderId)
+        }
         return 'unchanged'
       } else {
         const { choice, payload } = await _awaitConflictModal(diagramType, isBatch)
@@ -412,9 +474,17 @@ export default function useFileImport({
           return 'unchanged'
         } else {
           const { choice } = await _awaitConflictModal(diagramType, isBatch)
-          if (isBatch && choice === 'replace') {
+          if (choice === 'replace') {
             const idx = tabNavList.value.findIndex(t => t.key === foundExternalProcessKey && t.type !== DIAGRAM_TYPE.FORM)
-            if (idx > -1) tabNavListXml.value[idx] = resXmlExternalUrl
+            if (idx > -1) {
+              // Overwrite the unsaved tab with the imported content through the editor:
+              // updateDiagramXml -> _validate re-imports it. cansave=null leaves the tab
+              // in its unsaved state (a re-import doesn't persist it to the DB).
+              updateDiagramXml?.(resXmlExternalUrl, idx, null, diagramType)
+              await nextTick()
+              if (!isBatch) await switchTabFromTabNav(idx)
+            }
+            return 'replaced'
           }
         }
       } else {
@@ -437,8 +507,10 @@ export default function useFileImport({
 
     let savedCount = 0
     let unchangedCount = 0
+    let replacedCount = 0     // unsaved tab overwritten with imported content (not persisted to DB)
     const invalidNames = []   // wrong extension — not a supported diagram file
     const readErrorNames = [] // valid extension but failed to read/parse/import
+    let readErrorReason = '' // what was wrong with the file, for a single-file import
 
     for (const file of files) {
       if (isBatch && _batchPolicy.value === 'stop') break
@@ -468,11 +540,13 @@ export default function useFileImport({
         })
         if (didSave === true) savedCount++
         else if (didSave === 'unchanged') unchangedCount++
+        else if (didSave === 'replaced') replacedCount++
       } catch (err) {
         // Valid extension but the file couldn't be read/parsed — distinct from a
         // wrong extension, so it gets the "could not be loaded" message, not "not a BPMN file".
         console.error('Error importing file:', file.name, err)
         readErrorNames.push(file.name)
+        readErrorReason = `${file.name}: ${err?.message ?? ''}`.trim()
       }
     }
 
@@ -483,21 +557,22 @@ export default function useFileImport({
       if (invalidNames.length) {
         showToastMessage({ isSuccess: false, toastText: 'toastLoadErrorFileExtension' })
       } else if (readErrorNames.length) {
-        showToastMessage({ isSuccess: false, toastText: 'toastLoadErrorFile' })
+        showToastMessage({ isSuccess: false, toastText: 'toastLoadErrorFile', bodyTextAlt: readErrorReason })
       }
     } else {
       // Batch: compose a summary from all non-zero outcome counts
       // skippedCount covers both user-skipped conflicts AND files not reached due to "Cancel remaining"
       const failedCount = invalidNames.length + readErrorNames.length
       const validTotal = files.length - invalidNames.length
-      const skippedCount = validTotal - savedCount - unchangedCount - readErrorNames.length
+      const skippedCount = validTotal - savedCount - unchangedCount - replacedCount - readErrorNames.length
       const parts = []
       if (savedCount > 0) parts.push(t('importSummary.imported', { count: savedCount }))
+      if (replacedCount > 0) parts.push(t('importSummary.replaced', { count: replacedCount }))
       if (unchangedCount > 0) parts.push(t('importSummary.upToDate', { count: unchangedCount }))
       if (skippedCount > 0) parts.push(t('importSummary.skipped', { count: skippedCount }))
       if (failedCount > 0) parts.push(t('importSummary.failed', { count: failedCount }))
       showToastMessage({
-        isSuccess: savedCount > 0 || unchangedCount > 0,
+        isSuccess: savedCount > 0 || unchangedCount > 0 || replacedCount > 0,
         toastText: 'toastImportBatch',
         bodyTextAlt: parts.join(', ') + '.',
       })

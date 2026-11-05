@@ -27,11 +27,11 @@
                     {{ props.body }} {{ props.name }}
                 </div>
                 <div class="modal-footer">
-                    <button type="button" @click.prevent="handleAcceptMessage" class="btn btn-danger">{{
-                        props.acceptLabel || $t("buttons.accept") }}</button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
                         @click="handleCloseMessage">{{ $t("buttons.cancel")
                         }}</button>
+                    <button type="button" @click.prevent="handleAcceptMessage" class="btn btn-danger">{{
+                        props.acceptLabel || $t("buttons.accept") }}</button>
                 </div>
             </div>
         </div>

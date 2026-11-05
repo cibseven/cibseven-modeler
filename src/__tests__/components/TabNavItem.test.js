@@ -14,8 +14,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { describe, it, expect } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { describe, it, expect, vi } from 'vitest'
+import { mount, flushPromises } from '@vue/test-utils'
 import TabNavItem from '../../components/layout/TabNavItem.vue'
 
 const mountItem = (overrides = {}) => mount(TabNavItem, {
@@ -48,5 +48,83 @@ describe('TabNavItem accessibility', () => {
         const close = mountItem().find('.mdi-close')
         expect(close.attributes('tabindex')).toBe('0')
         expect(close.attributes('aria-label')).toBe('buttons.close')
+    })
+})
+
+describe('TabNavItem tooltip', () => {
+    const mountWithPath = (tabNavList, folderPathFor) => mount(TabNavItem, {
+        props: { isDashboard: false, isVisible: true, name: 'proc', processkey: 'proc',
+            keyOfTabNav: 'k1', index: 0, activeTab: 0, tabNavList },
+        global: { mocks: { $t: k => k }, provide: { folderPathFor } },
+    })
+
+    /** The label is cut to the width of the tab, and it never says where the model is kept. */
+    it('names the whole folder path of the model', () => {
+        const w = mountWithPath({ type: 'bpmn-c7', canSave: false, folderId: '2024' },
+            () => 'General / Invoicing / 2024')
+
+        expect(w.find('[role="tab"]').attributes('title')).toBe('General / Invoicing / 2024 / proc.bpmn')
+    })
+
+    it('falls back to the file name for a model whose folder is not known', () => {
+        const w = mountWithPath({ type: 'bpmn-c7', canSave: false }, () => 'General')
+
+        expect(w.find('[role="tab"]').attributes('title')).toBe('proc.bpmn')
+    })
+
+    it('falls back to the file name where there is no tree to ask', () => {
+        const w = mount(TabNavItem, {
+            props: { isDashboard: false, isVisible: true, name: 'proc', processkey: 'proc',
+                keyOfTabNav: 'k1', index: 0, activeTab: 0,
+                tabNavList: { type: 'bpmn-c7', canSave: false, folderId: '2024' } },
+            global: { mocks: { $t: k => k } },
+        })
+
+        expect(w.find('[role="tab"]').attributes('title')).toBe('proc.bpmn')
+    })
+})
+
+describe('TabNavItem closeTab', () => {
+    it('is exposed so the overflow dropdown can close a hidden tab', async () => {
+        const w = mountItem()
+        w.vm.closeTab()
+        await flushPromises()
+        expect(w.emitted('removeSelectedTab')).toEqual([[0]])
+    })
+
+    it('asks for confirmation instead of closing when there are unsaved changes', async () => {
+        const w = mountItem({ tabNavList: { type: 'bpmn-c7', canSave: true } })
+        w.vm.closeTab()
+        await flushPromises()
+        expect(w.emitted('showModalMessage')).toEqual([[0]])
+        expect(w.emitted('removeSelectedTab')).toBeUndefined()
+    })
+
+    it('runs the session hook before closing a diagram tab', async () => {
+        const closeSessionHook = vi.fn()
+        const w = mount(TabNavItem, {
+            props: { isDashboard: false, isVisible: true, name: 'proc', processkey: 'proc',
+                keyOfTabNav: 'k1', index: 0, activeTab: 0,
+                tabNavList: { type: 'bpmn-c7', canSave: false, sessionId: 's1' } },
+            global: { mocks: { $t: k => k }, provide: { closeSessionHook } },
+        })
+        w.vm.closeTab()
+        await flushPromises()
+        expect(closeSessionHook).toHaveBeenCalledWith('s1', 'bpmn-c7')
+        expect(w.emitted('removeSelectedTab')).toEqual([[0]])
+    })
+
+    it('runs the form session hook for form tabs', async () => {
+        const closeFormSessionHook = vi.fn()
+        const w = mount(TabNavItem, {
+            props: { isDashboard: false, isVisible: true, name: 'form', processkey: 'form',
+                keyOfTabNav: 'k1', index: 0, activeTab: 0,
+                tabNavList: { type: 'form', canSave: false, sessionId: 's2' } },
+            global: { mocks: { $t: k => k }, provide: { closeFormSessionHook } },
+        })
+        w.vm.closeTab()
+        await flushPromises()
+        expect(closeFormSessionHook).toHaveBeenCalledWith('s2', 'form')
+        expect(w.emitted('removeSelectedTab')).toEqual([[0]])
     })
 })

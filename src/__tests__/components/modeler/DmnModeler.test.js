@@ -1,0 +1,335 @@
+/*
+ * Copyright CIB software GmbH and/or licensed to CIB software GmbH
+ * under one or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information regarding copyright
+ * ownership. CIB software licenses this file to you under the Apache License,
+ * Version 2.0; you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { mount, flushPromises } from '@vue/test-utils'
+
+const dmnInstance = vi.hoisted(() => {
+  const canvas = { zoom: vi.fn() }
+  const minimap = { toggle: vi.fn() }
+  const searchPad = { toggle: vi.fn() }
+  const propertiesPanel = { attachTo: vi.fn(), detach: vi.fn() }
+  const eventBus = { on: vi.fn() }
+  const viewer = {
+    on: vi.fn(),
+    get: vi.fn((name) => {
+      if (name === 'propertiesPanel') return propertiesPanel
+      if (name === 'eventBus') return eventBus
+      if (name === 'canvas') return canvas
+      if (name === 'minimap') return minimap
+      if (name === 'searchPad') return searchPad
+      return null
+    }),
+  }
+  return {
+    canvas,
+    minimap,
+    searchPad,
+    propertiesPanel,
+    viewer,
+    instance: {
+      saveXML: vi.fn().mockResolvedValue({ xml: '<dmn/>' }),
+      getActiveViewer: vi.fn(() => viewer),
+      getActiveView: vi.fn(() => ({ type: 'drd' })),
+      on: vi.fn(),
+      destroy: vi.fn(),
+      get: vi.fn(),
+    },
+  }
+})
+
+const modelerMocks = vi.hoisted(() => ({
+  validate: vi.fn().mockResolvedValue(undefined),
+  saveXmlAfterUpdate: vi.fn(),
+  toggleConsole: vi.fn(),
+  addLineWithErrorToConsole: vi.fn(),
+  copyLine: vi.fn(),
+  cleanConsole: vi.fn(),
+  isConsolePanelShowing: vi.fn(() => false),
+  isConsoleOpen: { value: false },
+  processHistoryListComp: { value: [] },
+  changeActiveVersion: vi.fn(),
+  activeVersion: { value: -1 },
+  toggleVersionNotSaved: vi.fn(),
+  toggleEnableSave: vi.fn(),
+  saveDecisionTable: vi.fn(),
+}))
+
+const panelMocks = vi.hoisted(() => ({
+  updateParentHeight: vi.fn(),
+  updateParentWidth: vi.fn(),
+  parentWidth: { value: 700 },
+  parentHeight: { value: 600 },
+}))
+
+vi.mock('dmn-js/lib/Modeler', () => ({
+  default: vi.fn(function () {
+    return dmnInstance.instance
+  }),
+}))
+
+vi.mock('@bpmn-io/dmn-migrate', () => ({
+  migrateDiagram: vi.fn((xml) => Promise.resolve(xml)),
+}))
+
+vi.mock('dmn-js-properties-panel', () => ({
+  DmnPropertiesPanelModule: {},
+  DmnPropertiesProviderModule: {},
+  CamundaPropertiesProviderModule: {},
+}))
+
+vi.mock('diagram-js-minimap', () => ({ default: {} }))
+vi.mock('camunda-dmn-moddle/resources/camunda.json', () => ({ default: {} }))
+
+vi.mock('../../../composables/useModeler.js', () => ({
+  default: () => modelerMocks,
+}))
+
+vi.mock('../../../composables/usePropertiesPanel.js', () => ({
+  default: () => panelMocks,
+}))
+
+import DmnModeler from '../../../components/modeler/DmnModeler.vue'
+import { defaultTabElement } from '../../helpers/modelerTestUtils.js'
+
+const layoutStubs = {
+  PropertiesPanel: {
+    name: 'PropertiesPanel',
+    template: '<div class="properties-panel-stub" ref="propertiesPanelEl" />',
+    methods: { _changeWidth: vi.fn(() => 400), _resetPropertiesPanelWidth: vi.fn(), _restorePropertiesPanelWidth: vi.fn() },
+  },
+  ConsolePanel: {
+    name: 'ConsolePanel',
+    template: '<div class="console-panel-stub" />',
+    props: ['isModelerVisible', 'parentHeight', 'rightPos', 'processID'],
+  },
+  MonacoThemeScope: { template: '<div><slot /></div>' },
+  MonacoConsole: { template: '<div class="monaco-console-stub" />' },
+  MenuActionButtons: { template: '<div><slot name="leftButtons" /><slot name="rightButtons" /></div>' },
+}
+
+function mountDmnModeler(props = {}) {
+  return mount(DmnModeler, {
+    props: {
+      xml: '',
+      tabElementIndex: 0,
+      tabElement: defaultTabElement,
+      isModelerVisible: false,
+      isActiveTab: true,
+      consoleErrors: '',
+      ...props,
+    },
+    global: {
+      stubs: layoutStubs,
+      mocks: { $t: (k) => k },
+    },
+  })
+}
+
+describe('DmnModeler', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    modelerMocks.isConsoleOpen.value = false
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  describe('rendering', () => {
+    it('mounts and renders canvas', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      expect(wrapper.find('.canvas').exists()).toBe(true)
+    })
+
+    it('renders zoom control buttons', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      expect(wrapper.findAll('button').length).toBeGreaterThanOrEqual(4)
+    })
+
+    it('renders console panel stub', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      expect(wrapper.find('.console-panel-stub').exists()).toBe(true)
+    })
+  })
+
+  describe('zoom controls', () => {
+    it('zoomIn calls canvas zoom', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      dmnInstance.canvas.zoom.mockClear()
+      await wrapper.findAll('button')[0].trigger('click')
+      expect(dmnInstance.canvas.zoom).toHaveBeenCalled()
+    })
+
+    it('toggleMinimap toggles minimap', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      const minimapBtn = wrapper.findAll('button').find(b => b.attributes('aria-pressed') !== undefined)
+      if (minimapBtn) {
+        await minimapBtn.trigger('click')
+        expect(dmnInstance.minimap.toggle).toHaveBeenCalled()
+      }
+    })
+  })
+
+  // Only the diagram (DRD) view has a search, so the button follows that view
+  describe('search button', () => {
+    const fire = name => dmnInstance.viewer.on.mock.calls.filter(([event]) => event === name).at(-1)[1]()
+
+    it('opens the same search as Ctrl+F in the diagram view', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      dmnInstance.searchPad.toggle.mockClear()
+
+      await wrapper.find('button.search-elements').trigger('click')
+
+      expect(dmnInstance.searchPad.toggle).toHaveBeenCalledTimes(1)
+    })
+
+    it('shows the search as open until it closes', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      const button = () => wrapper.find('button.search-elements')
+
+      fire('searchPad.opened')
+      await flushPromises()
+      expect(button().attributes('aria-pressed')).toBe('true')
+
+      fire('searchPad.closed')
+      await flushPromises()
+      expect(button().attributes('aria-pressed')).toBe('false')
+    })
+
+    // The search closes on any click that reaches the page, so the opening click must not get there
+    it('keeps its click from reaching the page', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      const reached = vi.fn()
+      wrapper.element.addEventListener('click', reached)
+
+      wrapper.find('button.search-elements').element.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+
+      expect(reached).not.toHaveBeenCalled()
+    })
+
+    it('is not offered in a decision table, which has no search', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+
+      fire('propertiesPanel.detach')
+      await flushPromises()
+
+      expect(wrapper.find('button.search-elements').exists()).toBe(false)
+    })
+
+    // Zoom, fit and the minimap work on the diagram canvas, which a decision table does not have
+    it('offers only fullscreen in a decision table', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      const labels = () => wrapper.findAll('button').map(button => button.attributes('aria-label'))
+      expect(labels()).toEqual(expect.arrayContaining(['buttons.zoomIn', 'buttons.zoomOut', 'buttons.resetViewport', 'buttons.minimap']))
+
+      fire('propertiesPanel.detach')
+      await flushPromises()
+
+      expect(labels()).not.toContain('buttons.zoomIn')
+      expect(labels()).not.toContain('buttons.zoomOut')
+      expect(labels()).not.toContain('buttons.resetViewport')
+      expect(labels()).not.toContain('buttons.minimap')
+      expect(labels()).toContain('buttons.fullscreen')
+    })
+
+    it('offers them all again back in the diagram', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      fire('propertiesPanel.detach')
+      await flushPromises()
+
+      fire('propertiesPanel.attach')
+      await flushPromises()
+
+      const labels = wrapper.findAll('button').map(button => button.attributes('aria-label'))
+      expect(labels).toEqual(expect.arrayContaining(['buttons.zoomIn', 'buttons.minimap', 'buttons.searchElements', 'buttons.fullscreen']))
+    })
+
+    // Coming back to a tab re-attached the panel, and its attach event made the table look like the diagram
+    it('keeps them hidden when the tab of a decision table is opened again', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      fire('propertiesPanel.detach')
+      await flushPromises()
+      dmnInstance.instance.getActiveView.mockReturnValue({ type: 'decisionTable' })
+      dmnInstance.propertiesPanel.attachTo.mockClear()
+
+      await wrapper.setProps({ isActiveTab: false })
+      await wrapper.setProps({ isActiveTab: true })
+      await flushPromises()
+
+      expect(dmnInstance.propertiesPanel.attachTo).not.toHaveBeenCalled()
+      expect(wrapper.findAll('button').map(button => button.attributes('aria-label'))).not.toContain('buttons.zoomIn')
+      dmnInstance.instance.getActiveView.mockReturnValue({ type: 'drd' })
+    })
+
+    it('brings the properties panel back when the tab of a diagram is opened again', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      dmnInstance.propertiesPanel.attachTo.mockClear()
+
+      await wrapper.setProps({ isActiveTab: false })
+      await wrapper.setProps({ isActiveTab: true })
+      await flushPromises()
+
+      expect(dmnInstance.propertiesPanel.attachTo).toHaveBeenCalled()
+    })
+
+    it('does nothing in a view without a search', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      dmnInstance.viewer.get.mockImplementationOnce(() => { throw new Error('No provider for "searchPad"') })
+
+      await wrapper.find('button.search-elements').trigger('click')
+
+      expect(dmnInstance.searchPad.toggle).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('lifecycle', () => {
+    it('emits resizeTabNav on mount', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      expect(wrapper.emitted('resizeTabNav')).toBeTruthy()
+    })
+
+    it('creates DmnJS modeler on mount', async () => {
+      const DmnJS = (await import('dmn-js/lib/Modeler')).default
+      mountDmnModeler()
+      await flushPromises()
+      expect(DmnJS).toHaveBeenCalled()
+    })
+  })
+
+  describe('exposed methods', () => {
+    it('exposes togglePropertiesPanel', async () => {
+      const wrapper = mountDmnModeler()
+      await flushPromises()
+      expect(wrapper.vm.togglePropertiesPanel).toBeDefined()
+    })
+  })
+})

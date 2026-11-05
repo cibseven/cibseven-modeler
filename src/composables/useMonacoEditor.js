@@ -96,7 +96,7 @@ export default function useMonacoEditor(monacoRef, props, emit) {
       lineNumbers: 'on',
       roundedSelection: false,
       scrollBeyondLastLine: false,
-      readOnly: false,
+      readOnly: !!props.readOnly,
       theme: 'vs',
       automaticLayout: true,
       quickSuggestions: true,
@@ -110,6 +110,7 @@ export default function useMonacoEditor(monacoRef, props, emit) {
     monacoEditor.getModel().onDidChangeContent(() => {
       emit('updateFromEditor', monacoEditor.getValue(), props.tabElementIndex)
     })
+    return monacoEditor
   }
 
    //in case we want to add some style

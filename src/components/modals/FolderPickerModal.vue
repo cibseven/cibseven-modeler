@@ -1,0 +1,177 @@
+<!--
+  Copyright CIB software GmbH and/or licensed to CIB software GmbH
+  under one or more contributor license agreements. See the NOTICE file
+  distributed with this work for additional information regarding copyright
+  ownership. CIB software licenses this file to you under the Apache License,
+  Version 2.0; you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+<template>
+    <div class="modal fade" ref="modalRoot" tabindex="-1" aria-hidden="true" :aria-labelledby="titleId">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fs-5" :id="titleId">{{ title }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" :aria-label="$t('buttons.close')"></button>
+                </div>
+                <div class="modal-body">
+                    <fieldset>
+                        <legend class="form-label fs-6">{{ $t('folders.destination') }}</legend>
+                        <!-- The global list style drops the outer item borders; the scroll box frames the list instead -->
+                        <div class="list-group overflow-auto" style="max-height: 40vh">
+                            <div v-if="allowTopLevel" class="list-group-item d-flex align-items-center gap-2"
+                                :class="{ 'text-body-secondary': isCurrent('') }">
+                                <input :id="`${optionId}-top-level`" type="radio" class="form-check-input m-0"
+                                    value="" v-model="selected" :disabled="isCurrent('')">
+                                <label :for="`${optionId}-top-level`" class="d-flex align-items-center gap-2 mb-0">
+                                    <span class="mdi mdi-folder-multiple-outline" aria-hidden="true"></span>
+                                    <span>{{ $t('folders.projects') }}</span>
+                                    <span v-if="isCurrent('')" class="small">({{ $t('folders.currentLocation') }})</span>
+                                </label>
+                            </div>
+                            <div v-for="folder in options" :key="folder.id"
+                                class="list-group-item d-flex align-items-center gap-2"
+                                :class="{ 'text-body-secondary': isCurrent(folder.id) }">
+                                <input :id="`${optionId}-${folder.id}`" type="radio" class="form-check-input m-0"
+                                    :value="folder.id" v-model="selected" :disabled="isCurrent(folder.id)">
+                                <label :for="`${optionId}-${folder.id}`" class="d-flex align-items-center gap-2 mb-0">
+                                    <span class="mdi mdi-folder-outline" aria-hidden="true"
+                                        :style="{ marginLeft: `${folder.depth}rem` }"></span>
+                                    <span>{{ folder.name }}</span>
+                                    <span v-if="isCurrent(folder.id)" class="small">({{ $t('folders.currentLocation') }})</span>
+                                </label>
+                            </div>
+                        </div>
+                    </fieldset>
+                    <div v-if="requireKey" class="mt-3">
+                        <label class="form-label" :for="keyId">{{ $t(keyLabel) }}</label>
+                        <input :id="keyId" type="text" maxlength="100" class="form-control form-control-sm" v-model="key"
+                            @input="error = ''" @keyup.enter="handleAccept">
+                    </div>
+                    <div v-if="error" tabindex="-1" role="alert" aria-live="assertive" aria-atomic="true"
+                        class="d-block invalid-feedback">{{ error }}</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ $t('buttons.cancel') }}</button>
+                    <button type="submit" class="btn btn-primary" :disabled="!isChosen" @click="handleAccept">
+                        {{ $t('buttons.accept') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script setup>
+import * as bootstrap from 'bootstrap'
+import { computed, onMounted, ref, useId } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { folderErrorMessage } from '../../utils/folderErrors.js'
+
+const { t } = useI18n()
+const titleId = useId()
+const keyId = useId()
+const optionId = useId()
+
+const modalRoot = ref(null)
+const options = ref([])
+const selected = ref(null)
+const key = ref('')
+const error = ref('')
+const title = ref('')
+const allowTopLevel = ref(false)
+const requireKey = ref(false)
+const keyLabel = ref('folders.copyKey')
+const keyRequired = ref('folders.copyKeyRequired')
+const runAfterClose = ref(false)
+// Where the item already is: listed, but not a choice. null is the top level, undefined is none
+const current = ref(undefined)
+const shown = ref(false)
+let modalBootstrap = null
+let onAccept = null
+// One click is one answer: the button stays clickable while the dialog fades out
+let accepting = false
+
+// An empty string is the top level, which is a valid choice; null is nothing chosen yet
+const isChosen = computed(() => selected.value !== null)
+
+const isCurrent = id => current.value !== undefined && id === (current.value ?? '')
+
+onMounted(() => {
+    if (!modalRoot.value) return
+    modalBootstrap = new bootstrap.Modal(modalRoot.value)
+    modalRoot.value.addEventListener('hidden.bs.modal', () => { shown.value = false })
+})
+
+const handleAccept = async () => {
+    if (!isChosen.value || accepting) return
+    if (requireKey.value && !key.value.trim()) {
+        error.value = t(keyRequired.value)
+        return
+    }
+    accepting = true
+    if (runAfterClose.value) {
+        // The work says elsewhere how it went, so the dialog leaves first rather than sitting
+        // over it — and a dialog of its own can only open once this one is gone
+        const chosen = selected.value === '' ? null : selected.value
+        modalRoot.value?.addEventListener('hidden.bs.modal',
+            () => Promise.resolve(onAccept?.(chosen, key.value.trim())).catch(e => console.error(e)),
+            { once: true })
+        modalBootstrap?.hide()
+        return
+    }
+    try {
+        await onAccept?.(selected.value === '' ? null : selected.value, key.value.trim())
+    } catch (e) {
+        const refusal = folderErrorMessage(e)
+        error.value = refusal ? t(refusal.key, refusal.params) : t('folders.saveFailed')
+        accepting = false
+        return
+    }
+    modalBootstrap?.hide()
+}
+
+/**
+ * @param {object} options where the folders come from and what the dialog asks for
+ * @param {Array} options.folders rows of { id, name, depth }
+ * @param {Function} options.accept receives (folderId, key); throwing keeps the dialog open,
+ *   except under runAfterClose, where the dialog is already gone and reporting is the caller's
+ * @param {boolean} [options.runAfterClose] close first and accept afterwards, for work that
+ *   reports itself elsewhere
+ * @param {string|null} [options.current] the item's current location, shown but disabled;
+ *   null is the top level
+ */
+const show = ({ folders, title: dialogTitle, allowTopLevel: topLevel = false,
+        requireKey: needsKey = false, defaultKey = '', accept, selected: preselected = null,
+        runAfterClose: afterClose = false, current: currentLocation = undefined,
+        keyLabel: label = 'folders.copyKey',
+        keyRequired: required = 'folders.copyKeyRequired' }) => {
+    options.value = folders ?? []
+    title.value = dialogTitle
+    allowTopLevel.value = topLevel
+    requireKey.value = needsKey
+    runAfterClose.value = afterClose
+    keyLabel.value = label
+    keyRequired.value = required
+    key.value = defaultKey
+    current.value = currentLocation
+    // Only a folder still in the tree can be offered as the choice already made
+    selected.value = options.value.some(folder => folder.id === preselected) && !isCurrent(preselected)
+        ? preselected : null
+    error.value = ''
+    accepting = false
+    onAccept = accept
+    shown.value = true
+    modalBootstrap?.show()
+}
+
+defineExpose({ show, isShown: () => shown.value })
+</script>

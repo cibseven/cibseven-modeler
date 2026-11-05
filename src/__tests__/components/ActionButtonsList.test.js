@@ -32,6 +32,8 @@ function mountButtons(tabElement, {
     isXmlValidated = { validation: true, text: '' },
     modeler = null,
     tabElementIndex = 0,
+    readOnly = false,
+    provide = {},
 } = {}) {
     return mount(ActionButtonsList, {
         props: {
@@ -43,10 +45,11 @@ function mountButtons(tabElement, {
             modeler,
             tabNavList: [],
             tabNavListXml: '',
+            readOnly,
         },
         global: {
             mocks: { $t: (k) => k },
-            provide: { extraDownloadLinks: null},
+            provide: { extraDownloadLinks: null, ...provide },
         },
     })
 }
@@ -130,6 +133,42 @@ describe('ActionButtonsList', () => {
             expect(saveFn).not.toHaveBeenCalled()
         })
 
+        /** Ctrl+S comes here rather than through the button, so the method refuses too. */
+        it('saves nothing of a model the user may only look at', async () => {
+            const saveFn = vi.fn().mockResolvedValue(undefined)
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), {
+                canSave: true,
+                readOnly: true,
+                modeler: { _saveDiagram: saveFn },
+            })
+
+            await wrapper.vm._saveDiagram()
+            expect(saveFn).not.toHaveBeenCalled()
+        })
+
+        /**
+         * Left out rather than hidden: the groups carry d-flex, whose display !important beats the
+         * inline display none of a v-show, so a hidden button stayed on screen.
+         */
+        it('offers neither saving nor deploying a model the user may only look at, and says why', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), { canSave: true, readOnly: true })
+
+            expect(wrapper.find('.save-diagram').exists()).toBe(false)
+            expect(wrapper.find('button[title="buttons.deploy"]').exists()).toBe(false)
+            const badge = wrapper.find('.read-only-badge')
+            expect(badge.attributes('role')).toBe('note')
+            expect(badge.attributes('title')).toBe('readOnlyNotice')
+            expect(badge.text()).toContain('readOnlyBadge')
+        })
+
+        it('offers saving and deploying, and no badge, when the model may be changed', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), { canSave: true })
+
+            expect(wrapper.find('.save-diagram').exists()).toBe(true)
+            expect(wrapper.find('button[title="buttons.deploy"]').exists()).toBe(true)
+            expect(wrapper.find('.read-only-badge').exists()).toBe(false)
+        })
+
         it('calls modeler._saveDiagram when canSave is true and xml is valid', async () => {
             const saveFn = vi.fn().mockResolvedValue(undefined)
             const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), {
@@ -200,16 +239,17 @@ describe('ActionButtonsList', () => {
     })
 
     describe('undo / redo buttons', () => {
-        it('hides undo and redo buttons when isButtonDisabled is true', () => {
+        it('leaves out undo, redo, save and deploy when isButtonDisabled is true', () => {
             const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), {
                 isButtonDisabled: true,
                 modeler: { _undo: vi.fn(), _redo: vi.fn() },
             })
 
-            expect(undoButton(wrapper).exists()).toBe(true)
-            expect(redoButton(wrapper).exists()).toBe(true)
-            expect(undoButton(wrapper).isVisible()).toBe(false)
-            expect(redoButton(wrapper).isVisible()).toBe(false)
+            // Not rendered at all: on a d-flex element a v-show could not hide them
+            expect(undoButton(wrapper).exists()).toBe(false)
+            expect(redoButton(wrapper).exists()).toBe(false)
+            expect(wrapper.find('.save-diagram').exists()).toBe(false)
+            expect(wrapper.find('button[title="buttons.deploy"]').exists()).toBe(false)
         })
 
         it('shows undo and redo buttons when isButtonDisabled is false', () => {
@@ -318,6 +358,84 @@ describe('ActionButtonsList', () => {
             expect(mockEvent.preventDefault).toHaveBeenCalled()
             expect(wrapper.emitted('showToastMessage')).toHaveLength(1)
             expect(wrapper.emitted('showToastMessage')[0][0].isSuccess).toBe(false)
+        })
+    })
+
+    // Autosave is a host feature: it arrives as a component and is offered under the save button
+    describe('save options', () => {
+        const AutosaveMenu = { name: 'AutosaveMenu', props: ['tabElement', 'isSaving'], template: '<div class="autosave-menu" />' }
+        const menuToggle = wrapper => wrapper.find('button[data-bs-toggle="dropdown"]')
+
+        it('offers no menu when the host has no autosave', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7))
+
+            expect(menuToggle(wrapper).exists()).toBe(false)
+            expect(wrapper.find('.dropdown-menu').exists()).toBe(false)
+        })
+
+        it('offers the autosave of the host in a menu next to the save button', () => {
+            const tabElement = makeTabElement(DIAGRAM_TYPE.BPMN_C7)
+            const wrapper = mountButtons(tabElement, { provide: { autosaveToggleComponent: AutosaveMenu } })
+
+            expect(menuToggle(wrapper).attributes('aria-label')).toBe('buttons.saveOptions')
+            const menu = wrapper.findComponent({ name: 'AutosaveMenu' })
+            expect(menu.exists()).toBe(true)
+            expect(menu.props('tabElement')).toEqual(tabElement)
+            expect(wrapper.find('.dropdown-menu .autosave-menu').exists()).toBe(true)
+        })
+
+        it('shows on the save button that autosave is on', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), {
+                provide: { autosaveToggleComponent: AutosaveMenu, autosaveOptions: { enabled: true } }
+            })
+
+            expect(wrapper.find('button.save-diagram .mdi').classes()).toContain('mdi-content-save-check-outline')
+        })
+
+        it('shows the plain save icon while autosave is off', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), {
+                provide: { autosaveToggleComponent: AutosaveMenu, autosaveOptions: { enabled: false } }
+            })
+
+            expect(wrapper.find('button.save-diagram .mdi').classes()).toContain('mdi-content-save-outline')
+        })
+
+        it('names the autosave state on the save button', () => {
+            const on = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), {
+                provide: { autosaveToggleComponent: AutosaveMenu, autosaveOptions: { enabled: true } }
+            })
+            const off = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), {
+                provide: { autosaveToggleComponent: AutosaveMenu, autosaveOptions: { enabled: false } }
+            })
+
+            expect(on.find('button.save-diagram').attributes('title')).toBe('buttons.saveDiagram – buttons.autosaveOn')
+            expect(on.find('button.save-diagram').attributes('aria-label')).toBe('buttons.saveDiagram – buttons.autosaveOn')
+            expect(off.find('button.save-diagram').attributes('title')).toBe('buttons.saveDiagram – buttons.autosaveOff')
+        })
+
+        // Nothing to save disables the button, and a disabled button never shows its own title
+        it('names the autosave state while there is nothing to save', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), {
+                canSave: false,
+                provide: { autosaveToggleComponent: AutosaveMenu, autosaveOptions: { enabled: true } }
+            })
+
+            expect(wrapper.find('button.save-diagram').attributes('disabled')).toBeDefined()
+            expect(wrapper.find('.btn-group').attributes('title')).toBe('buttons.saveDiagram – buttons.autosaveOn')
+        })
+
+        it('keeps the plain title without autosave', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7))
+
+            expect(wrapper.find('button.save-diagram').attributes('title')).toBe('buttons.saveDiagram')
+        })
+
+        it('opens the menu with a chevron rather than the default caret', () => {
+            const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7), { provide: { autosaveToggleComponent: AutosaveMenu } })
+
+            const toggle = menuToggle(wrapper)
+            expect(toggle.classes()).not.toContain('dropdown-toggle')
+            expect(toggle.find('.mdi-chevron-down').exists()).toBe(true)
         })
     })
 })

@@ -52,12 +52,16 @@
             </div>
         </div>
         <!-- Resize handle: only available when panel is expanded -->
-        <div v-show="!collapsed" class="resizable-l" role="presentation" @mousedown="handleDown" />
+        <!-- Focusable resize separator (WAI-ARIA window-splitter pattern) -->
+        <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -->
+        <div v-show="!collapsed" class="resizable-l" role="separator" aria-orientation="vertical"
+            tabindex="0" @mousedown="onHandleMouseDown" @keydown="onHandleKeydown" />
     </div>
 </template>
 
 <script setup>
 import { ref, watch, computed, onMounted, onUpdated, inject } from 'vue'
+import { useResizable } from '../../composables/useResizable.js'
 
 const TOGGLE_STRIP_WIDTH = 24
 const notResizingMaxWidth = 200 // the rest of the width that the panel will not surpass
@@ -94,14 +98,17 @@ const style = computed(() => {
     return { width: `${width.value}px !important` }
 })
 
-let isResizing = false // to check if the user is resizing
-let startX = null
-let startWidth = null
+const { onMouseDown: onHandleMouseDown, onKeydown: onHandleKeydown } = useResizable({
+    axis: 'x',
+    getSize: () => Number(width.value),
+    setSize: n => { width.value = n },
+    min: () => Number(props.minWidth),
+    max: () => props.parentWidth - notResizingMaxWidth,
+    disabled: () => collapsed.value,
+})
 
 onMounted(() => {
     emit('changeWidth', props.parentWidth - parent.value.clientWidth)
-    document.documentElement.addEventListener('mousemove', handleMove, true)
-    document.documentElement.addEventListener('mouseup', handleUp, true)
 })
 
 onUpdated(() => props.isPropertyPanelVisible && emit('changeWidth', props.parentWidth - width.value))
@@ -110,34 +117,6 @@ watch(width, newW => {
     style.value.width = `${newW}px`
     if (props.isPropertyPanelVisible) emit('changeWidth', props.parentWidth - newW)
 })
-
-const handleDown = e => {
-    isResizing = true
-    startX = e.clientX
-    startWidth = Number(width.value)
-    e.preventDefault()
-}
-
-const handleUp = () => {
-    isResizing = false
-    startX = null
-    startWidth = null
-}
-
-const handleMove = e => {
-    if (isResizing && !collapsed.value) resizeMovement(e)
-}
-
-const resizeMovement = e => {
-    const newWidth = startWidth + (startX - e.clientX)
-    //checks if its not less than the min width and the max size
-    if (newWidth >= props.minWidth && newWidth <= props.parentWidth - notResizingMaxWidth) {
-        width.value = newWidth
-    }
-    else if (newWidth <= props.minWidth) {
-        width.value = props.minWidth
-    }
-}
 
 const toggleCollapsed = () => {
     if (!collapsed.value) {

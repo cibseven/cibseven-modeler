@@ -19,7 +19,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, inject } from 'vue'
+import { ref, onMounted, inject, watch } from 'vue'
 import useMonacoEditor from '../../composables/useMonacoEditor.js'
 
 const monaco = inject('monaco')
@@ -38,7 +38,9 @@ const props = defineProps({
 	language: {
 		type: String,
 		default: 'xml'
-	}
+	},
+	// The source of a model the user may only look at can be read and copied, not typed into
+	readOnly: { type: Boolean, default: false }
 
 })
 
@@ -47,11 +49,15 @@ const emit = defineEmits([
 ])
 
 const { createMonacoEditorEditable } = useMonacoEditor(monaco, props, emit)
+let monacoEditor = null
 
 onMounted(() => {
 	// create the editor
-	createMonacoEditorEditable(editor.value)
+	monacoEditor = createMonacoEditorEditable(editor.value)
 })
+
+// The rights may arrive after the editor is open
+watch(() => props.readOnly, readOnly => monacoEditor?.updateOptions({ readOnly: !!readOnly }))
 
 </script>
 

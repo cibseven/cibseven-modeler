@@ -23,6 +23,9 @@ export default mergeConfig(
   defineConfig({
     test: {
       environment: 'jsdom',
+      // Node 25+ ships its own global 'localStorage', which shadows jsdom's and is
+      // undefined without '--localstorage-file'. Turn it off in the test workers.
+      execArgv: ['--no-experimental-webstorage'],
       exclude: [
         ...configDefaults.exclude,
       ],
@@ -43,6 +46,7 @@ export default mergeConfig(
         provider: 'istanbul',
         reporter: ['text', 'lcov', 'cobertura'],
         reportsDirectory: './target/coverage',
+        include: ['src/**'],
         exclude: [
           'dist/**',
           'target/**',
@@ -61,7 +65,7 @@ export default mergeConfig(
           'linterConfig.js',
 
           // Exclude Vite internals
-          '**/\0**', // Exclude Vite virtual modules
+          '\0*', // Exclude Vite virtual modules
         ],
         excludeNodeModules: true,
       },

@@ -24,7 +24,7 @@ const m = vi.hoisted(() => ({
 }))
 
 vi.mock('bootstrap', () => ({
-    Modal: vi.fn(() => ({ show: m.modalShow })),
+    Modal: vi.fn(function () { return { show: m.modalShow } }),
     Tooltip: vi.fn(),
 }))
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: k => k }) }))

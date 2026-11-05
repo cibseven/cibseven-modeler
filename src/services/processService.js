@@ -26,28 +26,21 @@ const fetchDecisionDiagram = decisionId => {
   return getAxios().get('/client/cibseven-engine/decision/id/' + decisionId + '/xml')
 }
 
-// get list of processes
-const fetchProcesses = (firstResult, maxResults, keyword = '', diagramType = '') => {
-  return getAxios().get(getModelerServicePath() + '/processes', {
-    params: {
-      firstResult,
-      maxResults,
-      keyword,
-      diagramType
-    }
-  })
-}
-
 // get unified paginated list of processes and forms
-const getUnifiedDiagrams = (firstResult, maxResults, keyword, type) => {
+const getUnifiedDiagrams = (firstResult, maxResults, keyword, type, folderId) => {
   return getAxios().get(getModelerServicePath() + '/unified-diagrams', {
     params: {
       firstResult,
       maxResults,
       keyword,
-      type
+      type,
+      folderId
     }
   })
+}
+
+const getUnifiedDiagramById = id => {
+  return getAxios().get(getModelerServicePath() + '/unified-diagrams/' + id)
 }
 
 const fetchProcessByKey = key => {
@@ -57,9 +50,10 @@ const fetchProcessByKey = key => {
 /**
  * Authoritative (database-backed) duplicate-key check, beyond the loaded/paginated
  * store list. Returns true when a diagram/form with this EXACT key already exists,
- * via the exact by-key lookups (200 = exists, 404 = not found). On any error we return
- * false so a transient failure never blocks the user; the backend's unique constraint
- * remains the final guard.
+ * via the exact by-key lookups (200 = exists, 404 = not found). A 403 exists too, in a
+ * project the user may not open: keys are unique across projects. On any other error we
+ * return false so a transient failure never blocks the user; the backend's unique
+ * constraint remains the final guard.
  *
  * @param {string} key - process key (bpmn/dmn) or form id.
  * @param {'form'|string} type - 'form' looks up forms by formId; otherwise processes by processkey.
@@ -69,8 +63,8 @@ const keyExistsRemote = async (key, type) => {
   try {
     await (type === 'form' ? fetchFormByFormId(key) : fetchProcessByKey(key)) // 404 rejects → caught below
     return true
-  } catch {
-    return false
+  } catch (error) {
+    return error?.response?.status === 403
   }
 }
 
@@ -92,13 +86,15 @@ const deleteProcessById = id => {
   return getAxios().delete(getModelerServicePath() + '/process/delete/' + id)
 }
 
-const saveDiagramProcess = (name, processkey, blob, type) => {
+const saveDiagramProcess = (name, processkey, blob, type, folderId = null) => {
 
   const formData = new FormData()
   formData.append('name', name)
   formData.append('processkey', processkey)
   formData.append('diagram', blob)
   formData.append('type', type)
+  // Left out the backend files it under its default folder, which is rarely what the user meant
+  if (folderId) formData.append('folderId', folderId)
   return getAxios().post(getModelerServicePath() + '/process/save', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   })
@@ -120,9 +116,10 @@ const updateDiagramProcess = (id, name, processkey, blob, type) => {
 export {
   fetchDiagram,
   fetchDecisionDiagram,
-  fetchProcesses,
   getUnifiedDiagrams,
+  getUnifiedDiagramById,
   keyExistsRemote,
+  fetchProcessByKey,
   fetchProcessByName,
   fetchProcessById,
   saveDiagramProcess,

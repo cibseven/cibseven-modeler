@@ -113,4 +113,12 @@ describe('library.js', () => {
       }).join('\n')).toEqual('')
     })
   })
+
+  describe('stylesheets', () => {
+    it('imports no stylesheet of its own, so the host keeps its theme', () => {
+      // eslint-disable-next-line no-undef
+      const source = readFileSync(path.resolve(__dirname, '../../library.js'), 'utf-8')
+      expect(source).not.toMatch(/import\s+['"][^'"]+\.s?css['"]/)
+    })
+  })
 })

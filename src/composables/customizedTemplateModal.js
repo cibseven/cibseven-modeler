@@ -16,6 +16,7 @@
  */
 import { nextTick, ref } from 'vue'
 import {  translateValue } from "../i18n.js"
+import { parseTemplateNameGroup } from '../components/templates/elementTemplateUtils.js'
 
 export default function useCustomizedTemplateModal() {
   const containerModeler = ref(null)
@@ -40,7 +41,9 @@ export default function useCustomizedTemplateModal() {
     modalButton.classList.add('btn', 'border-0', 'shadow-0')
     spanButton.textContent = translateValue('Select')
     modalButton.onclick = () => {
-      elementTemplatesModal.value.show(e)
+      // Pass the modeler's actually-loaded template ids so the picker can only offer
+      // templates that applyTemplate can resolve (config.excludeTemplates strips some).
+      elementTemplatesModal.value.show(e, modeler.get('elementTemplates').getAll().map(t => t.id))
     }
     button.replaceWith(modalButton)
   }
@@ -51,6 +54,13 @@ export default function useCustomizedTemplateModal() {
     const element = elementRegistry.get(e.element.id)
     const elementTemplates = modeler.get('elementTemplates')
     const specificTemplate = elementTemplates.getAll().find((t) => t.id === selectedTemplateId)
+    // Guard: the element may be stale/removed, or the template may not be loaded in the
+    // modeler. applyTemplate() with an undefined arg throws and leaves the command stack
+    // mid-transaction, so skip instead of crashing.
+    if (!element || !specificTemplate) {
+      console.warn(`applyTemplateToTask: skipped, element or template not available (id: ${selectedTemplateId})`)
+      return
+    }
     elementTemplates.applyTemplate(element, specificTemplate)
   }
 
@@ -65,7 +75,9 @@ export default function useCustomizedTemplateModal() {
 
     const templates = modeler.get('elementTemplates').getAll()
 
-    const taskGroups = templates.reduce((groups, template) => {
+    // A template loaded without id/name can't be grouped (both get split() below), so skip
+    // it rather than crash the whole picker for every task.
+    const taskGroups = templates.filter(template => template.id && template.name).reduce((groups, template) => {
       const version = template.id.split('-').pop()
       const appliesTo = template.appliesTo || []
 
@@ -73,10 +85,7 @@ export default function useCustomizedTemplateModal() {
         if (!groups[taskType]) {
           groups[taskType] = {}
         }
-        // extracts name before the first
-        const splitTemplate = template.name.split(/-(.+)/)
-        const templateName = splitTemplate.length>1 ? splitTemplate[1].split('(')[0] : splitTemplate[0].split('(')[0]
-        const groupName = splitTemplate.length >1 ? splitTemplate[0] : 'undefined'
+        const { groupName, templateName } = parseTemplateNameGroup(template.name)
         // initializes the array of templates in case it doesnt exists for that name
         if (!groups[taskType][groupName]) {
           groups[taskType][groupName] = [] // groups by templates name

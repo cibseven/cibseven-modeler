@@ -28,6 +28,42 @@ export const applicableTaskTypes = {
     'bpmn:EndEvent': 'End Event',
 }
 
+// Synthetic bucket for templates whose content can't be grouped by task type (empty/invalid
+// content, or missing the id/name fields the grouping logic itself needs) — shown to the user
+// instead of silently disappearing from the categorized view.
+export const UNCATEGORIZED_TASK_TYPE = 'uncategorized'
+export const UNCATEGORIZED_GROUP_NAME = 'not-categorized'
+
+// Fallback group for a template name with no "Group - Name" prefix.
+export const UNDEFINED_GROUP_NAME = 'undefined'
+
+/**
+ * Parses a template's content and returns it only if it's usable for categorization
+ * (valid JSON with both `id` and `name`). Returns null otherwise.
+ */
+export const parseCompleteTemplateContent = (template) => {
+    try {
+        if (!template.content || template.content.trim() === '') return null
+        const parsed = JSON.parse(template.content)
+        if (!parsed.id || !parsed.name) return null
+        return parsed
+    } catch {
+        return null
+    }
+}
+
+/**
+ * Splits a template's display name into its group prefix and the name shown to the user,
+ * e.g. "Email - Send Message" -> { groupName: 'Email', templateName: 'Send Message' }.
+ * A name with no "prefix - " falls back to UNDEFINED_GROUP_NAME.
+ */
+export const parseTemplateNameGroup = (name) => {
+    const splitTemplate = name.split(/-(.+)/)
+    const templateName = splitTemplate.length > 1 ? splitTemplate[1].split('(')[0] : splitTemplate[0].split('(')[0]
+    const groupName = splitTemplate.length > 1 ? splitTemplate[0] : UNDEFINED_GROUP_NAME
+    return { groupName, templateName }
+}
+
 /**
  * Consolidated template categorization utility function
  * Parses templates, groups them by task type and group name, and sorts the results
@@ -41,25 +77,20 @@ export const applicableTaskTypes = {
 export const categorizeTemplates = (rawTemplates, options = {}) => {
   const { filterActive = false, preserveOriginalTemplate = false } = options
 
-  // Parse template content and filter
-  const templates = rawTemplates
+  // Parse template content, setting aside anything that can't be grouped (id suffix -> version,
+  // name prefix -> group name) instead of dropping it from the view entirely.
+  const templates = []
+  const incomplete = []
+  rawTemplates
     .filter(template => !filterActive || template.active)
-    .map(template => {
-      try {
-        if (template.content && template.content.trim() !== '') {
-          const parsed = JSON.parse(template.content)
-          // Add reference to original template if requested
-          return preserveOriginalTemplate ? { ...parsed, originalTemplate: template } : parsed
-        } else {
-          console.warn(`Template ${template.templateId} has empty or null content`)
-          return null
-        }
-      } catch (error) {
-        console.error(`Failed to parse content for template ${template.templateId}:`, error)
-        return null
+    .forEach(template => {
+      const parsed = parseCompleteTemplateContent(template)
+      if (parsed) {
+        templates.push(preserveOriginalTemplate ? { ...parsed, originalTemplate: template } : parsed)
+      } else {
+        incomplete.push(template)
       }
     })
-    .filter(content => content !== null)
 
   // Group templates by task type and group name
   const taskGroups = templates.reduce((groups, template) => {
@@ -70,11 +101,8 @@ export const categorizeTemplates = (rawTemplates, options = {}) => {
       if (!groups[taskType]) {
         groups[taskType] = {}
       }
-      // extracts name before the first dash
-      const splitTemplate = template.name.split(/-(.+)/)
-      const templateName = splitTemplate.length > 1 ? splitTemplate[1].split('(')[0] : splitTemplate[0].split('(')[0]
-      const groupName = splitTemplate.length > 1 ? splitTemplate[0] : 'undefined'
-      
+      const { groupName, templateName } = parseTemplateNameGroup(template.name)
+
       // initializes the array of templates in case it doesn't exist for that name
       if (!groups[taskType][groupName]) {
         groups[taskType][groupName] = [] // groups by templates name
@@ -98,6 +126,29 @@ export const categorizeTemplates = (rawTemplates, options = {}) => {
     })
     return groups
   }, {})
+
+  // Surface templates that couldn't be grouped instead of hiding them
+  if (incomplete.length > 0) {
+    taskGroups[UNCATEGORIZED_TASK_TYPE] = {
+      [UNCATEGORIZED_GROUP_NAME]: incomplete.map(template => ({
+        name: template.name || template.templateId,
+        // No parsed content exists for these (that's why they're here), so there's no `id` to
+        // take a dash-suffix from the way normal entries do — `templateId` is the same business
+        // key under a different name (see ElementTemplate's `@JsonAlias("id")`), so use that.
+        version: template.templateId.split('-').pop(),
+        // Same reason `template` is always the raw row here, unlike normal entries: there's no
+        // parsed shape to offer instead, so `preserveOriginalTemplate` has nothing to toggle.
+        template,
+        id: template.templateId,
+        templateVersion: template.version,
+        extern: false,
+        tooltip: template.description ?? '',
+        metaKeys: undefined,
+        icon: null,
+        incomplete: true
+      }))
+    }
+  }
 
   // Sort templates within groups and sort groups within task types
   for (const taskType in taskGroups) {

@@ -19,21 +19,21 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" :id="titleId">{{ $t('modalImportedFile.title', { item: itemLabel, name: modalData?.name ?? '' }) }}</h1>
+                    <h1 class="modal-title fs-5" :id="titleId">{{ title }}</h1>
                     <button type="button" class="btn-close" @click.prevent="dismiss" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="mb-3">{{ $t('modalImportedFile.body', { item: itemLabel }) }}</p>
+                    <p class="mb-3">{{ fromDeployment ? $t('modalImportedFile.bodyDeployed') : $t('modalImportedFile.body', { item: itemLabel }) }}</p>
 
                     <div class="form-check mb-2">
                         <input class="form-check-input" type="radio" id="ic-replace" value="replace" v-model="action">
                         <label class="form-check-label" for="ic-replace">
-                            <span class="fw-semibold">{{ $t('buttons.replace') }}</span>
-                            <span class="d-block small text-muted">{{ $t('modalImportedFile.replaceHint', { item: itemLabel }) }}</span>
+                            <span class="fw-semibold">{{ fromDeployment ? $t('modalImportedFile.deployedLabel') : $t('buttons.replace') }}</span>
+                            <span class="d-block small text-muted">{{ fromDeployment ? $t('modalImportedFile.deployedHint') : $t('modalImportedFile.replaceHint', { item: itemLabel }) }}</span>
                         </label>
                     </div>
 
-                    <div class="form-check mb-1">
+                    <div v-if="canRename" class="form-check mb-1">
                         <input class="form-check-input" type="radio" id="ic-rename" value="rename" v-model="action">
                         <label class="form-check-label" for="ic-rename">
                             <span class="fw-semibold">{{ $t('buttons.rename') }}</span>
@@ -42,7 +42,7 @@
                     </div>
                     <div v-if="action === 'rename'" class="mb-2 ms-4">
                         <label for="ic-rename-key" class="form-label small fw-semibold mb-1">{{ newKeyLabel }}</label>
-                        <input id="ic-rename-key" type="text" class="form-control form-control-sm" v-model="renameKey"
+                        <input id="ic-rename-key" type="text" maxlength="100" class="form-control form-control-sm" v-model="renameKey"
                             @keyup.enter="confirm" @input="renameError = ''" />
                         <div v-if="renameError" class="text-danger small mt-1">{{ renameError }}</div>
                     </div>
@@ -50,8 +50,8 @@
                     <div class="form-check mb-2">
                         <input class="form-check-input" type="radio" id="ic-skip" value="skip" v-model="action">
                         <label class="form-check-label" for="ic-skip">
-                            <span class="fw-semibold">{{ $t('buttons.skip') }}</span>
-                            <span class="d-block small text-muted">{{ $t('modalImportedFile.skipHint', { item: itemLabel }) }}</span>
+                            <span class="fw-semibold">{{ fromDeployment ? $t('modalImportedFile.storedLabel') : $t('buttons.skip') }}</span>
+                            <span class="d-block small text-muted">{{ fromDeployment ? $t('modalImportedFile.storedHint') : $t('modalImportedFile.skipHint', { item: itemLabel }) }}</span>
                         </label>
                     </div>
 
@@ -96,7 +96,9 @@ const props = defineProps({
     validateRenameKey: { type: Function, default: null },
 })
 
-const action = ref('replace')
+// Skip is what happens if the dialog is answered without reading it, and skipping is undoable:
+// replace is not, and 'apply to all' would carry it over every remaining conflict in one click
+const action = ref('skip')
 const applyAll = ref(false)
 const renameKey = ref('')
 const renameError = ref('')
@@ -105,6 +107,19 @@ let modalBootstrap = null
 let _closedByButton = false
 
 const itemLabel = computed(() => t(`items.${props.modalData?.diagramType ?? 'process'}`))
+
+/** Which folder holds it matters as soon as there is more than one; without a name, say neither. */
+const title = computed(() => {
+    const name = props.modalData?.name ?? ''
+    const folder = props.modalData?.folderName
+    return folder
+        ? t('modalImportedFile.titleInFolder', { item: itemLabel.value, name, folder })
+        : t('modalImportedFile.title', { item: itemLabel.value, name })
+})
+/** Opened from Cockpit: the choice is which version opens, not what happens to an imported file. */
+const fromDeployment = computed(() => props.modalData?.source === 'deployment')
+/** Renaming stores the incoming version under a new key, which only an import has to store. */
+const canRename = computed(() => !fromDeployment.value)
 const newKeyLabel = computed(() =>
     props.modalData?.diagramType === 'form'
         ? t('modalImportedFile.newKeyLabelForm')
@@ -121,7 +136,7 @@ onMounted(() => {
 
 watch(() => props.showModal, shown => {
     if (shown) {
-        action.value = 'replace'
+        action.value = 'skip'
         applyAll.value = false
         renameKey.value = props.modalData?.processkey ?? ''
         renameError.value = ''
@@ -148,8 +163,8 @@ const confirm = () => {
     if (props.isBatch && applyAll.value) {
         props.functionApplyAll(action.value)
     } else if (action.value === 'replace') {
-        const { id, name, processkey, xmlExternalUrl, diagramType } = props.modalData
-        props.functionAfterAccepting(xmlExternalUrl, id, name, processkey, diagramType, true, true, true)
+        const { id, name, processkey, xmlExternalUrl, diagramType, folderId } = props.modalData
+        props.functionAfterAccepting(xmlExternalUrl, id, name, processkey, diagramType, true, true, true, folderId ?? null)
     } else {
         // skip (single): keep the existing one
         props.functionAfterCanceling?.()

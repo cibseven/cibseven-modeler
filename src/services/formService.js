@@ -33,12 +33,14 @@ const fetchFormByFormId = formId => {
   return getAxios().get(getModelerServicePath() + '/form/find-by-formid', { params: { formId } })
 }
 
-const saveForm = (id, formJson) => {
+const saveForm = (id, formJson, folderId = null) => {
   const blob = new Blob([JSON.stringify(formJson)], { type: 'application/json' })
 
   const formData = new FormData()
   formData.append('formid', id)
   formData.append('form_schema', blob)
+  // Left out the backend files it under its default folder, which is rarely what the user meant
+  if (folderId) formData.append('folderId', folderId)
 
   return getAxios().post(getModelerServicePath() + '/form/save', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }

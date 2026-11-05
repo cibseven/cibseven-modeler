@@ -133,11 +133,10 @@ export default {
     },
     sortedItems() {
       if (!this.sortKey) return this.items
-      return [...this.items].sort((a, b) => {
-        if (a[this.sortKey] < b[this.sortKey]) return -1 * this.sortOrder
-        if (a[this.sortKey] > b[this.sortKey]) return 1 * this.sortOrder
-        return 0
-      })
+      // Coalesce: comparing null with a string is false both ways, leaving such columns unsorted.
+      const value = item => String(item[this.sortKey] ?? '')
+      return [...this.items].sort((a, b) =>
+        value(a).localeCompare(value(b), undefined, { numeric: true, sensitivity: 'base' }) * this.sortOrder)
     },
     resizeHandleStyle() {
       return {
@@ -197,13 +196,18 @@ export default {
       return 'sortable'
     },
     getAriaSort(field) {
+      if (field.sortable === false) return null
       if ((field.sortKey ?? field.key) === this.sortKey) {
-        return this.$t(`bcomponents.${this.sortOrder === 1 ? 'ariaSortAsc' : 'ariaSortDes'}`)
+        return this.sortOrder === 1 ? 'ascending' : 'descending'
       }
-      return this.$t('bcomponents.ariaSortNone')
+      return 'none'
     },
     getRowClass(item) {
-      return [... typeof this.tbodyTrClass === 'function' ? this.tbodyTrClass(item) : this.tbodyTrClass,
+      const trClass = typeof this.tbodyTrClass === 'function' ? this.tbodyTrClass(item) : this.tbodyTrClass
+      // Spreading a string (e.g. "foo bar") splits it into individual characters, so only
+      // arrays are spread; a plain string/falsy result is used as a single class entry instead.
+      return [
+        ...(Array.isArray(trClass) ? trClass : trClass ? [trClass] : []),
         this.clickableRows ? 'cursor-pointer' : '',
       ]
     },

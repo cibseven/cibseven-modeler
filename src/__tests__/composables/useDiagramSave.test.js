@@ -26,19 +26,19 @@ import useDiagramSave from '../../composables/useDiagramSave.js'
  * Mount a minimal wrapper to exercise useDiagramSave.
  * Returns { save, emitted } via expose.
  */
-function withSetup({ tabElement, tabElementIndex = 0, createSessionHook = null } = {}) {
+function withSetup({ tabElement, tabElementIndex = 0, createSessionHook = null, autosaveHook = null, readOnly = false } = {}) {
     let composableResult
     const wrapper = mount(defineComponent({
         name: 'TestWrapper',
         setup() {
-            const props = { tabElement: ref(tabElement).value, tabElementIndex }
+            const props = { tabElement: ref(tabElement).value, tabElementIndex, readOnly }
             const emitted = []
             const emit = (event, ...args) => emitted.push({ event, args })
             const sessionHooks = createSessionHook ? { createSessionHook } : {}
             composableResult = { ...useDiagramSave(props, emit, sessionHooks), emitted }
         },
         template: '<div />',
-    }))
+    }), autosaveHook ? { global: { provide: { autosaveHook } } } : undefined)
     return { ...composableResult, wrapper }
 }
 
@@ -65,6 +65,18 @@ function makeSaveOpts(overrides = {}) {
 
 describe('useDiagramSave', () => {
     beforeEach(() => vi.clearAllMocks())
+
+    /** Autosave and every other way to save end here, and the backend would refuse it anyway. */
+    it('sends nothing for a model the user may only look at', async () => {
+        const opts = makeSaveOpts()
+        const { save, emitted } = withSetup({ tabElement: makeTabElement({ isSaved: true }), readOnly: true })
+
+        expect(await save(opts)).toBe(false)
+        expect(opts.createFn).not.toHaveBeenCalled()
+        expect(opts.updateFn).not.toHaveBeenCalled()
+        expect(keyExistsRemote).not.toHaveBeenCalled()
+        expect(emitted).toEqual([])
+    })
 
     describe('create path (isSaved = false)', () => {
         it('calls createFn and emits success events', async () => {
@@ -246,6 +258,121 @@ describe('useDiagramSave', () => {
             }))
 
             expect(functionToExecute).not.toHaveBeenCalled()
+        })
+    })
+
+    describe('falsy response and session-hook failure (regression)', () => {
+        it('returns false and warns when createFn resolves falsy', async () => {
+            const { save, emitted } = withSetup({ tabElement: makeTabElement() })
+            const result = await save(makeSaveOpts({ createFn: vi.fn().mockResolvedValue(null) }))
+
+            expect(result).toBe(false)
+            const toast = emitted.find(e => e.event === 'showToastMessage')
+            expect(toast.args[0].isSuccess).toBe(false)
+            expect(toast.args[0].toastText).toBe('toastSomethingWentWrong')
+        })
+
+        it('returns false when updateFn resolves falsy', async () => {
+            const { save, emitted } = withSetup({ tabElement: makeTabElement({ isSaved: true }) })
+            const result = await save(makeSaveOpts({ updateFn: vi.fn().mockResolvedValue(undefined) }))
+
+            expect(result).toBe(false)
+            expect(emitted.find(e => e.event === 'showToastMessage').args[0].toastText).toBe('toastSomethingWentWrong')
+        })
+
+        it('still succeeds but warns when the session hook fails', async () => {
+            const createSessionHook = vi.fn().mockRejectedValue(new Error('session POST failed'))
+            const { save, emitted } = withSetup({ tabElement: makeTabElement(), createSessionHook })
+            const result = await save(makeSaveOpts({ sessionResponse: { message: 'NO_SESSION' } }))
+
+            expect(result).toBe(true) // the diagram save itself succeeded
+            expect(createSessionHook).toHaveBeenCalledOnce()
+            const toasts = emitted.filter(e => e.event === 'showToastMessage').map(t => t.args[0].toastText)
+            expect(toasts).toContain('toastSaveSuccessful')
+            expect(toasts).toContain('toastSessionLockFailed')
+        })
+
+        it('does not warn when the session hook succeeds', async () => {
+            const createSessionHook = vi.fn().mockResolvedValue({ sessionId: 's1' })
+            const { save, emitted } = withSetup({ tabElement: makeTabElement(), createSessionHook })
+            const result = await save(makeSaveOpts({ sessionResponse: { message: 'NO_SESSION' } }))
+
+            expect(result).toBe(true)
+            const toasts = emitted.filter(e => e.event === 'showToastMessage').map(t => t.args[0].toastText)
+            expect(toasts).not.toContain('toastSessionLockFailed')
+        })
+    })
+
+    /**
+     * An autosave the user did not ask for reports through the status the indicator reads,
+     * not through toasts. A silent failure is not acceptable either: the indicator would
+     * keep showing the last successful time and the work would look saved.
+     */
+    describe('autosave', () => {
+        const savedTab = () => makeTabElement({ isSaved: true })
+
+        it('reports a failed autosave through the hook and raises no toast', async () => {
+            const autosaveHook = vi.fn()
+            const { save, emitted } = withSetup({ tabElement: savedTab(), autosaveHook })
+            const result = await save(makeSaveOpts({
+                updateFn: vi.fn().mockRejectedValue(new Error('boom')),
+                isAutosave: true,
+            }))
+
+            expect(result).toBe(false)
+            expect(autosaveHook).toHaveBeenCalledWith(expect.anything(), { state: 'failed' })
+            expect(emitted.filter(e => e.event === 'showToastMessage')).toHaveLength(0)
+        })
+
+        it('reports a failure when the update yields no response', async () => {
+            const autosaveHook = vi.fn()
+            const { save, emitted } = withSetup({ tabElement: savedTab(), autosaveHook })
+            const result = await save(makeSaveOpts({
+                updateFn: vi.fn().mockResolvedValue(null),
+                isAutosave: true,
+            }))
+
+            expect(result).toBe(false)
+            expect(autosaveHook).toHaveBeenCalledWith(expect.anything(), { state: 'failed' })
+            expect(emitted.filter(e => e.event === 'showToastMessage')).toHaveLength(0)
+        })
+
+        it('still toasts a failed manual save', async () => {
+            const autosaveHook = vi.fn()
+            const { save, emitted } = withSetup({ tabElement: savedTab(), autosaveHook })
+            const result = await save(makeSaveOpts({ updateFn: vi.fn().mockRejectedValue(new Error('boom')) }))
+
+            expect(result).toBe(false)
+            const toasts = emitted.filter(e => e.event === 'showToastMessage').map(t => t.args[0].toastText)
+            expect(toasts).toContain('toastSomethingWentWrong')
+            expect(autosaveHook).not.toHaveBeenCalledWith(expect.anything(), { state: 'failed' })
+        })
+
+        it('keeps a failing session lock quiet during autosave', async () => {
+            const createSessionHook = vi.fn().mockRejectedValue(new Error('nope'))
+            const autosaveHook = vi.fn()
+            const { save, emitted } = withSetup({ tabElement: savedTab(), createSessionHook, autosaveHook })
+            const result = await save(makeSaveOpts({
+                sessionResponse: { message: 'NO_SESSION' },
+                isAutosave: true,
+            }))
+
+            expect(result).toBe(true)
+            expect(createSessionHook).toHaveBeenCalledOnce()
+            const toasts = emitted.filter(e => e.event === 'showToastMessage').map(t => t.args[0].toastText)
+            expect(toasts).not.toContain('toastSessionLockFailed')
+            expect(autosaveHook).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ state: 'saved' }))
+        })
+
+        it('reports the saved state and no success toast on a successful autosave', async () => {
+            const autosaveHook = vi.fn()
+            const { save, emitted } = withSetup({ tabElement: savedTab(), autosaveHook })
+            const result = await save(makeSaveOpts({ isAutosave: true }))
+
+            expect(result).toBe(true)
+            const toasts = emitted.filter(e => e.event === 'showToastMessage').map(t => t.args[0].toastText)
+            expect(toasts).not.toContain('toastUpdateSuccessful')
+            expect(autosaveHook).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ state: 'saved' }))
         })
     })
 })

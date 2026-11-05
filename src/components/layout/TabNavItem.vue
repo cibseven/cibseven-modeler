@@ -30,7 +30,7 @@
                 :class="{ 'active': props.activeTab === props.index }"
                 @mousedown.middle.prevent
                 @auxclick.middle="checkIfProcessIsSaved">
-                <div ref="tabItem" :id="`process${props.keyOfTabNav}-tab`" @keyup.enter.stop="selectTab" @click.stop="selectTab" :title="tabTitle"
+                <div ref="tabItem" :id="`process${props.keyOfTabNav}-tab`" @keyup.enter.stop="selectTab" @click.stop="selectTab" :title="tabTooltip"
                     class="ps-4" :style="{ maxWidth: props.maxTabItemWidth + 'px' }" style="vertical-align: middle;line-height: 38px; height: 39px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;"
                     role="tab"
                     :aria-labelledby="`process${props.keyOfTabNav}-tab`"
@@ -54,6 +54,7 @@ import { computed, inject, ref } from 'vue'
 const tabItem = ref(null)
 const closeSessionHook = inject('closeSessionHook', null)
 const closeFormSessionHook = inject('closeFormSessionHook', null)
+const folderPathFor = inject('folderPathFor', null)
 const props = defineProps({
     id: { type: String },
     tabNavList: Object,
@@ -80,14 +81,25 @@ const tabTitle = computed(() => {
         : `${props.processkey}.${props.tabNavList.type.startsWith('bpmn') ? 'bpmn' : props.tabNavList.type}`
 })
 
-const checkIfProcessIsSaved = e => {
-    e.stopPropagation()
+// The label is cut to the width of the tab and says nothing about where the model is kept
+const tabTooltip = computed(() => {
+    const path = props.tabNavList.folderId ? folderPathFor?.(props.tabNavList.folderId) : null
+    return path ? `${path} / ${tabTitle.value}` : tabTitle.value
+})
+
+// Also called from TabNav for tabs sitting in the overflow dropdown.
+const closeTab = () => {
     if (props.tabNavList.canSave && props.index > -1) // the process has unsaved changes
     {
         emit('showModalMessage', props.index)
         return
     }
     removeSelectedTab() // if the process has been saved it will close the tab without displaying the modal
+}
+
+const checkIfProcessIsSaved = e => {
+    e.stopPropagation()
+    closeTab()
 }
 
 const selectBySimulateClick = () => {
@@ -115,7 +127,8 @@ const selectTab = (e) => {
 }
 
 defineExpose({
-    selectBySimulateClick
+    selectBySimulateClick,
+    closeTab
 })
 </script>
 
@@ -124,6 +137,7 @@ defineExpose({
     border-left: none !important;
     border-bottom: 2px solid var(--bs-light) !important;
     cursor: pointer;
+    font-weight: 500;
 }
 
 .dashboard.active {

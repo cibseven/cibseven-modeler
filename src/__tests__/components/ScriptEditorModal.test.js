@@ -60,6 +60,12 @@ describe('ScriptEditorModal', () => {
         mockEditor.getValue.mockReturnValue('editor content')
     })
 
+    // As everywhere in the webclient, the main action comes last
+    it('puts Cancel first and Accept last', () => {
+        const wrapper = mountModal()
+        expect(wrapper.findAll('button').map(button => button.text())).toEqual(['buttons.cancel', 'buttons.accept'])
+    })
+
     describe('language mapping', () => {
         // We test _mapLanguage indirectly via open() → monaco.editor.create language arg
         const cases = [

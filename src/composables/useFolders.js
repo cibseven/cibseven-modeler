@@ -1,0 +1,249 @@
+/*
+ * Copyright CIB software GmbH and/or licensed to CIB software GmbH
+ * under one or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information regarding copyright
+ * ownership. CIB software licenses this file to you under the Apache License,
+ * Version 2.0; you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+import { computed, ref } from 'vue'
+import {
+  createFolder,
+  deleteFolder,
+  fetchFolderAccess,
+  fetchFolderContents,
+  fetchFolders,
+  fetchUserFolder,
+  moveFolder,
+  renameFolder
+} from '../services/folderService'
+import { canEditFolder, rightsOfFolder, setProjectRights } from '../utils/projectRights.js'
+
+/**
+ * The folder a user is looking at and the folders around it. The whole tree arrives in one call
+ * and the levels are derived here, so walking in and out of folders costs no request.
+ */
+const DEFAULT_FOLDER_KEY = 'cibseven-modeler.defaultFolder'
+
+export default function useFolders() {
+  const folders = ref([])
+  // Null is the top level, which holds folders only: a model always lives in a folder
+  const currentFolderId = ref(null)
+  // The folder at the top level named after the user, created on the first visit
+  const userFolderId = ref(null)
+  // Administrators may rename, move and delete user folders, everybody else leaves them where they are
+  const manageUserFolders = ref(false)
+  // Whose default folder is kept: people sharing a browser keep their own
+  const userId = ref(null)
+  // Where a visit starts: null when none is chosen, an empty value for the top level, else a folder
+  const defaultFolderId = ref(null)
+  // The user's rights per project; a project without an entry restricts nothing
+  const access = ref({ projects: {}, movesBetweenProjects: true })
+
+  const byId = computed(() => new Map(folders.value.map(folder => [folder.id, folder])))
+
+  const isLocked = folder => !!folder?.userFolder && !manageUserFolders.value
+
+  const defaultFolderKey = () => `${DEFAULT_FOLDER_KEY}.${userId.value}`
+
+  // Without knowing the user there is nobody to keep it for
+  const canSetDefault = computed(() => !!userId.value)
+
+  /** The top level is passed as null, like everywhere else. Without a choice, the user folder is the default. */
+  const isDefault = folderId => {
+    const target = defaultFolderId.value ?? userFolderId.value
+    return target !== null && target === (folderId ?? '')
+  }
+
+  const setDefault = folderId => {
+    if (!canSetDefault.value) return
+    // Choosing the user folder is the same as choosing nothing
+    if (folderId && folderId === userFolderId.value) return clearDefault()
+    defaultFolderId.value = folderId ?? ''
+    localStorage.setItem(defaultFolderKey(), defaultFolderId.value)
+  }
+
+  const clearDefault = () => {
+    if (!canSetDefault.value) return
+    defaultFolderId.value = null
+    localStorage.removeItem(defaultFolderKey())
+  }
+
+  const childrenOf = parentId => folders.value
+    .filter(folder => (folder.parentId ?? null) === (parentId ?? null))
+    .sort((one, other) => one.name.localeCompare(other.name))
+
+  const currentFolder = computed(() =>
+    currentFolderId.value ? byId.value.get(currentFolderId.value) ?? null : null)
+
+  const currentChildren = computed(() => childrenOf(currentFolderId.value))
+
+  /** The folders from the top level down to the one given. */
+  const pathOf = folderId => {
+    const path = []
+    // A cycle cannot be created through the API, but a stale list must not hang the page
+    const seen = new Set()
+    let folder = folderId ? byId.value.get(folderId) : null
+    while (folder && !seen.has(folder.id)) {
+      seen.add(folder.id)
+      path.unshift(folder)
+      folder = folder.parentId ? byId.value.get(folder.parentId) : null
+    }
+    return path
+  }
+
+  /** The path down to the folder open, for the breadcrumb. */
+  const breadcrumb = computed(() => pathOf(currentFolderId.value))
+
+  /** The project a folder lies in: the folder at the top level above it, a project being its own. */
+  const projectOf = folderId => pathOf(folderId)[0]?.id ?? null
+
+  // The same answers the open tabs get, from the rights load() hands over
+  const rightsOf = rightsOfFolder
+
+  /** Folders and models inside a project are up to its editors; anybody may start a project. */
+  const canEdit = canEditFolder
+
+  /** Renaming or deleting a whole project is up to its admins, a folder inside it to its editors. */
+  const canChange = folder => folder.parentId
+    ? canEdit(folder.id)
+    : (rightsOf(folder.id)?.manageMembers ?? true)
+
+  const movesBetweenProjects = computed(() => access.value.movesBetweenProjects !== false)
+
+  const loadAccess = async () => {
+    try {
+      const loaded = await fetchFolderAccess()
+      access.value = { projects: loaded?.projects ?? {}, movesBetweenProjects: loaded?.movesBetweenProjects ?? true }
+    } catch (error) {
+      // A backend without it restricts nothing, so the tree stays usable as before
+      console.error(error)
+      access.value = { projects: {}, movesBetweenProjects: true }
+    }
+  }
+
+  // Asked for until it is known: the first call is the one that creates it
+  const ensureUserFolder = async () => {
+    if (userFolderId.value) return
+    try {
+      const userFolder = await fetchUserFolder()
+      userFolderId.value = userFolder?.folder?.id ?? null
+      manageUserFolders.value = !!userFolder?.manageUserFolders
+      // The folder is named after the user, which is all the modeler knows of who is working
+      userId.value = userFolder?.folder?.name ?? null
+      if (userId.value) defaultFolderId.value = localStorage.getItem(defaultFolderKey())
+    } catch (error) {
+      // The tree is usable without a user folder, so the listing goes on
+      console.error(error)
+    }
+  }
+
+  const load = async () => {
+    await ensureUserFolder()
+    const [loaded] = await Promise.all([fetchFolders(), loadAccess()])
+    folders.value = Array.isArray(loaded) ? loaded : []
+    // The open tabs ask the same rights whether their model may be changed
+    setProjectRights(folders.value, access.value)
+    // A folder removed in another tab must not leave the view pointing at nothing
+    if (currentFolderId.value && !byId.value.has(currentFolderId.value)) {
+      currentFolderId.value = null
+    }
+    return folders.value
+  }
+
+  const open = folderId => {
+    currentFolderId.value = folderId ?? null
+  }
+
+  /**
+   * Every folder in tree order with its depth, for pickers. Skipping a folder skips what is
+   * below it as well, which is how a folder is kept from being moved into its own subtree.
+   * Within a project, only that project is walked; editable only, only where the user may add.
+   */
+  const flatten = (excluded = null, { within = null, editableOnly = false } = {}) => {
+    const rows = []
+    const walk = (parentId, depth) => {
+      childrenOf(parentId).forEach(folder => {
+        if (folder.id === excluded) return
+        if (depth === 0 && within && folder.id !== within) return
+        // A project the user may not change leaves every folder in it unchangeable
+        if (editableOnly && !canEdit(folder.id)) return
+        rows.push({ id: folder.id, name: folder.name, depth })
+        walk(folder.id, depth + 1)
+      })
+    }
+    walk(null, 0)
+    return rows
+  }
+
+  const create = async name => {
+    const created = await createFolder(name, currentFolderId.value)
+    await load()
+    return created
+  }
+
+  const rename = async (folderId, name) => {
+    const renamed = await renameFolder(folderId, name)
+    await load()
+    return renamed
+  }
+
+  const move = async (folderId, parentId) => {
+    const moved = await moveFolder(folderId, parentId ?? null)
+    await load()
+    return moved
+  }
+
+  const remove = async folderId => {
+    const removed = await deleteFolder(folderId)
+    // Standing in a folder that was just removed would show a tree that is no longer there
+    if (currentFolderId.value === folderId) {
+      currentFolderId.value = byId.value.get(folderId)?.parentId ?? null
+    }
+    await load()
+    return removed
+  }
+
+  const contents = async folderId => {
+    return fetchFolderContents(folderId)
+  }
+
+  return {
+    folders,
+    currentFolderId,
+    userFolderId,
+    manageUserFolders,
+    isLocked,
+    defaultFolderId,
+    canSetDefault,
+    isDefault,
+    setDefault,
+    clearDefault,
+    currentFolder,
+    currentChildren,
+    breadcrumb,
+    pathOf,
+    access,
+    projectOf,
+    rightsOf,
+    canEdit,
+    canChange,
+    movesBetweenProjects,
+    load,
+    open,
+    flatten,
+    create,
+    rename,
+    move,
+    remove,
+    contents
+  }
+}

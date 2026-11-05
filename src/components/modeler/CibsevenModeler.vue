@@ -16,10 +16,10 @@
 -->
 <template>
 	<div class="h-100">
-		<DropZone @handleDropFile="handleFile">
+		<DropZone @handleDropFile="importFile">
 			<div class="custom-content position-relative w-100 h-100 justify-content-center align-items-center"
 				style="display: flex;  background-color: lightgray; font-size: 2em; opacity: 0.3; color: var(--bs-rimary);">
-				{{ $t("dropFileToLoad") }}
+				{{ targetFolderPath ? $t("dropFileToFolder", { folder: targetFolderPath }) : $t("dropFileToLoad") }}
 				<div class="position-absolute"
 					style="border: 5px dashed var(--bs-primary); content: ''; bottom: 30px; left: 30px; right: 30px; top: 30px;">
 				</div>
@@ -36,14 +36,15 @@
 	</TabNav>
 
 	<div ref="modelerTabPanes" class="tab-content flex-grow-1" style="min-height: 0;" :key="`modelerid1-i`">
-		<div class="tab-pane  bg-light fade" role="tabpanel" style="height: calc(100vh - 40px);"
+		<div class="tab-pane  bg-light fade h-100" role="tabpanel"
 			:class="{ 'active show': activeTab === -1 && !hasDirectDiagram }" :aria-labelledby="`dashboard-tab`" tabindex="0">
-	<StartPage ref="startPage" v-if="diagrams !== null && !hasDirectDiagram" :diagrams="diagrams"
+	<StartPage ref="startPage" v-if="diagrams !== null && !hasDirectDiagram" :diagrams="diagrams" :initialFolderId="folderFromUrl"
 		:hasMore="hasMore"
-		@openDiagram="openDiagramFromChild" @openSelectedFile="handleFile" @showToastMessage="showToastMessage"
+		@openDiagram="openDiagramFromChild" @openSelectedFile="importFile" @showToastMessage="showToastMessage"
+		@modelMoved="handleModelMoved"
 		@createNewBpmnc7Diagram="createNewBpmnDiagram"
 		@createNewDmnDiagram="createNewDmnDiagram" @getStoredDiagrams="getStoredDiagrams"
-		@loadMore="loadMore" @search="handleSearch"
+		@loadMore="loadMore" @search="handleSearch" @navigateFolder="handleNavigateFolder"
 		@createNewFormDiagram="createNewFormDiagram"
 		@closeRemovedProcessesOpenInTab="closeRemovedProcessesOpenInTab">
 	</StartPage>
@@ -53,7 +54,7 @@
 			role="tabpanel" :aria-labelledby="`process${tabElement.keyOfTabNav}-tab`" tabindex="0">
 			<BpmnModeler
 				v-if="tabNavListXml[index] && waitToLoad && tabNavList[index].type === 'bpmn-c7'"
-				:tabElementIndex="index" :ref="el => modeler[index] = el" :tabElement="tabElement"
+				:tabElementIndex="index" :ref="el => modeler[index] = el" :tabElement="tabElement" :readOnly="isReadOnlyTab(tabElement)"
 				v-show="tabElement.isPropertyPanelVisible" :diagramType="tabNavList[index].type"
 				:isActiveTab="index === activeTab" :clipboard="clipboard" :xml="tabNavListXml[index]"
 				:isModelerVisible="tabNavList[index].isModelerVisible" :elementTemplateJson="elementTemplateJson"
@@ -72,11 +73,11 @@
 				@show-console-notification="showConsoleNotification">
 				<div v-if="tabElement.isModelerVisible" class="h-100">
 					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index] != null"
-						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index"></monaco-editor>
+						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index" :readOnly="isReadOnlyTab(tabElement)"></monaco-editor>
 				</div>
 				<template #menu>
 					<ActionButtonsList :tabNavListXml="tabNavListXml[index]" :tabElementIndex="index"
-						:tabElement="tabElement" :ref="el => actionButton[index] = el"
+						:tabElement="tabElement" :ref="el => actionButton[index] = el" :readOnly="isReadOnlyTab(tabElement)"
 						:isButtonDisabled="isButtonDisabled[index]" :isEditorVisible="tabElement.isEditorVisible"
 						:canSave="tabNavList[index].canSave" :modeler="modeler[index]"
 						:console-open="modeler[index]?.isConsoleOpen ?? false"
@@ -89,7 +90,7 @@
 				</template>
 			</BpmnModeler>
 			<DmnModeler v-if="tabNavListXml[index] && waitToLoad && tabNavList[index].type === 'dmn'"
-				:isActiveTab="index === activeTab" :tabElement="tabElement" :ref="el => modeler[index] = el"
+				:isActiveTab="index === activeTab" :tabElement="tabElement" :ref="el => modeler[index] = el" :readOnly="isReadOnlyTab(tabElement)"
 				:tabElementIndex="index" @isValidated="isValidated" @updateEditorXML="updateEditorXML"
 				:xml="tabNavListXml[index]" @updateIsButtonDisabled="updateIsButtonDisabled"
 				@updateDownloadLink="_updateDownloadLink"
@@ -106,11 +107,11 @@
 				>
 				<div v-if="tabElement.isModelerVisible" class="h-100">
 					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index] != null"
-						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index"></monaco-editor>
+						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index" :readOnly="isReadOnlyTab(tabElement)"></monaco-editor>
 				</div>
 				<template #menu>
 					<ActionButtonsList :tabNavListXml="tabNavListXml[index]" :tabElementIndex="index"
-						:tabElement="tabElement" :ref="el => actionButton[index] = el"
+						:tabElement="tabElement" :ref="el => actionButton[index] = el" :readOnly="isReadOnlyTab(tabElement)"
 						:isButtonDisabled="isButtonDisabled[index]" :isEditorVisible="tabElement.isEditorVisible"
 						:canSave="tabNavList[index].canSave" :modeler="modeler[index]"
 						:console-open="modeler[index]?.isConsoleOpen ?? false"
@@ -122,7 +123,7 @@
 					</ActionButtonsList>
 				</template>
 			</DmnModeler>
-			<FormModeler v-if="tabNavListXml[index] && tabNavList[index].type === 'form'" :json="tabNavListXml[index]" :isActiveTab="index === activeTab" :tabElement="tabElement" :ref="el => modeler[index] = el"
+			<FormModeler v-if="tabNavListXml[index] && tabNavList[index].type === 'form'" :json="tabNavListXml[index]" :isActiveTab="index === activeTab" :tabElement="tabElement" :ref="el => modeler[index] = el" :readOnly="isReadOnlyTab(tabElement)"
 				:tabElementIndex="index" @isValidated="isValidated" @updateEditorXML="updateEditorXML"
 				:xml="tabNavListXml[index]" @updateIsButtonDisabled="updateIsButtonDisabled"
 				@updateDownloadLink="_updateDownloadLinkForm"
@@ -137,11 +138,11 @@
 				:chat-unread="props.chatUnread" :chat-on-tab-change="props.chatOnTabChange" :chat-on-message="props.chatOnMessage">
 				<div v-if="tabElement.isModelerVisible" class="h-100">
 					<monaco-editor :isBpmn="tabNavList[index].isBpmn" :xml="editorXML[index]" v-if="editorXML[index] != null"
-						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index" language='json'></monaco-editor>
+						@updateFromEditor="updateDiagramFromEditor" :tabElementIndex="index" :readOnly="isReadOnlyTab(tabElement)" language='json'></monaco-editor>
 				</div>
 				<template #menu>
 					<ActionButtonsList :tabNavListXml="tabNavListXml[index]" :tabElementIndex="index"
-						:tabElement="tabElement" :ref="el => actionButton[index] = el"
+						:tabElement="tabElement" :ref="el => actionButton[index] = el" :readOnly="isReadOnlyTab(tabElement)"
 						:isButtonDisabled="isButtonDisabled[index]" :isEditorVisible="tabElement.isEditorVisible"
 						:canSave="tabNavList[index].canSave" :modeler="modeler[index]"
 						@showToastMessage="showToastMessage" :isXmlValidated="isXmlValidated[tabElement.key]"
@@ -157,6 +158,8 @@
 
 	<ModalNewDiagram ref="modalNewDiagram" :showModal="isShowModalNewDiagram" :check-duplicate-id="checkDuplicateId">
 	</ModalNewDiagram>
+	<!-- A file can be dropped on any tab, and the start page is hidden behind the one open -->
+	<FolderPickerModal ref="importPicker" />
 	<modal-deploy :diagram="editorXML[activeTab]" v-if="activeTab > -1" :showModal="isShowModal"
 		:tabNavList="tabNavList[activeTab]" @toggleModal="toggleModal" @showToastMessage="showToastMessage"
 		@add-error-message-to-console="addErrorMessageToConsole" @show-console-notification="showConsoleNotification">
@@ -174,7 +177,7 @@
 		:functionApplyAll="handleApplyAll"
 		:functionAfterRenaming="handleRename"
 		:validateRenameKey="validateRenameKey"
-		@modalClosed="() => resolveConflict('skip')"
+		@modalClosed="openDiagramFromChildAndResolve"
 		@modalHidden="onConflictModalHidden">
 	</ImportConflictModal>
 	<!-- Polite live region: announces transient async states (loading, deploying, saving)
@@ -190,7 +193,7 @@ import * as monaco from '../../monaco-setup.js'
 import { useStore } from 'vuex'
 import { useRoute, useRouter } from 'vue-router'
 
-import { compareXML, getTimeStamp, getTagValueFromXml, checkCamundaVersion, generateUniqueId, setTagValueOfXml, filterTemplates, resolveTabIndexById } from '../../utils.js'
+import { compareXML, getTimeStamp, getTagValueFromXml, getProcessKeyFromBpmn, generateUniqueId, setTagValueOfXml, filterTemplates, resolveTabIndexById } from '../../utils.js'
 import Clipboard from 'diagram-js/lib/features/clipboard/Clipboard'
 import { ref, onMounted, onUnmounted, nextTick, watch, computed, inject, provide } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -206,13 +209,16 @@ import TabNav from '../layout/TabNav.vue'
 import ModalNewDiagram from '../modals/ModalNewDiagram.vue'
 import ActionButtonsList from '../ActionButtonsList.vue'
 import ImportConflictModal from '../modals/ImportConflictModal.vue'
+import FolderPickerModal from '../modals/FolderPickerModal.vue'
 //for full screen drop files
 import DropZone from '../DropZone.vue'
 //composables
 import useTabManager from '../../composables/useTabManager.js'
 import useFileImport from '../../composables/useFileImport.js'
 import { DIAGRAM_TYPE, SKIP_CREATION_MODAL_KEY } from '../../constants/diagramTypes.js'
-import { keyExistsRemote } from '../../services/processService.js'
+import { keyExistsRemote, fetchProcessByKey } from '../../services/processService.js'
+import { fetchUserFolder } from '../../services/folderService.js'
+import { canEditFolder } from '../../utils/projectRights.js'
 
 // Provide monaco for child components (MonacoEditor, MonacoConsole)
 // This is necessary when used as a library since the host app doesn't provide monaco
@@ -254,6 +260,10 @@ const diagramOffset = ref(0)
 const hasMore = ref(true)
 const PAGE_SIZE = 20
 const currentKeyword = ref('')
+const currentFolderId = ref(null)
+// The open folder is kept in the URL, so a refresh comes back to it while a new visit, which has
+// none, starts in the user's own folder. An empty value is the top level.
+const folderFromUrl = typeof route.query.folder === 'string' ? route.query.folder : null
 const currentDiagramType = ref('')
 // Tab state is owned by useTabManager — initialized after modeler ref
 const { tabNavList, tabNavListXml, editorXML, _copyArray, _saveTabNavSavedLocalStorage, _loadTabNavList, _closeSelectedTab, orderTabNavListHiddenTab: _orderTabNavListHiddenTab } = useTabManager(modeler)
@@ -268,7 +278,10 @@ const showModalAcceptCancelMessage = ref({ show: false, type: 'bpmn'})
 const modalData = ref({})
 const tabNavWidth = ref(0)
 const startPage = ref(null)
+// A tab shows a name; the folder its model lives in is only reachable through the tree
+provide('folderPathFor', folderId => startPage.value?.folderPathFor?.(folderId) ?? null)
 const modalNewDiagram = ref(null)
+const importPicker = ref(null)
 const elementTemplateJson = ref(null)
 //one clipboard instance that we can pass around to every bpmn-js instance that we create.
 const clipboard = new Clipboard()
@@ -317,7 +330,10 @@ watch(() => activeTab.value, async newValue => { // when the tab is selected it 
 	}
 })
 
-const handleRename = newKey => resolveConflict('rename', false, { newKey })
+const handleRename = newKey => {
+	_takeExternalKeep()
+	resolveConflict('rename', false, { newKey })
+}
 
 const validateRenameKey = newKey => {
 	if (newKey === modalData.value.processkey) return t('modalImportedFile.renameSameKey')
@@ -357,8 +373,18 @@ watch(() => store.getters['modeler/elementTemplates/allElementTemplateContents']
 	elementTemplateJson.value = filterTemplates(templateContents, config)
 }, { deep: true })
 
+// Asks for name and id first unless the user opted out; done() releases the start page button
+const _startCreation = async (callback, type, done) => {
+	try {
+		if (localStorage.getItem(SKIP_CREATION_MODAL_KEY) === 'true') await callback(null, null)
+		else await modalNewDiagram.value._toggleModalNewDiagram(true, callback, type)
+	} finally {
+		done?.()
+	}
+}
+
 //emit calls an exposed function from StartPage
-const createNewBpmnDiagram = async (diagramXML, type) => {
+const createNewBpmnDiagram = async (diagramXML, type, done) => {
 	const callback = async (nameUpdated, idUpdated) => {
 		const uniqueId = idUpdated ? idUpdated.trim() : _assignUniqueId('Process')
 		const name = nameUpdated ? nameUpdated.trim() : uniqueId
@@ -366,16 +392,15 @@ const createNewBpmnDiagram = async (diagramXML, type) => {
 
 		if (nameUpdated) finalXml = setTagValueOfXml(finalXml, 'bpmn:process', 'name', name)
 
-		tabNavList.value.push({ version: 0, type: type, name: name, navId: uniqueId, id: uniqueId, key: name, keyOfTabNav: name, canSave: true, isSaved: false, isModelerVisible: false, isPropertyPanelVisible: false, isEditorVisible: false })
+		tabNavList.value.push({ version: 0, type: type, name: name, navId: uniqueId, id: uniqueId, key: name, keyOfTabNav: name, canSave: true, isSaved: false, isModelerVisible: false, isPropertyPanelVisible: false, isEditorVisible: false, folderId: currentFolderId.value })
 		tabNavListXml.value[tabNavList.value.length - 1] = finalXml
 		editorXML.value[tabNavList.value.length - 1] = finalXml
 		switchTabFromTabNav(tabNavList.value.length - 1)
 	}
-	if (localStorage.getItem(SKIP_CREATION_MODAL_KEY) === 'true') { await callback(null, null); return }
-	await modalNewDiagram.value._toggleModalNewDiagram(true, callback, type)
+	await _startCreation(callback, type, done)
 }
 
-const createNewDmnDiagram = async (dmnXML, type) => {
+const createNewDmnDiagram = async (dmnXML, type, done) => {
 	const callback = async (nameUpdated, idUpdated) => {
 		const uniqueId = idUpdated ? idUpdated.trim() : _assignUniqueId('Dmn')
 		const name = nameUpdated ? nameUpdated.trim() : uniqueId
@@ -383,26 +408,24 @@ const createNewDmnDiagram = async (dmnXML, type) => {
 
 		if (nameUpdated) finalXml = setTagValueOfXml(finalXml, 'definitions', 'name', name)
 
-		tabNavList.value.push({ version: 0, type: type, name: name, navId: uniqueId, id: uniqueId, key: name, keyOfTabNav: name, canSave: true, isSaved: false, isModelerVisible: false, isPropertyPanelVisible: false, isEditorVisible: false })
+		tabNavList.value.push({ version: 0, type: type, name: name, navId: uniqueId, id: uniqueId, key: name, keyOfTabNav: name, canSave: true, isSaved: false, isModelerVisible: false, isPropertyPanelVisible: false, isEditorVisible: false, folderId: currentFolderId.value })
 		tabNavListXml.value[tabNavList.value.length - 1] = finalXml
 		editorXML.value[tabNavList.value.length - 1] = finalXml
 		switchTabFromTabNav(tabNavList.value.length - 1)
 	}
-	if (localStorage.getItem(SKIP_CREATION_MODAL_KEY) === 'true') { await callback(null, null); return }
-	await modalNewDiagram.value._toggleModalNewDiagram(true, callback, type)
+	await _startCreation(callback, type, done)
 }
 
-const createNewFormDiagram = async(formJson, type) => {
+const createNewFormDiagram = async (formJson, type, done) => {
 	const callback = async (nameUpdated, idUpdated) => {
 		const uniqueId = idUpdated ? idUpdated.trim() : _assignUniqueId('Form')
 		formJson.id = uniqueId
-		tabNavList.value.push({ version: 0, type: type, name: uniqueId, navId: uniqueId, id: uniqueId, key: uniqueId, keyOfTabNav: uniqueId, canSave: true, isSaved: false, isModelerVisible: false, isPropertyPanelVisible: false, isEditorVisible: false, isBpmn: false })
+		tabNavList.value.push({ version: 0, type: type, name: uniqueId, navId: uniqueId, id: uniqueId, key: uniqueId, keyOfTabNav: uniqueId, canSave: true, isSaved: false, isModelerVisible: false, isPropertyPanelVisible: false, isEditorVisible: false, folderId: currentFolderId.value, isBpmn: false })
 		tabNavListXml.value[tabNavList.value.length - 1] = JSON.stringify(formJson, null, 2)
 		editorXML.value[tabNavList.value.length - 1] = JSON.stringify(formJson, null, 2)
 		switchTabFromTabNav(tabNavList.value.length - 1)
 	}
-	if (localStorage.getItem(SKIP_CREATION_MODAL_KEY) === 'true') { await callback(null, null); return }
-	await modalNewDiagram.value._toggleModalNewDiagram(true, callback, type)
+	await _startCreation(callback, type, done)
 }
 
 const saveWithKeyboardFromTab = (e, tabElementName, tabElementIndex) => {
@@ -443,13 +466,31 @@ const updateStoredLocalStorageTabNavList = async ({ processId, processName, proc
 	switchTabFromTabNav(tabElementIndex)
 }
 
+// Searching looks through the whole tree; browsing stays in the folder that is open
+const _folderToFetch = () => currentKeyword.value ? null : currentFolderId.value
+
 const getStoredDiagrams = async functionAfterExecution => {
 	diagramOffset.value = 0
-	await store.dispatch('modeler/processes/fetchUnifiedDiagrams', { firstResult: 0, maxResults: PAGE_SIZE, keyword: currentKeyword.value, type: currentDiagramType.value })
+	// The top level holds folders only, so there is nothing to ask the server for
+	if (!currentKeyword.value && !currentFolderId.value) {
+		diagrams.value = []
+		hasMore.value = false
+		functionAfterExecution && functionAfterExecution()
+		return
+	}
+	await store.dispatch('modeler/processes/fetchUnifiedDiagrams', { firstResult: 0, maxResults: PAGE_SIZE, keyword: currentKeyword.value, type: currentDiagramType.value, folderId: _folderToFetch() })
 	const fetched = store.state.modeler.processes.unifiedDiagrams ?? []
 	diagrams.value = fetched
 	hasMore.value = fetched.length === PAGE_SIZE
 	functionAfterExecution && functionAfterExecution()
+}
+
+const handleNavigateFolder = async folderId => {
+	currentFolderId.value = folderId ?? null
+	router.replace({ query: { ...route.query, folder: folderId ?? '' } }).catch(() => {})
+	if (startPage.value) startPage.value._toggleIsLoading(true)
+	await getStoredDiagrams()
+	if (startPage.value) startPage.value._toggleIsLoading(false)
 }
 
 const handleSearch = async ({ keyword, diagramType }) => {
@@ -463,7 +504,7 @@ const handleSearch = async ({ keyword, diagramType }) => {
 const loadMore = async () => {
 	if (!hasMore.value) return
 	diagramOffset.value += PAGE_SIZE
-	await store.dispatch('modeler/processes/fetchUnifiedDiagrams', { firstResult: diagramOffset.value, maxResults: PAGE_SIZE, keyword: currentKeyword.value, type: currentDiagramType.value })
+	await store.dispatch('modeler/processes/fetchUnifiedDiagrams', { firstResult: diagramOffset.value, maxResults: PAGE_SIZE, keyword: currentKeyword.value, type: currentDiagramType.value, folderId: _folderToFetch() })
 	const fetched = store.state.modeler.processes.unifiedDiagrams ?? []
 	diagrams.value = [...(diagrams.value ?? []), ...fetched]
 	hasMore.value = fetched.length === PAGE_SIZE
@@ -531,13 +572,13 @@ const switchTabFromTabNav = async selectedTabIndex => {
 	activeTab.value = selectedTabIndex
 	const tab = tabNavList.value[selectedTabIndex]
 	if (tab?.isSaved && tab?.id) {
-		router.replace({ params: { diagramId: tab.id } }).catch(() => {})
+		router.replace({ params: { diagramId: tab.id }, query: route.query }).catch(() => {})
 	} else if (route.params.diagramId) {
-		router.replace({ path: route.path.replace('/' + route.params.diagramId, '') }).catch(() => {})
+		router.replace({ path: route.path.replace('/' + route.params.diagramId, ''), query: route.query }).catch(() => {})
 	}
 	// Fetch XML if not already loaded for saved tabs
 	if (selectedTabIndex > -1 && tab?.isSaved && tab?.id && !editorXML.value[selectedTabIndex] && !tabNavListXml.value[selectedTabIndex]) {
-		let selectedProcess = null
+		let selectedProcess
 		if (tabNavList.value[selectedTabIndex].type !== 'form') {
 			await store.dispatch('modeler/processes/fetchProcessById', tabNavList.value[selectedTabIndex].id)
 			selectedProcess = store.state.modeler.processes.processSelected
@@ -576,17 +617,21 @@ const isValidated = (validated, tabElementIndex) => {
 }
 
 //called from monaco editor
+/** A model the user may only look at: its project gives them no more than viewing. */
+const isReadOnlyTab = tab => !!tab?.folderId && !canEditFolder(tab.folderId)
+
 const updateDiagramFromEditor = (xmlContent, tabElementIndex) => {
 	//updates xml content
 	if (!modeler.value[tabElementIndex]) return
+	if (isReadOnlyTab(tabNavList.value[tabElementIndex])) return
 	if (!xmlContent) return // ignore empty content — user is mid-edit; keep the editor alive
 	modeler.value[tabElementIndex]._validate(xmlContent)
-	const typeOfDiagram = checkCamundaVersion(xmlContent) ?? DIAGRAM_TYPE.DMN
+	const tab = tabNavList.value[tabElementIndex]
 
-	if (isXmlValidated.value[tabNavList.value[tabElementIndex].key].validation) {
+	if (isXmlValidated.value[tab.key].validation) {
 		editorXML.value[tabElementIndex] = xmlContent // update xml from modeler
-		tabNavList.value[tabElementIndex].canSave = true //enables save button
-		modeler.value[tabElementIndex]._saveXmlAfterUpdate(typeOfDiagram.startsWith('bpmn'), xmlContent, tabElementIndex)
+		tab.canSave = true //enables save button
+		modeler.value[tabElementIndex]._saveXmlAfterUpdate(tab.type?.startsWith('bpmn') ?? false, xmlContent, tabElementIndex)
 	}
 }
 
@@ -603,28 +648,44 @@ const updateDiagramXml = async (valueFromChild, tabElementIndex, cansave, _typeD
 }
 
 //open from imported files
-const openDiagramFromModal = (valueFromChild, processId, processName, processKey, typeOfDiagram, isSaved, canSave, canReplaceXml) => {
-	const foundElIndex = openDiagram(valueFromChild, processId, processName, processKey, typeOfDiagram, isSaved, canSave, canReplaceXml)
+const openDiagramFromModal = (valueFromChild, processId, processName, processKey, typeOfDiagram, isSaved, canSave, canReplaceXml, folderId = null) => {
+	const foundElIndex = openDiagram(valueFromChild, processId, processName, processKey, typeOfDiagram, isSaved, canSave, canReplaceXml, folderId)
 	if (foundElIndex >= 0) {
 		updateDiagramXml(valueFromChild, foundElIndex, canSave, typeOfDiagram)
 		switchTabFromTabNav(foundElIndex)
 	}
 }
 
+// Set while the conflict dialog is up for a model opened from outside, e.g. from Cockpit:
+// keeping the stored version opens it, where an import would simply leave it alone
+let externalKeep = null
+
+// Every answer ends it, or a later import's dialog would open the model from outside
+const _takeExternalKeep = () => {
+	const keep = externalKeep
+	externalKeep = null
+	return keep
+}
+
 // Wrappers that resolve the pending conflict promise after the modal callback fires,
 // allowing the multi-file import loop to continue to the next file.
 // In batch mode, tab-opening is suppressed — useFileImport handles DB writes directly.
+
 const openDiagramFromModalAndResolve = (...args) => {
+	_takeExternalKeep()
 	if (!showModalAcceptCancelMessage.value.isBatch) openDiagramFromModal(...args)
 	resolveConflict('replace')
 }
-const openDiagramFromChildAndResolve = () => resolveConflict('skip')
+const openDiagramFromChildAndResolve = () => {
+	_takeExternalKeep()?.()
+	resolveConflict('skip')
+}
 const handleApplyAll = choice => resolveConflict(choice, true)
 
 //emit passed from ProcessDiagramElement to FlowModeler
-const openDiagramFromChild = async (valueFromChild, processId, processName, processKey, typeOfDiagram, isSaved, canSave, canReplaceXml) => {
+const openDiagramFromChild = async (valueFromChild, processId, processName, processKey, typeOfDiagram, isSaved, canSave, canReplaceXml, folderId = null) => {
 
-	const foundElIndex = openDiagram(valueFromChild, processId, processName, processKey, typeOfDiagram, isSaved, canSave, canReplaceXml)
+	const foundElIndex = openDiagram(valueFromChild, processId, processName, processKey, typeOfDiagram, isSaved, canSave, canReplaceXml, folderId)
 	if (foundElIndex >= 0) {
 		const xmlToLoad = editorXML.value[foundElIndex] ?? valueFromChild
 		openDiagramFromNavTabFromChild(xmlToLoad, foundElIndex, canSave)
@@ -633,14 +694,16 @@ const openDiagramFromChild = async (valueFromChild, processId, processName, proc
 	}
 }
 
-const openDiagram = (valueFromChild, processId, processName, processKey, typeOfDiagram, isSaved, canSave, canReplaceXml) => {
+const openDiagram = (valueFromChild, processId, processName, processKey, typeOfDiagram, isSaved, canSave, canReplaceXml, folderId = null) => {
 	const foundElIndex = tabNavList.value.findIndex((element) => {
 		return element.id === processId
 	})
+	// A tab kept from before knows no folder, and the model may have been moved since
+	if (foundElIndex > -1 && folderId) _rememberTabFolder(tabNavList.value[foundElIndex], folderId)
 	//if the tab is not already opened
 	if (foundElIndex < 0) {
 		const keyOfTabNav = generateUniqueId()
-		tabNavList.value.push({ type: typeOfDiagram, name: processName, navId: processName, id: processId, key: processKey, keyOfTabNav: keyOfTabNav, isSaved: isSaved, canSave: canSave, isModelerVisible: false, isPropertyPanelVisible: false, isEditorVisible: false, replaceXml: canReplaceXml })
+		tabNavList.value.push({ type: typeOfDiagram, name: processName, navId: processName, id: processId, key: processKey, keyOfTabNav: keyOfTabNav, isSaved: isSaved, canSave: canSave, isModelerVisible: false, isPropertyPanelVisible: false, isEditorVisible: false, replaceXml: canReplaceXml, folderId: folderId })
 		tabNavListXml.value.push(valueFromChild) //adds xml
 		_saveTabNavSavedLocalStorage()
 		const newIndex = tabNavListXml.value.length - 1
@@ -738,6 +801,109 @@ const onBatchComplete = async () => {
 	await getStoredDiagrams()
 }
 
+const _pinnedFolderId = ref(null)
+const _lastImportFolderId = ref(null)
+
+/**
+ * An import lands where the user is looking: the folder of the model on screen, or the one
+ * the list is browsing. Neither is set at the top level, and a new model has no folder yet.
+ */
+const targetFolderId = computed(() => activeTab.value === -1
+	? currentFolderId.value
+	: tabNavList.value[activeTab.value]?.folderId ?? null)
+
+// An import that is running keeps its folder from start to finish, whatever the user does meanwhile
+const importFolderId = computed(() => _pinnedFolderId.value ?? targetFolderId.value)
+
+const _runImport = async (event, folderId) => {
+	_pinnedFolderId.value = folderId
+	_lastImportFolderId.value = folderId
+	try {
+		return await handleFile(event)
+	} catch (e) {
+		// Each file reports itself; what is left is the import as a whole, and by now the
+		// dialog that started it is gone
+		console.error(e)
+		showToastMessage({ isSuccess: false, toastText: 'toastLoadErrorFile', bodyTextAlt: e?.message ?? '' })
+	} finally {
+		_pinnedFolderId.value = null
+	}
+}
+
+const targetFolderPath = computed(() => targetFolderId.value
+	? startPage.value?.folderPathFor?.(targetFolderId.value)
+	: null)
+
+/**
+ * A tab kept from before the folder was carried does not know it, but the stored model does.
+ * Asking heals the tab, so it is asked once rather than on every drop.
+ */
+const _storedFolderOfOpenModel = async () => {
+	const tab = activeTab.value === -1 ? null : tabNavList.value[activeTab.value]
+	if (!tab?.id || !tab.isSaved) return null
+	const diagram = await store.dispatch('modeler/processes/fetchUnifiedDiagramById', tab.id)
+	if (diagram?.folderId) _rememberTabFolder(tab, diagram.folderId)
+	return diagram?.folderId ?? null
+}
+
+/** The tab outlives the page, so what it learns has to go with it. */
+const _rememberTabFolder = (tab, folderId) => {
+	tab.folderId = folderId
+	_saveTabNavSavedLocalStorage()
+}
+
+/** A folder deleted meanwhile is no target, and the save would fail with nothing said. */
+const _isKnownFolder = folderId => {
+	// Nothing to check against without the start page, and then the tab is all there is to go on
+	if (!startPage.value?.folderOptions) return true
+	// The options are the folders the user may add to, so an empty list means there is none
+	return startPage.value.folderOptions().some(folder => folder.id === folderId)
+}
+
+// On the top level of the list a drop goes into the default folder, if the user chose one there
+const _defaultDropFolderId = () => activeTab.value === -1
+	? startPage.value?.defaultDropFolderId?.() ?? null
+	: null
+
+const importFile = async e => {
+	// The files have to be taken now: the browser empties a drop as soon as this handler returns,
+	// and the folder may only be chosen afterwards
+	const files = Array.from(e?.dataTransfer?.files ?? e?.target?.files ?? [])
+	if (files.length === 0) return
+	const dropped = { dataTransfer: { files } }
+
+	const onScreen = _isKnownFolder(targetFolderId.value) ? targetFolderId.value : null
+	const stored = onScreen ? null : await _storedFolderOfOpenModel()
+	const known = onScreen ?? (stored && _isKnownFolder(stored) ? stored : null) ?? _defaultDropFolderId()
+	if (known) return _runImport(dropped, known)
+
+	// The dialog on screen is already asking about a drop, and answering it would carry the
+	// files of this one into the folder chosen for that one
+	if (importPicker.value?.isShown?.()) return
+
+	const folders = startPage.value?.folderOptions?.() ?? []
+	if (folders.length === 0) {
+		// Without the start page there is no tree at all; with it, the tree simply has no folder
+		const toastText = startPage.value ? 'toastImportNoFolders' : 'toastImportNeedsFolder'
+		showToastMessage({ isSuccess: false, toastText, bodyTextAlt: '' })
+		return
+	}
+	return importPicker.value?.show({
+		folders,
+		title: t('folders.importTitle'),
+		selected: _lastImportFolderId.value,
+		// The import opens a tab and reports itself, and may have to ask about a conflict
+		runAfterClose: true,
+		accept: folderId => _runImport(dropped, folderId)
+	})
+}
+
+// A model moved out of the list keeps its tab, so the tab has to learn where it went
+const handleModelMoved = (modelId, folderId) => {
+	const tab = tabNavList.value.find(element => element.id === modelId)
+	if (tab) _rememberTabFolder(tab, folderId)
+}
+
 // File import is handled by useFileImport (initialized here, after all its dependencies are declared)
 const { handleFile, _addNewBpmnFromLoadedXml, resolveConflict } = useFileImport({
 	store,
@@ -755,66 +921,73 @@ const { handleFile, _addNewBpmnFromLoadedXml, resolveConflict } = useFileImport(
 	onBatchComplete,
 	nextModalHiddenPromise,
 	updateDiagramXml,
+	importFolderId,
+	folderNameFor: folderId => startPage.value?.folderNameFor?.(folderId) ?? null,
 })
 
-const _openProcessFromExternalXml = async (xml, resExistingProcess, externalProcessKey, _decodedProcessId) => {
-	const resXmlExternalUrl = xml
-	let diagramType = null
-	let foundExternalProcessKey = getTagValueFromXml(resXmlExternalUrl, 'process', 'id')
-
-	if (foundExternalProcessKey) {
-		diagramType = checkCamundaVersion(resXmlExternalUrl)
-	}
-	else { // if it is not a bpmn process
-		foundExternalProcessKey = getTagValueFromXml(resXmlExternalUrl, 'definitions', 'id')
-		diagramType = DIAGRAM_TYPE.DMN
-	}
-
-	if (resExistingProcess) { // if the process exists in the modelers database
-		if (resExistingProcess.id) await store.dispatch('modeler/processes/fetchProcessById', resExistingProcess.id) // gets the xml from the database with the id
-		else {
-			await store.dispatch('modeler/processes/fetchProcessByName', resExistingProcess) // gets the xml for the collaboration process by its name
-			const foundProcess = diagrams.value.find(process => resExistingProcess === process.processkey)
-			resExistingProcess = foundProcess.id
-
-		}
-
-		const xmlFromModeler = store.state.modeler.processes.processSelected
-		const isEqual = compareXML(xmlFromModeler, resXmlExternalUrl)
-		//open existing process form modeler
-		isEqual && openDiagramFromModal(xmlFromModeler, resExistingProcess.id ?? resExistingProcess, resExistingProcess.name ?? resExistingProcess, foundExternalProcessKey, diagramType, true, false, false)
-		if (!isEqual) // if the xmls are not equal, ask the user
-		{
-			modalData.value = { id: resExistingProcess.id ?? resExistingProcess, name: resExistingProcess.name ?? resExistingProcess, processkey: foundExternalProcessKey, xmlFromModeler, xmlExternalUrl: resXmlExternalUrl, diagramType }
-			showModalAcceptCancelMessage.value.type = diagramType
-			showModalAcceptCancelMessage.value.show = true
+// The stored model of a deployed definition, whichever folder it lives in. The key the modeler stores
+// the XML under (the collaboration id of a diagram with pools) comes first: another model may well
+// carry the bare process key.
+const _findStoredModel = async (storedKey, definitionKey) => {
+	for (const key of new Set([storedKey, definitionKey].filter(Boolean))) {
+		try {
+			return await fetchProcessByKey(key)
+		} catch (error) {
+			if (error?.response?.status !== 404) throw error
 		}
 	}
-	else {
-		_addNewBpmnFromLoadedXml(diagramType, resXmlExternalUrl, externalProcessKey, true) // if the process doesnt exist in the modeler it opens a new one
-		return
+	return null
+}
+
+// A model opened from a deployment needs a folder to be saved into, and no list is on screen to pick one from
+const _landingFolderId = async () => {
+	try {
+		return (await fetchUserFolder())?.folder?.id ?? null
+	} catch (error) {
+		console.error(error)
+		return null
 	}
 }
 
-const _checkExistingProcessFromExternalReturn = async (decodedProcessId, externalProcessKey, type) => {
+const _openProcessFromExternalXml = async (xml, definitionKey) => {
+	const diagramType = getTagValueFromXml(xml, 'process', 'id') ? DIAGRAM_TYPE.BPMN_C7 : DIAGRAM_TYPE.DMN
+	const storedKey = diagramType === DIAGRAM_TYPE.DMN ? getTagValueFromXml(xml, 'definitions', 'id') : getProcessKeyFromBpmn(xml)
+	const stored = await _findStoredModel(storedKey, definitionKey)
+	if (!stored) {
+		// Not in the modeler yet: opens as a new model, named as an import of the same XML would be.
+		// The definition id is no fallback name, as the engine makes it a bare UUID for long keys.
+		_addNewBpmnFromLoadedXml(diagramType, xml, storedKey ?? definitionKey, true, await _landingFolderId())
+		return
+	}
+
+	await store.dispatch('modeler/processes/fetchProcessById', stored.id)
+	const xmlFromModeler = store.state.modeler.processes.processSelected
+	if (!xmlFromModeler) throw store.state.modeler.processes.error ?? new Error(`Model ${stored.id} could not be loaded`)
+
+	const type = stored.type ?? diagramType
+	const openStored = () => openDiagramFromModal(xmlFromModeler, stored.id, stored.name, stored.processkey, type, true, false, false, stored.folderId)
+	if (compareXML(xmlFromModeler, xml)) {
+		openStored()
+		return
+	}
+	// The deployed version differs from the stored one: the user picks which one opens
+	externalKeep = openStored
+	modalData.value = { id: stored.id, name: stored.name, processkey: stored.processkey, xmlFromModeler, xmlExternalUrl: xml, diagramType: type, folderId: stored.folderId, source: 'deployment' }
+	showModalAcceptCancelMessage.value.type = type
+	showModalAcceptCancelMessage.value.show = true
+}
+
+const _checkExistingProcessFromExternalReturn = async (decodedProcessId, definitionKey, type) => {
 	try {
-		let resExistingProcess = diagrams.value?.find(process => externalProcessKey === process.processkey)
-
-		// Check if type parameter is 'dmn' to fetch decision diagram, otherwise fetch process diagram
-		if (type === 'dmn') {
-			await store.dispatch('modeler/xml/fetchDecisionDiagram', decodedProcessId) // gets the decision xml from the database with the id
-		} else {
-			await store.dispatch('modeler/xml/fetchDiagram', decodedProcessId) // gets the process xml from the database with the id
-		}
-		
-		const xmlFromExternalReturn = store.state.modeler.xml.xmlFromExternalReturn
-		const resXmlExternalUrl = xmlFromExternalReturn.bpmn20Xml || xmlFromExternalReturn.dmnXml || xmlFromExternalReturn
-		if (!resExistingProcess) resExistingProcess = getTagValueFromXml(resXmlExternalUrl, 'collaboration', 'id')
-		//if (!resExistingProcess) resExistingProcess = getTagValueFromXml(resXmlExternalUrl, 'bpmn2:collaboration', 'id')
-		_openProcessFromExternalXml(resXmlExternalUrl, resExistingProcess, externalProcessKey)
-
+		await store.dispatch(type === 'dmn' ? 'modeler/xml/fetchDecisionDiagram' : 'modeler/xml/fetchDiagram', decodedProcessId)
+		if (store.state.modeler.xml.error) throw store.state.modeler.xml.error
+		const fromEngine = store.state.modeler.xml.xmlFromExternalReturn
+		const xml = fromEngine?.bpmn20Xml || fromEngine?.dmnXml || fromEngine
+		if (!xml || typeof xml !== 'string') throw new Error(`No diagram found for ${decodedProcessId}`)
+		await _openProcessFromExternalXml(xml, definitionKey)
 	} catch (error) {
-		console.log(error)
+		console.error(error)
+		showToastMessage({ isSuccess: false, toastText: 'toastLoadErrorFile', bodyTextAlt: error?.message ?? '' })
 	}
 }
 
@@ -847,17 +1020,17 @@ const _checkExternalReturn = async () => {
 		}
 	} else if (route.params.diagramId || url.href.includes('diagramId=')) {
 		const diagramId = route.params.diagramId || route.query.diagramId
-		const diagram = diagrams.value?.find(d => d.id === diagramId)
+		const diagram = await store.dispatch('modeler/processes/fetchUnifiedDiagramById', diagramId)
 		if (diagram) {
 			if (diagram.type === 'form') {
 				await store.dispatch('modeler/forms/fetchFormById', diagramId)
 				const selectedForm = store.state.modeler.forms.formSelected
 				const formKey = diagram.formId ?? diagram.processkey ?? diagram.name
-				openDiagramFromChild(selectedForm, diagram.id, formKey, formKey, 'form', true, false, false)
+				openDiagramFromChild(selectedForm, diagram.id, formKey, formKey, 'form', true, false, false, diagram.folderId)
 			} else {
 				await store.dispatch('modeler/processes/fetchProcessById', diagramId)
 				const selectedDiagram = store.state.modeler.processes.processSelected
-				openDiagramFromChild(selectedDiagram, diagram.id, diagram.name, diagram.processkey, diagram.type, true, false, false)
+				openDiagramFromChild(selectedDiagram, diagram.id, diagram.name, diagram.processkey, diagram.type, true, false, false, diagram.folderId)
 			}
 		}
 	}

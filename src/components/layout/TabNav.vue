@@ -38,12 +38,19 @@
                     <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button"
                         style="height: 40px; border-color: #CCD7E4;" aria-expanded="false"><span class="visually-hidden">{{ $t('buttons.moreTabs') }}</span></a>
                     <ul class="dropdown-menu" role="menu">
-                        <li v-for="(navItem, index) in hiddenItems" :key="navItem.id">
-                            <a class="dropdown-item d-flex align-items-center gap-2" href="#" role="menuitem" @click.prevent="selectHiddenTab(index)">
+                        <li v-for="(navItem, index) in hiddenItems" :key="navItem.id" role="none" class="d-flex align-items-center">
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="#" role="menuitem" @click.prevent="selectHiddenTab(index)"
+                                @mousedown.middle.prevent @auxclick.middle.stop.prevent="closeHiddenTab(index)">
                                 <span v-if="navItem.canSave" class="mdi mdi-18px mdi-circle-medium text-warning" :title="$t('tabs.unsavedChanges')" :aria-label="$t('tabs.unsavedChanges')"></span>
                                 {{ navItem.name !== 'undefined' && navItem.name !== '' ? navItem.name : '(' + navItem.key + ')'
                                 }}
                             </a>
+                            <!-- Sibling of the item, and click.stop, so closing does not select the tab or dismiss the menu -->
+                            <button type="button" role="menuitem" class="btn btn-sm btn-link text-muted px-2 py-0 lh-1 flex-shrink-0"
+                                :title="$t('buttons.close')" :aria-label="$t('buttons.closeTab', { name: hiddenTabLabel(navItem) })"
+                                @click.stop.prevent="closeHiddenTab(index)">
+                                <span class="mdi mdi-close mdi-18px" aria-hidden="true"></span>
+                            </button>
                         </li>
                     </ul>
                 </li>
@@ -140,6 +147,14 @@ watch(() => props.tabNavWidth,() => {
 )
 
 const selectHiddenTab = index => emit('orderTabNavListHiddenTab', hiddenItems.value.length - index)
+
+const hiddenTabLabel = navItem => navItem.name !== 'undefined' && navItem.name !== '' ? navItem.name : `(${navItem.key})`
+
+// hiddenItems holds the tail of tabNavList, so its own index maps back by the offset of that tail.
+const closeHiddenTab = index => {
+    const tabElementIndex = props.tabNavList.length - hiddenItems.value.length + index
+    tabNavItem.value[tabElementIndex]?.closeTab()
+}
 
 const tabsVisibleAndCalculate = () => {
     const availableWidth = tabNav.value?.parentElement?.offsetWidth ?? props.tabNavWidth

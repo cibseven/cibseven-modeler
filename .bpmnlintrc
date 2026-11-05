@@ -1,29 +1,29 @@
 {
-  "extends": "bpmnlint:recommended",
+  "extends": [
+    "bpmnlint:recommended",
+    "plugin:camunda-compat/camunda-platform-7-24"
+  ],
   "rules": {
     "no-overlapping-elements": "off",
     "local/custom-no-overlapping-elements": "warn",
-    "conditional-flows" : "off",
-    "local/custom-conditional-flows" : "error",
+    "conditional-flows": "off",
+    "local/custom-conditional-flows": "error",
+    "conditional-event": "error",
+    "start-event-required": "error",
     "end-event-required": "error",
-    "event-sub-process-typed-start-event": "error",
-    "fake-join": "warn",
-    "label-required": "warn",
-    "link-event": "error",
+    "no-disconnected": "error",
+    "no-implicit-start": "error",
     "no-bpmndi": "error",
     "no-complex-gateway": "error",
-    "no-disconnected": "error",
-    "no-duplicate-sequence-flows": "error",
-    "no-gateway-join-fork": "error",
-    "no-implicit-split": "error",
-    "no-implicit-end": "error",
-    "no-implicit-start": "error",
-    "no-inclusive-gateway": "error",
-    "single-blank-start-event": "error",
     "single-event-definition": "error",
-    "start-event-required": "error",
-    "sub-process-blank-start-event": "error",
+    "no-implicit-split": "error",
+    "no-duplicate-sequence-flows": "error",
+    "no-implicit-end": "warn",
+    "no-gateway-join-fork": "warn",
     "superfluous-gateway": "warn",
-    "superfluous-termination": "warn"
+    "superfluous-termination": "warn",
+    "label-required": "off",
+    "fake-join": "off",
+    "no-inclusive-gateway": "off"
   }
 }

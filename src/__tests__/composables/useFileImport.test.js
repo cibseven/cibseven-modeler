@@ -21,7 +21,8 @@ import { ref } from 'vue'
 const m = vi.hoisted(() => ({
     saveDiagramProcess: vi.fn(),
     updateDiagramProcess: vi.fn(),
-    getUnifiedDiagrams: vi.fn(),
+    fetchProcessByKey: vi.fn(),
+    fetchFormByFormId: vi.fn(),
     saveForm: vi.fn(),
     updateForm: vi.fn(),
 }))
@@ -30,11 +31,12 @@ vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k, p) => (p ? `${k}` : k) }) 
 vi.mock('../../services/processService.js', () => ({
     saveDiagramProcess: m.saveDiagramProcess,
     updateDiagramProcess: m.updateDiagramProcess,
-    getUnifiedDiagrams: m.getUnifiedDiagrams,
+    fetchProcessByKey: m.fetchProcessByKey,
 }))
 vi.mock('../../services/formService.js', () => ({
     saveForm: m.saveForm,
     updateForm: m.updateForm,
+    fetchFormByFormId: m.fetchFormByFormId,
 }))
 
 import useFileImport from '../../composables/useFileImport.js'
@@ -85,12 +87,16 @@ function makeDeps(overrides = {}) {
     }
 }
 
+const notFound = () => Object.assign(new Error('Request failed with status code 404'), { response: { status: 404 } })
+
 const waitForModal = deps => vi.waitFor(() => expect(deps.showModalAcceptCancelMessage.value.show).toBe(true))
 
 describe('useFileImport', () => {
     beforeEach(() => {
         vi.clearAllMocks()
-        m.getUnifiedDiagrams.mockResolvedValue([])
+        // The backend answers an unknown key with a 404, which is the only 'nothing there'
+        m.fetchProcessByKey.mockRejectedValue(notFound())
+        m.fetchFormByFormId.mockRejectedValue(notFound())
         m.saveDiagramProcess.mockResolvedValue({ id: 'new-id' })
         m.updateDiagramProcess.mockResolvedValue({})
         m.saveForm.mockResolvedValue({ id: 'new-form-id' })
@@ -170,12 +176,36 @@ describe('useFileImport', () => {
             expect(deps.openDiagramFromChild).toHaveBeenCalledOnce()
         })
 
-        it('detects a conflict for a process not on the current page via DB lookup', async () => {
+        /**
+         * Nothing is stored and nothing is asked, so without a word the import of a file that is
+         * already there looks like it went nowhere — least of all into the folder asked for.
+         */
+        it('says where the model it opened instead is stored', async () => {
+            const deps = makeDeps()
+            deps.processes.value = [{ id: 'db1', name: 'Proc A', processkey: 'procA', folderId: 'general' }]
+            deps.store.state.modeler.processes.processSelected = bpmn('procA')
+            deps.folderNameFor = folderId => folderId === 'general' ? 'General' : null
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
+
+            expect(deps.showToastMessage).toHaveBeenCalledWith(expect.objectContaining({
+                isSuccess: true,
+                toastText: 'toastImportExists',
+                bodyTextAlt: expect.stringContaining('toastImportExists.bodyInFolder'),
+            }))
+        })
+
+        /**
+         * The loaded list only holds the folder in view, so a diagram in another folder is not
+         * in it - and a process key collides across the whole installation, not per folder.
+         */
+        it('detects a conflict for a process in another folder', async () => {
             const deps = makeDeps()
             // not in the loaded processes list...
             deps.processes.value = []
-            // ...but the targeted DB lookup finds it
-            m.getUnifiedDiagrams.mockResolvedValue([{ id: 'db9', name: 'Proc A', processkey: 'procA' }])
+            // ...but it is there, in a folder the user is not looking at
+            m.fetchProcessByKey.mockResolvedValue({ id: 'db9', name: 'Proc A', processkey: 'procA', folderId: 'archive' })
             deps.store.state.modeler.processes.processSelected = bpmn('procA-OLD')
             const { handleFile, resolveConflict } = useFileImport(deps)
 
@@ -184,8 +214,139 @@ describe('useFileImport', () => {
             resolveConflict('replace')
             await p
 
-            expect(m.getUnifiedDiagrams).toHaveBeenCalled()
+            expect(m.fetchProcessByKey).toHaveBeenCalledWith('procA')
             expect(m.updateDiagramProcess).toHaveBeenCalledOnce()
+            // so that replacing it opens the tab where the model lives
+            expect(deps.modalData.value.folderId).toBe('archive')
+        })
+
+        /** The dialog has to say where it found it, now that "the modeler" is more than one place. */
+        it('names the folder the existing diagram lives in', async () => {
+            const deps = makeDeps()
+            deps.processes.value = []
+            deps.folderNameFor = folderId => (folderId === 'archive' ? 'Archive' : null)
+            m.fetchProcessByKey.mockResolvedValue({ id: 'db9', name: 'Proc A', processkey: 'procA', folderId: 'archive' })
+            deps.store.state.modeler.processes.processSelected = bpmn('procA-OLD')
+            const { handleFile, resolveConflict } = useFileImport(deps)
+
+            const p = handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
+            await waitForModal(deps)
+
+            expect(deps.modalData.value.folderName).toBe('Archive')
+            resolveConflict('skip')
+            await p
+        })
+
+        /** A near match is not a conflict: the unique constraint is on the exact key. */
+        it('treats a process whose key merely resembles another as new', async () => {
+            const deps = makeDeps()
+            deps.processes.value = []
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
+
+            expect(m.fetchProcessByKey).toHaveBeenCalledWith('procA')
+            expect(m.saveDiagramProcess).toHaveBeenCalledOnce()
+            expect(deps.showModalAcceptCancelMessage.value.show).toBe(false)
+        })
+
+        /** An import opens a tab and is stored on save, so the tab has to remember the folder. */
+        it('opens the tab in the folder the import was started from', async () => {
+            const deps = makeDeps()
+            deps.importFolderId = { value: 'invoicing' }
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
+
+            expect(deps.tabNavList.value.at(-1).folderId).toBe('invoicing')
+        })
+
+        /** A definition opened from Cockpit names the folder its tab is saved into. */
+        it('opens a new tab in the folder its caller names', () => {
+            const deps = makeDeps()
+            deps.importFolderId = { value: 'invoicing' }
+            const { _addNewBpmnFromLoadedXml } = useFileImport(deps)
+
+            _addNewBpmnFromLoadedXml('bpmn-c7', bpmn('procA'), 'procA', true, 'home')
+
+            expect(deps.tabNavList.value.at(-1)).toMatchObject({ key: 'procA', folderId: 'home', isSaved: false })
+        })
+    })
+
+    describe('before anything has been loaded', () => {
+        /**
+         * The store starts at null and stays there where nothing was fetched, such as the top
+         * level, which holds folders only. Reading .find off it took the whole import down.
+         */
+        it('imports a process when the loaded list is still null', async () => {
+            const deps = makeDeps()
+            deps.processes.value = null
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
+
+            expect(m.saveDiagramProcess).toHaveBeenCalledOnce()
+            expect(deps.showToastMessage).not.toHaveBeenCalled()
+        })
+
+        it('imports a form when the loaded list is still null', async () => {
+            const deps = makeDeps()
+            deps.forms.value = null
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'f.form', content: form('formA') }]))
+
+            expect(m.saveForm).toHaveBeenCalledOnce()
+            expect(deps.showToastMessage).not.toHaveBeenCalled()
+        })
+    })
+
+    describe('a file that cannot be read', () => {
+        /** The console had the reason and the toast did not, leaving nothing to act on. */
+        it.each([
+            ['an empty file', '', 'importErrors.empty'],
+            ['a file that is not XML', 'not xml at all', 'importErrors.notXml'],
+            ['XML without definitions', '<?xml version="1.0"?><root/>', 'importErrors.noDefinitions'],
+        ])('names the file and the reason for %s', async (_case, content, reason) => {
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'broken.bpmn', content }]))
+
+            const toast = deps.showToastMessage.mock.calls.at(-1)[0]
+            expect(toast.isSuccess).toBe(false)
+            expect(toast.toastText).toBe('toastLoadErrorFile')
+            expect(toast.bodyTextAlt).toContain('broken.bpmn')
+            expect(toast.bodyTextAlt).toContain(reason)
+        })
+
+        it('stores nothing when the file cannot be read', async () => {
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'broken.bpmn', content: '' }]))
+
+            expect(m.saveDiagramProcess).not.toHaveBeenCalled()
+        })
+
+        /**
+         * Only a 404 says the key is free. Any other answer is unknown, and importing anyway
+         * would write a second diagram under a key the database refuses.
+         */
+        it.each([
+            ['a server error', Object.assign(new Error('boom'), { response: { status: 500 } })],
+            ['a failed request', new Error('Network Error')],
+        ])('imports nothing when the key cannot be looked up: %s', async (_case, failure) => {
+            m.fetchProcessByKey.mockRejectedValue(failure)
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'procA.bpmn', content: bpmn('procA') }]))
+
+            expect(m.saveDiagramProcess).not.toHaveBeenCalled()
+            const toast = deps.showToastMessage.mock.calls.at(-1)[0]
+            expect(toast.isSuccess).toBe(false)
+            expect(toast.bodyTextAlt).toContain('importErrors.lookupFailed')
         })
     })
 
@@ -229,6 +390,26 @@ describe('useFileImport', () => {
 
             const p = handleFile(fileEvent([{ name: 'f.form', content: form('formA') }]))
             await waitForModal(deps)
+            resolveConflict('replace')
+            await p
+
+            expect(m.updateForm).toHaveBeenCalledOnce()
+        })
+
+        /** A form id is unique across the installation too, not just within the folder in view. */
+        it('detects a conflict for a form in another folder', async () => {
+            const deps = makeDeps()
+            deps.forms.value = []
+            deps.folderNameFor = folderId => (folderId === 'archive' ? 'Archive' : null)
+            m.fetchFormByFormId.mockResolvedValue({ id: 'fdb', formId: 'formA', folderId: 'archive' })
+            deps.store.state.modeler.forms.formSelected = form('formA', [{ type: 'textfield' }])
+            const { handleFile, resolveConflict } = useFileImport(deps)
+
+            const p = handleFile(fileEvent([{ name: 'f.form', content: form('formA') }]))
+            await waitForModal(deps)
+
+            expect(m.fetchFormByFormId).toHaveBeenCalledWith('formA')
+            expect(deps.modalData.value.folderName).toBe('Archive')
             resolveConflict('replace')
             await p
 
