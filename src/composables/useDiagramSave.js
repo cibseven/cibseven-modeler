@@ -40,13 +40,19 @@ export default function useDiagramSave(props, emit, sessionHooks = {}) {
    * through the autosave status otherwise: a silent failure would leave the indicator on
    * the last successful time and let the user believe the work is saved.
    */
-  const _reportFailure = (isAutosave) => {
+  const _reportFailure = (isAutosave, error = null) => {
     if (isAutosave) {
       if (autosaveHook) autosaveHook(props.tabElement, { state: 'failed' })
     } else {
-      emit('showToastMessage', { isSuccess: false, toastText: 'toastSomethingWentWrong' })
+      emit('showToastMessage', { isSuccess: false, toastText: _failureToast(error) })
     }
   }
+
+  // The backend refuses a key the folder has, also one the checks here could not see: a tab
+  // that does not know its folder, a save meanwhile, or a database that keeps keys unique across folders
+  const _failureToast = error =>
+    ['ExistingProcessKeyException', 'ExistingFormIdException'].includes(error?.response?.data?.type)
+      ? 'toastSaveErrorDuplicateKey' : 'toastSomethingWentWrong'
 
   const _createSessionSafely = async (response, blob, sessionResponse, isAutosave = false) => {
     if (createSessionHook && sessionResponse?.message === 'NO_SESSION') {
@@ -133,7 +139,7 @@ export default function useDiagramSave(props, emit, sessionHooks = {}) {
         if (functionToExecute) functionToExecute(xml)
         return true
       } catch (error) {
-        _reportFailure(isAutosave)
+        _reportFailure(isAutosave, error)
         console.error(error)
         return false
       }
@@ -154,7 +160,7 @@ export default function useDiagramSave(props, emit, sessionHooks = {}) {
         if (functionToExecute) functionToExecute(xml)
         return true
       } catch (error) {
-        emit('showToastMessage', { isSuccess: false, toastText: 'toastSomethingWentWrong' })
+        emit('showToastMessage', { isSuccess: false, toastText: _failureToast(error) })
         console.error(error)
         return false
       }

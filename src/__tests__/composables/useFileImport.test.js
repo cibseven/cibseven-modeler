@@ -233,6 +233,41 @@ describe('useFileImport', () => {
             expect(m.updateDiagramProcess).not.toHaveBeenCalled()
         })
 
+        /** The same key may be open for the model of another folder, whose tab is not the one replaced. */
+        it('replaces the stored model without touching the tab of the same key in another folder', async () => {
+            const deps = makeDeps()
+            deps.processes.value = [{ id: 'db1', name: 'Proc A', processkey: 'procA', folderId: 'general' }]
+            deps.tabNavList.value = [{ id: 'dbB', key: 'procA', type: 'bpmn-c7', folderId: 'archive', isSaved: true, canSave: true }]
+            deps.editorXML.value = [bpmn('procA-edited-in-archive')]
+            deps.store.state.modeler.processes.processSelected = bpmn('procA-OLD')
+            const { handleFile, resolveConflict } = useFileImport(deps)
+
+            const p = handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
+            await waitForModal(deps)
+            // Compared with what is stored in the folder, not with the other tab's edits
+            expect(deps.modalData.value.xmlFromModeler).toBe(bpmn('procA-OLD'))
+            resolveConflict('replace')
+            await p
+
+            expect(m.updateDiagramProcess).toHaveBeenCalledWith('db1', 'procA', 'procA', expect.anything(), 'bpmn-c7')
+            expect(deps.updateDiagramXml).not.toHaveBeenCalled()
+            expect(deps.tabNavList.value[0].canSave).toBe(true)
+        })
+
+        it('stores a new import although an unsaved tab of another folder has its key', async () => {
+            const deps = makeDeps()
+            deps.tabNavList.value = [{ id: 'procA', key: 'procA', type: 'bpmn-c7', folderId: 'archive', isSaved: false, canSave: true }]
+            deps.editorXML.value = [bpmn('procA-draft')]
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
+
+            expect(deps.showModalAcceptCancelMessage.value.show).toBe(false)
+            expect(m.saveDiagramProcess).toHaveBeenCalledOnce()
+            // The draft of the other folder stays a draft
+            expect(deps.tabNavList.value[0].isSaved).toBe(false)
+        })
+
         /** The dialog has to say where it found it, now that "the modeler" is more than one place. */
         it('names the folder the existing diagram lives in', async () => {
             const deps = makeDeps()
@@ -427,6 +462,20 @@ describe('useFileImport', () => {
             await p
 
             expect(m.updateForm).toHaveBeenCalledOnce()
+        })
+
+        it('opens the stored form rather than moving the tab of the same form id in another folder', async () => {
+            const deps = makeDeps()
+            deps.forms.value = [{ id: 'fdb', formId: 'formA', folderId: 'general' }]
+            deps.tabNavList.value = [{ id: 'fB', key: 'formA', type: 'form', folderId: 'archive', isSaved: true, canSave: false }]
+            deps.store.state.modeler.forms.formSelected = form('formA')
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'f.form', content: form('formA') }]))
+
+            expect(deps.tabNavList.value[0].folderId).toBe('archive')
+            expect(deps.modelerTabNav.value.selectTab).not.toHaveBeenCalled()
+            expect(deps.openDiagramFromChild).toHaveBeenCalledWith(expect.anything(), 'fdb', 'formA', 'formA', 'form', true, false, false, 'general')
         })
 
         it('imports a form whose form id only another folder has as a new one', async () => {

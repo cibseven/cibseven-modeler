@@ -613,17 +613,24 @@ const _formForReference = (candidates, folderId) => {
 		?? candidates[0]
 }
 
-const _autoAddReferencedForms = async () => {
+// Counts the openings, so an answer that comes after the dialog was opened again is dropped
+let opening = 0
+
+const _autoAddReferencedForms = async current => {
 	if (!isBpmn.value) return
+	// Read before the first answer: the tab on screen may have changed by then
+	const folderId = props.tabNavList.folderId
 	detectedFormRefs.value = getFormRefsFromBpmn(props.diagram)
 	if (!detectedFormRefs.value.length) return
 	for (const ref of detectedFormRefs.value) {
 		try {
 			const candidates = await fetchFormsByFormId(ref)
+			if (current !== opening) return
 			if (candidates.length > 1) ambiguousFormRefs.value.push(ref)
-			const match = _formForReference(candidates, props.tabNavList.folderId)
+			const match = _formForReference(candidates, folderId)
 			if (!match || addedFormIds.value.has(match.formId)) continue
 			const content = await fetchFormById(match.id)
+			if (current !== opening) return
 			const blob = new Blob([JSON.stringify(content)], { type: 'application/json' })
 			additionalDeploymentResources.value.push({ resourceName: `${match.formId}.form`, blob })
 		} catch { /* silently skip — form may not exist in the modeler */ }
@@ -634,14 +641,14 @@ const _autoAddReferencedForms = async () => {
  * A key may repeat across folders, but the engine keeps one definition per key: deploying adds a
  * version to what another model deployed. Said, not refused; without an answer nothing is said.
  */
-const _checkKeyInUse = async () => {
+const _checkKeyInUse = async current => {
 	const type = props.tabNavList.type === 'form' ? 'form' : 'process'
 	const ownId = props.tabNavList.isSaved ? props.tabNavList.id : null
+	let used = false
 	try {
-		keyUsedElsewhere.value = await keyInUseElsewhere(_getProcessKeyForDeployName(), type, ownId)
-	} catch {
-		keyUsedElsewhere.value = false
-	}
+		used = await keyInUseElsewhere(_getProcessKeyForDeployName(), type, ownId)
+	} catch { /* a warning only: without an answer there is none */ }
+	if (current === opening) keyUsedElsewhere.value = used
 }
 
 const _showModalComp = () => {
@@ -656,8 +663,9 @@ const _showModalComp = () => {
 	checkIfProcessStartable()
 	disableDeployButton.value = false
 	modalBootstrap.show()
-	_autoAddReferencedForms()
-	_checkKeyInUse()
+	const current = ++opening
+	_autoAddReferencedForms(current)
+	_checkKeyInUse(current)
 }
 
 </script>

@@ -284,6 +284,23 @@ describe('ModalDeploy — form picker', () => {
             expect(wrapper.text()).toContain('deployForm.keyInUse.form')
         })
 
+        /** An answer slower than the user belongs to the opening that asked, not to the next one. */
+        it('drops the answer of an earlier opening', async () => {
+            let answerFirst
+            m.keyInUseElsewhere.mockReturnValueOnce(new Promise(resolve => { answerFirst = resolve }))
+            m.fetchFormsByFormId.mockReturnValueOnce(new Promise(() => {}))
+            const wrapper = mountModal({ diagram: BPMN_WITH_REF })
+            await openModal(wrapper)
+
+            await wrapper.setProps({ showModal: false })
+            m.fetchFormsByFormId.mockResolvedValue([])
+            await openModal(wrapper)
+            answerFirst(true)
+            await flushPromises()
+
+            expect(wrapper.text()).not.toContain('deployForm.keyInUse')
+        })
+
         it('says nothing when no other model has it, or when there is no answer', async () => {
             const wrapper = mountModal({ diagram: BPMN_NO_REF })
             await openModal(wrapper)
