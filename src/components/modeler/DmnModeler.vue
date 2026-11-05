@@ -122,7 +122,6 @@ import useModeler from '../../composables/useModeler.js'
 import useAutosave from '../../composables/useAutosave.js'
 import usePropertiesPanel from '../../composables/usePropertiesPanel.js'
 import { getTagValueFromXml } from '../../utils.js'
-import { withoutResult } from '../../utils/diagramEvents.js'
 
 const containerModeler = ref(null)
 const canvas = ref(null)
@@ -304,13 +303,13 @@ onMounted(async () => {
 	const _registerDrdListeners = (viewer) => {
 		if (drdListenersRegistered || !viewer) return false
 		try { propertiesPanelComponent.value = viewer.get('propertiesPanel') } catch { return false }
-		viewer.on('propertiesPanel.detach', withoutResult(async () => {
+		viewer.on('propertiesPanel.detach', async () => {
 			isDrdShowing.value = false
 			if (!props.isModelerVisible) togglePropertiesPanel(false)
 			await nextTick()
 			const decisionTableRef = containerModeler.value?.querySelector('.dmn-decision-table-container')
 			if (decisionTableRef) observerDecisionTables = createObserver(decisionTableRef)
-		}))
+		})
 		viewer.on('propertiesPanel.attach', () => {
 			isDrdShowing.value = true
 			if (!props.isModelerVisible) togglePropertiesPanel(true)
@@ -332,7 +331,7 @@ onMounted(async () => {
 
 	// Track view changes to update XML and download links
 	let drdSelectionListenerRegistered = false
-	dmnModeler.on('views.changed', withoutResult(async ({ activeView }) => {
+	dmnModeler.on('views.changed', async ({ activeView }) => {
 		if (activeView && (activeView.type === 'decisionTable' || activeView.type === 'literalExpression')) {
 			const el = activeView.element
 			selectedElement.value = { id: el.id, name: el.name || el.id, type: el.$type }
@@ -371,7 +370,7 @@ onMounted(async () => {
 		} catch (err) {
 			console.error(err)
 		}
-	}))
+	})
 
 	window.addEventListener('resize', updateParentWidth, true)
 	window.addEventListener('resize', updateParentHeight, true)
