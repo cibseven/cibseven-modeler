@@ -143,11 +143,20 @@ describe('useFolders', () => {
       const folders = await loaded()
 
       expect(folders.flatten()).toEqual([
-        { id: 'archive', name: 'Archive', depth: 0 },
-        { id: 'general', name: 'General', depth: 0 },
-        { id: 'invoicing', name: 'Invoicing', depth: 1 },
-        { id: '2024', name: '2024', depth: 2 }
+        { id: 'archive', name: 'Archive', depth: 0, userFolder: false },
+        { id: 'general', name: 'General', depth: 0, userFolder: false },
+        { id: 'invoicing', name: 'Invoicing', depth: 1, userFolder: false },
+        { id: '2024', name: '2024', depth: 2, userFolder: false }
       ])
+    })
+
+    /** Pickers show a user folder with its own icon, as the start page does. */
+    it('marks a user folder', async () => {
+      fetchFolders.mockResolvedValue([{ id: 'adrian', parentId: null, name: 'adrian', userFolder: true }])
+      const folders = useFolders()
+      await folders.load()
+
+      expect(folders.flatten()).toEqual([{ id: 'adrian', name: 'adrian', depth: 0, userFolder: true }])
     })
 
     /** Moving a folder into its own subtree would cut that subtree out of the tree. */

@@ -44,7 +44,9 @@ const messages = {
             copyFormIdRequired: 'A copy needs a form id of its own.',
             nameTaken: 'A folder with that name is already there.',
             nameTooLong: 'The name is longer than 255 characters.',
-            keyTaken: '"{key}" is already taken.'
+            keyTaken: '"{key}" is already taken.',
+            filterFolders: 'Filter folders', filterNoMatch: 'No folder matches "{keyword}".',
+            selectedDestination: 'Selected'
         },
         buttons: { accept: 'Accept', cancel: 'Cancel', close: 'Close' }
     }
@@ -242,19 +244,164 @@ describe('FolderPickerModal', () => {
 
         await open(wrapper)
 
-        const labels = wrapper.findAll('.list-group-item')
+        const labels = wrapper.findAll('.folder-picker-row')
         expect(labels).toHaveLength(2)
         expect(labels[1].text()).toContain('Invoicing')
     })
 
-    it('leaves the frame to the list items, so the top and bottom borders are not doubled', async () => {
+    /** The whole row moves in, radio included, so a subfolder reads as nested (CIB7-2591). */
+    it('indents the whole row by depth, and the folders one more under the top level', async () => {
         const wrapper = mountModal(FolderPickerModal)
+        const indents = () => wrapper.findAll('.folder-picker-row').map(row => row.element.style.paddingLeft)
 
         await open(wrapper)
+        expect(indents()).toEqual(['calc(0.75rem)', 'calc(2.25rem)'])
 
-        const classes = wrapper.find('.list-group').classes()
-        expect(classes).not.toContain('border-top')
-        expect(classes).not.toContain('border-bottom')
+        await open(wrapper, { allowTopLevel: true })
+        expect(indents()).toEqual(['calc(0.75rem)', 'calc(2.25rem)', 'calc(3.75rem)'])
+    })
+
+    it('shows projects, folders and user folders with the icons of the start page', async () => {
+        const wrapper = mountModal(FolderPickerModal)
+
+        await open(wrapper, { folders: [...FOLDERS, { id: 'adrian', name: 'adrian', depth: 0, userFolder: true }] })
+
+        const icons = wrapper.findAll('.folder-picker-row .mdi').map(icon => icon.classes().find(c => c.startsWith('mdi-')))
+        expect(icons).toEqual(['mdi-briefcase', 'mdi-folder-outline', 'mdi-folder-account-outline'])
+    })
+
+    describe('the choice', () => {
+        it('marks the chosen row and names its path under the list', async () => {
+            const wrapper = mountModal(FolderPickerModal)
+            await open(wrapper)
+            expect(wrapper.find('.folder-picker-choice').text()).toBe('')
+
+            await wrapper.findAll('input[type="radio"]')[1].setValue()
+
+            expect(wrapper.findAll('.folder-picker-row')[1].classes()).toContain('is-selected')
+            expect(wrapper.findAll('.folder-picker-row')[0].classes()).not.toContain('is-selected')
+            expect(wrapper.find('.folder-picker-choice').text()).toMatch(/Selected:\s*General \/ Invoicing/)
+        })
+
+        it('names the top level as the projects', async () => {
+            const wrapper = mountModal(FolderPickerModal)
+            await open(wrapper, { allowTopLevel: true })
+
+            await wrapper.findAll('input[type="radio"]')[0].setValue()
+
+            expect(wrapper.find('.folder-picker-choice').text()).toMatch(/Selected:\s*Projects$/)
+        })
+
+        it('tells apart folders that share a name by their parents', async () => {
+            const wrapper = mountModal(FolderPickerModal)
+            await open(wrapper, {
+                folders: [
+                    { id: 'a', name: 'Sales', depth: 0 }, { id: 'a-2024', name: '2024', depth: 1 },
+                    { id: 'b', name: 'Support', depth: 0 }, { id: 'b-2024', name: '2024', depth: 1 }
+                ],
+                selected: 'b-2024'
+            })
+
+            expect(wrapper.find('.folder-picker-choice').text()).toMatch(/Support \/ 2024/)
+        })
+    })
+
+    describe('the filter', () => {
+        const MANY = [
+            { id: 'sales', name: 'Sales', depth: 0 },
+            { id: 'invoices', name: 'Invoices', depth: 1 },
+            { id: 'archive', name: 'Archive', depth: 2 },
+            { id: 'orders', name: 'Orders', depth: 1 },
+            { id: 'support', name: 'Support', depth: 0 },
+            { id: 'tickets', name: 'Tickets', depth: 1 },
+            { id: 'hr', name: 'HR', depth: 0 },
+            { id: 'payroll', name: 'Payroll', depth: 1 },
+        ]
+        const names = wrapper => wrapper.findAll('.folder-picker-row').map(row => row.text())
+        const filterBy = async (wrapper, text) => {
+            await wrapper.find('input[type="search"]').setValue(text)
+            await flushPromises()
+        }
+
+        it('is offered only once the list is long', async () => {
+            const wrapper = mountModal(FolderPickerModal)
+
+            await open(wrapper)
+            expect(wrapper.find('input[type="search"]').exists()).toBe(false)
+
+            await open(wrapper, { folders: MANY })
+            expect(wrapper.find('input[type="search"]').exists()).toBe(true)
+            expect(wrapper.find(`label[for="${wrapper.find('input[type="search"]').attributes('id')}"]`).text())
+                .toBe('Filter folders')
+        })
+
+        it('keeps the matching folders with their parents, ignoring case', async () => {
+            const wrapper = mountModal(FolderPickerModal)
+            await open(wrapper, { folders: MANY })
+
+            await filterBy(wrapper, 'ARCH')
+
+            expect(names(wrapper)).toEqual(['Sales', 'Invoices', 'Archive'])
+        })
+
+        it('keeps the top level, which is no folder to match', async () => {
+            const wrapper = mountModal(FolderPickerModal)
+            await open(wrapper, { folders: MANY, allowTopLevel: true })
+
+            await filterBy(wrapper, 'payroll')
+
+            expect(names(wrapper)).toEqual(['Projects', 'HR', 'Payroll'])
+        })
+
+        it('says when nothing matches', async () => {
+            const wrapper = mountModal(FolderPickerModal)
+            await open(wrapper, { folders: MANY })
+
+            await filterBy(wrapper, 'nothing')
+
+            expect(names(wrapper)).toEqual([])
+            expect(wrapper.text()).toContain('No folder matches "nothing".')
+        })
+
+        it('keeps the choice when it is filtered out of sight', async () => {
+            const accept = vi.fn().mockResolvedValue()
+            const wrapper = mountModal(FolderPickerModal)
+            await open(wrapper, { folders: MANY, selected: 'tickets', accept })
+
+            await filterBy(wrapper, 'payroll')
+            await wrapper.find('button.btn-primary').trigger('click')
+            await flushPromises()
+
+            expect(wrapper.find('.folder-picker-choice').text()).toMatch(/Support \/ Tickets/)
+            expect(accept).toHaveBeenCalledWith('tickets', '')
+        })
+
+        it('starts empty every time the dialog opens', async () => {
+            const wrapper = mountModal(FolderPickerModal)
+            await open(wrapper, { folders: MANY })
+            await filterBy(wrapper, 'payroll')
+
+            await open(wrapper, { folders: MANY })
+
+            expect(wrapper.find('input[type="search"]').element.value).toBe('')
+            expect(names(wrapper)).toHaveLength(MANY.length)
+        })
+    })
+
+    /** An import opened on the folder the last one went into shows that folder, however far down. */
+    it('scrolls the choice already made into view', async () => {
+        const scrollIntoView = vi.fn()
+        Element.prototype.scrollIntoView = scrollIntoView
+        const wrapper = mountModal(FolderPickerModal)
+
+        await open(wrapper, { selected: 'invoicing' })
+        expect(scrollIntoView).not.toHaveBeenCalled()
+
+        wrapper.element.dispatchEvent(new Event('shown.bs.modal'))
+
+        expect(scrollIntoView).toHaveBeenCalledOnce()
+        expect(scrollIntoView.mock.contexts[0].textContent).toContain('Invoicing')
+        delete Element.prototype.scrollIntoView
     })
 
     /** A model cannot sit at the top level, so it is only offered when a folder may move there. */
@@ -456,8 +603,8 @@ describe('FolderPickerModal', () => {
 
             expect(radios(wrapper)[0].attributes('disabled')).toBeUndefined()
             expect(radios(wrapper)[1].attributes('disabled')).toBeDefined()
-            expect(wrapper.findAll('.list-group-item')[1].text()).toContain('Invoicing')
-            expect(wrapper.findAll('.list-group-item')[1].text()).toContain('(current location)')
+            expect(wrapper.findAll('.folder-picker-row')[1].text()).toContain('Invoicing')
+            expect(wrapper.findAll('.folder-picker-row')[1].text()).toContain('(current location)')
         })
 
         it('is the top level for a folder that sits there', async () => {
@@ -466,7 +613,7 @@ describe('FolderPickerModal', () => {
             await open(wrapper, { allowTopLevel: true, current: null })
 
             expect(radios(wrapper)[0].attributes('disabled')).toBeDefined()
-            expect(wrapper.findAll('.list-group-item')[0].text()).toMatch(/Projects\s*\(current location\)/)
+            expect(wrapper.findAll('.folder-picker-row')[0].text()).toMatch(/Projects\s*\(current location\)/)
             expect(radios(wrapper).slice(1).every(radio => radio.attributes('disabled') === undefined)).toBe(true)
         })
 

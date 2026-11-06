@@ -176,7 +176,7 @@ export default function useFolders() {
         if (depth === 0 && within && folder.id !== within) return
         // A project the user may not change leaves every folder in it unchangeable
         if (editableOnly && !canEdit(folder.id)) return
-        rows.push({ id: folder.id, name: folder.name, depth })
+        rows.push({ id: folder.id, name: folder.name, depth, userFolder: !!folder.userFolder })
         walk(folder.id, depth + 1)
       })
     }
