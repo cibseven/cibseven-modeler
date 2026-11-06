@@ -613,8 +613,7 @@ const handleCopyModel = item => {
 const _toggleIsLoading = comp => isLoading.value = comp
 
 // The tree is loaded here, so this is where a folder id can be turned into a name or a path
-const folderPathFor = folderId =>
-    folderState.pathOf(folderId).map(folder => folder.name).join(' / ') || null
+const folderPathFor = folderId => folderState.pathText(folderId) || null
 
 const folderNameFor = folderId => folderState.pathOf(folderId).at(-1)?.name ?? null
 
