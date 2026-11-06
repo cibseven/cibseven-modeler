@@ -289,7 +289,7 @@ describe('FolderPickerModal', () => {
 
             await wrapper.findAll('input[type="radio"]')[1].setValue()
 
-            expect(wrapper.findAll('.folder-picker-row')[1].classes()).toContain('is-selected')
+            expect(wrapper.findAll('.folder-picker-row')[1].classes()).toEqual(expect.arrayContaining(['is-selected', 'bg-primary-subtle']))
             expect(wrapper.findAll('.folder-picker-row')[0].classes()).not.toContain('is-selected')
             expect(wrapper.find('.folder-picker-choice').text()).toMatch(/Selected:\s*General \/ Invoicing/)
         })

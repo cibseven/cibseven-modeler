@@ -35,9 +35,9 @@
                     </div>
                     <!-- One name makes one group: a single tab stop, and the arrow keys move between the folders -->
                     <div ref="listRoot" role="radiogroup" :aria-labelledby="destinationId"
-                        class="folder-picker border rounded overflow-auto">
-                        <label v-if="allowTopLevel" :for="`${optionId}-top-level`" class="folder-picker-row"
-                            :class="rowClass('')" :style="{ paddingLeft: indent(0) }">
+                        class="border rounded overflow-auto" style="max-height: 40vh">
+                        <label v-if="allowTopLevel" :for="`${optionId}-top-level`"
+                            class="folder-picker-row d-flex align-items-center gap-2 mb-0 py-2 pe-3" :class="rowClass('')" :style="{ paddingLeft: indent(0) }">
                             <input :id="`${optionId}-top-level`" type="radio" :name="optionId"
                                 class="form-check-input m-0 flex-shrink-0" value="" v-model="selected" :disabled="isCurrent('')">
                             <span class="mdi mdi-folder-multiple-outline" aria-hidden="true"></span>
@@ -45,7 +45,7 @@
                             <span v-if="isCurrent('')" class="small flex-shrink-0">({{ $t('folders.currentLocation') }})</span>
                         </label>
                         <label v-for="folder in visibleOptions" :key="folder.id" :for="`${optionId}-${folder.id}`"
-                            class="folder-picker-row" :class="rowClass(folder.id)"
+                            class="folder-picker-row d-flex align-items-center gap-2 mb-0 py-2 pe-3" :class="rowClass(folder.id)"
                             :style="{ paddingLeft: indent(folder.depth + (allowTopLevel ? 1 : 0)) }">
                             <input :id="`${optionId}-${folder.id}`" type="radio" :name="optionId"
                                 class="form-check-input m-0 flex-shrink-0" :value="folder.id" v-model="selected"
@@ -59,7 +59,7 @@
                         </p>
                     </div>
                     <!-- Not announced: the radio just chosen has said it already -->
-                    <p class="folder-picker-choice small mt-2 mb-0 text-truncate">
+                    <p class="folder-picker-choice small mt-2 mb-0 text-truncate" style="min-height: 1.5em">
                         <template v-if="selectedPath">
                             <span class="text-body-secondary">{{ $t('folders.selectedDestination') }}:</span>
                             <span class="fw-semibold ms-1" :title="selectedPath">{{ selectedPath }}</span>
@@ -173,7 +173,7 @@ const clearFilter = event => {
 const indent = depth => `calc(0.75rem + ${depth * 1.5}rem)`
 
 const rowClass = id => ({
-    'is-selected': selected.value === id,
+    'is-selected bg-primary-subtle': selected.value === id,
     'is-current text-body-secondary': isCurrent(id)
 })
 
@@ -270,34 +270,12 @@ defineExpose({ show, isShown: () => shown.value })
 </script>
 
 <style scoped>
-.folder-picker {
-    max-height: 40vh;
-}
-
-.folder-picker-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 0;
-    padding: 0.4rem 0.75rem;
+/* Bootstrap has no hover or cursor utilities */
+.folder-picker-row:not(.is-current) {
     cursor: pointer;
 }
 
-.folder-picker-row:hover {
+.folder-picker-row:not(.is-current):hover {
     background-color: var(--bs-tertiary-bg);
-}
-
-.folder-picker-row.is-selected {
-    background-color: var(--bs-primary-bg-subtle);
-}
-
-.folder-picker-row.is-current {
-    cursor: default;
-    background-color: transparent;
-}
-
-/* Keeps the line under the list from jumping when the first folder is chosen */
-.folder-picker-choice {
-    min-height: 1.5em;
 }
 </style>
