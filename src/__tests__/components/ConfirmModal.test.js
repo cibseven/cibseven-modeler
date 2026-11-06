@@ -72,7 +72,12 @@ describe('ConfirmModal', () => {
 
         it('renders accept button', () => {
             const wrapper = mountConfirmModal()
-            expect(wrapper.find('.btn-danger').exists()).toBe(true)
+            expect(wrapper.find('.btn-primary').exists()).toBe(true)
+        })
+
+        // White on the primary colour, like the webclient's main actions
+        it('writes the accept button in white', () => {
+            expect(mountConfirmModal().find('.btn-primary').classes()).toContain('text-white')
         })
 
         it('renders cancel button', () => {
@@ -152,7 +157,7 @@ describe('ConfirmModal', () => {
 
         it('displays custom acceptLabel if provided', () => {
             const wrapper = mountConfirmModal({ acceptLabel: 'Confirm Delete' })
-            expect(wrapper.find('.btn-danger').text()).toContain('Confirm Delete')
+            expect(wrapper.find('.btn-primary').text()).toContain('Confirm Delete')
         })
     })
 
@@ -176,14 +181,32 @@ describe('ConfirmModal', () => {
         it('calls functionAfterAccepting when accept button clicked', async () => {
             const fn = vi.fn()
             const wrapper = mountConfirmModal({ functionAfterAccepting: fn })
-            await wrapper.find('.btn-danger').trigger('click')
+            await wrapper.find('.btn-primary').trigger('click')
         })
 
         it('handles multiple accept button clicks', async () => {
             const fn = vi.fn()
             const wrapper = mountConfirmModal({ functionAfterAccepting: fn })
-            await wrapper.find('.btn-danger').trigger('click')
-            await wrapper.find('.btn-danger').trigger('click')
+            await wrapper.find('.btn-primary').trigger('click')
+            await wrapper.find('.btn-primary').trigger('click')
+        })
+
+        it('lets the user leave when the leave dialog is accepted', async () => {
+            const accept = vi.fn()
+            const cancel = vi.fn()
+            const wrapper = mountConfirmModal({ type: 'leave', functionAfterAccepting: accept, functionAfterCanceling: cancel })
+            await wrapper.find('.btn-primary').trigger('click')
+            expect(accept).toHaveBeenCalledOnce()
+            expect(cancel).not.toHaveBeenCalled()
+        })
+
+        it('keeps the user in the modeler when the leave dialog is cancelled', async () => {
+            const accept = vi.fn()
+            const cancel = vi.fn()
+            const wrapper = mountConfirmModal({ type: 'leave', functionAfterAccepting: accept, functionAfterCanceling: cancel })
+            await wrapper.find('.btn-secondary').trigger('click')
+            expect(cancel).toHaveBeenCalledOnce()
+            expect(accept).not.toHaveBeenCalled()
         })
     })
 
@@ -220,9 +243,9 @@ describe('ConfirmModal', () => {
     })
 
     describe('styling', () => {
-        it('accept button has danger styling', () => {
+        it('accept button has primary styling', () => {
             const wrapper = mountConfirmModal()
-            expect(wrapper.find('.btn-danger').exists()).toBe(true)
+            expect(wrapper.find('.btn-primary').exists()).toBe(true)
         })
 
         it('cancel button has secondary styling', () => {

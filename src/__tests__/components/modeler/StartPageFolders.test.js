@@ -196,26 +196,41 @@ describe('StartPage folders', () => {
       expect(labels).toContain('buttons.createForm')
     })
 
-    /** Opening the dialog or the new tab can take a moment, so the clicked button says it is busy. */
-    it('shows the clicked button as busy until the dialog is open', async () => {
+    it('offers the model types in one "Create new" menu, next to a light import button', async () => {
       const wrapper = await mountStartPage()
       await filesTable(wrapper).vm.$emit('openFolder', 'general')
       await flushPromises()
-      const createButtons = () => wrapper.findAll('button').filter(button => button.text().startsWith('buttons.create'))
 
-      await createButtons()[1].trigger('click')
+      const toggle = wrapper.find('button.create-model')
+      expect(toggle.text()).toBe('buttons.createDiagram')
+      expect(toggle.classes()).toContain('dropdown-toggle')
+      const items = wrapper.findAll('.dropdown-menu .dropdown-item').map(item => item.text())
+      expect(items).toEqual(expect.arrayContaining(['buttons.createBpmn', 'buttons.createDmn', 'buttons.createForm']))
+      const importButton = wrapper.findAll('button').find(button => button.text() === 'buttons.import')
+      expect(importButton.classes()).toContain('btn-light')
+    })
+
+    /** Opening the dialog or the new tab can take a moment, so the menu says it is busy. */
+    it('shows the menu as busy until the dialog is open', async () => {
+      const wrapper = await mountStartPage()
+      await filesTable(wrapper).vm.$emit('openFolder', 'general')
+      await flushPromises()
+      const toggle = () => wrapper.find('button.create-model')
+      const createItems = () => wrapper.findAll('button.dropdown-item').filter(button => button.text().startsWith('buttons.create'))
+
+      await createItems()[1].trigger('click')
 
       const [dmn] = wrapper.emitted('createNewDmnDiagram')
-      expect(createButtons()[1].attributes('aria-busy')).toBe('true')
-      expect(createButtons()[1].find('.spinner-border').exists()).toBe(true)
-      expect(createButtons().every(button => button.attributes('disabled') !== undefined)).toBe(true)
+      expect(toggle().attributes('aria-busy')).toBe('true')
+      expect(toggle().find('.spinner-border').exists()).toBe(true)
+      expect([toggle(), ...createItems()].every(button => button.attributes('disabled') !== undefined)).toBe(true)
 
       dmn[2]()
       await flushPromises()
 
-      expect(createButtons()[1].attributes('aria-busy')).toBe('false')
+      expect(toggle().attributes('aria-busy')).toBe('false')
       expect(wrapper.find('.spinner-border').exists()).toBe(false)
-      expect(createButtons().every(button => button.attributes('disabled') === undefined)).toBe(true)
+      expect([toggle(), ...createItems()].every(button => button.attributes('disabled') === undefined)).toBe(true)
     })
   })
 
@@ -243,7 +258,8 @@ describe('StartPage folders', () => {
       await openGeneral(wrapper)
 
       expect(createButton(wrapper).text()).toBe('folders.create')
-      expect(createButton(wrapper).classes()).toContain('btn-outline-secondary')
+      // Styled like the import button next to it
+      expect(createButton(wrapper).classes()).toEqual(expect.arrayContaining(['btn-light', 'border']))
       expect(createButton(wrapper).classes()).not.toContain('btn-secondary')
       expect(createButton(wrapper).find('.mdi-folder-plus-outline').exists()).toBe(true)
       // Same size as the project button, so the row does not jump when a folder is opened

@@ -79,6 +79,7 @@ vi.mock('../../../monaco-setup.js', () => ({
 vi.mock('vue-router', () => ({
   useRoute: vi.fn(() => routerMocks.route),
   useRouter: vi.fn(() => ({ replace: (...args) => routerMocks.replace(...args) })),
+  onBeforeRouteLeave: vi.fn(guard => { routerMocks.leaveGuard = guard }),
 }))
 
 vi.mock('vuex', () => ({
@@ -782,6 +783,31 @@ describe('CibsevenModeler', () => {
       await wrapper.vm.switchTabFromTabNav(0)
 
       expect(routerMocks.replace).toHaveBeenCalledWith({ params: { diagramId: 'p1' }, query: { folder: 'invoicing' } })
+    })
+  })
+
+  describe('leaving with unsaved changes', () => {
+    it('lets the route go when every tab is saved', async () => {
+      tabManagerState.tabNavList.value = [{ id: 'p1', key: 'k1', name: 'BPMN', type: 'bpmn-c7', canSave: false }]
+      mountCibsevenModeler()
+      await flushPromises()
+
+      expect(routerMocks.leaveGuard()).toBe(true)
+    })
+
+    it('asks first when a tab has unsaved changes, and stays on cancel', async () => {
+      tabManagerState.tabNavList.value = [
+        { id: 'p1', key: 'k1', name: 'BPMN', type: 'bpmn-c7', canSave: false },
+        { id: 'p2', key: 'k2', name: 'DMN', type: 'dmn', canSave: true },
+      ]
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+
+      const leaving = routerMocks.leaveGuard()
+      const dialog = wrapper.findAllComponents({ name: 'ConfirmModal' }).find(m => m.props('type') === 'leave')
+      dialog.props('functionAfterCanceling')()
+
+      await expect(leaving).resolves.toBe(false)
     })
   })
 

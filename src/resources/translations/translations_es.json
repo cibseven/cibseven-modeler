@@ -192,7 +192,10 @@
   "tabs": {
     "unsavedChanges": "Cambios sin guardar",
     "closeAllTitle": "Cerrar todas las pestañas",
-    "closeAllBody": "Algunas pestañas tienen cambios sin guardar. Se perderán todos los cambios no guardados."
+    "closeAllBody": "Algunas pestañas tienen cambios sin guardar. Se perderán todos los cambios no guardados.",
+    "leaveTitle": "¿Salir del modelador?",
+    "leaveBody": "Algunas pestañas tienen cambios sin guardar. Si sale del modelador, se perderán todos los cambios no guardados.",
+    "leaveAccept": "Salir"
   },
   "deployForm": {
     "deploymentName": {

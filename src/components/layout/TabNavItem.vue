@@ -31,14 +31,14 @@
                 @mousedown.middle.prevent
                 @auxclick.middle="checkIfProcessIsSaved">
                 <div ref="tabItem" :id="`process${props.keyOfTabNav}-tab`" @keyup.enter.stop="selectTab" @click.stop="selectTab" :title="tabTooltip"
-                    class="ps-4" :style="{ maxWidth: props.maxTabItemWidth + 'px' }" style="vertical-align: middle;line-height: 38px; height: 39px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;"
+                    class="ps-3" :style="{ maxWidth: props.maxTabItemWidth + 'px' }" style="vertical-align: middle;line-height: 38px; height: 39px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;"
                     role="tab"
                     :aria-labelledby="`process${props.keyOfTabNav}-tab`"
                     :aria-controls="`process${props.keyOfTabNav}-tab-pane`" tabindex="0"
                     :aria-selected="props.activeTab === props.index">
                     {{ tabTitle }}
                 </div>
-                <span v-if="props.tabNavList.canSave" class="mdi mdi-18px mdi-circle-medium text-warning align-self-center" :title="$t('tabs.unsavedChanges')" :aria-label="$t('tabs.unsavedChanges')"></span>
+                <span v-if="props.tabNavList.canSave" class="unsaved-dot bg-warning rounded-circle align-self-center flex-shrink-0 ms-2" role="img" :title="$t('tabs.unsavedChanges')" :aria-label="$t('tabs.unsavedChanges')"></span>
                 <div class="d-flex align-items-center">
                     <span class="mdi mdi-close ms-2 float-end px-2" role="button" :aria-label="$t('buttons.close')" style="cursor: pointer;" tabindex="0"
                     @keyup.enter="checkIfProcessIsSaved"  @click.stop="checkIfProcessIsSaved"></span>
@@ -149,13 +149,25 @@ defineExpose({
     background-color: white !important;
 }
 
+/* No top border: the header above already draws that line */
 .nav-link {
-    border-color: #CCD7E4 #CCD7E4 #CCD7E4 #CCD7E4 !important;
+    border-color: transparent #CCD7E4 #CCD7E4 #CCD7E4 !important;
     cursor: pointer !important;
 }
 
+.nav-icon:not(.active) {
+    background-color: var(--bs-white);
+    color: var(--bs-gray-700);
+}
+
 .nav-icon.active {
-    background-color: var(--bs-light) !important;  
+    background-color: var(--bs-light) !important;
+    color: var(--bs-dark);
+}
+
+.unsaved-dot {
+    width: 0.5rem;
+    height: 0.5rem;
 }
 
 .btn-close:hover {

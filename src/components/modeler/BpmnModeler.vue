@@ -20,7 +20,7 @@
 			<div class="d-flex flex-grow-1" style="min-height: 0;">
 				<div v-show="!props.isModelerVisible" class="position-relative" :style="styleCanvas">
 					<div class="canvas h-100 w-100" ref="canvas" tabindex="0"></div>
-					<div class="position-absolute top-0 end-0 d-flex flex-column gap-1 m-2" style="z-index: 10;">
+					<div class="canvas-controls position-absolute top-0 end-0 d-flex flex-column gap-1 m-2" style="z-index: 10;">
 						<button @click="zoomIn" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomIn')" :aria-label="$t('buttons.zoomIn')">
 							<span class="mdi mdi-18px mdi-magnify-plus-outline" aria-hidden="true"></span>
 						</button>
@@ -39,7 +39,7 @@
 							:class="['btn btn-sm btn-light border text-secondary search-elements', { active: isSearchOpen }]">
 							<span class="mdi mdi-18px mdi-magnify" aria-hidden="true"></span>
 						</button>
-						<button @click="toggleFullscreen" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.fullscreen')" :aria-label="$t('buttons.fullscreen')" :aria-pressed="isFullscreen">
+						<button @click="toggleFullscreen" :class="['btn btn-sm btn-light border text-secondary', { active: isFullscreen }]" :title="$t('buttons.fullscreen')" :aria-label="$t('buttons.fullscreen')" :aria-pressed="isFullscreen">
 							<span :class="['mdi', 'mdi-18px', isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen']" aria-hidden="true"></span>
 						</button>
 					</div>
@@ -1119,6 +1119,81 @@ defineExpose({
 	width: 94px !important;
 	border-radius: 0.25rem !important;
 	border-color: var(--bs-gray-500) !important;
+}
+
+/* The icon buttons on the canvas: no gray after a click, and the toggled one filled, without a ring.
+   #8092A6 is the theme's $gray-650, which has no CSS variable. */
+.canvas-controls .btn {
+	--bs-btn-hover-bg: var(--bs-white);
+	--bs-btn-hover-border-color: #8092A6;
+	--bs-btn-active-bg: var(--bs-white);
+	--bs-btn-active-border-color: #8092A6;
+	--bs-btn-focus-box-shadow: none;
+}
+.canvas-controls .btn:focus-visible {
+	outline: 2px solid var(--bs-dark);
+	outline-offset: 0;
+}
+/* .border and .text-secondary are !important */
+.canvas-controls .btn.active {
+	background-color: var(--bs-secondary);
+	border-color: var(--bs-secondary) !important;
+	color: var(--bs-white) !important;
+}
+
+.container.modeler .djs-parent {
+	--palette-background-color: var(--bs-white);
+	--palette-entry-hover-color: var(--bs-dark);
+	--context-pad-entry-hover-background-color: var(--bs-gray-400);
+	--popup-border-color: var(--bs-gray-500);
+}
+
+.container.modeler .djs-palette .entry {
+	font-size: 1.5rem;
+	border-radius: 0.25rem;
+}
+.container.modeler .djs-palette .entry:hover {
+	background-color: var(--bs-gray-400);
+}
+
+/* The context pad lies horizontally: what comes next on top, what changes this element below */
+.container.modeler .djs-context-pad.open {
+	display: flex;
+	flex-wrap: wrap;
+	width: max-content;
+	max-width: 11rem;
+	padding: 0.25rem;
+	background-color: var(--bs-white);
+	border: 1px solid var(--bs-gray-500);
+	border-radius: 0.3rem;
+	box-shadow: var(--bs-box-shadow);
+}
+.container.modeler .djs-context-pad .group {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 2px;
+}
+.container.modeler .djs-context-pad .group[data-group="model"] {
+	flex-basis: 100%;
+	padding-bottom: 0.25rem;
+	margin-bottom: 0.25rem;
+	border-bottom: 1px solid var(--bs-gray-500);
+}
+.container.modeler .djs-context-pad .group[data-group="model"] ~ .group:not(:last-child) {
+	margin-right: 2px;
+}
+.container.modeler .djs-context-pad .entry {
+	width: 26px;
+	height: 26px;
+	line-height: 26px;
+	font-size: 1.125rem;
+	margin: 0;
+	box-shadow: none;
+}
+
+.container.modeler .djs-popup {
+	border-radius: 0.3rem;
+	box-shadow: var(--bs-box-shadow);
 }
 
 /* bpmn-js only moves the breadcrumbs past a two-column palette when diagram-js marks it as one,
