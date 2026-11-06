@@ -469,7 +469,7 @@ const initializeModeler = async () => {
 	emit('setTypeOfDiagramForModeler', typeOfDiagram, props.tabElementIndex)
 	guardCommandStack(bpmnModeler.get('commandStack'), () => props.readOnly)
 
-	bpmnModeler.on('element.click', async e => {
+	bpmnModeler.on('element.click', e => {
 		_setMonacoEditorToDiv(e, divScriptTaskID)
 		_detectListenerFromUserTask(e, 'TaskListener')
 		_detectListenerFromUserTask(e, 'ExecutionListener')
@@ -490,18 +490,21 @@ const initializeModeler = async () => {
 		if (autosaveOptions?.enabled && props.tabElement.isSaved && !props.readOnly) autosave.schedule()
 	})
 
-	bpmnModeler.on('element.changed', async e => {
-		await nextTick()
-		_setMonacoEditorToDiv(e, divScriptTaskID)
-		_detectListenerFromUserTask(e, 'TaskListener')
-		_detectListenerFromUserTask(e, 'ExecutionListener')
-		_addingFormFieldToStartEvent(e.element)
-		if (e.element?.id) {
-			_addInstructionsToNotFoundTemplate(e.element.id)
-			addCustomizeTemplateButton(e)
-		}
-		_openCalledElementWhenCalActivity(e)
-		_setupDiagramFunctions()
+	// Not async: diagram-js stops an event at a listener that returns something, a promise too,
+	// and the lint markers only follow a moved element in a later element.changed listener
+	bpmnModeler.on('element.changed', e => {
+		nextTick(() => {
+			_setMonacoEditorToDiv(e, divScriptTaskID)
+			_detectListenerFromUserTask(e, 'TaskListener')
+			_detectListenerFromUserTask(e, 'ExecutionListener')
+			_addingFormFieldToStartEvent(e.element)
+			if (e.element?.id) {
+				_addInstructionsToNotFoundTemplate(e.element.id)
+				addCustomizeTemplateButton(e)
+			}
+			_openCalledElementWhenCalActivity(e)
+			_setupDiagramFunctions()
+		})
 	})
 
 	bpmnModeler.on('commandStack.element.updateProperties.postExecute', e => {
@@ -1083,37 +1086,6 @@ defineExpose({
 
 }
 
-.bts-notifications {
-	/*leaves space for de action buttons*/
-	margin-bottom: 50px;
-}
-
-.container.modeler .bts-toggle-mode:hover {
-	background-color: var(--bs-primary);
-}
-
-.container.modeler .bjs-container.simulation .bts-toggle-mode {
-	background-color: var(--bs-primary);
-}
-
-.container.modeler .bjs-container.simulation .djs-container {
-	box-shadow: inset 0px 0px 0px 4px var(--bs-primary);
-}
-
-.container.modeler .bts-context-pad:not(.disabled):hover {
-	background-color: var(--bs-primary);
-}
-
-.container.modeler .bts-set-animation-speed .bts-animation-speed-button.active,
-.container.modeler .bts-set-animation-speed .bts-animation-speed-button:hover {
-	background-color: var(--bs-primary);
-}
-
-.container.modeler .bts-palette .bts-entry.active,
-.container.modeler .bts-palette .bts-entry:not(.disabled):hover {
-	background-color: var(--bs-primary);
-}
-
 /* Force palette to always display 2 columns */
 .djs-palette {
 	width: 94px !important;
@@ -1125,10 +1097,6 @@ defineExpose({
    which it does only in short windows; keep them clear of the one forced above */
 .container.modeler .djs-palette-shown .bjs-breadcrumbs {
 	left: 140px;
-}
-
-.container.modeler .bts-log .bts-header {
-	background-color: var(--bs-primary);
 }
 
 .bjs-container .bjsl-button-warning {
@@ -1192,7 +1160,6 @@ defineExpose({
 .bjs-container .bjsl-issues .icon.warning {
 	--icon-color: var(--bs-warning);
 }
-
 
 /* Lint summary button (bpmn-js-bpmnlint) */
 .bjs-container .bjsl-button {

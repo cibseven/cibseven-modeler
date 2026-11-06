@@ -100,8 +100,6 @@ describe('MonacoConsole', () => {
       expect(editor.classes()).toContain('overflow-hidden')
       expect(editor.classes()).toContain('h-100')
       expect(editor.classes()).toContain('p-2')
-      expect(editor.classes()).toContain('border')
-      expect(editor.classes()).toContain('rounded-1')
     })
 
     it('creates a ref for the editor container', () => {
@@ -344,14 +342,11 @@ describe('MonacoConsole', () => {
       expect(wrapper.find('.editor').classes('overflow-hidden')).toBe(true)
     })
 
-    it('applies border styling', () => {
-      const wrapper = mountMonacoConsole()
-      expect(wrapper.find('.editor').classes('border')).toBe(true)
-    })
-
-    it('applies rounded corner styling', () => {
-      const wrapper = mountMonacoConsole()
-      expect(wrapper.find('.editor').classes('rounded-1')).toBe(true)
+    // The console panel around it draws the one outline (CIB7-1283)
+    it('draws no box of its own inside the console', () => {
+      const editor = mountMonacoConsole().find('.editor')
+      expect(editor.classes('border')).toBe(false)
+      expect(editor.classes('rounded-1')).toBe(false)
     })
 
     it('applies padding via p-2 class', () => {

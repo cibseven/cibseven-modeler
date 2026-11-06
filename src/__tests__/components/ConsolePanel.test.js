@@ -54,6 +54,13 @@ describe('ConsolePanel', () => {
       expect(wrapper.find('.border').exists()).toBe(true)
     })
 
+    // $gray-500 outline on a $gray-100 background, set in the component's own style (CIB7-1283)
+    it('outlines the whole console once, with its own background', () => {
+      const wrapper = mountConsolePanel()
+      expect(wrapper.find('.console-panel.border').exists()).toBe(true)
+      expect(wrapper.find('.resizable-component').classes()).not.toContain('bg-light')
+    })
+
     it('has resizable component class', () => {
       const wrapper = mountConsolePanel()
       expect(wrapper.find('[class*="resizable"]').exists()).toBe(true)
