@@ -57,10 +57,21 @@ const mountModal = component => mount(component, {
     attachTo: document.body,
 })
 
-const FOLDERS = [
+/** Fills in the parent and the path of rows in tree order, as useFolders.flatten gives them. */
+const asRows = list => {
+    const parents = []
+    return list.map(row => {
+        parents.length = row.depth
+        const parent = parents.at(-1) ?? null
+        parents.push(row)
+        return { userFolder: false, ...row, parentId: parent?.id ?? null, path: parents.map(p => p.name).join(' / ') }
+    })
+}
+
+const FOLDERS = asRows([
     { id: 'general', name: 'General', depth: 0 },
     { id: 'invoicing', name: 'Invoicing', depth: 1 },
-]
+])
 
 describe('FolderNameModal', () => {
     beforeEach(() => vi.clearAllMocks())
@@ -264,7 +275,7 @@ describe('FolderPickerModal', () => {
     it('shows projects, folders and user folders with the icons of the start page', async () => {
         const wrapper = mountModal(FolderPickerModal)
 
-        await open(wrapper, { folders: [...FOLDERS, { id: 'adrian', name: 'adrian', depth: 0, userFolder: true }] })
+        await open(wrapper, { folders: [...FOLDERS, ...asRows([{ id: 'adrian', name: 'adrian', depth: 0, userFolder: true }])] })
 
         const icons = wrapper.findAll('.folder-picker-row .mdi').map(icon => icon.classes().find(c => c.startsWith('mdi-')))
         expect(icons).toEqual(['mdi-briefcase', 'mdi-folder-outline', 'mdi-folder-account-outline'])
@@ -295,10 +306,10 @@ describe('FolderPickerModal', () => {
         it('tells apart folders that share a name by their parents', async () => {
             const wrapper = mountModal(FolderPickerModal)
             await open(wrapper, {
-                folders: [
+                folders: asRows([
                     { id: 'a', name: 'Sales', depth: 0 }, { id: 'a-2024', name: '2024', depth: 1 },
                     { id: 'b', name: 'Support', depth: 0 }, { id: 'b-2024', name: '2024', depth: 1 }
-                ],
+                ]),
                 selected: 'b-2024'
             })
 
@@ -307,7 +318,7 @@ describe('FolderPickerModal', () => {
     })
 
     describe('the filter', () => {
-        const MANY = [
+        const MANY = asRows([
             { id: 'sales', name: 'Sales', depth: 0 },
             { id: 'invoices', name: 'Invoices', depth: 1 },
             { id: 'archive', name: 'Archive', depth: 2 },
@@ -316,7 +327,7 @@ describe('FolderPickerModal', () => {
             { id: 'tickets', name: 'Tickets', depth: 1 },
             { id: 'hr', name: 'HR', depth: 0 },
             { id: 'payroll', name: 'Payroll', depth: 1 },
-        ]
+        ])
         const names = wrapper => wrapper.findAll('.folder-picker-row').map(row => row.text())
         const filterBy = async (wrapper, text) => {
             await wrapper.find('input[type="search"]').setValue(text)
@@ -363,17 +374,67 @@ describe('FolderPickerModal', () => {
             expect(wrapper.text()).toContain('No folder matches "nothing".')
         })
 
-        it('keeps the choice when it is filtered out of sight', async () => {
+        /** A filter must not hide where the model is about to go. */
+        it('keeps the choice listed, with its parents, whatever the filter', async () => {
             const accept = vi.fn().mockResolvedValue()
             const wrapper = mountModal(FolderPickerModal)
             await open(wrapper, { folders: MANY, selected: 'tickets', accept })
 
             await filterBy(wrapper, 'payroll')
+            expect(names(wrapper)).toEqual(['Support', 'Tickets', 'HR', 'Payroll'])
+            expect(wrapper.find('.is-selected').text()).toBe('Tickets')
+
             await wrapper.find('button.btn-primary').trigger('click')
             await flushPromises()
-
-            expect(wrapper.find('.folder-picker-choice').text()).toMatch(/Support \/ Tickets/)
             expect(accept).toHaveBeenCalledWith('tickets', '')
+        })
+
+        it('lets go of a former choice once another folder is chosen', async () => {
+            const wrapper = mountModal(FolderPickerModal)
+            await open(wrapper, { folders: MANY, selected: 'tickets' })
+            await filterBy(wrapper, 'payroll')
+
+            await wrapper.findAll('input[type="radio"]')[3].setValue()
+
+            expect(names(wrapper)).toEqual(['HR', 'Payroll'])
+        })
+
+        /** Esc on a search box clears it; closing the dialog would throw away a dropped file. */
+        it('is emptied by Esc, which then does not reach the dialog', async () => {
+            const wrapper = mountModal(FolderPickerModal)
+            const dialogHeard = vi.fn()
+            await open(wrapper, { folders: MANY })
+            wrapper.element.addEventListener('keydown', dialogHeard)
+            await filterBy(wrapper, 'payroll')
+
+            await wrapper.find('input[type="search"]').trigger('keydown', { key: 'Escape' })
+            expect(wrapper.find('input[type="search"]').element.value).toBe('')
+            expect(dialogHeard).not.toHaveBeenCalled()
+
+            await wrapper.find('input[type="search"]').trigger('keydown', { key: 'Escape' })
+            expect(dialogHeard).toHaveBeenCalledOnce()
+        })
+
+        it('scrolls back to the choice once it is cleared', async () => {
+            const scrollIntoView = vi.fn()
+            Element.prototype.scrollIntoView = scrollIntoView
+            const wrapper = mountModal(FolderPickerModal)
+            await open(wrapper, { folders: MANY, selected: 'payroll' })
+            await filterBy(wrapper, 'arch')
+            expect(scrollIntoView).not.toHaveBeenCalled()
+
+            await filterBy(wrapper, '')
+
+            expect(scrollIntoView).toHaveBeenCalledOnce()
+            expect(scrollIntoView.mock.contexts[0].textContent).toBe('Payroll')
+            delete Element.prototype.scrollIntoView
+        })
+
+        it('stays outside the group of destinations', async () => {
+            const wrapper = mountModal(FolderPickerModal)
+            await open(wrapper, { folders: MANY })
+
+            expect(wrapper.find('[role="radiogroup"] input[type="search"]').exists()).toBe(false)
         })
 
         it('starts empty every time the dialog opens', async () => {
@@ -386,6 +447,27 @@ describe('FolderPickerModal', () => {
             expect(wrapper.find('input[type="search"]').element.value).toBe('')
             expect(names(wrapper)).toHaveLength(MANY.length)
         })
+    })
+
+    /** One group is one tab stop, and the arrow keys move between the folders. */
+    it('makes the destinations one radio group, labelled by the destination', async () => {
+        const wrapper = mountModal(FolderPickerModal)
+        await open(wrapper, { allowTopLevel: true })
+
+        const group = wrapper.find('[role="radiogroup"]')
+        const names = group.findAll('input[type="radio"]').map(radio => radio.attributes('name'))
+        expect(names).toHaveLength(3)
+        expect(new Set(names).size).toBe(1)
+        expect(names[0]).toBeTruthy()
+        expect(document.getElementById(group.attributes('aria-labelledby')).textContent).toBe('Destination')
+    })
+
+    /** The radio just chosen has said it already; reading the path again would double every step. */
+    it('does not announce the path of the choice', async () => {
+        const wrapper = mountModal(FolderPickerModal)
+        await open(wrapper, { selected: 'invoicing' })
+
+        expect(wrapper.find('.folder-picker-choice').attributes('aria-live')).toBeUndefined()
     })
 
     /** An import opened on the folder the last one went into shows that folder, however far down. */

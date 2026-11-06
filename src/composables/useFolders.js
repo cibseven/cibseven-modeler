@@ -101,6 +101,9 @@ export default function useFolders() {
   }
 
   /** The path down to the folder open, for the breadcrumb. */
+  /** Where a folder lies, as one line: "Sales / Invoices / 2024". */
+  const pathText = folderId => pathOf(folderId).map(folder => folder.name).join(' / ')
+
   const breadcrumb = computed(() => pathOf(currentFolderId.value))
 
   /** The project a folder lies in: the folder at the top level above it, a project being its own. */
@@ -176,7 +179,10 @@ export default function useFolders() {
         if (depth === 0 && within && folder.id !== within) return
         // A project the user may not change leaves every folder in it unchangeable
         if (editableOnly && !canEdit(folder.id)) return
-        rows.push({ id: folder.id, name: folder.name, depth, userFolder: !!folder.userFolder })
+        rows.push({
+          id: folder.id, name: folder.name, depth, parentId: folder.parentId ?? null,
+          userFolder: !!folder.userFolder, path: pathText(folder.id)
+        })
         walk(folder.id, depth + 1)
       })
     }
@@ -231,6 +237,7 @@ export default function useFolders() {
     currentChildren,
     breadcrumb,
     pathOf,
+    pathText,
     access,
     projectOf,
     rightsOf,

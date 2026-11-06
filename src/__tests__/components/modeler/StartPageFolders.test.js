@@ -512,8 +512,8 @@ describe('StartPage folders', () => {
       const wrapper = await mountStartPage()
 
       expect(wrapper.vm.folderOptions()).toEqual([
-        { id: 'general', name: 'General', depth: 0, userFolder: false },
-        { id: 'invoicing', name: 'Invoicing', depth: 1, userFolder: false }
+        { id: 'general', name: 'General', depth: 0, parentId: null, userFolder: false, path: 'General' },
+        { id: 'invoicing', name: 'Invoicing', depth: 1, parentId: 'general', userFolder: false, path: 'General / Invoicing' }
       ])
     })
   })

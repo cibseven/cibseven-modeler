@@ -23,45 +23,48 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" :aria-label="$t('buttons.close')"></button>
                 </div>
                 <div class="modal-body">
-                    <fieldset>
-                        <legend class="form-label fs-6">{{ $t('folders.destination') }}</legend>
-                        <div v-if="filterable" class="mb-2">
-                            <label class="visually-hidden" :for="filterId">{{ $t('folders.filterFolders') }}</label>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text"><span class="mdi mdi-magnify" aria-hidden="true"></span></span>
-                                <input :id="filterId" type="search" class="form-control" v-model="filter"
-                                    :placeholder="$t('folders.filterFolders')" autocomplete="off">
-                            </div>
+                    <div :id="destinationId" class="form-label fs-6">{{ $t('folders.destination') }}</div>
+                    <!-- Outside the radio group, so the filter is not announced as one of the destinations -->
+                    <div v-if="filterable" class="mb-2">
+                        <label class="visually-hidden" :for="filterId">{{ $t('folders.filterFolders') }}</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text"><span class="mdi mdi-magnify" aria-hidden="true"></span></span>
+                            <input :id="filterId" type="search" class="form-control" v-model="filter"
+                                :placeholder="$t('folders.filterFolders')" autocomplete="off" @keydown.esc="clearFilter">
                         </div>
-                        <div ref="listRoot" class="folder-picker border rounded overflow-auto">
-                            <label v-if="allowTopLevel" :for="`${optionId}-top-level`" class="folder-picker-row"
-                                :class="rowClass('')" :style="{ paddingLeft: indent(0) }">
-                                <input :id="`${optionId}-top-level`" type="radio" class="form-check-input m-0 flex-shrink-0"
-                                    value="" v-model="selected" :disabled="isCurrent('')">
-                                <span class="mdi mdi-folder-multiple-outline" aria-hidden="true"></span>
-                                <span class="text-truncate">{{ $t('folders.projects') }}</span>
-                                <span v-if="isCurrent('')" class="small flex-shrink-0">({{ $t('folders.currentLocation') }})</span>
-                            </label>
-                            <label v-for="folder in visibleOptions" :key="folder.id" :for="`${optionId}-${folder.id}`"
-                                class="folder-picker-row" :class="rowClass(folder.id)"
-                                :style="{ paddingLeft: indent(folder.depth + (allowTopLevel ? 1 : 0)) }">
-                                <input :id="`${optionId}-${folder.id}`" type="radio" class="form-check-input m-0 flex-shrink-0"
-                                    :value="folder.id" v-model="selected" :disabled="isCurrent(folder.id)">
-                                <span class="mdi" :class="iconOf(folder)" aria-hidden="true"></span>
-                                <span class="text-truncate">{{ folder.name }}</span>
-                                <span v-if="isCurrent(folder.id)" class="small flex-shrink-0">({{ $t('folders.currentLocation') }})</span>
-                            </label>
-                            <p v-if="filtering && visibleOptions.length === 0" class="text-body-secondary small m-0 px-3 py-2">
-                                {{ $t('folders.filterNoMatch', { keyword: filter.trim() }) }}
-                            </p>
-                        </div>
-                        <p class="folder-picker-choice small mt-2 mb-0 text-truncate" aria-live="polite">
-                            <template v-if="selectedPath">
-                                <span class="text-body-secondary">{{ $t('folders.selectedDestination') }}:</span>
-                                <span class="fw-semibold ms-1" :title="selectedPath">{{ selectedPath }}</span>
-                            </template>
+                    </div>
+                    <!-- One name makes one group: a single tab stop, and the arrow keys move between the folders -->
+                    <div ref="listRoot" role="radiogroup" :aria-labelledby="destinationId"
+                        class="folder-picker border rounded overflow-auto">
+                        <label v-if="allowTopLevel" :for="`${optionId}-top-level`" class="folder-picker-row"
+                            :class="rowClass('')" :style="{ paddingLeft: indent(0) }">
+                            <input :id="`${optionId}-top-level`" type="radio" :name="optionId"
+                                class="form-check-input m-0 flex-shrink-0" value="" v-model="selected" :disabled="isCurrent('')">
+                            <span class="mdi mdi-folder-multiple-outline" aria-hidden="true"></span>
+                            <span class="text-truncate">{{ $t('folders.projects') }}</span>
+                            <span v-if="isCurrent('')" class="small flex-shrink-0">({{ $t('folders.currentLocation') }})</span>
+                        </label>
+                        <label v-for="folder in visibleOptions" :key="folder.id" :for="`${optionId}-${folder.id}`"
+                            class="folder-picker-row" :class="rowClass(folder.id)"
+                            :style="{ paddingLeft: indent(folder.depth + (allowTopLevel ? 1 : 0)) }">
+                            <input :id="`${optionId}-${folder.id}`" type="radio" :name="optionId"
+                                class="form-check-input m-0 flex-shrink-0" :value="folder.id" v-model="selected"
+                                :disabled="isCurrent(folder.id)">
+                            <span class="mdi" :class="folderIcon(folder)" aria-hidden="true"></span>
+                            <span class="text-truncate">{{ folder.name }}</span>
+                            <span v-if="isCurrent(folder.id)" class="small flex-shrink-0">({{ $t('folders.currentLocation') }})</span>
+                        </label>
+                        <p v-if="filtering && visibleOptions.length === 0" class="text-body-secondary small m-0 px-3 py-2">
+                            {{ $t('folders.filterNoMatch', { keyword: filter.trim() }) }}
                         </p>
-                    </fieldset>
+                    </div>
+                    <!-- Not announced: the radio just chosen has said it already -->
+                    <p class="folder-picker-choice small mt-2 mb-0 text-truncate">
+                        <template v-if="selectedPath">
+                            <span class="text-body-secondary">{{ $t('folders.selectedDestination') }}:</span>
+                            <span class="fw-semibold ms-1" :title="selectedPath">{{ selectedPath }}</span>
+                        </template>
+                    </p>
                     <div v-if="requireKey" class="mt-3">
                         <label class="form-label" :for="keyId">{{ $t(keyLabel) }}</label>
                         <input :id="keyId" type="text" maxlength="100" class="form-control form-control-sm" v-model="key"
@@ -83,7 +86,7 @@
 
 <script setup>
 import * as bootstrap from 'bootstrap'
-import { computed, onMounted, ref, useId, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { folderErrorMessage } from '../../utils/folderErrors.js'
 import { folderIcon } from '../../utils.js'
@@ -96,6 +99,7 @@ const titleId = useId()
 const keyId = useId()
 const optionId = useId()
 const filterId = useId()
+const destinationId = useId()
 
 const modalRoot = ref(null)
 const listRoot = ref(null)
@@ -130,54 +134,52 @@ const isCurrent = id => current.value !== undefined && id === (current.value ?? 
 const filterable = computed(() => options.value.length >= FILTER_FROM)
 const filtering = computed(() => filterable.value && filter.value.trim() !== '')
 
-/**
- * The rows come in tree order with their depth, so the parent of a row is the closest row above
- * it one level up. Each row gets the indexes of its parents, top first.
- */
-const parentsOf = computed(() => {
-    const stack = []
-    return options.value.map((folder, index) => {
-        stack.length = folder.depth
-        const parents = stack.slice()
-        stack[folder.depth] = index
-        return parents
-    })
-})
+const rowsById = computed(() => new Map(options.value.map(folder => [folder.id, folder])))
 
-// A matching folder keeps its parents, so the match is shown where it lies
+// A folder shown while filtering brings its parents along, so it is shown where it lies
+const showWithParents = (folder, shownIds) => {
+    while (folder && !shownIds.has(folder.id)) {
+        shownIds.add(folder.id)
+        folder = rowsById.value.get(folder.parentId)
+    }
+}
+
+// The choice stays listed too: a filter must not hide where the model is about to go
 const visibleOptions = computed(() => {
     if (!filtering.value) return options.value
     const keyword = filter.value.trim().toLowerCase()
-    const shownRows = new Set()
-    options.value.forEach((folder, index) => {
-        if (!folder.name.toLowerCase().includes(keyword)) return
-        shownRows.add(index)
-        parentsOf.value[index].forEach(parent => shownRows.add(parent))
-    })
-    return options.value.filter((folder, index) => shownRows.has(index))
+    const shownIds = new Set()
+    options.value
+        .filter(folder => folder.name.toLowerCase().includes(keyword))
+        .forEach(folder => showWithParents(folder, shownIds))
+    showWithParents(rowsById.value.get(selected.value), shownIds)
+    return options.value.filter(folder => shownIds.has(folder.id))
 })
-
-const pathOf = folderId => {
-    const index = options.value.findIndex(folder => folder.id === folderId)
-    if (index < 0) return ''
-    return [...parentsOf.value[index], index].map(row => options.value[row].name).join(' / ')
-}
 
 // The choice stays in sight below the list, and tells apart folders that share a name
 const selectedPath = computed(() => {
     if (selected.value === null) return ''
     if (selected.value === '') return t('folders.projects')
-    return pathOf(selected.value)
+    return rowsById.value.get(selected.value)?.path ?? ''
 })
 
-// The rows carry no parent, but a row at the top level is a project
-const iconOf = folder => folderIcon({ userFolder: folder.userFolder, parentId: folder.depth > 0 ? true : null })
+// Esc empties the filter first; only an empty one lets the dialog close as usual
+const clearFilter = event => {
+    if (!filter.value) return
+    event.stopPropagation()
+    filter.value = ''
+}
 
 const indent = depth => `calc(0.75rem + ${depth * 1.5}rem)`
 
 const rowClass = id => ({
     'is-selected': selected.value === id,
     'is-current text-body-secondary': isCurrent(id)
+})
+
+// Back to the whole list, the choice is looked up again rather than left wherever the list scrolled to
+watch(filtering, (now, before) => {
+    if (before && !now) nextTick(revealSelected)
 })
 
 watch(selected, folderId => {
@@ -227,7 +229,7 @@ function revealSelected() {
 
 /**
  * @param {object} options where the folders come from and what the dialog asks for
- * @param {Array} options.folders rows of { id, name, depth, userFolder } in tree order
+ * @param {Array} options.folders rows of { id, name, depth, parentId, userFolder, path } in tree order, as useFolders.flatten gives them
  * @param {Function} options.accept receives (folderId, key); throwing keeps the dialog open,
  *   except under runAfterClose, where the dialog is already gone and reporting is the caller's
  * @param {boolean} [options.runAfterClose] close first and accept afterwards, for work that
