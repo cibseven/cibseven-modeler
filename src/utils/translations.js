@@ -19,23 +19,29 @@ import translations_de from '../resources/translations/translations_de.json'
 import translations_es from '../resources/translations/translations_es.json'
 import translations_ua from '../resources/translations/translations_ua.json'
 import translations_ru from '../resources/translations/translations_ru.json'
+import translations_zh from '../resources/translations/translations_zh.json'
+import translations_zh_tw from '../resources/translations/translations_zh-tw.json'
+import { normalizeLanguage } from './language.js'
 
 export const modelerTranslations = {
 	en: translations_en,
 	de: translations_de,
 	es: translations_es,
 	ua: translations_ua,
-	ru: translations_ru
+	ru: translations_ru,
+	zh: translations_zh,
+	'zh-tw': translations_zh_tw
 }
 
 /**
  * Merge modeler translations into the consumer app's i18n instance.
  * @param {Object} i18n - The vue-i18n instance from the consumer app
- * @param {string} lang - The language code (en, de, es, ua, ru)
+ * @param {string} lang - The language code (en, de, es, ua, ru, zh, zh-tw) or a tag such as zh-TW
  */
 export function mergeModelerTranslations(i18n, lang) {
-	const translation = modelerTranslations[lang] || modelerTranslations.en
+	const locale = normalizeLanguage(lang) || 'en'
+	const translation = modelerTranslations[locale] || modelerTranslations.en
 	if (i18n.global && i18n.global.mergeLocaleMessage) {
-		i18n.global.mergeLocaleMessage(lang, translation)
+		i18n.global.mergeLocaleMessage(locale, translation)
 	}
 }

@@ -14,14 +14,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import en from '../../resources/translations/translations_en.json'
 import de from '../../resources/translations/translations_de.json'
 import es from '../../resources/translations/translations_es.json'
 import ru from '../../resources/translations/translations_ru.json'
 import ua from '../../resources/translations/translations_ua.json'
+import zh from '../../resources/translations/translations_zh.json'
+import zhTw from '../../resources/translations/translations_zh-tw.json'
+import { mergeModelerTranslations } from '../../utils/translations.js'
 
-const locales = { en, de, es, ru, ua }
+const locales = { en, de, es, ru, ua, zh, 'zh-tw': zhTw }
 const REFERENCE = 'en'
 
 /**
@@ -98,5 +101,35 @@ describe('i18n translation consistency', () => {
             .filter(([, val]) => typeof val !== 'string' || val.trim() === '')
             .map(([p]) => pathLabel(p))
         expect(empty, `Empty/non-string values in en: ${empty.join(', ')}`).toEqual([])
+    })
+})
+
+describe('mergeModelerTranslations', () => {
+    const createI18nMock = () => ({ global: { mergeLocaleMessage: vi.fn() } })
+
+    it('merges a supported language under its own code', () => {
+        const i18n = createI18nMock()
+        mergeModelerTranslations(i18n, 'zh')
+        expect(i18n.global.mergeLocaleMessage).toHaveBeenCalledWith('zh', zh)
+    })
+
+    it.each(['zh-TW', 'zh-HK', 'zh-MO', 'zh-Hant', 'zh_TW'])(
+        'merges the traditional Chinese tag %s into zh-tw', (tag) => {
+            const i18n = createI18nMock()
+            mergeModelerTranslations(i18n, tag)
+            expect(i18n.global.mergeLocaleMessage).toHaveBeenCalledWith('zh-tw', zhTw)
+        })
+
+    it.each(['zh-CN', 'zh-Hans', 'zh-SG'])(
+        'merges the simplified Chinese tag %s into zh', (tag) => {
+            const i18n = createI18nMock()
+            mergeModelerTranslations(i18n, tag)
+            expect(i18n.global.mergeLocaleMessage).toHaveBeenCalledWith('zh', zh)
+        })
+
+    it('falls back to English without a language', () => {
+        const i18n = createI18nMock()
+        mergeModelerTranslations(i18n)
+        expect(i18n.global.mergeLocaleMessage).toHaveBeenCalledWith('en', en)
     })
 })
