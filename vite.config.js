@@ -22,6 +22,7 @@ import path from 'node:path'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
+import monacoDompurify from './build/monacoDompurify.js'
 const backendUrl = 'http://localhost:8091'
 
 // https://flaviocopes.com/fix-dirname-not-defined-es-module-scope/
@@ -32,6 +33,7 @@ const __dirname = path.dirname(__filename);
 export default defineConfig({
   base: '/',
   plugins: [
+    monacoDompurify(),
     vue(),
     vueDevTools(),
   ],
