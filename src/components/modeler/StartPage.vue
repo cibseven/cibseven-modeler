@@ -665,6 +665,11 @@ defineExpose({
     outline-offset: -1px;
 }
 
+/* The theme outlines every focused input (!important); here the field's ring is the only one */
+.start-page-search-field:focus {
+    outline: none !important;
+}
+
 /* Bootstrap has no hover utility: secondary, dark on hover and while the type menu is open */
 .start-page-search-button {
     color: var(--bs-secondary);
