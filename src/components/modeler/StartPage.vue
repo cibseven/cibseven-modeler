@@ -35,13 +35,13 @@
                             <button
                                 @click.stop="handleSearch"
                                 type="button"
-                                class="start-page-search-button"
+                                class="start-page-search-button d-inline-flex align-items-center p-0 border-0 bg-transparent lh-1 rounded-1"
                                 :title="$t('titles.search')"
                                 :aria-label="$t('buttons.search')">
                                 <span class="mdi mdi-magnify mdi-18px" aria-hidden="true"></span>
                             </button>
                             <input
-                                class="start-page-search-field flex-grow-1"
+                                class="start-page-search-field flex-grow-1 p-0 border-0 bg-transparent text-reset shadow-none"
                                 type="text"
                                 :title="$t('titles.search')"
                                 :placeholder="$t('titles.search')"
@@ -52,7 +52,7 @@
                             <div class="dropdown d-flex">
                                 <button
                                     type="button"
-                                    class="dropdown-toggle text-nowrap start-page-search-button"
+                                    class="dropdown-toggle text-nowrap start-page-search-button d-inline-flex align-items-center p-0 border-0 bg-transparent lh-1 rounded-1"
                                     data-bs-toggle="dropdown"
                                     aria-expanded="false"
                                     :title="$t(`filterElements.${filterType}`)">
@@ -658,45 +658,20 @@ defineExpose({
     opacity: 0.5;
 }
 
-/* The styles of the webclient's SearchInput, so both search fields look the same */
+/* The focus ring of the webclient's SearchInput, drawn on the whole field */
 .start-page-search:focus-within {
     border-color: var(--bs-gray-800) !important;
     outline: 2px solid var(--bs-gray-800);
     outline-offset: -1px;
 }
 
-.start-page-search-field {
-    min-width: 0;
-    padding: 0;
-    border: 0;
-    background-color: transparent;
-    color: inherit;
-}
-
-.start-page-search-field:focus {
-    outline: none !important;
-    box-shadow: none !important;
-}
-
-/* Simple icon buttons inside the field: secondary, dark on hover and focus; the field's ring marks the focus */
+/* Bootstrap has no hover utility: secondary, dark on hover and while the type menu is open */
 .start-page-search-button {
-    display: inline-flex;
-    align-items: center;
-    padding: 0;
-    border: 0;
-    border-radius: var(--bs-border-radius-sm);
-    background-color: transparent;
     color: var(--bs-secondary);
-    line-height: 1;
 }
 
 .start-page-search-button:hover,
-.start-page-search-button:focus-visible,
 .start-page-search-button.show {
     color: var(--bs-dark);
-}
-
-.start-page-search-button:focus-visible {
-    outline: 0 !important;
 }
 </style>
