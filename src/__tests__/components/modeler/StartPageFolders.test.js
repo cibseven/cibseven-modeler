@@ -243,11 +243,36 @@ describe('StartPage folders', () => {
       await openGeneral(wrapper)
 
       expect(createButton(wrapper).text()).toBe('folders.create')
-      expect(createButton(wrapper).classes()).toContain('btn-outline-secondary')
+      expect(createButton(wrapper).classes()).toContain('btn-light')
       expect(createButton(wrapper).classes()).not.toContain('btn-secondary')
       expect(createButton(wrapper).find('.mdi-folder-plus-outline').exists()).toBe(true)
       // Same size as the project button, so the row does not jump when a folder is opened
       expect(createButton(wrapper).classes()).not.toContain('btn-sm')
+    })
+
+    // One element with changing classes let the button transition flash between the two colours
+    it('swaps the project button for another element inside a folder, and back', async () => {
+      const wrapper = await mountStartPage()
+      const projectButton = createButton(wrapper).element
+
+      await openGeneral(wrapper)
+      const folderButton = createButton(wrapper).element
+      expect(folderButton).not.toBe(projectButton)
+      expect(projectButton.isConnected).toBe(false)
+
+      await filesTable(wrapper).vm.$emit('openFolder', null)
+      await flushPromises()
+      expect(createButton(wrapper).element).not.toBe(folderButton)
+      expect(createButton(wrapper).classes()).toContain('btn-secondary')
+    })
+
+    it('shows Import as a light button inside a folder', async () => {
+      const wrapper = await mountStartPage()
+      await openGeneral(wrapper)
+
+      const importButton = wrapper.findAll('button').find(button => button.text() === 'buttons.import')
+      expect(importButton.classes()).toContain('btn-light')
+      expect(importButton.classes()).not.toContain('btn-outline-secondary')
     })
 
     it('asks for a project name at the top level', async () => {

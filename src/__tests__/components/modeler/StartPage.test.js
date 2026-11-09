@@ -123,6 +123,20 @@ describe('StartPage', () => {
       expect(wrapper.find('.start-page-search-field').exists()).toBe(true)
     })
 
+    // Like the webclient's SearchInput: one form-control holding the magnifier, the input and the type filter
+    it('builds the search field like the webclient lists', async () => {
+      const wrapper = mountStartPage()
+      await flushPromises()
+      const field = wrapper.find('.start-page-search')
+
+      expect(field.classes()).toContain('form-control')
+      expect(field.find('.start-page-search-field').classes()).not.toContain('form-control-plaintext')
+      const buttons = field.findAll('button.start-page-search-button')
+      expect(buttons).toHaveLength(2)
+      expect(buttons[0].find('.mdi-magnify.mdi-18px').exists()).toBe(true)
+      expect(buttons[1].classes()).toContain('dropdown-toggle')
+    })
+
     it('renders diagram list when not loading', async () => {
       const wrapper = mountStartPage()
       await flushPromises()

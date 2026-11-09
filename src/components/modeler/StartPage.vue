@@ -30,16 +30,18 @@
             <div class="container px-3 pt-4">
                 <div class="row align-items-center g-2 pb-2">
                     <div class="col-12 col-xl-5">
-                        <div class="d-flex align-items-center border rounded start-page-search">
+                        <!-- Built like the webclient's SearchInput, which the modeler cannot import: one form-control, the ring on the container -->
+                        <div class="form-control d-flex align-items-center gap-2 start-page-search">
                             <button
                                 @click.stop="handleSearch"
                                 type="button"
-                                class="btn btn-link btn-sm mdi mdi-magnify mdi-24px text-secondary"
+                                class="start-page-search-button"
                                 :title="$t('titles.search')"
                                 :aria-label="$t('buttons.search')">
+                                <span class="mdi mdi-magnify mdi-18px" aria-hidden="true"></span>
                             </button>
                             <input
-                                class="start-page-search-field form-control-plaintext flex-grow-1 w-100 border-0 px-2"
+                                class="start-page-search-field flex-grow-1"
                                 type="text"
                                 :title="$t('titles.search')"
                                 :placeholder="$t('titles.search')"
@@ -47,10 +49,10 @@
                                 autocomplete="off"
                                 v-model="inputSearchValue"
                                 @input="handleSearch">
-                            <div class="dropdown align-self-stretch d-flex">
+                            <div class="dropdown d-flex">
                                 <button
                                     type="button"
-                                    class="btn dropdown-toggle border-0 border-start rounded-0 rounded-end text-secondary shadow-none start-page-search-segment d-flex align-items-center px-3"
+                                    class="dropdown-toggle text-nowrap start-page-search-button"
                                     data-bs-toggle="dropdown"
                                     aria-expanded="false"
                                     :title="$t(`filterElements.${filterType}`)">
@@ -67,15 +69,19 @@
                         </div>
                     </div>
                     <div class="col-12 col-xl-7 d-flex flex-wrap gap-2 justify-content-xl-end">
-                        <!-- At the top level a folder is a project, and creating one is all there is to do -->
-                        <button v-if="canEditHere" type="button" class="btn text-nowrap create-folder"
-                            :class="currentFolderId ? 'btn-outline-secondary' : 'btn-secondary'"
-                            :title="createFolderLabel" @click="handleCreateFolder">
-                            <i class="mdi me-1" :class="currentFolderId ? 'mdi-folder-plus-outline' : 'mdi-briefcase-plus'" aria-hidden="true"></i>{{ createFolderLabel }}
+                        <!-- At the top level a folder is a project, and creating one is all there is to do.
+                             Two elements, not one with changing classes, so the button transition never shows a colour flash -->
+                        <button v-if="canEditHere && !currentFolderId" key="create-project" type="button"
+                            class="btn btn-secondary text-nowrap create-folder" :title="createFolderLabel" @click="handleCreateFolder">
+                            <i class="mdi me-1 mdi-briefcase-plus" aria-hidden="true"></i>{{ createFolderLabel }}
+                        </button>
+                        <button v-else-if="canEditHere" key="create-folder" type="button"
+                            class="btn btn-light text-nowrap create-folder" :title="createFolderLabel" @click="handleCreateFolder">
+                            <i class="mdi me-1 mdi-folder-plus-outline" aria-hidden="true"></i>{{ createFolderLabel }}
                         </button>
                         <!-- Models are always stored in a folder -->
                         <template v-if="currentFolderId && canEditHere">
-                            <button type="button" class="btn btn-outline-secondary text-nowrap" :title="$t('buttons.importFile')"
+                            <button type="button" class="btn btn-light text-nowrap" :title="$t('buttons.importFile')"
                                 @click="handleOpenFileInput">
                                 <i class="mdi mdi-upload me-1" aria-hidden="true"></i>{{ $t('buttons.import') }}
                             </button>
@@ -652,13 +658,45 @@ defineExpose({
     opacity: 0.5;
 }
 
-/* TODO: Unify search box styles across the project (shared component or global styles). */
-.start-page-search .start-page-search-segment:hover,
-.start-page-search .start-page-search-segment:focus-visible {
-    background-color: var(--bs-gray-200) !important;
+/* The styles of the webclient's SearchInput, so both search fields look the same */
+.start-page-search:focus-within {
+    border-color: var(--bs-gray-800) !important;
+    outline: 2px solid var(--bs-gray-800);
+    outline-offset: -1px;
 }
 
-.start-page-search .dropdown-toggle.show {
-    background-color: var(--bs-gray-200) !important;
+.start-page-search-field {
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background-color: transparent;
+    color: inherit;
+}
+
+.start-page-search-field:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* Simple icon buttons inside the field: secondary, dark on hover and focus; the field's ring marks the focus */
+.start-page-search-button {
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: var(--bs-border-radius-sm);
+    background-color: transparent;
+    color: var(--bs-secondary);
+    line-height: 1;
+}
+
+.start-page-search-button:hover,
+.start-page-search-button:focus-visible,
+.start-page-search-button.show {
+    color: var(--bs-dark);
+}
+
+.start-page-search-button:focus-visible {
+    outline: 0 !important;
 }
 </style>
