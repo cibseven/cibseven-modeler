@@ -809,6 +809,18 @@ describe('CibsevenModeler', () => {
 
       await expect(leaving).resolves.toBe(false)
     })
+
+    it('asks first when a tab was switched to another version and not saved', async () => {
+      tabManagerState.tabNavList.value = [{ id: 'p1', key: 'k1', name: 'BPMN', type: 'bpmn-c7', canSave: false, changedVersion: true }]
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+
+      const leaving = routerMocks.leaveGuard()
+      expect(leaving).toBeInstanceOf(Promise)
+      wrapper.findAllComponents({ name: 'ConfirmModal' }).find(m => m.props('type') === 'leave').props('functionAfterAccepting')()
+
+      await expect(leaving).resolves.toBe(true)
+    })
   })
 
   /** The start page keeps the clicked create button busy until it is told the creation is under way. */

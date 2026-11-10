@@ -275,8 +275,8 @@ const currentDiagramType = ref('')
 // Tab state is owned by useTabManager — initialized after modeler ref
 const { tabNavList, tabNavListXml, editorXML, _copyArray, _saveTabNavSavedLocalStorage, _loadTabNavList, _closeSelectedTab, orderTabNavListHiddenTab: _orderTabNavListHiddenTab } = useTabManager(modeler)
 const orderTabNavListHiddenTab = idx => _orderTabNavListHiddenTab(idx, () => selectedTab(0))
-// A tab that can be saved has changes that are not
-const { showLeaveModal, confirmLeave, cancelLeave } = useUnsavedChangesGuard(() => tabNavList.value.some(tab => tab.canSave))
+// A tab that can be saved has changes that are not, a version switched to as well (as the save button has it)
+const { showLeaveModal, confirmLeave, cancelLeave } = useUnsavedChangesGuard(() => tabNavList.value.some(tab => tab.canSave || tab.changedVersion))
 const consoleErrorsList = ref([])
 const modelerTabPanes = ref(null) // gets the reference of the navigation tab
 const modelerTabNav = ref(null) //to call the switch tab method
