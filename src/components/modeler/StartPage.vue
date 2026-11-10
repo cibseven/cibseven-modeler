@@ -195,7 +195,7 @@ import ConfirmModal from '../modals/ConfirmModal.vue'
 import formJson from '../../resources/formSchema.json'
 import { DIAGRAM_ICON, DIAGRAM_TYPE } from '../../constants/diagramTypes.js'
 import { getPlugin } from '../../plugins/pluginsConfig.js'
-import { folderIcon, modelName } from '../../utils'
+import { folderIcon, isValidXmlId, modelName } from '../../utils'
 
 const startPageTool = getPlugin('start-page-tools')
 // What an edition adds to a folder's menu: { id, icon, label, visible(folder, rights), run(folder, { reload }) }
@@ -607,6 +607,8 @@ const handleCopyModel = item => {
         defaultKey: ownKey,
         // A key is unique within a folder: a copy elsewhere keeps it, only one beside the original needs its own
         keyFor: folderId => folderId === (item.folderId ?? null) ? `${ownKey}-copy` : ownKey,
+        // The copy carries the key as the id of its process or definitions; a form id is no element id
+        validateKey: isForm ? null : key => isValidXmlId(key) ? null : t('modalNewDiagram.qnameError'),
         accept: async (folderId, key) => {
             if (isForm) await copyFormToFolder(item.id, folderId, key)
             else await copyProcessToFolder(item.id, folderId, key, item.name)

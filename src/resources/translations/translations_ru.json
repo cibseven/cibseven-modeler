@@ -467,7 +467,7 @@
     "processName": "Имя {item}",
     "processId": "ID {item}",
     "cancel": "Позже",
-    "qnameError": "ID должен быть допустимым QName",
+    "qnameError": "Начните с буквы или _ и используйте только буквы, цифры, ., - и _",
     "fillId": "ID обязателен",
     "duplicatedId": "ID уже существует"
   },

@@ -193,7 +193,7 @@ import * as monaco from '../../monaco-setup.js'
 import { useStore } from 'vuex'
 import { useRoute, useRouter } from 'vue-router'
 
-import { compareXML, getTimeStamp, getTagValueFromXml, getProcessKeyFromBpmn, generateUniqueId, setTagValueOfXml, filterTemplates, resolveTabIndexById } from '../../utils.js'
+import { compareXML, getTimeStamp, getTagValueFromXml, getProcessKeyFromBpmn, generateUniqueId, setTagValueOfXml, filterTemplates, resolveTabIndexById, isValidXmlId } from '../../utils.js'
 import Clipboard from 'diagram-js/lib/features/clipboard/Clipboard'
 import { ref, onMounted, onUnmounted, nextTick, watch, computed, inject, provide } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -342,6 +342,8 @@ const _loadedWithKey = (key, type, folderId) => type === 'form'
 
 const validateRenameKey = newKey => {
 	if (newKey === modalData.value.processkey) return t('modalImportedFile.renameSameKey')
+	// The renamed model carries the key as the id of its process or definitions; a form id is no element id
+	if (modalData.value.diagramType !== DIAGRAM_TYPE.FORM && !isValidXmlId(newKey)) return t('modalNewDiagram.qnameError')
 	if (_loadedWithKey(newKey, modalData.value.diagramType, importFolderId.value ?? null)) return t('toastSaveErrorDuplicateKey.body')
 	return null
 }

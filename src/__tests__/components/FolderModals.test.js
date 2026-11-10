@@ -643,6 +643,21 @@ describe('FolderPickerModal', () => {
         expect(wrapper.find('.invalid-feedback').text()).toBe('A copy needs a process key of its own.')
     })
 
+    it('keeps the dialog open with the message for a key that cannot be used', async () => {
+        const accept = vi.fn()
+        const validateKey = vi.fn(key => key.includes(' ') ? 'No spaces' : null)
+        const wrapper = mountModal(FolderPickerModal)
+        await open(wrapper, { requireKey: true, defaultKey: '  my invoice ', accept, validateKey })
+
+        await wrapper.findAll('input[type="radio"]')[0].setValue()
+        await wrapper.find('button.btn-primary').trigger('click')
+        await flushPromises()
+
+        expect(validateKey).toHaveBeenCalledWith('my invoice')
+        expect(accept).not.toHaveBeenCalled()
+        expect(wrapper.find('.invalid-feedback').text()).toBe('No spaces')
+    })
+
     it('passes the key along with the folder', async () => {
         const accept = vi.fn().mockResolvedValue()
         const wrapper = mountModal(FolderPickerModal)

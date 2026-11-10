@@ -72,6 +72,7 @@ import { onMounted, ref, computed, useId } from 'vue'
 const titleId = useId()
 import { useI18n } from 'vue-i18n'
 import { SKIP_CREATION_MODAL_KEY } from '../../constants/diagramTypes.js'
+import { isValidXmlId } from '../../utils.js'
 const { t } = useI18n()
 
 const props = defineProps({
@@ -86,10 +87,7 @@ let functionOnCallback = null
 const nameOfProcess = ref('')
 const idOfProcess = ref('')
 const isIdFilled = ref(true)
-const isValidId = computed(() => {
-    // Check if the idOfProcess.value starts with a non-digit character and contains no spaces, asterisks, or punctuation except for period and hyphen
-    return /^\D[^\s*?!@#$%^&()_+={}[\]|\\:;"'<>,/¿¡]*$/.test(idOfProcess.value)
-})
+const isValidId = computed(() => isValidXmlId(idOfProcess.value))
 // Set on Create-click by the parent-supplied check (loaded list + backend); cleared on input.
 const isIdDuplicated = ref(false)
 

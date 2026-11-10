@@ -349,6 +349,18 @@ describe('StartPage folders', () => {
       await options.accept('invoicing', 'invoice-form')
       expect(copyFormToFolder).toHaveBeenCalledWith('f1', 'invoicing', 'invoice-form')
       expect(copyProcessToFolder).not.toHaveBeenCalled()
+      // A form id is no element id, so any key goes
+      expect(options.validateKey).toBeNull()
+    })
+
+    /** The copy carries its key as the id of its process (CIB7-2689), so the dialog refuses one that is no valid id. */
+    it('checks that the key of a diagram copy is a valid id', async () => {
+      const wrapper = await mountStartPage()
+
+      const options = await openPicker(wrapper, DIAGRAMS[0])
+
+      expect(options.validateKey('my invoice')).toBe('modalNewDiagram.qnameError')
+      expect(options.validateKey('process-one_copy')).toBeNull()
     })
   })
 

@@ -35,6 +35,7 @@ import {
     toMoment,
     rekeyXml,
     setTagValueOfXml,
+    isValidXmlId,
 } from '../../utils.js'
 
 describe('Utils', () => {
@@ -700,5 +701,16 @@ describe('setTagValueOfXml', () => {
 
         expect(renamed).toContain('<bpmn:process id="Process_new"/><bpmn:process id="b"/>')
         expect(setTagValueOfXml(renamed, 'process', 'name', 'New')).toContain('id="Process_new" name="New"')
+    })
+})
+
+// A process or decision key is the id of an element in the model (CIB7-2689)
+describe('isValidXmlId', () => {
+    it.each(['Process_1', '_draft', 'invoice-2.1', 'a'])('accepts %s', id => {
+        expect(isValidXmlId(id)).toBe(true)
+    })
+
+    it.each(['', null, undefined, '1invoice', '-invoice', '.invoice', 'my invoice', 'a:b', 'Prüfung', 'a$b'])('refuses %j', id => {
+        expect(isValidXmlId(id)).toBe(false)
     })
 })
