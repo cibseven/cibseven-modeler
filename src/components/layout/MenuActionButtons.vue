@@ -37,14 +37,15 @@ const style = computed(() => {
 
 <style>
 /* Unscoped on purpose: the buttons come from ActionButtonsList and from the host (filter, snapshots),
-   none of them from this template. #8092A6 is the theme's $gray-650, which has no CSS variable. */
+   none of them from this template. */
 .menu-action-bar .btn-outline-light {
     --bs-btn-color: var(--bs-gray-200);
     --bs-btn-hover-color: var(--bs-white);
     --bs-btn-hover-bg: var(--bs-gray-700);
     --bs-btn-hover-border-color: transparent;
-    --bs-btn-active-color: var(--bs-white);
-    --bs-btn-active-bg: #8092A6;
+    /* Dark: white on gray-600 cannot be read */
+    --bs-btn-active-color: var(--bs-dark);
+    --bs-btn-active-bg: var(--bs-gray-600);
     --bs-btn-active-border-color: transparent;
     --bs-btn-disabled-color: var(--bs-gray-200);
     --bs-btn-disabled-opacity: 0.3;
@@ -77,6 +78,6 @@ const style = computed(() => {
 .menu-action-bar .menu-divider {
     width: 1px;
     height: 1.5rem;
-    background-color: #8092A6;
+    background-color: var(--bs-gray-600);
 }
 </style>

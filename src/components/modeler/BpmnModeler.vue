@@ -1121,20 +1121,21 @@ defineExpose({
 	border-color: var(--bs-gray-500) !important;
 }
 
-/* The icon buttons on the canvas: no gray after a click, and the toggled one filled, without a ring.
-   #8092A6 is the theme's $gray-650, which has no CSS variable. */
+/* The icon buttons on the canvas: no gray after a click, and the toggled one filled, without a ring */
 .canvas-controls .btn {
 	--bs-btn-hover-bg: var(--bs-white);
-	--bs-btn-hover-border-color: #8092A6;
 	--bs-btn-active-bg: var(--bs-white);
-	--bs-btn-active-border-color: #8092A6;
 	--bs-btn-focus-box-shadow: none;
 }
 .canvas-controls .btn:focus-visible {
 	outline: 2px solid var(--bs-dark);
 	outline-offset: 0;
 }
-/* .border and .text-secondary are !important */
+/* .border and .text-secondary are !important, so the button's own border variables never reach them */
+.canvas-controls .btn:hover,
+.canvas-controls .btn:active {
+	border-color: var(--bs-gray-600) !important;
+}
 .canvas-controls .btn.active {
 	background-color: var(--bs-secondary);
 	border-color: var(--bs-secondary) !important;
