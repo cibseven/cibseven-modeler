@@ -136,18 +136,34 @@ describe('useFolders', () => {
       expect(folders.pathOf(null)).toEqual([])
       expect(folders.pathOf('removed')).toEqual([])
     })
+
+    it('reads as one line for the pickers and the tab titles', async () => {
+      const folders = await loaded()
+
+      expect(folders.pathText('2024')).toBe('General / Invoicing / 2024')
+      expect(folders.pathText(null)).toBe('')
+    })
   })
 
   describe('flatten', () => {
-    it('gives every folder in tree order with its depth', async () => {
+    it('gives every folder in tree order with its depth, parent and path', async () => {
       const folders = await loaded()
 
       expect(folders.flatten()).toEqual([
-        { id: 'archive', name: 'Archive', depth: 0 },
-        { id: 'general', name: 'General', depth: 0 },
-        { id: 'invoicing', name: 'Invoicing', depth: 1 },
-        { id: '2024', name: '2024', depth: 2 }
+        { id: 'archive', name: 'Archive', depth: 0, parentId: null, userFolder: false, path: 'Archive' },
+        { id: 'general', name: 'General', depth: 0, parentId: null, userFolder: false, path: 'General' },
+        { id: 'invoicing', name: 'Invoicing', depth: 1, parentId: 'general', userFolder: false, path: 'General / Invoicing' },
+        { id: '2024', name: '2024', depth: 2, parentId: 'invoicing', userFolder: false, path: 'General / Invoicing / 2024' }
       ])
+    })
+
+    /** Pickers show a user folder with its own icon, as the start page does. */
+    it('marks a user folder', async () => {
+      fetchFolders.mockResolvedValue([{ id: 'adrian', parentId: null, name: 'adrian', userFolder: true }])
+      const folders = useFolders()
+      await folders.load()
+
+      expect(folders.flatten()).toEqual([{ id: 'adrian', name: 'adrian', depth: 0, parentId: null, userFolder: true, path: 'adrian' }])
     })
 
     /** Moving a folder into its own subtree would cut that subtree out of the tree. */

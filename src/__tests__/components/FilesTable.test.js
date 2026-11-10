@@ -270,6 +270,22 @@ describe('FilesTable', () => {
       expect(BDropdown.methods.hide).toHaveBeenCalledTimes(2)
     })
 
+    /**
+     * The rows are reused by position, so after a reload the first row's menu still sat under the key
+     * of the model it showed before the folders arrived, and closed itself as one of the "others".
+     */
+    it('leaves the menu just opened alone when its row showed another item before', async () => {
+      const wrapper = mountTable({ folders: [], models: [DECISION] })
+      await wrapper.setProps({ folders: [PROJECT], models: [PROCESS] })
+      BDropdown.methods.hide.mockClear()
+
+      const first = wrapper.findAllComponents(BDropdown)[0].vm
+      await first.$emit('shown')
+
+      expect(BDropdown.methods.hide.mock.contexts).not.toContain(first)
+      expect(BDropdown.methods.hide).toHaveBeenCalledTimes(1)
+    })
+
     it('draws the menu icons in the secondary color, except the one for deleting', () => {
       const wrapper = mountTable()
 

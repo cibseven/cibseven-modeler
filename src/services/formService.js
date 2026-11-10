@@ -28,9 +28,16 @@ const fetchFormById = id => {
     return getAxios().get(getModelerServicePath() + '/form/' + id + '/data')
 }
 
-// Exact lookup by formId (the unique key). Resolves with the form, or rejects (404) when none exists.
-const fetchFormByFormId = formId => {
-  return getAxios().get(getModelerServicePath() + '/form/find-by-formid', { params: { formId } })
+// Exact lookup by formId in the folder given, or the latest visible one without a folder: a form id
+// is unique only within a folder. Resolves with the form, or rejects (404) when none exists.
+const fetchFormByFormId = (formId, folderId = null) => {
+  const params = folderId ? { formId, folderId } : { formId }
+  return getAxios().get(getModelerServicePath() + '/form/find-by-formid', { params })
+}
+
+// Every form with this formId the user may see, the latest change first
+const fetchFormsByFormId = async formId => {
+  return (await getAxios().get(getModelerServicePath() + '/form/find-all-by-formid', { params: { formId } })) ?? []
 }
 
 const saveForm = (id, formJson, folderId = null) => {
@@ -68,6 +75,7 @@ export {
   fetchForms,
   fetchFormById,
   fetchFormByFormId,
+  fetchFormsByFormId,
   saveForm,
   updateForm,
   deleteFormById,

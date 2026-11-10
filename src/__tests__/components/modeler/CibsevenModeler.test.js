@@ -31,7 +31,7 @@ const newDiagramMocks = vi.hoisted(() => ({ toggle: vi.fn() }))
 
 const storeMocks = vi.hoisted(() => ({ dispatch: vi.fn() }))
 
-const processServiceMocks = vi.hoisted(() => ({ fetchProcessByKey: vi.fn() }))
+const processServiceMocks = vi.hoisted(() => ({ fetchProcessByKey: vi.fn(), keyExistsRemote: vi.fn() }))
 
 const folderServiceMocks = vi.hoisted(() => ({ fetchUserFolder: vi.fn() }))
 
@@ -123,7 +123,7 @@ vi.mock('../../../composables/useFileImport.js', () => ({
 }))
 
 vi.mock('../../../services/processService.js', () => ({
-  keyExistsRemote: vi.fn().mockResolvedValue(false),
+  keyExistsRemote: (...args) => processServiceMocks.keyExistsRemote(...args),
   fetchProcessByKey: (...args) => processServiceMocks.fetchProcessByKey(...args),
 }))
 
@@ -200,7 +200,7 @@ vi.mock('../../../components/messages/ToastMessage.vue', () => ({
   default: { name: 'ToastMessage', props: ['headerText'], template: '<div class="toast-stub" />', methods: { _showToastTimeOut: (...args) => toastMocks.show(...args) } },
 }))
 vi.mock('../../../components/modals/ImportConflictModal.vue', () => ({
-  default: { name: 'ImportConflictModal', props: ['showModal', 'modalData', 'functionAfterAccepting', 'functionAfterCanceling', 'functionAfterRenaming'], template: '<div />' },
+  default: { name: 'ImportConflictModal', props: ['showModal', 'modalData', 'functionAfterAccepting', 'functionAfterCanceling', 'functionAfterRenaming', 'validateRenameKey'], template: '<div />' },
 }))
 vi.mock('../../../components/modals/FolderPickerModal.vue', () => ({
   default: { name: 'FolderPickerModal', template: '<div />', methods: { show: (...args) => pickerMocks.show(...args), isShown: (...args) => pickerMocks.isShown(...args) } },
@@ -1023,6 +1023,20 @@ describe('CibsevenModeler opened from Cockpit', () => {
       expect(tabManagerState.tabNavList.value).toEqual([])
     })
 
+    // The renamed model carries the key as the id of its process (CIB7-2689); a form id is no element id
+    it('refuses a new key that is no valid id, except for a form', async () => {
+      const wrapper = await open()
+      const validate = conflictModal(wrapper).props('validateRenameKey')
+
+      expect(validate('my invoice')).toBe('modalNewDiagram.qnameError')
+      expect(validate('2024-invoice')).toBe('modalNewDiagram.qnameError')
+      expect(validate('invoice_2')).toBeNull()
+      expect(validate('invoice')).toBe('modalImportedFile.renameSameKey')
+
+      conflictModal(wrapper).props('modalData').diagramType = 'form'
+      expect(validate('my invoice')).toBeNull()
+    })
+
     it('opens the stored model, in its folder, when it is kept', async () => {
       const wrapper = await open()
 
@@ -1058,6 +1072,24 @@ describe('CibsevenModeler opened from Cockpit', () => {
       conflictModal(wrapper).props('functionAfterCanceling')()
 
       expect(tabManagerState.tabNavList.value).toEqual([])
+    })
+  })
+  /** A key is unique within a folder, so a new diagram only collides with the models of its own (CIB7-2277). */
+  describe('the duplicate check of a new diagram', () => {
+    afterEach(() => { storeState.modeler.processes.processes = [] })
+
+    it('counts only the models in the folder the new diagram goes into', async () => {
+      storeState.modeler.processes.processes = [{ id: 'p9', processkey: 'invoice', folderId: 'archive' }]
+      processServiceMocks.keyExistsRemote.mockResolvedValue(false)
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+
+      await wrapper.vm.handleNavigateFolder('invoicing')
+      expect(await wrapper.vm.checkDuplicateId('invoice', 'bpmn-c7')).toBe(false)
+      expect(processServiceMocks.keyExistsRemote).toHaveBeenCalledWith('invoice', 'bpmn-c7', 'invoicing')
+
+      await wrapper.vm.handleNavigateFolder('archive')
+      expect(await wrapper.vm.checkDuplicateId('invoice', 'bpmn-c7')).toBe(true)
     })
   })
 })

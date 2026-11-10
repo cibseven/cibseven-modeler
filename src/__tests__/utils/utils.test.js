@@ -33,6 +33,9 @@ import {
     formatDate,
     modelName,
     toMoment,
+    rekeyXml,
+    setTagValueOfXml,
+    isValidXmlId,
 } from '../../utils.js'
 
 describe('Utils', () => {
@@ -615,5 +618,99 @@ describe('Utils', () => {
         it.each([undefined, '', 'undefined'])('falls back to the key when the name is %j', name => {
             expect(modelName({ type: 'dmn', name, processkey: 'approval' })).toBe('approval')
         })
+    })
+})
+
+// The import's rename: the same rule as a copy with a new key in the backend (CIB7-2680)
+describe('rekeyXml', () => {
+    const NS = 'xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"'
+    const parse = xml => new DOMParser().parseFromString(xml, 'text/xml')
+    const ids = xml => [...parse(xml).getElementsByTagName('*')].map(el => el.getAttribute('id')).filter(Boolean)
+    const attr = (xml, localName, name) => parse(xml).querySelector(`*|${localName}`)?.getAttribute(name)
+
+    const pool = `<bpmn:definitions ${NS} id="d">` +
+        '<bpmn:collaboration id="invoice"><bpmn:participant id="P" processRef="Process_1"/></bpmn:collaboration>' +
+        '<bpmn:process id="Process_1"><bpmn:startEvent id="Start_1"/></bpmn:process>' +
+        '<bpmndi:BPMNDiagram id="D"><bpmndi:BPMNPlane id="Plane" bpmnElement="invoice"/></bpmndi:BPMNDiagram>' +
+        '</bpmn:definitions>'
+
+    it('gives a pool the new key on the collaboration only, so no two elements share an id', () => {
+        const renamed = rekeyXml(pool, 'invoice-2')
+
+        expect(attr(renamed, 'collaboration', 'id')).toBe('invoice-2')
+        expect(attr(renamed, 'BPMNPlane', 'bpmnElement')).toBe('invoice-2')
+        expect(attr(renamed, 'process', 'id')).toBe('Process_1')
+        expect(attr(renamed, 'participant', 'processRef')).toBe('Process_1')
+        expect(new Set(ids(renamed)).size).toBe(ids(renamed).length)
+    })
+
+    it('gives a plain process the new key and its diagram and participants follow', () => {
+        const xml = `<bpmn:definitions ${NS} id="d">` +
+            '<bpmn:collaboration id="C"><bpmn:participant id="P" processRef="invoice"/></bpmn:collaboration>' +
+            '<bpmn:process id="invoice" name="invoice"><bpmn:callActivity id="Call" calledElement="invoice"/></bpmn:process>' +
+            '<bpmndi:BPMNDiagram id="D"><bpmndi:BPMNPlane id="Plane" bpmnElement="invoice"/></bpmndi:BPMNDiagram>' +
+            '</bpmn:definitions>'
+
+        const renamed = rekeyXml(xml, 'billing')
+
+        expect(attr(renamed, 'process', 'id')).toBe('billing')
+        expect(attr(renamed, 'participant', 'processRef')).toBe('billing')
+        expect(attr(renamed, 'BPMNPlane', 'bpmnElement')).toBe('billing')
+        // A name and a call of the process keep what they say
+        expect(attr(renamed, 'process', 'name')).toBe('invoice')
+        expect(attr(renamed, 'callActivity', 'calledElement')).toBe('invoice')
+        expect(attr(renamed, 'collaboration', 'id')).toBe('C')
+    })
+
+    it('takes the collaboration, else the first process, without a diagram', () => {
+        const withPool = `<bpmn:definitions ${NS}><bpmn:collaboration id="C"/><bpmn:process id="p"/></bpmn:definitions>`
+        const twoProcesses = `<bpmn:definitions ${NS}><bpmn:process id="p"/><bpmn:process id="q"/></bpmn:definitions>`
+
+        expect(ids(rekeyXml(withPool, 'k'))).toEqual(['k', 'p'])
+        expect(ids(rekeyXml(twoProcesses, 'k'))).toEqual(['k', 'q'])
+    })
+
+    it('gives a DMN the new key on its definitions; decisions and their shapes keep theirs', () => {
+        const xml = '<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" id="rules">' +
+            '<decision id="rules-decision"/><dmndi:DMNDI><dmndi:DMNDiagram id="dia"><dmndi:DMNShape id="s" dmnElementRef="rules-decision"/></dmndi:DMNDiagram></dmndi:DMNDI>' +
+            '</definitions>'
+
+        const renamed = rekeyXml(xml, 'rules-2', true)
+
+        expect(attr(renamed, 'definitions', 'id')).toBe('rules-2')
+        expect(attr(renamed, 'decision', 'id')).toBe('rules-decision')
+        expect(attr(renamed, 'DMNShape', 'dmnElementRef')).toBe('rules-decision')
+    })
+
+    it('leaves a diagram without a key element, or one the diagram does not find, as it is', () => {
+        const noProcess = `<bpmn:definitions ${NS} id="d"/>`
+        const lostPlane = `<bpmn:definitions ${NS}><bpmn:process id="p"/><bpmndi:BPMNDiagram id="D"><bpmndi:BPMNPlane id="x" bpmnElement="gone"/></bpmndi:BPMNDiagram></bpmn:definitions>`
+
+        expect(rekeyXml(noProcess, 'k')).toBe(noProcess)
+        expect(rekeyXml(lostPlane, 'k')).toBe(lostPlane)
+        expect(rekeyXml(pool, 'invoice')).toBe(pool)
+    })
+})
+
+// New diagrams are made from a template with it
+describe('setTagValueOfXml', () => {
+    it('sets the attribute on the first element of that name, with or without its prefix', () => {
+        const xml = '<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"><bpmn:process id="a"/><bpmn:process id="b"/></bpmn:definitions>'
+
+        const renamed = setTagValueOfXml(xml, 'bpmn:process', 'id', 'Process_new')
+
+        expect(renamed).toContain('<bpmn:process id="Process_new"/><bpmn:process id="b"/>')
+        expect(setTagValueOfXml(renamed, 'process', 'name', 'New')).toContain('id="Process_new" name="New"')
+    })
+})
+
+// A process or decision key is the id of an element in the model (CIB7-2689)
+describe('isValidXmlId', () => {
+    it.each(['Process_1', '_draft', 'invoice-2.1', 'a'])('accepts %s', id => {
+        expect(isValidXmlId(id)).toBe(true)
+    })
+
+    it.each(['', null, undefined, '1invoice', '-invoice', '.invoice', 'my invoice', 'a:b', 'Prüfung', 'a$b'])('refuses %j', id => {
+        expect(isValidXmlId(id)).toBe(false)
     })
 })

@@ -83,6 +83,7 @@ function makeDeps(overrides = {}) {
         onBatchComplete: vi.fn().mockResolvedValue(undefined),
         nextModalHiddenPromise: () => Promise.resolve(),
         updateDiagramXml: vi.fn(),
+        importFolderId: { value: 'general' },
         ...overrides,
     }
 }
@@ -115,7 +116,7 @@ describe('useFileImport', () => {
 
         it('shows a conflict and updates on replace', async () => {
             const deps = makeDeps()
-            deps.processes.value = [{ id: 'db1', name: 'Proc A', processkey: 'procA' }]
+            deps.processes.value = [{ id: 'db1', name: 'Proc A', processkey: 'procA', folderId: 'general' }]
             deps.store.state.modeler.processes.processSelected = bpmn('procA-OLD')
             const { handleFile, resolveConflict } = useFileImport(deps)
 
@@ -130,7 +131,7 @@ describe('useFileImport', () => {
 
         it('does not update on skip', async () => {
             const deps = makeDeps()
-            deps.processes.value = [{ id: 'db1', name: 'Proc A', processkey: 'procA' }]
+            deps.processes.value = [{ id: 'db1', name: 'Proc A', processkey: 'procA', folderId: 'general' }]
             deps.store.state.modeler.processes.processSelected = bpmn('procA-OLD')
             const { handleFile, resolveConflict } = useFileImport(deps)
 
@@ -145,7 +146,7 @@ describe('useFileImport', () => {
 
         it('saves under the new key with rewritten id on rename', async () => {
             const deps = makeDeps()
-            deps.processes.value = [{ id: 'db1', name: 'Proc A', processkey: 'procA' }]
+            deps.processes.value = [{ id: 'db1', name: 'Proc A', processkey: 'procA', folderId: 'general' }]
             deps.store.state.modeler.processes.processSelected = bpmn('procA-OLD')
             const { handleFile, resolveConflict } = useFileImport(deps)
 
@@ -163,9 +164,34 @@ describe('useFileImport', () => {
             expect(m.updateDiagramProcess).not.toHaveBeenCalled()
         })
 
+        // Before CIB7-2680 the collaboration and the process both got the new key, and the diagram kept the old one
+        it('renames only the collaboration of a pool, and its diagram follows', async () => {
+            const pooled = '<?xml version="1.0" encoding="UTF-8"?>' +
+                '<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI">' +
+                '<bpmn:collaboration id="procA"><bpmn:participant id="P" processRef="Process_1"/></bpmn:collaboration>' +
+                '<bpmn:process id="Process_1"><bpmn:startEvent id="Start_1"/></bpmn:process>' +
+                '<bpmndi:BPMNDiagram id="D"><bpmndi:BPMNPlane id="Plane" bpmnElement="procA"/></bpmndi:BPMNDiagram>' +
+                '</bpmn:definitions>'
+            const deps = makeDeps()
+            deps.processes.value = [{ id: 'db1', name: 'Proc A', processkey: 'procA', folderId: 'general' }]
+            deps.store.state.modeler.processes.processSelected = bpmn('procA-OLD')
+            const { handleFile, resolveConflict } = useFileImport(deps)
+
+            const p = handleFile(fileEvent([{ name: 'a.bpmn', content: pooled }]))
+            await waitForModal(deps)
+            resolveConflict('rename', false, { newKey: 'procRenamed' })
+            await p
+
+            const xmlText = await m.saveDiagramProcess.mock.calls[0][2].text()
+            expect(xmlText).toContain('<bpmn:collaboration id="procRenamed"')
+            expect(xmlText).toContain('bpmnElement="procRenamed"')
+            expect(xmlText).toContain('<bpmn:process id="Process_1"')
+            expect(xmlText).toContain('processRef="Process_1"')
+        })
+
         it('treats identical content as unchanged (no modal)', async () => {
             const deps = makeDeps()
-            deps.processes.value = [{ id: 'db1', name: 'Proc A', processkey: 'procA' }]
+            deps.processes.value = [{ id: 'db1', name: 'Proc A', processkey: 'procA', folderId: 'general' }]
             deps.store.state.modeler.processes.processSelected = bpmn('procA')
             const { handleFile } = useFileImport(deps)
 
@@ -197,15 +223,15 @@ describe('useFileImport', () => {
         })
 
         /**
-         * The loaded list only holds the folder in view, so a diagram in another folder is not
-         * in it - and a process key collides across the whole installation, not per folder.
+         * The loaded list may not hold the whole folder, so the backend is asked as well - about the
+         * folder the import goes into only, as a key is unique within a folder (CIB7-2277).
          */
-        it('detects a conflict for a process in another folder', async () => {
+        it('detects a conflict for a process of the folder that is not loaded', async () => {
             const deps = makeDeps()
             // not in the loaded processes list...
             deps.processes.value = []
-            // ...but it is there, in a folder the user is not looking at
-            m.fetchProcessByKey.mockResolvedValue({ id: 'db9', name: 'Proc A', processkey: 'procA', folderId: 'archive' })
+            // ...but it is there, in the folder the import goes into
+            m.fetchProcessByKey.mockResolvedValue({ id: 'db9', name: 'Proc A', processkey: 'procA', folderId: 'general' })
             deps.store.state.modeler.processes.processSelected = bpmn('procA-OLD')
             const { handleFile, resolveConflict } = useFileImport(deps)
 
@@ -214,25 +240,72 @@ describe('useFileImport', () => {
             resolveConflict('replace')
             await p
 
-            expect(m.fetchProcessByKey).toHaveBeenCalledWith('procA')
+            expect(m.fetchProcessByKey).toHaveBeenCalledWith('procA', 'general')
             expect(m.updateDiagramProcess).toHaveBeenCalledOnce()
-            // so that replacing it opens the tab where the model lives
-            expect(deps.modalData.value.folderId).toBe('archive')
+            expect(deps.modalData.value.folderId).toBe('general')
+        })
+
+        /** Two files of the same process may sit side by side in different folders. */
+        it('imports a process whose key only another folder has as a new one', async () => {
+            const deps = makeDeps()
+            deps.processes.value = [{ id: 'db9', name: 'Proc A', processkey: 'procA', folderId: 'archive' }]
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
+
+            expect(deps.showModalAcceptCancelMessage.value.show).toBe(false)
+            expect(m.saveDiagramProcess).toHaveBeenCalledOnce()
+            expect(m.updateDiagramProcess).not.toHaveBeenCalled()
+        })
+
+        /** The same key may be open for the model of another folder, whose tab is not the one replaced. */
+        it('replaces the stored model without touching the tab of the same key in another folder', async () => {
+            const deps = makeDeps()
+            deps.processes.value = [{ id: 'db1', name: 'Proc A', processkey: 'procA', folderId: 'general' }]
+            deps.tabNavList.value = [{ id: 'dbB', key: 'procA', type: 'bpmn-c7', folderId: 'archive', isSaved: true, canSave: true }]
+            deps.editorXML.value = [bpmn('procA-edited-in-archive')]
+            deps.store.state.modeler.processes.processSelected = bpmn('procA-OLD')
+            const { handleFile, resolveConflict } = useFileImport(deps)
+
+            const p = handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
+            await waitForModal(deps)
+            // Compared with what is stored in the folder, not with the other tab's edits
+            expect(deps.modalData.value.xmlFromModeler).toBe(bpmn('procA-OLD'))
+            resolveConflict('replace')
+            await p
+
+            expect(m.updateDiagramProcess).toHaveBeenCalledWith('db1', 'procA', 'procA', expect.anything(), 'bpmn-c7')
+            expect(deps.updateDiagramXml).not.toHaveBeenCalled()
+            expect(deps.tabNavList.value[0].canSave).toBe(true)
+        })
+
+        it('stores a new import although an unsaved tab of another folder has its key', async () => {
+            const deps = makeDeps()
+            deps.tabNavList.value = [{ id: 'procA', key: 'procA', type: 'bpmn-c7', folderId: 'archive', isSaved: false, canSave: true }]
+            deps.editorXML.value = [bpmn('procA-draft')]
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
+
+            expect(deps.showModalAcceptCancelMessage.value.show).toBe(false)
+            expect(m.saveDiagramProcess).toHaveBeenCalledOnce()
+            // The draft of the other folder stays a draft
+            expect(deps.tabNavList.value[0].isSaved).toBe(false)
         })
 
         /** The dialog has to say where it found it, now that "the modeler" is more than one place. */
         it('names the folder the existing diagram lives in', async () => {
             const deps = makeDeps()
             deps.processes.value = []
-            deps.folderNameFor = folderId => (folderId === 'archive' ? 'Archive' : null)
-            m.fetchProcessByKey.mockResolvedValue({ id: 'db9', name: 'Proc A', processkey: 'procA', folderId: 'archive' })
+            deps.folderNameFor = folderId => (folderId === 'general' ? 'General' : null)
+            m.fetchProcessByKey.mockResolvedValue({ id: 'db9', name: 'Proc A', processkey: 'procA', folderId: 'general' })
             deps.store.state.modeler.processes.processSelected = bpmn('procA-OLD')
             const { handleFile, resolveConflict } = useFileImport(deps)
 
             const p = handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
             await waitForModal(deps)
 
-            expect(deps.modalData.value.folderName).toBe('Archive')
+            expect(deps.modalData.value.folderName).toBe('General')
             resolveConflict('skip')
             await p
         })
@@ -245,7 +318,7 @@ describe('useFileImport', () => {
 
             await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
 
-            expect(m.fetchProcessByKey).toHaveBeenCalledWith('procA')
+            expect(m.fetchProcessByKey).toHaveBeenCalledWith('procA', 'general')
             expect(m.saveDiagramProcess).toHaveBeenCalledOnce()
             expect(deps.showModalAcceptCancelMessage.value.show).toBe(false)
         })
@@ -384,7 +457,7 @@ describe('useFileImport', () => {
 
         it('shows a conflict and updates on replace (different content)', async () => {
             const deps = makeDeps()
-            deps.forms.value = [{ id: 'fdb', formId: 'formA' }]
+            deps.forms.value = [{ id: 'fdb', formId: 'formA', folderId: 'general' }]
             deps.store.state.modeler.forms.formSelected = form('formA', [{ type: 'textfield' }])
             const { handleFile, resolveConflict } = useFileImport(deps)
 
@@ -396,29 +469,65 @@ describe('useFileImport', () => {
             expect(m.updateForm).toHaveBeenCalledOnce()
         })
 
-        /** A form id is unique across the installation too, not just within the folder in view. */
-        it('detects a conflict for a form in another folder', async () => {
+        /** A form id is unique within a folder: the backend is asked about the import's folder only. */
+        it('detects a conflict for a form of the folder that is not loaded', async () => {
             const deps = makeDeps()
             deps.forms.value = []
-            deps.folderNameFor = folderId => (folderId === 'archive' ? 'Archive' : null)
-            m.fetchFormByFormId.mockResolvedValue({ id: 'fdb', formId: 'formA', folderId: 'archive' })
+            deps.folderNameFor = folderId => (folderId === 'general' ? 'General' : null)
+            m.fetchFormByFormId.mockResolvedValue({ id: 'fdb', formId: 'formA', folderId: 'general' })
             deps.store.state.modeler.forms.formSelected = form('formA', [{ type: 'textfield' }])
             const { handleFile, resolveConflict } = useFileImport(deps)
 
             const p = handleFile(fileEvent([{ name: 'f.form', content: form('formA') }]))
             await waitForModal(deps)
 
-            expect(m.fetchFormByFormId).toHaveBeenCalledWith('formA')
-            expect(deps.modalData.value.folderName).toBe('Archive')
+            expect(m.fetchFormByFormId).toHaveBeenCalledWith('formA', 'general')
+            expect(deps.modalData.value.folderName).toBe('General')
             resolveConflict('replace')
             await p
 
             expect(m.updateForm).toHaveBeenCalledOnce()
+        })
+
+        it('opens the stored form rather than moving the tab of the same form id in another folder', async () => {
+            const deps = makeDeps()
+            deps.forms.value = [{ id: 'fdb', formId: 'formA', folderId: 'general' }]
+            deps.tabNavList.value = [{ id: 'fB', key: 'formA', type: 'form', folderId: 'archive', isSaved: true, canSave: false }]
+            deps.store.state.modeler.forms.formSelected = form('formA')
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'f.form', content: form('formA') }]))
+
+            expect(deps.tabNavList.value[0].folderId).toBe('archive')
+            expect(deps.modelerTabNav.value.selectTab).not.toHaveBeenCalled()
+            expect(deps.openDiagramFromChild).toHaveBeenCalledWith(expect.anything(), 'fdb', 'formA', 'formA', 'form', true, false, false, 'general')
+        })
+
+        it('imports a form whose form id only another folder has as a new one', async () => {
+            const deps = makeDeps()
+            deps.forms.value = [{ id: 'fdb', formId: 'formA', folderId: 'archive' }]
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'f.form', content: form('formA') }]))
+
+            expect(deps.showModalAcceptCancelMessage.value.show).toBe(false)
+            expect(m.saveForm).toHaveBeenCalledOnce()
+        })
+
+        /** Without a folder the backend picks one and refuses a key it holds, so nothing is looked up. */
+        it('looks nothing up for an import without a folder', async () => {
+            const deps = makeDeps({ importFolderId: { value: null } })
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'f.form', content: form('formA') }]))
+
+            expect(m.fetchFormByFormId).not.toHaveBeenCalled()
+            expect(m.saveForm).toHaveBeenCalledOnce()
         })
 
         it('treats identical form content as unchanged even when double-encoded in the store', async () => {
             const deps = makeDeps()
-            deps.forms.value = [{ id: 'fdb', formId: 'formA' }]
+            deps.forms.value = [{ id: 'fdb', formId: 'formA', folderId: 'general' }]
             // Store double-encodes formSelected; canonical comparison must see through it.
             deps.store.state.modeler.forms.formSelected = JSON.stringify(form('formA'))
             const { handleFile } = useFileImport(deps)
@@ -434,8 +543,8 @@ describe('useFileImport', () => {
         it('applies "replace all" to subsequent conflicts without re-prompting', async () => {
             const deps = makeDeps()
             deps.processes.value = [
-                { id: '1', name: 'A', processkey: 'procA' },
-                { id: '2', name: 'B', processkey: 'procB' },
+                { id: '1', name: 'A', processkey: 'procA', folderId: 'general' },
+                { id: '2', name: 'B', processkey: 'procB', folderId: 'general' },
             ]
             deps.store.state.modeler.processes.processSelected = bpmn('OLD')
             const { handleFile, resolveConflict } = useFileImport(deps)
@@ -454,8 +563,8 @@ describe('useFileImport', () => {
         it('"cancel remaining" stops the batch without processing further files', async () => {
             const deps = makeDeps()
             deps.processes.value = [
-                { id: '1', name: 'A', processkey: 'procA' },
-                { id: '2', name: 'B', processkey: 'procB' },
+                { id: '1', name: 'A', processkey: 'procA', folderId: 'general' },
+                { id: '2', name: 'B', processkey: 'procB', folderId: 'general' },
             ]
             deps.store.state.modeler.processes.processSelected = bpmn('OLD')
             const { handleFile, resolveConflict } = useFileImport(deps)

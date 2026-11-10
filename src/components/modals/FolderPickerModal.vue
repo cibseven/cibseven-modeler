@@ -23,38 +23,52 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" :aria-label="$t('buttons.close')"></button>
                 </div>
                 <div class="modal-body">
-                    <fieldset>
-                        <legend class="form-label fs-6">{{ $t('folders.destination') }}</legend>
-                        <!-- The global list style drops the outer item borders; the scroll box frames the list instead -->
-                        <div class="list-group overflow-auto" style="max-height: 40vh">
-                            <div v-if="allowTopLevel" class="list-group-item d-flex align-items-center gap-2"
-                                :class="{ 'text-body-secondary': isCurrent('') }">
-                                <input :id="`${optionId}-top-level`" type="radio" class="form-check-input m-0"
-                                    value="" v-model="selected" :disabled="isCurrent('')">
-                                <label :for="`${optionId}-top-level`" class="d-flex align-items-center gap-2 mb-0">
-                                    <span class="mdi mdi-folder-multiple-outline" aria-hidden="true"></span>
-                                    <span>{{ $t('folders.projects') }}</span>
-                                    <span v-if="isCurrent('')" class="small">({{ $t('folders.currentLocation') }})</span>
-                                </label>
-                            </div>
-                            <div v-for="folder in options" :key="folder.id"
-                                class="list-group-item d-flex align-items-center gap-2"
-                                :class="{ 'text-body-secondary': isCurrent(folder.id) }">
-                                <input :id="`${optionId}-${folder.id}`" type="radio" class="form-check-input m-0"
-                                    :value="folder.id" v-model="selected" :disabled="isCurrent(folder.id)">
-                                <label :for="`${optionId}-${folder.id}`" class="d-flex align-items-center gap-2 mb-0">
-                                    <span class="mdi mdi-folder-outline" aria-hidden="true"
-                                        :style="{ marginLeft: `${folder.depth}rem` }"></span>
-                                    <span>{{ folder.name }}</span>
-                                    <span v-if="isCurrent(folder.id)" class="small">({{ $t('folders.currentLocation') }})</span>
-                                </label>
-                            </div>
+                    <div :id="destinationId" class="form-label fs-6">{{ $t('folders.destination') }}</div>
+                    <!-- Outside the radio group, so the filter is not announced as one of the destinations -->
+                    <div v-if="filterable" class="mb-2">
+                        <label class="visually-hidden" :for="filterId">{{ $t('folders.filterFolders') }}</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text"><span class="mdi mdi-magnify" aria-hidden="true"></span></span>
+                            <input :id="filterId" type="search" class="form-control" v-model="filter"
+                                :placeholder="$t('folders.filterFolders')" autocomplete="off" @keydown.esc="clearFilter">
                         </div>
-                    </fieldset>
+                    </div>
+                    <!-- One name makes one group: a single tab stop, and the arrow keys move between the folders -->
+                    <div ref="listRoot" role="radiogroup" :aria-labelledby="destinationId"
+                        class="border rounded overflow-auto" style="max-height: 40vh">
+                        <label v-if="allowTopLevel" :for="`${optionId}-top-level`"
+                            class="folder-picker-row d-flex align-items-center gap-2 mb-0 py-2 pe-3" :class="rowClass('')" :style="{ paddingLeft: indent(0) }">
+                            <input :id="`${optionId}-top-level`" type="radio" :name="optionId"
+                                class="form-check-input m-0 flex-shrink-0" value="" v-model="selected" :disabled="isCurrent('')">
+                            <span class="mdi mdi-folder-multiple-outline" aria-hidden="true"></span>
+                            <span class="text-truncate">{{ $t('folders.projects') }}</span>
+                            <span v-if="isCurrent('')" class="small flex-shrink-0">({{ $t('folders.currentLocation') }})</span>
+                        </label>
+                        <label v-for="folder in visibleOptions" :key="folder.id" :for="`${optionId}-${folder.id}`"
+                            class="folder-picker-row d-flex align-items-center gap-2 mb-0 py-2 pe-3" :class="rowClass(folder.id)"
+                            :style="{ paddingLeft: indent(folder.depth + (allowTopLevel ? 1 : 0)) }">
+                            <input :id="`${optionId}-${folder.id}`" type="radio" :name="optionId"
+                                class="form-check-input m-0 flex-shrink-0" :value="folder.id" v-model="selected"
+                                :disabled="isCurrent(folder.id)">
+                            <span class="mdi" :class="folderIcon(folder)" aria-hidden="true"></span>
+                            <span class="text-truncate">{{ folder.name }}</span>
+                            <span v-if="isCurrent(folder.id)" class="small flex-shrink-0">({{ $t('folders.currentLocation') }})</span>
+                        </label>
+                        <p v-if="filtering && visibleOptions.length === 0" class="text-body-secondary small m-0 px-3 py-2">
+                            {{ $t('folders.filterNoMatch', { keyword: filter.trim() }) }}
+                        </p>
+                    </div>
+                    <!-- Not announced: the radio just chosen has said it already -->
+                    <p class="folder-picker-choice small mt-2 mb-0 text-truncate" style="min-height: 1.5em">
+                        <template v-if="selectedPath">
+                            <span class="text-body-secondary">{{ $t('folders.selectedDestination') }}:</span>
+                            <span class="fw-semibold ms-1" :title="selectedPath">{{ selectedPath }}</span>
+                        </template>
+                    </p>
                     <div v-if="requireKey" class="mt-3">
                         <label class="form-label" :for="keyId">{{ $t(keyLabel) }}</label>
                         <input :id="keyId" type="text" maxlength="100" class="form-control form-control-sm" v-model="key"
-                            @input="error = ''" @keyup.enter="handleAccept">
+                            @input="error = ''; keyEdited = true" @keyup.enter="handleAccept">
                     </div>
                     <div v-if="error" tabindex="-1" role="alert" aria-live="assertive" aria-atomic="true"
                         class="d-block invalid-feedback">{{ error }}</div>
@@ -72,21 +86,29 @@
 
 <script setup>
 import * as bootstrap from 'bootstrap'
-import { computed, onMounted, ref, useId } from 'vue'
+import { computed, nextTick, onMounted, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { folderErrorMessage } from '../../utils/folderErrors.js'
+import { folderIcon } from '../../utils.js'
+
+// A short list is read at a glance; from this many folders on, the dialog offers a filter
+const FILTER_FROM = 8
 
 const { t } = useI18n()
 const titleId = useId()
 const keyId = useId()
 const optionId = useId()
+const filterId = useId()
+const destinationId = useId()
 
 const modalRoot = ref(null)
+const listRoot = ref(null)
 const options = ref([])
 const selected = ref(null)
 const key = ref('')
 const error = ref('')
 const title = ref('')
+const filter = ref('')
 const allowTopLevel = ref(false)
 const requireKey = ref(false)
 const keyLabel = ref('folders.copyKey')
@@ -95,6 +117,11 @@ const runAfterClose = ref(false)
 // Where the item already is: listed, but not a choice. null is the top level, undefined is none
 const current = ref(undefined)
 const shown = ref(false)
+// The key to suggest for a folder, when it depends on the one chosen
+let keyFor = null
+let validateKey = null
+// Once the user typed a key, choosing another folder leaves it alone
+const keyEdited = ref(false)
 let modalBootstrap = null
 let onAccept = null
 // One click is one answer: the button stays clickable while the dialog fades out
@@ -105,16 +132,78 @@ const isChosen = computed(() => selected.value !== null)
 
 const isCurrent = id => current.value !== undefined && id === (current.value ?? '')
 
+const filterable = computed(() => options.value.length >= FILTER_FROM)
+const filtering = computed(() => filterable.value && filter.value.trim() !== '')
+
+const rowsById = computed(() => new Map(options.value.map(folder => [folder.id, folder])))
+
+// A folder shown while filtering brings its parents along, so it is shown where it lies
+const showWithParents = (folder, shownIds) => {
+    while (folder && !shownIds.has(folder.id)) {
+        shownIds.add(folder.id)
+        folder = rowsById.value.get(folder.parentId)
+    }
+}
+
+// The choice stays listed too: a filter must not hide where the model is about to go
+const visibleOptions = computed(() => {
+    if (!filtering.value) return options.value
+    const keyword = filter.value.trim().toLowerCase()
+    const shownIds = new Set()
+    options.value
+        .filter(folder => folder.name.toLowerCase().includes(keyword))
+        .forEach(folder => showWithParents(folder, shownIds))
+    showWithParents(rowsById.value.get(selected.value), shownIds)
+    return options.value.filter(folder => shownIds.has(folder.id))
+})
+
+// The choice stays in sight below the list, and tells apart folders that share a name
+const selectedPath = computed(() => {
+    if (selected.value === null) return ''
+    if (selected.value === '') return t('folders.projects')
+    return rowsById.value.get(selected.value)?.path ?? ''
+})
+
+// Esc empties the filter first; only an empty one lets the dialog close as usual
+const clearFilter = event => {
+    if (!filter.value) return
+    event.stopPropagation()
+    filter.value = ''
+}
+
+const indent = depth => `calc(0.75rem + ${depth * 1.5}rem)`
+
+const rowClass = id => ({
+    'is-selected bg-primary-subtle': selected.value === id,
+    'is-current text-body-secondary': isCurrent(id)
+})
+
+// Back to the whole list, the choice is looked up again rather than left wherever the list scrolled to
+watch(filtering, (now, before) => {
+    if (before && !now) nextTick(revealSelected)
+})
+
+watch(selected, folderId => {
+    if (keyFor && !keyEdited.value && folderId !== null) key.value = keyFor(folderId === '' ? null : folderId)
+})
+
 onMounted(() => {
     if (!modalRoot.value) return
     modalBootstrap = new bootstrap.Modal(modalRoot.value)
     modalRoot.value.addEventListener('hidden.bs.modal', () => { shown.value = false })
+    // A hidden list cannot scroll, so the choice is brought into view once the dialog is shown
+    modalRoot.value.addEventListener('shown.bs.modal', revealSelected)
 })
 
 const handleAccept = async () => {
     if (!isChosen.value || accepting) return
     if (requireKey.value && !key.value.trim()) {
         error.value = t(keyRequired.value)
+        return
+    }
+    const invalidKey = requireKey.value ? validateKey?.(key.value.trim()) : null
+    if (invalidKey) {
+        error.value = invalidKey
         return
     }
     accepting = true
@@ -139,28 +228,40 @@ const handleAccept = async () => {
     modalBootstrap?.hide()
 }
 
+// A choice made before, as on a repeated import, may sit far down the list
+function revealSelected() {
+    listRoot.value?.querySelector('.is-selected')?.scrollIntoView?.({ block: 'nearest' })
+}
+
 /**
  * @param {object} options where the folders come from and what the dialog asks for
- * @param {Array} options.folders rows of { id, name, depth }
+ * @param {Array} options.folders rows of { id, name, depth, parentId, userFolder, path } in tree order, as useFolders.flatten gives them
  * @param {Function} options.accept receives (folderId, key); throwing keeps the dialog open,
  *   except under runAfterClose, where the dialog is already gone and reporting is the caller's
  * @param {boolean} [options.runAfterClose] close first and accept afterwards, for work that
  *   reports itself elsewhere
  * @param {string|null} [options.current] the item's current location, shown but disabled;
  *   null is the top level
+ * @param {Function} [options.keyFor] (folderId) => the key to suggest once that folder is chosen,
+ *   until the user types one
+ * @param {Function} [options.validateKey] (key) => the message for a key that cannot be used, or null
  */
 const show = ({ folders, title: dialogTitle, allowTopLevel: topLevel = false,
         requireKey: needsKey = false, defaultKey = '', accept, selected: preselected = null,
         runAfterClose: afterClose = false, current: currentLocation = undefined,
         keyLabel: label = 'folders.copyKey',
-        keyRequired: required = 'folders.copyKeyRequired' }) => {
+        keyRequired: required = 'folders.copyKeyRequired', keyFor: suggestKey = null, validateKey: checkKey = null }) => {
     options.value = folders ?? []
     title.value = dialogTitle
+    filter.value = ''
     allowTopLevel.value = topLevel
     requireKey.value = needsKey
     runAfterClose.value = afterClose
     keyLabel.value = label
     keyRequired.value = required
+    keyFor = suggestKey
+    validateKey = checkKey
+    keyEdited.value = false
     key.value = defaultKey
     current.value = currentLocation
     // Only a folder still in the tree can be offered as the choice already made
@@ -175,3 +276,14 @@ const show = ({ folders, title: dialogTitle, allowTopLevel: topLevel = false,
 
 defineExpose({ show, isShown: () => shown.value })
 </script>
+
+<style scoped>
+/* Bootstrap has no hover or cursor utilities */
+.folder-picker-row:not(.is-current) {
+    cursor: pointer;
+}
+
+.folder-picker-row:not(.is-current):hover {
+    background-color: var(--bs-tertiary-bg);
+}
+</style>
