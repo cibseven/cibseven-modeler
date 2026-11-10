@@ -17,6 +17,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import TabNavItem from '../../components/layout/TabNavItem.vue'
+import tabNavItemSource from '../../components/layout/TabNavItem.vue?raw'
 
 const mountItem = (overrides = {}) => mount(TabNavItem, {
     props: {
@@ -45,6 +46,13 @@ describe('TabNavItem accessibility', () => {
         expect(dot.attributes('role')).toBe('img')
         expect(dot.attributes('aria-label')).toBe('tabs.unsavedChanges')
         expect(mountItem().find('.unsaved-dot').exists()).toBe(false)
+    })
+
+    // jsdom applies no component styles, so the size is read from the rule itself
+    it('draws the unsaved dot 0.625rem wide and high', () => {
+        const rule = tabNavItemSource.match(/\.unsaved-dot \{([^}]*)\}/)[1]
+        expect(rule).toMatch(/width: 0\.625rem/)
+        expect(rule).toMatch(/height: 0\.625rem/)
     })
 
     it('aria-selected reflects whether the tab is the active one', () => {

@@ -166,8 +166,8 @@ defineExpose({
 }
 
 .unsaved-dot {
-    width: 0.5rem;
-    height: 0.5rem;
+    width: 0.625rem;
+    height: 0.625rem;
 }
 
 .btn-close:hover {
