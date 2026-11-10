@@ -467,7 +467,7 @@
     "processName": "{item}name",
     "processId": "{item}-ID",
     "cancel": "Später",
-    "qnameError": "ID muss ein gültiger QName sein",
+    "qnameError": "Mit einem Buchstaben oder _ beginnen, dann nur Buchstaben, Ziffern, ., - und _ verwenden",
     "fillId": "ID ist erforderlich",
     "duplicatedId": "ID existiert bereits"
   },

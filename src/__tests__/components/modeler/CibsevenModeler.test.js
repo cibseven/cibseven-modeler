@@ -199,7 +199,7 @@ vi.mock('../../../components/messages/ToastMessage.vue', () => ({
   default: { name: 'ToastMessage', props: ['headerText'], template: '<div class="toast-stub" />', methods: { _showToastTimeOut: (...args) => toastMocks.show(...args) } },
 }))
 vi.mock('../../../components/modals/ImportConflictModal.vue', () => ({
-  default: { name: 'ImportConflictModal', props: ['showModal', 'modalData', 'functionAfterAccepting', 'functionAfterCanceling', 'functionAfterRenaming'], template: '<div />' },
+  default: { name: 'ImportConflictModal', props: ['showModal', 'modalData', 'functionAfterAccepting', 'functionAfterCanceling', 'functionAfterRenaming', 'validateRenameKey'], template: '<div />' },
 }))
 vi.mock('../../../components/modals/FolderPickerModal.vue', () => ({
   default: { name: 'FolderPickerModal', template: '<div />', methods: { show: (...args) => pickerMocks.show(...args), isShown: (...args) => pickerMocks.isShown(...args) } },
@@ -995,6 +995,20 @@ describe('CibsevenModeler opened from Cockpit', () => {
       expect(conflictModal(wrapper).props('showModal')).toBe(true)
       expect(conflictModal(wrapper).props('modalData')).toMatchObject({ id: 'm1', processkey: 'invoice', folderId: 'archive', source: 'deployment' })
       expect(tabManagerState.tabNavList.value).toEqual([])
+    })
+
+    // The renamed model carries the key as the id of its process (CIB7-2689); a form id is no element id
+    it('refuses a new key that is no valid id, except for a form', async () => {
+      const wrapper = await open()
+      const validate = conflictModal(wrapper).props('validateRenameKey')
+
+      expect(validate('my invoice')).toBe('modalNewDiagram.qnameError')
+      expect(validate('2024-invoice')).toBe('modalNewDiagram.qnameError')
+      expect(validate('invoice_2')).toBeNull()
+      expect(validate('invoice')).toBe('modalImportedFile.renameSameKey')
+
+      conflictModal(wrapper).props('modalData').diagramType = 'form'
+      expect(validate('my invoice')).toBeNull()
     })
 
     it('opens the stored model, in its folder, when it is kept', async () => {

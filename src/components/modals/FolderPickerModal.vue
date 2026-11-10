@@ -119,6 +119,7 @@ const current = ref(undefined)
 const shown = ref(false)
 // The key to suggest for a folder, when it depends on the one chosen
 let keyFor = null
+let validateKey = null
 // Once the user typed a key, choosing another folder leaves it alone
 const keyEdited = ref(false)
 let modalBootstrap = null
@@ -200,6 +201,11 @@ const handleAccept = async () => {
         error.value = t(keyRequired.value)
         return
     }
+    const invalidKey = requireKey.value ? validateKey?.(key.value.trim()) : null
+    if (invalidKey) {
+        error.value = invalidKey
+        return
+    }
     accepting = true
     if (runAfterClose.value) {
         // The work says elsewhere how it went, so the dialog leaves first rather than sitting
@@ -238,12 +244,13 @@ function revealSelected() {
  *   null is the top level
  * @param {Function} [options.keyFor] (folderId) => the key to suggest once that folder is chosen,
  *   until the user types one
+ * @param {Function} [options.validateKey] (key) => the message for a key that cannot be used, or null
  */
 const show = ({ folders, title: dialogTitle, allowTopLevel: topLevel = false,
         requireKey: needsKey = false, defaultKey = '', accept, selected: preselected = null,
         runAfterClose: afterClose = false, current: currentLocation = undefined,
         keyLabel: label = 'folders.copyKey',
-        keyRequired: required = 'folders.copyKeyRequired', keyFor: suggestKey = null }) => {
+        keyRequired: required = 'folders.copyKeyRequired', keyFor: suggestKey = null, validateKey: checkKey = null }) => {
     options.value = folders ?? []
     title.value = dialogTitle
     filter.value = ''
@@ -253,6 +260,7 @@ const show = ({ folders, title: dialogTitle, allowTopLevel: topLevel = false,
     keyLabel.value = label
     keyRequired.value = required
     keyFor = suggestKey
+    validateKey = checkKey
     keyEdited.value = false
     key.value = defaultKey
     current.value = currentLocation

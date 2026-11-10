@@ -96,6 +96,13 @@ export const setTagValueOfXml = (resXmlExternalUrl, xmlTag, attribute, xmlProper
 	return new XMLSerializer().serializeToString(doc)
 }
 
+/**
+ * Whether a key can be the id of a BPMN or DMN element, as a process or decision key is: a letter or
+ * "_" first, then letters, digits, ".", "-" and "_". The rule of the properties panel; the engine
+ * refuses to deploy anything else.
+ */
+export const isValidXmlId = id => /^[a-z_][\w.-]*$/i.test(id ?? '')
+
 // In BPMN the collaboration or process the first diagram shows (without a diagram the collaboration,
 // else the first process), as the modeler opens it; in DMN the definitions
 const _keyElement = (doc, isDmn) => {
