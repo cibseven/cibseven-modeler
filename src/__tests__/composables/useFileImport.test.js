@@ -164,6 +164,31 @@ describe('useFileImport', () => {
             expect(m.updateDiagramProcess).not.toHaveBeenCalled()
         })
 
+        // Before CIB7-2680 the collaboration and the process both got the new key, and the diagram kept the old one
+        it('renames only the collaboration of a pool, and its diagram follows', async () => {
+            const pooled = '<?xml version="1.0" encoding="UTF-8"?>' +
+                '<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI">' +
+                '<bpmn:collaboration id="procA"><bpmn:participant id="P" processRef="Process_1"/></bpmn:collaboration>' +
+                '<bpmn:process id="Process_1"><bpmn:startEvent id="Start_1"/></bpmn:process>' +
+                '<bpmndi:BPMNDiagram id="D"><bpmndi:BPMNPlane id="Plane" bpmnElement="procA"/></bpmndi:BPMNDiagram>' +
+                '</bpmn:definitions>'
+            const deps = makeDeps()
+            deps.processes.value = [{ id: 'db1', name: 'Proc A', processkey: 'procA', folderId: 'general' }]
+            deps.store.state.modeler.processes.processSelected = bpmn('procA-OLD')
+            const { handleFile, resolveConflict } = useFileImport(deps)
+
+            const p = handleFile(fileEvent([{ name: 'a.bpmn', content: pooled }]))
+            await waitForModal(deps)
+            resolveConflict('rename', false, { newKey: 'procRenamed' })
+            await p
+
+            const xmlText = await m.saveDiagramProcess.mock.calls[0][2].text()
+            expect(xmlText).toContain('<bpmn:collaboration id="procRenamed"')
+            expect(xmlText).toContain('bpmnElement="procRenamed"')
+            expect(xmlText).toContain('<bpmn:process id="Process_1"')
+            expect(xmlText).toContain('processRef="Process_1"')
+        })
+
         it('treats identical content as unchanged (no modal)', async () => {
             const deps = makeDeps()
             deps.processes.value = [{ id: 'db1', name: 'Proc A', processkey: 'procA', folderId: 'general' }]
