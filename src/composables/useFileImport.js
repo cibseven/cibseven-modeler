@@ -21,7 +21,7 @@ import {
   getProcessKeyFromBpmn,
   compareXML,
   generateUniqueId,
-  setTagValueOfXml,
+  rekeyXml,
 } from '../utils.js'
 import { DIAGRAM_TYPE } from '../constants/diagramTypes.js'
 import { saveDiagramProcess, updateDiagramProcess, fetchProcessByKey } from '../services/processService.js'
@@ -107,31 +107,21 @@ export default function useFileImport({
     })
   }
 
-  /** Returns the current XML for the tab matching processKey, or null if not open.
-   *  Only returns the tab XML if the tab has unsaved edits (canSave = true).
-   *  When the tab is open but clean, returning null causes the caller to fetch
-   *  the DB version instead — avoiding false conflicts from bpmn-js XML normalisation. */
-  const _checkIfProcessOpenInTab = processKey => {
-    const foundTabIndex = tabNavList.value.findIndex(
-      tab => tab.key === processKey && tab.type !== DIAGRAM_TYPE.FORM
-    )
-    if (foundTabIndex > -1 && tabNavList.value[foundTabIndex].canSave)
-      return editorXML.value[foundTabIndex] ?? tabNavListXml.value[foundTabIndex]
-    return null
-  }
+  // A key is unique within a folder only, so a tab is matched by the model it holds: a stored
+  // model by its id, and one not stored yet by its key, its kind and the folder it goes into
+  const _tabOfStored = id => tabNavList.value.findIndex(tab => tab.isSaved && tab.id === id)
 
-  /** Returns the current JSON for the tab matching formId, or null if not open.
-   *  Only returns tab JSON when canSave = true (unsaved edits present). */
-  const _checkIfFormOpenInTab = formId => {
-    const foundTabIndex = tabNavList.value.findIndex(
-      tab => tab.key === formId && tab.type === DIAGRAM_TYPE.FORM
-    )
-    // Prefer the live editor content (editorXML) over the originally-loaded snapshot
-    // so a conflict reflects the user's current unsaved edits — mirrors the process check.
-    if (foundTabIndex > -1 && tabNavList.value[foundTabIndex].canSave)
-      return editorXML.value[foundTabIndex] ?? tabNavListXml.value[foundTabIndex]
-    return null
-  }
+  const _unsavedTab = (key, isForm) => tabNavList.value.findIndex(tab =>
+    !tab.isSaved && tab.key === key && (tab.type === DIAGRAM_TYPE.FORM) === isForm
+    && (tab.folderId ?? null) === (importFolderId?.value ?? null))
+
+  /** The content of that tab when it has unsaved edits (canSave = true), or null.
+   *  A clean tab answers null, so the caller fetches the DB version instead — avoiding
+   *  false conflicts from bpmn-js XML normalisation. The live editor content comes first,
+   *  so a conflict reflects the user's current edits. */
+  const _editedContent = index => index > -1 && tabNavList.value[index].canSave
+    ? editorXML.value[index] ?? tabNavListXml.value[index]
+    : null
 
   /**
    * Normalize any form representation to a canonical compact JSON string for
@@ -198,9 +188,7 @@ export default function useFileImport({
       const blob = new Blob([xml], { type: 'text/xml' })
       const response = await saveDiagramProcess(processKey, processKey, blob, diagramType, importFolderId?.value)
       if (response?.id) {
-        const idx = tabNavList.value.findIndex(
-          t => t.key === processKey && !t.isSaved && t.type !== DIAGRAM_TYPE.FORM
-        )
+        const idx = _unsavedTab(processKey, false)
         if (idx > -1) {
           tabNavList.value[idx].id = response.id
           tabNavList.value[idx].isSaved = true
@@ -215,9 +203,7 @@ export default function useFileImport({
     try {
       const response = await saveForm(formId, JSON.parse(jsonString), importFolderId?.value)
       if (response?.id) {
-        const idx = tabNavList.value.findIndex(
-          t => t.key === formId && !t.isSaved && t.type === DIAGRAM_TYPE.FORM
-        )
+        const idx = _unsavedTab(formId, true)
         if (idx > -1) {
           tabNavList.value[idx].id = response.id
           tabNavList.value[idx].isSaved = true
@@ -244,18 +230,19 @@ export default function useFileImport({
 
   const _openFormFromImportedFile = async (jsonExternal, isBatch = false) => {
     const jsonId = JSON.parse(jsonExternal)?.id
-    // The loaded list only holds the folder in view, but a form id is unique across all of
-    // them, so a form that is not on screen still collides
-    let foundForm = forms.value?.find(form => form.formId === jsonId)
-    if (!foundForm) foundForm = await _findFormRemotely(jsonId)
+    // A form id is unique within a folder, so only a form in the one the import goes into
+    // collides; the loaded list may not hold all of it, so the backend is asked too
+    const folderId = importFolderId?.value ?? null
+    let foundForm = forms.value?.find(form => form.formId === jsonId && form.folderId === folderId)
+    if (!foundForm) foundForm = await _findFormRemotely(jsonId, folderId)
 
     if (foundForm) {
-      let jsonFromEditor = _checkIfFormOpenInTab(jsonId)
+      const foundTabIndex = _tabOfStored(foundForm.id)
+      let jsonFromEditor = _editedContent(foundTabIndex)
       if (!jsonFromEditor) {
         await store.dispatch('modeler/forms/fetchFormById', foundForm.id)
         jsonFromEditor = store.state.modeler.forms.formSelected
       }
-      const foundTabIndex = tabNavList.value.findIndex(el => el.key === jsonId)
       modalData.value = {
         id: foundForm.id,
         name: jsonId,
@@ -271,7 +258,7 @@ export default function useFileImport({
         const { choice, payload } = await _awaitConflictModal(DIAGRAM_TYPE.FORM, isBatch)
         if (choice === 'replace') {
           await _autoUpdateForm(jsonExternal, foundForm.id, jsonId)
-          const openIdx = tabNavList.value.findIndex(t => t.key === jsonId && t.type === DIAGRAM_TYPE.FORM)
+          const openIdx = foundTabIndex
           if (openIdx > -1) {
             // updateDiagramXml -> _validate -> importJson updates the form's `json` closure
             // synchronously, so a tab switch re-inits the editor with the new content.
@@ -303,7 +290,7 @@ export default function useFileImport({
       }
     } else {
       // Check for unsaved-tab conflict (re-import of a tab already open)
-      const unsavedJson = _checkIfFormOpenInTab(jsonId)
+      const unsavedJson = _editedContent(_unsavedTab(jsonId, true))
       if (unsavedJson !== null) {
         modalData.value = {
           id: jsonId,
@@ -316,14 +303,14 @@ export default function useFileImport({
         const isEqual = _canonicalFormJson(unsavedJson) === _canonicalFormJson(jsonExternal)
         if (isEqual) {
           if (!isBatch) {
-            const idx = tabNavList.value.findIndex(t => t.key === jsonId && t.type === DIAGRAM_TYPE.FORM)
+            const idx = _unsavedTab(jsonId, true)
             if (idx > -1) modelerTabNav.value.selectTab(idx)
           }
           return 'unchanged'
         } else {
           const { choice } = await _awaitConflictModal(DIAGRAM_TYPE.FORM, isBatch)
           if (choice === 'replace') {
-            const idx = tabNavList.value.findIndex(t => t.key === jsonId && t.type === DIAGRAM_TYPE.FORM)
+            const idx = _unsavedTab(jsonId, true)
             if (idx > -1) {
               // Overwrite the unsaved tab with the imported content through the editor:
               // updateDiagramXml -> _validate re-imports it. cansave=null leaves the tab
@@ -346,12 +333,14 @@ export default function useFileImport({
   }
 
   /**
-   * The stored diagram with that key, or null. Asked of the backend by exact key rather than
-   * searched: the key is what the unique constraint is on, so a near match is not a conflict.
+   * The stored diagram with that key in the folder, or null. Asked of the backend by exact key
+   * rather than searched: key and folder are what the unique constraint is on, so a near match
+   * is not a conflict. Without a folder the backend picks one, and refuses a key it holds already.
    */
-  const _findProcessRemotely = async key => {
+  const _findProcessRemotely = async (key, folderId) => {
+    if (!folderId) return null
     try {
-      return await fetchProcessByKey(key)
+      return await fetchProcessByKey(key, folderId)
     } catch (e) {
       // Only a 404 answers the question. Reading any other failure as "nothing there" would
       // import a second diagram under a key the database then refuses
@@ -360,9 +349,10 @@ export default function useFileImport({
     }
   }
 
-  const _findFormRemotely = async formId => {
+  const _findFormRemotely = async (formId, folderId) => {
+    if (!folderId) return null
     try {
-      return await fetchFormByFormId(formId)
+      return await fetchFormByFormId(formId, folderId)
     } catch (e) {
       if (e?.response?.status === 404) return null
       throw new Error(t('importErrors.lookupFailed'), { cause: e })
@@ -393,13 +383,14 @@ export default function useFileImport({
       diagramType = DIAGRAM_TYPE.BPMN_C7
     }
 
-    // The loaded list only holds the folder in view, but a process key is unique across all of
-    // them, so a diagram that is not on screen still collides
-    let foundModelerProcess = processes.value?.find(process => process.processkey === foundExternalProcessKey)
-    if (!foundModelerProcess) foundModelerProcess = await _findProcessRemotely(foundExternalProcessKey)
+    // A process key is unique within a folder, so only a diagram in the one the import goes into
+    // collides; the loaded list may not hold all of it, so the backend is asked too
+    const folderId = importFolderId?.value ?? null
+    let foundModelerProcess = processes.value?.find(process => process.processkey === foundExternalProcessKey && process.folderId === folderId)
+    if (!foundModelerProcess) foundModelerProcess = await _findProcessRemotely(foundExternalProcessKey, folderId)
 
     if (foundModelerProcess) {
-      let xmlFromModeler = _checkIfProcessOpenInTab(foundExternalProcessKey)
+      let xmlFromModeler = _editedContent(_tabOfStored(foundModelerProcess.id))
       if (!xmlFromModeler) {
         await store.dispatch('modeler/processes/fetchProcessById', foundModelerProcess.id)
         xmlFromModeler = store.state.modeler.processes.processSelected
@@ -429,7 +420,7 @@ export default function useFileImport({
         const { choice, payload } = await _awaitConflictModal(diagramType, isBatch)
         if (choice === 'replace') {
           await _autoUpdateProcess(resXmlExternalUrl, foundModelerProcess.id, foundExternalProcessKey, diagramType)
-          const openIdx = tabNavList.value.findIndex(t => t.key === foundExternalProcessKey && t.type !== DIAGRAM_TYPE.FORM)
+          const openIdx = _tabOfStored(foundModelerProcess.id)
           if (openIdx > -1) {
             updateDiagramXml?.(resXmlExternalUrl, openIdx, false, diagramType)
             // Wait for bpmn-js commandStack.changed to fire (it sets canSave=true), then override back to saved state
@@ -440,14 +431,7 @@ export default function useFileImport({
           }
           return true
         } else if (choice === 'rename' && payload?.newKey) {
-          let renamedXml = resXmlExternalUrl
-          if (diagramType === DIAGRAM_TYPE.DMN) {
-            renamedXml = setTagValueOfXml(renamedXml, 'definitions', 'id', payload.newKey)
-          } else {
-            if (getTagValueFromXml(renamedXml, 'collaboration', 'id'))
-              renamedXml = setTagValueOfXml(renamedXml, 'collaboration', 'id', payload.newKey)
-            renamedXml = setTagValueOfXml(renamedXml, 'process', 'id', payload.newKey)
-          }
+          const renamedXml = rekeyXml(resXmlExternalUrl, payload.newKey, diagramType === DIAGRAM_TYPE.DMN)
           if (!isBatch) _addNewBpmnFromLoadedXml(diagramType, renamedXml, payload.newKey, true)
           await _autoSaveProcess(renamedXml, payload.newKey, diagramType)
           return true
@@ -455,7 +439,7 @@ export default function useFileImport({
       }
     } else {
       // Check for unsaved-tab conflict (re-import of a tab already open)
-      const unsavedXml = _checkIfProcessOpenInTab(foundExternalProcessKey)
+      const unsavedXml = _editedContent(_unsavedTab(foundExternalProcessKey, false))
       if (unsavedXml !== null) {
         modalData.value = {
           id: foundExternalProcessKey,
@@ -468,14 +452,14 @@ export default function useFileImport({
         const isEqual = compareXML(unsavedXml, resXmlExternalUrl)
         if (isEqual) {
           if (!isBatch) {
-            const idx = tabNavList.value.findIndex(t => t.key === foundExternalProcessKey && t.type !== DIAGRAM_TYPE.FORM)
+            const idx = _unsavedTab(foundExternalProcessKey, false)
             if (idx > -1) modelerTabNav.value.selectTab(idx)
           }
           return 'unchanged'
         } else {
           const { choice } = await _awaitConflictModal(diagramType, isBatch)
           if (choice === 'replace') {
-            const idx = tabNavList.value.findIndex(t => t.key === foundExternalProcessKey && t.type !== DIAGRAM_TYPE.FORM)
+            const idx = _unsavedTab(foundExternalProcessKey, false)
             if (idx > -1) {
               // Overwrite the unsaved tab with the imported content through the editor:
               // updateDiagramXml -> _validate re-imports it. cansave=null leaves the tab

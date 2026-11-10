@@ -39,6 +39,9 @@ const projectOf = folderId => {
   return current
 }
 
+/** The project a folder lies in, its top-level folder; null for a model without a folder. */
+export const projectOfFolder = folderId => folderId ? projectOf(folderId) : null
+
 /** The rights in the project a folder lies in; null where the backend restricts nothing. */
 export const rightsOfFolder = folderId => state.projects[projectOf(folderId)] ?? null
 

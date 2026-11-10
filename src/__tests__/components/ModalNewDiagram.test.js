@@ -68,6 +68,26 @@ describe('ModalNewDiagram skip preference', () => {
     })
 })
 
+// The id becomes the id of the process or definitions, so it follows the XML id rules (CIB7-2689)
+describe('ModalNewDiagram id format', () => {
+    const errorFor = async id => {
+        const wrapper = mountModal(() => false)
+        await open(wrapper, vi.fn())
+        await wrapper.find('#processIdInput').setValue(id)
+        const error = wrapper.findAll('.invalid-feedback').map(e => e.text()).find(text => text.includes('qnameError'))
+        wrapper.unmount()
+        return error ?? null
+    }
+
+    it.each(['Process_1', '_draft', 'invoice-2.1'])('accepts %s', async id => {
+        expect(await errorFor(id)).toBeNull()
+    })
+
+    it.each(['-invoice', '.invoice', '1invoice', 'my invoice', 'a:b'])('refuses %s', async id => {
+        expect(await errorFor(id)).toContain('modalNewDiagram.qnameError')
+    })
+})
+
 describe('ModalNewDiagram duplicate-id validation', () => {
     it('shows the inline error and blocks Accept when the id already exists', async () => {
         const cb = vi.fn()

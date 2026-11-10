@@ -30,16 +30,18 @@
             <div class="container px-3 pt-4">
                 <div class="row align-items-center g-2 pb-2">
                     <div class="col-12 col-xl-5">
-                        <div class="d-flex align-items-center border rounded start-page-search">
+                        <!-- Built like the webclient's SearchInput, which the modeler cannot import: one form-control, the ring on the container -->
+                        <div class="form-control d-flex align-items-center gap-2 start-page-search">
                             <button
                                 @click.stop="handleSearch"
                                 type="button"
-                                class="btn btn-link btn-sm mdi mdi-magnify mdi-24px text-secondary"
+                                class="start-page-search-button d-inline-flex align-items-center p-0 border-0 bg-transparent lh-1 rounded-1"
                                 :title="$t('titles.search')"
                                 :aria-label="$t('buttons.search')">
+                                <span class="mdi mdi-magnify mdi-18px" aria-hidden="true"></span>
                             </button>
                             <input
-                                class="start-page-search-field form-control-plaintext flex-grow-1 w-100 border-0 px-2"
+                                class="start-page-search-field flex-grow-1 p-0 border-0 bg-transparent text-reset shadow-none"
                                 type="text"
                                 :title="$t('titles.search')"
                                 :placeholder="$t('titles.search')"
@@ -47,10 +49,10 @@
                                 autocomplete="off"
                                 v-model="inputSearchValue"
                                 @input="handleSearch">
-                            <div class="dropdown align-self-stretch d-flex">
+                            <div class="dropdown d-flex">
                                 <button
                                     type="button"
-                                    class="btn dropdown-toggle border-0 border-start rounded-0 rounded-end text-secondary shadow-none start-page-search-segment d-flex align-items-center px-3"
+                                    class="dropdown-toggle text-nowrap start-page-search-button d-inline-flex align-items-center p-0 border-0 bg-transparent lh-1 rounded-1"
                                     data-bs-toggle="dropdown"
                                     aria-expanded="false"
                                     :title="$t(`filterElements.${filterType}`)">
@@ -67,15 +69,19 @@
                         </div>
                     </div>
                     <div class="col-12 col-xl-7 d-flex flex-wrap gap-2 justify-content-xl-end">
-                        <!-- At the top level a folder is a project, and creating one is all there is to do -->
-                        <button v-if="canEditHere" type="button" class="btn text-nowrap create-folder"
-                            :class="currentFolderId ? 'btn-outline-secondary' : 'btn-secondary'"
-                            :title="createFolderLabel" @click="handleCreateFolder">
-                            <i class="mdi me-1" :class="currentFolderId ? 'mdi-folder-plus-outline' : 'mdi-briefcase-plus'" aria-hidden="true"></i>{{ createFolderLabel }}
+                        <!-- At the top level a folder is a project, and creating one is all there is to do.
+                             Two elements, not one with changing classes, so the button transition never shows a colour flash -->
+                        <button v-if="canEditHere && !currentFolderId" key="create-project" type="button"
+                            class="btn btn-secondary text-nowrap create-folder" :title="createFolderLabel" @click="handleCreateFolder">
+                            <i class="mdi me-1 mdi-briefcase-plus" aria-hidden="true"></i>{{ createFolderLabel }}
+                        </button>
+                        <button v-else-if="canEditHere" key="create-folder" type="button"
+                            class="btn btn-light text-nowrap create-folder" :title="createFolderLabel" @click="handleCreateFolder">
+                            <i class="mdi me-1 mdi-folder-plus-outline" aria-hidden="true"></i>{{ createFolderLabel }}
                         </button>
                         <!-- Models are always stored in a folder -->
                         <template v-if="currentFolderId && canEditHere">
-                            <button type="button" class="btn btn-outline-secondary text-nowrap" :title="$t('buttons.importFile')"
+                            <button type="button" class="btn btn-light text-nowrap" :title="$t('buttons.importFile')"
                                 @click="handleOpenFileInput">
                                 <i class="mdi mdi-upload me-1" aria-hidden="true"></i>{{ $t('buttons.import') }}
                             </button>
@@ -189,7 +195,7 @@ import ConfirmModal from '../modals/ConfirmModal.vue'
 import formJson from '../../resources/formSchema.json'
 import { DIAGRAM_ICON, DIAGRAM_TYPE } from '../../constants/diagramTypes.js'
 import { getPlugin } from '../../plugins/pluginsConfig.js'
-import { folderIcon, modelName } from '../../utils'
+import { folderIcon, isValidXmlId, modelName } from '../../utils'
 
 const startPageTool = getPlugin('start-page-tools')
 // What an edition adds to a folder's menu: { id, icon, label, visible(folder, rights), run(folder, { reload }) }
@@ -589,9 +595,8 @@ const handleMoveModel = item => {
 }
 
 const handleCopyModel = item => {
-    // A copy is a new model and what identifies it has to be its own: the engine resolves a
-    // process by key, and a form is referenced by its form id
     const isForm = item.type === DIAGRAM_TYPE.FORM
+    const ownKey = isForm ? item.formId : item.processkey
     // A copy may go into any project the user adds to: the source keeps its model
     folderPickerModal.value?.show({
         folders: folderState.flatten(null, { editableOnly: true }),
@@ -599,7 +604,11 @@ const handleCopyModel = item => {
         requireKey: true,
         keyLabel: isForm ? 'folders.copyFormId' : 'folders.copyKey',
         keyRequired: isForm ? 'folders.copyFormIdRequired' : 'folders.copyKeyRequired',
-        defaultKey: `${isForm ? item.formId : item.processkey}-copy`,
+        defaultKey: ownKey,
+        // A key is unique within a folder: a copy elsewhere keeps it, only one beside the original needs its own
+        keyFor: folderId => folderId === (item.folderId ?? null) ? `${ownKey}-copy` : ownKey,
+        // The copy carries the key as the id of its process or definitions; a form id is no element id
+        validateKey: isForm ? null : key => isValidXmlId(key) ? null : t('modalNewDiagram.qnameError'),
         accept: async (folderId, key) => {
             if (isForm) await copyFormToFolder(item.id, folderId, key)
             else await copyProcessToFolder(item.id, folderId, key, item.name)
@@ -612,8 +621,7 @@ const handleCopyModel = item => {
 const _toggleIsLoading = comp => isLoading.value = comp
 
 // The tree is loaded here, so this is where a folder id can be turned into a name or a path
-const folderPathFor = folderId =>
-    folderState.pathOf(folderId).map(folder => folder.name).join(' / ') || null
+const folderPathFor = folderId => folderState.pathText(folderId) || null
 
 const folderNameFor = folderId => folderState.pathOf(folderId).at(-1)?.name ?? null
 
@@ -652,13 +660,25 @@ defineExpose({
     opacity: 0.5;
 }
 
-/* TODO: Unify search box styles across the project (shared component or global styles). */
-.start-page-search .start-page-search-segment:hover,
-.start-page-search .start-page-search-segment:focus-visible {
-    background-color: var(--bs-gray-200) !important;
+/* The focus ring of the webclient's SearchInput, drawn on the whole field */
+.start-page-search:focus-within {
+    border-color: var(--bs-gray-800) !important;
+    outline: 2px solid var(--bs-gray-800);
+    outline-offset: -1px;
 }
 
-.start-page-search .dropdown-toggle.show {
-    background-color: var(--bs-gray-200) !important;
+/* The theme outlines every focused input (!important); here the field's ring is the only one */
+.start-page-search-field:focus {
+    outline: none !important;
+}
+
+/* Bootstrap has no hover utility: secondary, dark on hover and while the type menu is open */
+.start-page-search-button {
+    color: var(--bs-secondary);
+}
+
+.start-page-search-button:hover,
+.start-page-search-button.show {
+    color: var(--bs-dark);
 }
 </style>

@@ -156,10 +156,15 @@ onBeforeUnmount(() => Object.values(menus).forEach(menu => {
     if (placedMenus.has(menu)) menu.dropdownInstance?.dispose()
 }))
 
-// One menu at a time: BDropdown keeps the click on its button to itself, so the other menus never see it
-const closeOtherMenus = key => Object.entries(menus).forEach(([other, menu]) => {
-    if (other !== key) menu?.hide()
-})
+// One menu at a time: BDropdown keeps the click on its button to itself, so the other menus never see it.
+// The table reuses its rows by position, so a menu can still sit under the key of the item its row showed
+// before (the models arrive before the folders after a reload); the menu just opened is told apart by itself.
+const closeOtherMenus = key => {
+    const opened = menus[key]
+    Object.values(menus).forEach(menu => {
+        if (menu !== opened) menu?.hide()
+    })
+}
 
 const action = (id, icon, label, event) => ({ id, icon, label, event, danger: id === 'delete' })
 const OPEN_FOLDER = action('open', 'mdi-folder-open-outline', 'folders.open', 'openFolder')

@@ -96,6 +96,43 @@ export const setTagValueOfXml = (resXmlExternalUrl, xmlTag, attribute, xmlProper
 	return new XMLSerializer().serializeToString(doc)
 }
 
+/**
+ * Whether a key can be the id of a BPMN or DMN element, as a process or decision key is: a letter or
+ * "_" first, then letters, digits, ".", "-" and "_". The rule of the properties panel; the engine
+ * refuses to deploy anything else.
+ */
+export const isValidXmlId = id => /^[a-z_][\w.-]*$/i.test(id ?? '')
+
+// In BPMN the collaboration or process the first diagram shows (without a diagram the collaboration,
+// else the first process), as the modeler opens it; in DMN the definitions
+const _keyElement = (doc, isDmn) => {
+	if (isDmn) return doc.querySelector('*|definitions')
+	const shown = doc.querySelector('*|BPMNPlane')?.getAttribute('bpmnElement')
+	const candidates = [...doc.querySelectorAll('*|collaboration'), ...doc.querySelectorAll('*|process')]
+	return shown ? candidates.find(element => element.getAttribute('id') === shown) ?? null : candidates[0] ?? null
+}
+
+/**
+ * The diagram with a new key on the element the modeler reads it from, and on the references to it
+ * (bpmnElement, processRef). Other elements keep their ids, so the file stays valid. The same rule as
+ * a copy with a new key in the backend. Unchanged when the diagram has no such element.
+ */
+export const rekeyXml = (xml, newKey, isDmn = false) => {
+	const doc = new DOMParser().parseFromString(xml, 'text/xml')
+	const keyElement = _keyElement(doc, isDmn)
+	const oldKey = keyElement?.getAttribute('id')
+	if (!oldKey || oldKey === newKey) return xml
+	keyElement.setAttribute('id', newKey)
+	if (!isDmn) {
+		for (const element of doc.getElementsByTagName('*')) {
+			for (const attribute of ['bpmnElement', 'processRef']) {
+				if (element.getAttribute(attribute) === oldKey) element.setAttribute(attribute, newKey)
+			}
+		}
+	}
+	return new XMLSerializer().serializeToString(doc)
+}
+
 export const getOnlyNameOfTemplate = (templateWithVersion) => {
 	const parts = templateWithVersion.split('-')
 	return parts.slice(0, -1).join('-')

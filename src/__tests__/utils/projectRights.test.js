@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 import { describe, it, expect, afterEach } from 'vitest'
-import { canEditFolder, rightsOfFolder, setProjectRights } from '../../utils/projectRights.js'
+import { canEditFolder, projectOfFolder, rightsOfFolder, setProjectRights } from '../../utils/projectRights.js'
 
 const TREE = [
   { id: 'claims', parentId: null },
@@ -45,6 +45,14 @@ describe('projectRights', () => {
 
     expect(rightsOfFolder('old')).toEqual(VIEWER)
     expect(rightsOfFolder('sales')).toBeNull()
+  })
+
+  it('names the project of a folder, its top-level folder', () => {
+    setProjectRights(TREE, { projects: {} })
+
+    expect(projectOfFolder('old')).toBe('claims')
+    expect(projectOfFolder('sales')).toBe('sales')
+    expect(projectOfFolder(null)).toBeNull()
   })
 
   /** A new model has no folder yet, and is the user's own until saved. */

@@ -193,7 +193,7 @@ import * as monaco from '../../monaco-setup.js'
 import { useStore } from 'vuex'
 import { useRoute, useRouter } from 'vue-router'
 
-import { compareXML, getTimeStamp, getTagValueFromXml, getProcessKeyFromBpmn, generateUniqueId, setTagValueOfXml, filterTemplates, resolveTabIndexById } from '../../utils.js'
+import { compareXML, getTimeStamp, getTagValueFromXml, getProcessKeyFromBpmn, generateUniqueId, setTagValueOfXml, filterTemplates, resolveTabIndexById, isValidXmlId } from '../../utils.js'
 import Clipboard from 'diagram-js/lib/features/clipboard/Clipboard'
 import { ref, onMounted, onUnmounted, nextTick, watch, computed, inject, provide } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -335,23 +335,25 @@ const handleRename = newKey => {
 	resolveConflict('rename', false, { newKey })
 }
 
+// A key is unique within a folder, so only the loaded models of that folder can hold it
+const _loadedWithKey = (key, type, folderId) => type === 'form'
+	? forms.value?.some(f => f.formId === key && f.folderId === folderId)
+	: processes.value?.some(p => p.processkey === key && p.folderId === folderId)
+
 const validateRenameKey = newKey => {
 	if (newKey === modalData.value.processkey) return t('modalImportedFile.renameSameKey')
-	const exists = modalData.value.diagramType === 'form'
-		? forms.value.find(f => f.formId === newKey)
-		: processes.value.find(p => p.processkey === newKey)
-	if (exists) return t('toastSaveErrorDuplicateKey.body')
+	// The renamed model carries the key as the id of its process or definitions; a form id is no element id
+	if (modalData.value.diagramType !== DIAGRAM_TYPE.FORM && !isValidXmlId(newKey)) return t('modalNewDiagram.qnameError')
+	if (_loadedWithKey(newKey, modalData.value.diagramType, importFolderId.value ?? null)) return t('toastSaveErrorDuplicateKey.body')
 	return null
 }
 
-// Used by the new-diagram modal for a live, type-aware duplicate-id check: instant against
-// the loaded list, then an authoritative backend lookup for ids on not-yet-loaded pages.
+// Used by the new-diagram modal for a live, type-aware duplicate-id check in the folder the
+// diagram goes into: instant against the loaded list, then a backend lookup for ids on
+// not-yet-loaded pages.
 const checkDuplicateId = async (id, type) => {
-	const inLoaded = type === 'form'
-		? forms.value?.some(f => f.formId === id)
-		: processes.value?.some(p => p.processkey === id)
-	if (inLoaded) return true
-	return keyExistsRemote(id, type)
+	if (_loadedWithKey(id, type, currentFolderId.value)) return true
+	return keyExistsRemote(id, type, currentFolderId.value)
 }
 
 const _loadElementTemplatesByConfig = async () => {

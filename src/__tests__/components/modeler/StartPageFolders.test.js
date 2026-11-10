@@ -243,11 +243,36 @@ describe('StartPage folders', () => {
       await openGeneral(wrapper)
 
       expect(createButton(wrapper).text()).toBe('folders.create')
-      expect(createButton(wrapper).classes()).toContain('btn-outline-secondary')
+      expect(createButton(wrapper).classes()).toContain('btn-light')
       expect(createButton(wrapper).classes()).not.toContain('btn-secondary')
       expect(createButton(wrapper).find('.mdi-folder-plus-outline').exists()).toBe(true)
       // Same size as the project button, so the row does not jump when a folder is opened
       expect(createButton(wrapper).classes()).not.toContain('btn-sm')
+    })
+
+    // One element with changing classes let the button transition flash between the two colours
+    it('swaps the project button for another element inside a folder, and back', async () => {
+      const wrapper = await mountStartPage()
+      const projectButton = createButton(wrapper).element
+
+      await openGeneral(wrapper)
+      const folderButton = createButton(wrapper).element
+      expect(folderButton).not.toBe(projectButton)
+      expect(projectButton.isConnected).toBe(false)
+
+      await filesTable(wrapper).vm.$emit('openFolder', null)
+      await flushPromises()
+      expect(createButton(wrapper).element).not.toBe(folderButton)
+      expect(createButton(wrapper).classes()).toContain('btn-secondary')
+    })
+
+    it('shows Import as a light button inside a folder', async () => {
+      const wrapper = await mountStartPage()
+      await openGeneral(wrapper)
+
+      const importButton = wrapper.findAll('button').find(button => button.text() === 'buttons.import')
+      expect(importButton.classes()).toContain('btn-light')
+      expect(importButton.classes()).not.toContain('btn-outline-secondary')
     })
 
     it('asks for a project name at the top level', async () => {
@@ -297,29 +322,45 @@ describe('StartPage folders', () => {
       return picker.vm.show.mock.calls[0][0]
     }
 
-    it('asks a diagram for a process key of its own', async () => {
+    /** A key is unique within a folder: a copy elsewhere keeps it, one beside the original needs its own (CIB7-2277). */
+    it('suggests the key of a diagram for another folder and a new one beside it', async () => {
       const wrapper = await mountStartPage()
 
       const options = await openPicker(wrapper, DIAGRAMS[0])
 
       expect(options.keyLabel).toBe('folders.copyKey')
-      expect(options.defaultKey).toBe('process-one-copy')
-      await options.accept('invoicing', 'process-one-copy')
-      expect(copyProcessToFolder).toHaveBeenCalledWith('p1', 'invoicing', 'process-one-copy', 'Process One')
+      expect(options.defaultKey).toBe('process-one')
+      expect(options.keyFor('invoicing')).toBe('process-one')
+      expect(options.keyFor('general')).toBe('process-one-copy')
+      await options.accept('invoicing', 'process-one')
+      expect(copyProcessToFolder).toHaveBeenCalledWith('p1', 'invoicing', 'process-one', 'Process One')
     })
 
-    /** A form is referenced by its form id, so its copy needs one rather than a process key. */
-    it('asks a form for a form id of its own', async () => {
+    /** A form is referenced by its form id, so its copy is asked for one rather than a process key. */
+    it('suggests the form id of a form the same way', async () => {
       const form = { id: 'f1', formId: 'invoice-form', type: DIAGRAM_TYPE.FORM, folderId: 'general' }
       const wrapper = await mountStartPage({ diagrams: [form] })
 
       const options = await openPicker(wrapper, form)
 
       expect(options.keyLabel).toBe('folders.copyFormId')
-      expect(options.defaultKey).toBe('invoice-form-copy')
-      await options.accept('invoicing', 'invoice-form-copy')
-      expect(copyFormToFolder).toHaveBeenCalledWith('f1', 'invoicing', 'invoice-form-copy')
+      expect(options.defaultKey).toBe('invoice-form')
+      expect(options.keyFor('general')).toBe('invoice-form-copy')
+      await options.accept('invoicing', 'invoice-form')
+      expect(copyFormToFolder).toHaveBeenCalledWith('f1', 'invoicing', 'invoice-form')
       expect(copyProcessToFolder).not.toHaveBeenCalled()
+      // A form id is no element id, so any key goes
+      expect(options.validateKey).toBeNull()
+    })
+
+    /** The copy carries its key as the id of its process (CIB7-2689), so the dialog refuses one that is no valid id. */
+    it('checks that the key of a diagram copy is a valid id', async () => {
+      const wrapper = await mountStartPage()
+
+      const options = await openPicker(wrapper, DIAGRAMS[0])
+
+      expect(options.validateKey('my invoice')).toBe('modalNewDiagram.qnameError')
+      expect(options.validateKey('process-one_copy')).toBeNull()
     })
   })
 
@@ -508,8 +549,8 @@ describe('StartPage folders', () => {
       const wrapper = await mountStartPage()
 
       expect(wrapper.vm.folderOptions()).toEqual([
-        { id: 'general', name: 'General', depth: 0 },
-        { id: 'invoicing', name: 'Invoicing', depth: 1 }
+        { id: 'general', name: 'General', depth: 0, parentId: null, userFolder: false, path: 'General' },
+        { id: 'invoicing', name: 'Invoicing', depth: 1, parentId: 'general', userFolder: false, path: 'General / Invoicing' }
       ])
     })
   })

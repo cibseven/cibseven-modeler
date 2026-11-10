@@ -27,6 +27,8 @@ vi.mock('../../services/servicesConfig', () => ({ getModelerServicePath: () => '
 
 import {
     keyExistsRemote,
+    keyInUseElsewhere,
+    fetchProcessByKey,
     fetchProcessById,
     fetchProcessByName,
     getUnifiedDiagrams,
@@ -43,38 +45,63 @@ describe('processService', () => {
     })
 
     describe('keyExistsRemote', () => {
-        // Both types use an exact by-key GET: 200 resolves = exists, 404 rejects = not found.
-        it('returns true and hits /process/find-by-key when a process exists', async () => {
+        // A key is unique within a folder, so only that folder is asked: 200 resolves = exists, 404 rejects = not found.
+        it('returns true and hits /process/find-by-key in the folder when a process exists there', async () => {
             m.get.mockResolvedValueOnce({})
-            expect(await keyExistsRemote('proc-1', 'bpmn-c7')).toBe(true)
-            expect(m.get).toHaveBeenCalledWith(expect.stringContaining('/process/find-by-key'), { params: { key: 'proc-1' } })
+            expect(await keyExistsRemote('proc-1', 'bpmn-c7', 'sales')).toBe(true)
+            expect(m.get).toHaveBeenCalledWith(expect.stringContaining('/process/find-by-key'), { params: { key: 'proc-1', folderId: 'sales' } })
         })
 
-        it('returns true and hits /form/find-by-formid when a form exists', async () => {
+        it('returns true and hits /form/find-by-formid in the folder when a form exists there', async () => {
             m.get.mockResolvedValueOnce({})
-            expect(await keyExistsRemote('form-a', 'form')).toBe(true)
-            expect(m.get).toHaveBeenCalledWith(expect.stringContaining('/form/find-by-formid'), { params: { formId: 'form-a' } })
+            expect(await keyExistsRemote('form-a', 'form', 'sales')).toBe(true)
+            expect(m.get).toHaveBeenCalledWith(expect.stringContaining('/form/find-by-formid'), { params: { formId: 'form-a', folderId: 'sales' } })
         })
 
-        it('returns false when the lookup 404s (not found)', async () => {
+        it('returns false when the lookup 404s (not in that folder)', async () => {
             m.get.mockRejectedValueOnce(Object.assign(new Error('not found'), { response: { status: 404 } }))
-            expect(await keyExistsRemote('proc-1', 'bpmn-c7')).toBe(false)
+            expect(await keyExistsRemote('proc-1', 'bpmn-c7', 'sales')).toBe(false)
         })
 
-        // Keys are unique across projects, so one in a project the user may not open is taken too
-        it('returns true when the lookup 403s (exists in a project the user may not open)', async () => {
-            m.get.mockRejectedValueOnce(Object.assign(new Error('forbidden'), { response: { status: 403 } }))
-            expect(await keyExistsRemote('form-a', 'form')).toBe(true)
-        })
-
-        it('returns false for an empty key without calling the backend', async () => {
-            expect(await keyExistsRemote('', 'form')).toBe(false)
+        it('returns false for an empty key or no folder without calling the backend', async () => {
+            expect(await keyExistsRemote('', 'form', 'sales')).toBe(false)
+            expect(await keyExistsRemote('proc-1', 'bpmn-c7', null)).toBe(false)
             expect(m.get).not.toHaveBeenCalled()
         })
 
         it('returns false (never throws) when the request fails', async () => {
             m.get.mockRejectedValueOnce(new Error('network'))
-            expect(await keyExistsRemote('proc-1', 'bpmn-c7')).toBe(false)
+            expect(await keyExistsRemote('proc-1', 'bpmn-c7', 'sales')).toBe(false)
+        })
+    })
+
+    describe('fetchProcessByKey', () => {
+        // Without a folder the backend picks the latest diagram the user may see
+        it('asks without a folder unless one is given', async () => {
+            m.get.mockResolvedValue({})
+            await fetchProcessByKey('proc-1')
+            await fetchProcessByKey('proc-1', 'sales')
+            expect(m.get).toHaveBeenNthCalledWith(1, 'svc/process/find-by-key', { params: { key: 'proc-1' } })
+            expect(m.get).toHaveBeenNthCalledWith(2, 'svc/process/find-by-key', { params: { key: 'proc-1', folderId: 'sales' } })
+        })
+    })
+
+    describe('keyInUseElsewhere', () => {
+        it('asks whether another process has the key, leaving the saved one out', async () => {
+            m.get.mockResolvedValueOnce(true)
+            expect(await keyInUseElsewhere('proc-1', 'bpmn-c7', 'p1')).toBe(true)
+            expect(m.get).toHaveBeenCalledWith('svc/process/key-in-use', { params: { key: 'proc-1', id: 'p1' } })
+        })
+
+        it('asks about a form id for a form not saved yet', async () => {
+            m.get.mockResolvedValueOnce(false)
+            expect(await keyInUseElsewhere('form-a', 'form')).toBe(false)
+            expect(m.get).toHaveBeenCalledWith('svc/form/key-in-use', { params: { formId: 'form-a' } })
+        })
+
+        it('says nothing for an empty key', async () => {
+            expect(await keyInUseElsewhere('', 'form')).toBe(false)
+            expect(m.get).not.toHaveBeenCalled()
         })
     })
 
