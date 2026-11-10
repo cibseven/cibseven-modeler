@@ -21,7 +21,7 @@ import {
   getProcessKeyFromBpmn,
   compareXML,
   generateUniqueId,
-  setTagValueOfXml,
+  rekeyXml,
 } from '../utils.js'
 import { DIAGRAM_TYPE } from '../constants/diagramTypes.js'
 import { saveDiagramProcess, updateDiagramProcess, fetchProcessByKey } from '../services/processService.js'
@@ -431,14 +431,7 @@ export default function useFileImport({
           }
           return true
         } else if (choice === 'rename' && payload?.newKey) {
-          let renamedXml = resXmlExternalUrl
-          if (diagramType === DIAGRAM_TYPE.DMN) {
-            renamedXml = setTagValueOfXml(renamedXml, 'definitions', 'id', payload.newKey)
-          } else {
-            if (getTagValueFromXml(renamedXml, 'collaboration', 'id'))
-              renamedXml = setTagValueOfXml(renamedXml, 'collaboration', 'id', payload.newKey)
-            renamedXml = setTagValueOfXml(renamedXml, 'process', 'id', payload.newKey)
-          }
+          const renamedXml = rekeyXml(resXmlExternalUrl, payload.newKey, diagramType === DIAGRAM_TYPE.DMN)
           if (!isBatch) _addNewBpmnFromLoadedXml(diagramType, renamedXml, payload.newKey, true)
           await _autoSaveProcess(renamedXml, payload.newKey, diagramType)
           return true
