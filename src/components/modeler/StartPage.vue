@@ -85,14 +85,20 @@
                                 @click="handleOpenFileInput">
                                 <i class="mdi mdi-upload me-1" aria-hidden="true"></i>{{ $t('buttons.import') }}
                             </button>
-                            <button v-for="button in createButtons" :key="button.type" type="button"
-                                class="btn btn-secondary text-nowrap" :title="$t(button.label)"
-                                :disabled="creatingType !== null" :aria-busy="creatingType === button.type"
-                                @click="button.handler">
-                                <span v-if="creatingType === button.type" class="spinner-border spinner-border-sm me-1"
-                                    aria-hidden="true"></span>
-                                <i v-else class="mdi me-1" :class="DIAGRAM_ICON[button.type]" aria-hidden="true"></i>{{ $t(button.label) }}
-                            </button>
+                            <div class="dropdown">
+                                <button type="button" class="btn btn-secondary dropdown-toggle text-nowrap create-model"
+                                    data-bs-toggle="dropdown" aria-expanded="false"
+                                    :disabled="creatingType !== null" :aria-busy="creatingType !== null">
+                                    <span v-if="creatingType !== null" class="spinner-border spinner-border-sm me-1"
+                                        aria-hidden="true"></span>{{ $t('buttons.createDiagram') }}
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-end">
+                                    <button v-for="button in createButtons" :key="button.type" type="button"
+                                        class="dropdown-item" :disabled="creatingType !== null" @click="button.handler">
+                                        <i class="mdi me-2" :class="DIAGRAM_ICON[button.type]" aria-hidden="true"></i>{{ $t(button.label) }}
+                                    </button>
+                                </div>
+                            </div>
                         </template>
                     </div>
                 </div>

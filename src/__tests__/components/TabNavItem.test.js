@@ -17,6 +17,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import TabNavItem from '../../components/layout/TabNavItem.vue'
+import tabNavItemSource from '../../components/layout/TabNavItem.vue?raw'
 
 const mountItem = (overrides = {}) => mount(TabNavItem, {
     props: {
@@ -37,6 +38,30 @@ describe('TabNavItem accessibility', () => {
     it('the tab is keyboard-focusable and exposes role="tab"', () => {
         const tab = mountItem({ activeTab: 0, index: 0 }).find('[role="tab"]')
         expect(tab.attributes('tabindex')).toBe('0')
+    })
+
+    it('marks unsaved changes with a labelled dot, and only then', () => {
+        const dot = mountItem({ tabNavList: { type: 'bpmn-c7', canSave: true } }).find('.unsaved-dot')
+        expect(dot.exists()).toBe(true)
+        expect(dot.attributes('role')).toBe('img')
+        expect(dot.attributes('aria-label')).toBe('tabs.unsavedChanges')
+        expect(mountItem().find('.unsaved-dot').exists()).toBe(false)
+    })
+
+    // jsdom applies no component styles, so the size is read from the rule itself
+    it('draws the unsaved dot 0.625rem wide and high', () => {
+        const rule = tabNavItemSource.match(/\.unsaved-dot \{([^}]*)\}/)[1]
+        expect(rule).toMatch(/width: 0\.625rem/)
+        expect(rule).toMatch(/height: 0\.625rem/)
+    })
+
+    it('cuts a long name with an ellipsis', () => {
+        expect(mountItem().find('[role="tab"]').classes()).toEqual(expect.arrayContaining(['text-truncate', 'align-middle']))
+    })
+
+    it('draws the tab borders in the theme border colour', () => {
+        const rule = tabNavItemSource.match(/\.nav-link \{([^}]*)\}/)[1]
+        expect(rule).toMatch(/border-color: transparent var\(--bs-border-color\) var\(--bs-border-color\) var\(--bs-border-color\)/)
     })
 
     it('aria-selected reflects whether the tab is the active one', () => {

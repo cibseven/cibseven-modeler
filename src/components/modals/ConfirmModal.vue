@@ -30,7 +30,7 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
                         @click="handleCloseMessage">{{ $t("buttons.cancel")
                         }}</button>
-                    <button type="button" @click.prevent="handleAcceptMessage" class="btn btn-danger">{{
+                    <button type="button" @click.prevent="handleAcceptMessage" class="btn" :class="props.acceptClass">{{
                         props.acceptLabel || $t("buttons.accept") }}</button>
                 </div>
             </div>
@@ -69,6 +69,8 @@ const props = defineProps({
     title: { type: String, required: true },
     body: { type: String, required: true },
     acceptLabel: { type: String, default: null },
+    // Red by default, as most of these dialogs delete or discard something
+    acceptClass: { type: String, default: 'btn-danger text-white' },
 })
 
 const idSaved = ref(null)
@@ -97,8 +99,8 @@ const handleCloseMessage = () => {
         const { id, name, processkey, xmlFromModeler, diagramType } = props.modalData
         props.functionAfterCanceling(xmlFromModeler, id, name, processkey, diagramType, true, false, false) // open xml from  modeler
     }else
-    if (props.functionAfterCanceling && props.type === 'changeVersion') {
-        props.functionAfterCanceling() // returns to the previous selected index
+    if (props.functionAfterCanceling && (props.type === 'changeVersion' || props.type === 'leave')) {
+        props.functionAfterCanceling() // returns to the previous selected index, or stays in the modeler
     }
 
     idSaved.value = ''
@@ -117,7 +119,7 @@ const handleAcceptMessage = () => {
     } else if (props.type === 'changeVersion') {
         const { encodedXml, version } = props.modalData
         props.functionAfterAccepting(encodedXml, version) //changes the xml to the version selected
-    } else if (props.type === 'closeAll') {
+    } else if (props.type === 'closeAll' || props.type === 'leave') {
         props.functionAfterAccepting()
     }
 

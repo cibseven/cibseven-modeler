@@ -180,6 +180,12 @@
 		@modalClosed="openDiagramFromChildAndResolve"
 		@modalHidden="onConflictModalHidden">
 	</ImportConflictModal>
+	<ConfirmModal :showModal="showLeaveModal" type="leave"
+		:title="$t('tabs.leaveTitle')" :body="$t('tabs.leaveBody')" :acceptLabel="$t('tabs.leaveAccept')"
+		acceptClass="btn-primary text-white"
+		:functionAfterAccepting="confirmLeave" :functionAfterCanceling="cancelLeave"
+		@hideModal="showLeaveModal = false" @modalClosed="cancelLeave">
+	</ConfirmModal>
 	<!-- Polite live region: announces transient async states (loading, deploying, saving)
 	     to assistive tech. Success/error completion is announced by the toast (role="alert"). -->
 	<div class="visually-hidden" role="status" aria-live="polite" aria-atomic="true">{{ statusMessage }}</div>
@@ -210,11 +216,13 @@ import ModalNewDiagram from '../modals/ModalNewDiagram.vue'
 import ActionButtonsList from '../ActionButtonsList.vue'
 import ImportConflictModal from '../modals/ImportConflictModal.vue'
 import FolderPickerModal from '../modals/FolderPickerModal.vue'
+import ConfirmModal from '../modals/ConfirmModal.vue'
 //for full screen drop files
 import DropZone from '../DropZone.vue'
 //composables
 import useTabManager from '../../composables/useTabManager.js'
 import useFileImport from '../../composables/useFileImport.js'
+import { useUnsavedChangesGuard } from '../../composables/useUnsavedChangesGuard.js'
 import { DIAGRAM_TYPE, SKIP_CREATION_MODAL_KEY } from '../../constants/diagramTypes.js'
 import { keyExistsRemote, fetchProcessByKey } from '../../services/processService.js'
 import { fetchUserFolder } from '../../services/folderService.js'
@@ -268,6 +276,8 @@ const currentDiagramType = ref('')
 // Tab state is owned by useTabManager — initialized after modeler ref
 const { tabNavList, tabNavListXml, editorXML, _copyArray, _saveTabNavSavedLocalStorage, _loadTabNavList, _closeSelectedTab, orderTabNavListHiddenTab: _orderTabNavListHiddenTab } = useTabManager(modeler)
 const orderTabNavListHiddenTab = idx => _orderTabNavListHiddenTab(idx, () => selectedTab(0))
+// A tab that can be saved has changes that are not, a version switched to as well (as the save button has it)
+const { showLeaveModal, confirmLeave, cancelLeave } = useUnsavedChangesGuard(() => tabNavList.value.some(tab => tab.canSave || tab.changedVersion))
 const consoleErrorsList = ref([])
 const modelerTabPanes = ref(null) // gets the reference of the navigation tab
 const modelerTabNav = ref(null) //to call the switch tab method

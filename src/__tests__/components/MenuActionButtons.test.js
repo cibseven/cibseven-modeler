@@ -18,6 +18,7 @@ import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 
 import MenuActionButtons from '../../components/layout/MenuActionButtons.vue'
+import menuActionButtonsSource from '../../components/layout/MenuActionButtons.vue?raw'
 
 describe('MenuActionButtons', () => {
   const mountMenuActionButtons = (props = {}, slots = {}) => {
@@ -152,6 +153,14 @@ describe('MenuActionButtons', () => {
       const style = wrapper.attributes('style')
       expect(style).toContain('min-width: 200px')
       expect(style).toContain('min-height: 44px')
+    })
+
+    // jsdom applies no component styles, so the rule is read from the source
+    it('leaves the dividers to .vr, but for their height and gray-600', () => {
+      const rule = menuActionButtonsSource.match(/\.menu-action-bar \.menu-divider \{([^}]*)\}/)[1]
+      expect(rule).toMatch(/height: 1\.5rem/)
+      expect(rule).toMatch(/background-color: var\(--bs-gray-600\)/)
+      expect(rule).not.toMatch(/width/)
     })
 
     it('has high z-index', () => {

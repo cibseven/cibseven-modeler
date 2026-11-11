@@ -192,7 +192,10 @@
 	"tabs": {
 		"unsavedChanges": "Unsaved changes",
 		"closeAllTitle": "Close all tabs",
-		"closeAllBody": "Some tabs have unsaved changes. All unsaved changes will be lost."
+		"closeAllBody": "Some tabs have unsaved changes. All unsaved changes will be lost.",
+		"leaveTitle": "Leave the modeler?",
+		"leaveBody": "Some tabs have unsaved changes. If you leave the modeler, all unsaved changes will be lost.",
+		"leaveAccept": "Leave"
 	},
 	"deployForm": {
 		"deploymentName": {

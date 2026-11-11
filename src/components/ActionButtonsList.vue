@@ -83,10 +83,7 @@
             </div>
         </div>
 
-        <!-- Separator -->
-        <div class="btn-menu d-flex align-items-center mx-1 opacity-50">
-            <span aria-hidden="true">|</span>
-        </div>
+        <div class="btn-menu menu-divider vr mx-2 opacity-100 align-self-center" aria-hidden="true"></div>
 
         <!-- Undo/Redo buttons -->
         <div class="btn-menu d-flex align-items-center mx-1" v-if="!props.isButtonDisabled">
@@ -108,10 +105,7 @@
             </button>
         </div>
 
-        <!-- Separator -->
-        <div class="btn-menu d-flex align-items-center mx-1 opacity-50">
-            <span aria-hidden="true">|</span>
-        </div>
+        <div class="btn-menu menu-divider vr mx-2 opacity-100 align-self-center" aria-hidden="true"></div>
 
         <!-- Left section: filters, xml, console -->
         <div

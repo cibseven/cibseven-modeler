@@ -79,6 +79,7 @@ vi.mock('../../../monaco-setup.js', () => ({
 vi.mock('vue-router', () => ({
   useRoute: vi.fn(() => routerMocks.route),
   useRouter: vi.fn(() => ({ replace: (...args) => routerMocks.replace(...args) })),
+  onBeforeRouteLeave: vi.fn(guard => { routerMocks.leaveGuard = guard }),
 }))
 
 vi.mock('vuex', () => ({
@@ -782,6 +783,52 @@ describe('CibsevenModeler', () => {
       await wrapper.vm.switchTabFromTabNav(0)
 
       expect(routerMocks.replace).toHaveBeenCalledWith({ params: { diagramId: 'p1' }, query: { folder: 'invoicing' } })
+    })
+  })
+
+  describe('leaving with unsaved changes', () => {
+    it('lets the route go when every tab is saved', async () => {
+      tabManagerState.tabNavList.value = [{ id: 'p1', key: 'k1', name: 'BPMN', type: 'bpmn-c7', canSave: false }]
+      mountCibsevenModeler()
+      await flushPromises()
+
+      expect(routerMocks.leaveGuard()).toBe(true)
+    })
+
+    it('asks first when a tab has unsaved changes, and stays on cancel', async () => {
+      tabManagerState.tabNavList.value = [
+        { id: 'p1', key: 'k1', name: 'BPMN', type: 'bpmn-c7', canSave: false },
+        { id: 'p2', key: 'k2', name: 'DMN', type: 'dmn', canSave: true },
+      ]
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+
+      const leaving = routerMocks.leaveGuard()
+      const dialog = wrapper.findAllComponents({ name: 'ConfirmModal' }).find(m => m.props('type') === 'leave')
+      dialog.props('functionAfterCanceling')()
+
+      await expect(leaving).resolves.toBe(false)
+    })
+
+    it('asks first when a tab was switched to another version and not saved', async () => {
+      tabManagerState.tabNavList.value = [{ id: 'p1', key: 'k1', name: 'BPMN', type: 'bpmn-c7', canSave: false, changedVersion: true }]
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+
+      const leaving = routerMocks.leaveGuard()
+      expect(leaving).toBeInstanceOf(Promise)
+      wrapper.findAllComponents({ name: 'ConfirmModal' }).find(m => m.props('type') === 'leave').props('functionAfterAccepting')()
+
+      await expect(leaving).resolves.toBe(true)
+    })
+
+    // The other confirm dialogs delete or discard and stay red; leaving is the main way on
+    it('draws the leave button in the primary colour', async () => {
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+
+      const dialog = wrapper.findAllComponents({ name: 'ConfirmModal' }).find(m => m.props('type') === 'leave')
+      expect(dialog.props('acceptClass')).toBe('btn-primary text-white')
     })
   })
 
