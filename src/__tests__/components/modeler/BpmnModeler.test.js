@@ -368,4 +368,17 @@ describe('BpmnModeler', () => {
       expect(wrapper.findComponent(BpmnToolStub).exists()).toBe(false)
     })
   })
+
+  // diagram-js stops an event at a listener that returns a value; the overlays, lint markers among
+  // them, follow a moved element only from a later element.changed listener
+  describe('diagram event listeners', () => {
+    it.each(['element.changed', 'element.click'])('hand nothing back to %s, so the event goes on', async event => {
+      mountBpmnModeler()
+      await flushPromises()
+      const listener = bpmnInstance.instance.on.mock.calls.filter(([name]) => name === event).at(-1)[1]
+
+      expect(listener({ element: { id: 'Task_1', type: 'bpmn:Task', businessObject: { $type: 'bpmn:Task' }, di: { bpmnElement: { $type: 'bpmn:Task' } } } })).toBeUndefined()
+      await flushPromises()
+    })
+  })
 })

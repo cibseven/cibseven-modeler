@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 <template>
-    <div ref="editor" class="editor overflow-hidden h-100 p-2 border rounded-1" :style="style"></div>
+    <div ref="editor" class="editor overflow-hidden h-100 p-2" :style="style"></div>
 </template>
 
 <script setup>

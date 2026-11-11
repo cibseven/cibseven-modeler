@@ -54,6 +54,35 @@ describe('ConsolePanel', () => {
       expect(wrapper.find('.border').exists()).toBe(true)
     })
 
+    // The theme's $border-color ($gray-500) outline on its tertiary background ($gray-100, not $light) (CIB7-1283)
+    it('outlines the whole console once, on the tertiary background', () => {
+      const wrapper = mountConsolePanel()
+      expect(wrapper.findAll('.border')).toHaveLength(1)
+      expect(wrapper.find('.resizable-component').classes()).toContain('bg-body-tertiary')
+      expect(wrapper.find('.resizable-component').classes()).not.toContain('bg-light')
+    })
+
+    it('draws copy, delete and close as plain 18px icon buttons', () => {
+      const buttons = mountConsolePanel().findAll('button')
+      expect(buttons.map(b => b.attributes('title'))).toEqual(['buttons.copy', 'buttons.delete', 'buttons.close'])
+      buttons.forEach(b => {
+        expect(b.classes()).toEqual(['btn', 'p-0', 'lh-1', 'border-0', 'text-secondary'])
+        expect(b.find('.mdi-18px[aria-hidden="true"]').exists()).toBe(true)
+      })
+    })
+
+    it('copies, clears and closes from its buttons', async () => {
+      const wrapper = mountConsolePanel()
+      wrapper.vm.toggleConsole(true)
+      const [copy, clear, close] = wrapper.findAll('button')
+      await copy.trigger('click')
+      await clear.trigger('click')
+      await close.trigger('click')
+      expect(wrapper.emitted('copy-line')).toHaveLength(1)
+      expect(wrapper.emitted('clean-console')).toHaveLength(1)
+      expect(wrapper.vm.isOpen()).toBe(false)
+    })
+
     it('has resizable component class', () => {
       const wrapper = mountConsolePanel()
       expect(wrapper.find('[class*="resizable"]').exists()).toBe(true)
