@@ -140,6 +140,7 @@ vi.mock('../../../composables/useMonacoEditor.js', () => ({
 }))
 
 import BpmnModeler from '../../../components/modeler/BpmnModeler.vue'
+import bpmnModelerSource from '../../../components/modeler/BpmnModeler.vue?raw'
 import { getPlugin } from '../../../plugins/pluginsConfig'
 import { defaultTabElement } from '../../helpers/modelerTestUtils.js'
 
@@ -231,6 +232,30 @@ describe('BpmnModeler', () => {
       bpmnInstance.canvas.zoom.mockClear()
       await wrapper.findAll('button')[0].trigger('click')
       expect(bpmnInstance.canvas.zoom).toHaveBeenCalled()
+    })
+
+    // .btn-light, .border and .text-secondary would bring the theme's gray hover and need !important to override
+    it('draws the canvas buttons as plain small buttons', async () => {
+      const wrapper = mountBpmnModeler()
+      await flushPromises()
+      const buttons = wrapper.findAll('.canvas-controls button')
+      expect(buttons).toHaveLength(6)
+      buttons.forEach(b => {
+        expect(b.classes()).toEqual(expect.arrayContaining(['btn', 'btn-sm']))
+        expect(b.classes()).not.toContain('btn-light')
+        expect(b.classes()).not.toContain('border')
+        expect(b.classes()).not.toContain('text-secondary')
+      })
+    })
+
+    // jsdom applies no styles: white with a gray-600 border on hover, secondary when switched on
+    it('styles the canvas buttons through the button variables alone', () => {
+      const css = bpmnModelerSource.replace(/\r\n/g, '\n')
+      const rules = css.match(/\.canvas-controls \.btn[^{]*\{[^}]*\}/g).join('\n')
+      expect(rules).not.toMatch(/!important/)
+      expect(rules).toMatch(/--bs-btn-hover-bg: var\(--bs-white\)/)
+      expect(rules).toMatch(/--bs-btn-hover-border-color: var\(--bs-gray-600\)/)
+      expect(rules).toMatch(/--bs-btn-active-bg: var\(--bs-secondary\)/)
     })
 
     it('toggleMinimap calls minimap toggle', async () => {

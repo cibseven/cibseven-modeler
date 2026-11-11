@@ -23,26 +23,26 @@
 					<div class="canvas-controls position-absolute top-0 end-0 d-flex flex-column gap-1 m-2" style="z-index: 10;">
 						<!-- These work on the diagram (DRD) canvas; decision tables and literal expressions have none -->
 						<template v-if="isDrdShowing">
-						<button @click="zoomIn" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomIn')" :aria-label="$t('buttons.zoomIn')">
+						<button @click="zoomIn" class="btn btn-sm" :title="$t('buttons.zoomIn')" :aria-label="$t('buttons.zoomIn')">
 							<span class="mdi mdi-18px mdi-magnify-plus-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="zoomOut" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.zoomOut')" :aria-label="$t('buttons.zoomOut')">
+						<button @click="zoomOut" class="btn btn-sm" :title="$t('buttons.zoomOut')" :aria-label="$t('buttons.zoomOut')">
 							<span class="mdi mdi-18px mdi-magnify-minus-outline" aria-hidden="true"></span>
 						</button>
-						<button @click="resetViewport" class="btn btn-sm btn-light border text-secondary" :title="$t('buttons.resetViewport')" :aria-label="$t('buttons.resetViewport')">
+						<button @click="resetViewport" class="btn btn-sm" :title="$t('buttons.resetViewport')" :aria-label="$t('buttons.resetViewport')">
 							<span class="mdi mdi-18px mdi-fit-to-screen-outline" aria-hidden="true"></span>
 						</button>
 						<button @click="toggleMinimap" :title="$t('buttons.minimap')" :aria-label="$t('buttons.minimap')" :aria-pressed="isMinimapOpen"
-							:class="['btn btn-sm btn-light border text-secondary', { active: isMinimapOpen }]">
+							:class="['btn btn-sm', { active: isMinimapOpen }]">
 							<span class="mdi mdi-18px mdi-map-outline" aria-hidden="true"></span>
 						</button>
 						<!-- .stop: the search closes on any click that reaches the page, this one included -->
 						<button @click.stop="toggleSearch" :title="$t('buttons.searchElements')" :aria-label="$t('buttons.searchElements')" :aria-pressed="isSearchOpen"
-							:class="['btn btn-sm btn-light border text-secondary search-elements', { active: isSearchOpen }]">
+							:class="['btn btn-sm search-elements', { active: isSearchOpen }]">
 							<span class="mdi mdi-18px mdi-magnify" aria-hidden="true"></span>
 						</button>
 						</template>
-						<button @click="toggleFullscreen" :class="['btn btn-sm btn-light border text-secondary', { active: isFullscreen }]" :title="$t('buttons.fullscreen')" :aria-label="$t('buttons.fullscreen')" :aria-pressed="isFullscreen">
+						<button @click="toggleFullscreen" :class="['btn btn-sm', { active: isFullscreen }]" :title="$t('buttons.fullscreen')" :aria-label="$t('buttons.fullscreen')" :aria-pressed="isFullscreen">
 							<span :class="['mdi', 'mdi-18px', isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen']" aria-hidden="true"></span>
 						</button>
 					</div>
