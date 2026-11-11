@@ -75,8 +75,8 @@ const style = computed(() => {
     color: var(--bs-dark);
 }
 
+/* The .vr helper draws it; only its height and its colour differ */
 .menu-action-bar .menu-divider {
-    width: 1px;
     height: 1.5rem;
     background-color: var(--bs-gray-600);
 }

@@ -93,6 +93,13 @@ describe('ActionButtonsList', () => {
         })
     })
 
+    // Bootstrap's vertical rule, fully opaque; MenuActionButtons gives it its height and gray-600
+    it('draws the toolbar dividers as vertical rules', () => {
+        const dividers = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7)).findAll('.menu-divider')
+        expect(dividers).toHaveLength(2)
+        dividers.forEach(d => expect(d.classes()).toEqual(expect.arrayContaining(['vr', 'opacity-100', 'align-self-center'])))
+    })
+
     describe('console button visibility', () => {
         it('shows console button for BPMN_C7', () => {
             const wrapper = mountButtons(makeTabElement(DIAGRAM_TYPE.BPMN_C7))

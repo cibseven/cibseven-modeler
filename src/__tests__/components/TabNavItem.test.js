@@ -55,6 +55,15 @@ describe('TabNavItem accessibility', () => {
         expect(rule).toMatch(/height: 0\.625rem/)
     })
 
+    it('cuts a long name with an ellipsis', () => {
+        expect(mountItem().find('[role="tab"]').classes()).toEqual(expect.arrayContaining(['text-truncate', 'align-middle']))
+    })
+
+    it('draws the tab borders in the theme border colour', () => {
+        const rule = tabNavItemSource.match(/\.nav-link \{([^}]*)\}/)[1]
+        expect(rule).toMatch(/border-color: transparent var\(--bs-border-color\) var\(--bs-border-color\) var\(--bs-border-color\)/)
+    })
+
     it('aria-selected reflects whether the tab is the active one', () => {
         expect(mountItem({ activeTab: 0, index: 0 }).find('[role="tab"]').attributes('aria-selected')).toBe('true')
         expect(mountItem({ activeTab: 1, index: 0 }).find('[role="tab"]').attributes('aria-selected')).toBe('false')

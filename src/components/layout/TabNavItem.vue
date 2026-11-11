@@ -31,7 +31,7 @@
                 @mousedown.middle.prevent
                 @auxclick.middle="checkIfProcessIsSaved">
                 <div ref="tabItem" :id="`process${props.keyOfTabNav}-tab`" @keyup.enter.stop="selectTab" @click.stop="selectTab" :title="tabTooltip"
-                    class="ps-3" :style="{ maxWidth: props.maxTabItemWidth + 'px' }" style="vertical-align: middle;line-height: 38px; height: 39px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;"
+                    class="ps-3 text-truncate align-middle" :style="{ maxWidth: props.maxTabItemWidth + 'px' }" style="line-height: 38px; height: 39px;"
                     role="tab"
                     :aria-labelledby="`process${props.keyOfTabNav}-tab`"
                     :aria-controls="`process${props.keyOfTabNav}-tab-pane`" tabindex="0"
@@ -151,7 +151,7 @@ defineExpose({
 
 /* No top border: the header above already draws that line */
 .nav-link {
-    border-color: transparent #CCD7E4 #CCD7E4 #CCD7E4 !important;
+    border-color: transparent var(--bs-border-color) var(--bs-border-color) var(--bs-border-color) !important;
     cursor: pointer !important;
 }
 
