@@ -15,18 +15,13 @@
    limitations under the License.
 -->
 <template>
-    <div :class="shouldRenderConsoleClass" class="console-panel flex-column border position-relative" style="z-index: 1;">
+    <div :class="shouldRenderConsoleClass" class="flex-column border position-relative" style="z-index: 1;">
         <div ref="parent" :class="{ 'collapsible-content ': !isResizing }"
-            class="d-flex flex-column resizable-component" :style="style">
+            class="d-flex flex-column resizable-component bg-body-tertiary" :style="style">
             <div class="align-self-end d-flex align-items-center flex-shrink-0 pe-2 pt-3 gap-3">
-                <button type="button" :title="$t('buttons.copy')" class="btn btn-link btn-sm text-secondary text-decoration-none border-0 p-0 lh-1" @click="emit('copy-line')">
-                    <span class="mdi mdi-18px mdi-content-copy" aria-hidden="true"></span>
-                </button>
-                <button type="button" :title="$t('buttons.delete')" class="btn btn-link btn-sm text-secondary text-decoration-none border-0 p-0 lh-1" @click="emit('clean-console')">
-                    <span class="mdi mdi-18px mdi-trash-can-outline" aria-hidden="true"></span>
-                </button>
-                <button type="button" :title="$t('buttons.close')" class="btn btn-link btn-sm text-secondary text-decoration-none border-0 p-0 lh-1" @click="toggleConsole(false)">
-                    <span class="mdi mdi-18px mdi-close" aria-hidden="true"></span>
+                <button v-for="button in consoleButtons" :key="button.icon" type="button" :title="$t(button.titleKey)"
+                    class="btn p-0 lh-1 border-0 text-secondary" @click="button.onClick">
+                    <span class="mdi mdi-18px" :class="button.icon" aria-hidden="true"></span>
                 </button>
             </div>
             <div class="d-flex h-100 flex-grow" v-show="isVisible">
@@ -113,6 +108,12 @@ const toggleConsole = next => {
     return isVisible.value
 }
 
+const consoleButtons = [
+    { titleKey: 'buttons.copy', icon: 'mdi-content-copy', onClick: () => emit('copy-line') },
+    { titleKey: 'buttons.delete', icon: 'mdi-trash-can-outline', onClick: () => emit('clean-console') },
+    { titleKey: 'buttons.close', icon: 'mdi-close', onClick: () => toggleConsole(false) },
+]
+
 const isOpen = () => isVisible.value
 
 const _changeHeight = () => { if (parent.value) props.parentHeight - parent.value.clientHeight }
@@ -123,12 +124,7 @@ defineExpose({ isOpen, toggleConsole, _changeHeight, _resetPropertiesPanelHeight
 </script>
 
 <style scoped>
-.console-panel {
-    --bs-border-color: var(--bs-gray-500);
-}
-
 .resizable-component {
-    background-color: var(--bs-gray-100);
     position: relative;
     max-width: none;
     width: 100%;
