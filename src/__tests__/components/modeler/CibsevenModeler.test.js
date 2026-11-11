@@ -821,6 +821,15 @@ describe('CibsevenModeler', () => {
 
       await expect(leaving).resolves.toBe(true)
     })
+
+    // The other confirm dialogs delete or discard and stay red; leaving is the main way on
+    it('draws the leave button in the primary colour', async () => {
+      const wrapper = mountCibsevenModeler()
+      await flushPromises()
+
+      const dialog = wrapper.findAllComponents({ name: 'ConfirmModal' }).find(m => m.props('type') === 'leave')
+      expect(dialog.props('acceptClass')).toBe('btn-primary text-white')
+    })
   })
 
   /** The start page keeps the clicked create button busy until it is told the creation is under way. */

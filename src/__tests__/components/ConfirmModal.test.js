@@ -72,12 +72,18 @@ describe('ConfirmModal', () => {
 
         it('renders accept button', () => {
             const wrapper = mountConfirmModal()
-            expect(wrapper.find('.btn-primary').exists()).toBe(true)
+            expect(wrapper.find('.modal-footer .btn:last-child').exists()).toBe(true)
         })
 
-        // White on the primary colour, like the webclient's main actions
-        it('writes the accept button in white', () => {
-            expect(mountConfirmModal().find('.btn-primary').classes()).toContain('text-white')
+        // Most of these dialogs delete or discard something
+        it('draws the accept button red with white text by default', () => {
+            expect(mountConfirmModal().find('.modal-footer .btn:last-child').classes()).toEqual(expect.arrayContaining(['btn-danger', 'text-white']))
+        })
+
+        it('draws the accept button in the colour the caller asks for', () => {
+            const classes = mountConfirmModal({ acceptClass: 'btn-primary text-white' }).find('.modal-footer .btn:last-child').classes()
+            expect(classes).toEqual(expect.arrayContaining(['btn-primary', 'text-white']))
+            expect(classes).not.toContain('btn-danger')
         })
 
         it('renders cancel button', () => {
@@ -157,7 +163,7 @@ describe('ConfirmModal', () => {
 
         it('displays custom acceptLabel if provided', () => {
             const wrapper = mountConfirmModal({ acceptLabel: 'Confirm Delete' })
-            expect(wrapper.find('.btn-primary').text()).toContain('Confirm Delete')
+            expect(wrapper.find('.modal-footer .btn:last-child').text()).toContain('Confirm Delete')
         })
     })
 
@@ -181,21 +187,21 @@ describe('ConfirmModal', () => {
         it('calls functionAfterAccepting when accept button clicked', async () => {
             const fn = vi.fn()
             const wrapper = mountConfirmModal({ functionAfterAccepting: fn })
-            await wrapper.find('.btn-primary').trigger('click')
+            await wrapper.find('.modal-footer .btn:last-child').trigger('click')
         })
 
         it('handles multiple accept button clicks', async () => {
             const fn = vi.fn()
             const wrapper = mountConfirmModal({ functionAfterAccepting: fn })
-            await wrapper.find('.btn-primary').trigger('click')
-            await wrapper.find('.btn-primary').trigger('click')
+            await wrapper.find('.modal-footer .btn:last-child').trigger('click')
+            await wrapper.find('.modal-footer .btn:last-child').trigger('click')
         })
 
         it('lets the user leave when the leave dialog is accepted', async () => {
             const accept = vi.fn()
             const cancel = vi.fn()
             const wrapper = mountConfirmModal({ type: 'leave', functionAfterAccepting: accept, functionAfterCanceling: cancel })
-            await wrapper.find('.btn-primary').trigger('click')
+            await wrapper.find('.modal-footer .btn:last-child').trigger('click')
             expect(accept).toHaveBeenCalledOnce()
             expect(cancel).not.toHaveBeenCalled()
         })
@@ -243,9 +249,9 @@ describe('ConfirmModal', () => {
     })
 
     describe('styling', () => {
-        it('accept button has primary styling', () => {
+        it('accept button has danger styling', () => {
             const wrapper = mountConfirmModal()
-            expect(wrapper.find('.btn-primary').exists()).toBe(true)
+            expect(wrapper.find('.modal-footer .btn-danger').exists()).toBe(true)
         })
 
         it('cancel button has secondary styling', () => {

@@ -30,7 +30,7 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
                         @click="handleCloseMessage">{{ $t("buttons.cancel")
                         }}</button>
-                    <button type="button" @click.prevent="handleAcceptMessage" class="btn btn-primary text-white">{{
+                    <button type="button" @click.prevent="handleAcceptMessage" class="btn" :class="props.acceptClass">{{
                         props.acceptLabel || $t("buttons.accept") }}</button>
                 </div>
             </div>
@@ -69,6 +69,8 @@ const props = defineProps({
     title: { type: String, required: true },
     body: { type: String, required: true },
     acceptLabel: { type: String, default: null },
+    // Red by default, as most of these dialogs delete or discard something
+    acceptClass: { type: String, default: 'btn-danger text-white' },
 })
 
 const idSaved = ref(null)

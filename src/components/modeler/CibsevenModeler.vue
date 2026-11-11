@@ -182,6 +182,7 @@
 	</ImportConflictModal>
 	<ConfirmModal :showModal="showLeaveModal" type="leave"
 		:title="$t('tabs.leaveTitle')" :body="$t('tabs.leaveBody')" :acceptLabel="$t('tabs.leaveAccept')"
+		acceptClass="btn-primary text-white"
 		:functionAfterAccepting="confirmLeave" :functionAfterCanceling="cancelLeave"
 		@hideModal="showLeaveModal = false" @modalClosed="cancelLeave">
 	</ConfirmModal>
