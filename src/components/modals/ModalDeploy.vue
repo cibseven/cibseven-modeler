@@ -474,8 +474,10 @@ const _errorMessage = error => {
 }
 
 /**
- * The reason travels with the toast, so the webclient does not have to report it a second time in a
- * dialog. The reason replaces the toast body, so a body that must stay readable goes first.
+ * Unlike the rule in utils/toast.js, deploy and start report their backend errors themselves: the
+ * toast carries the engine's reason and whether the deployment went through. For some error types
+ * (SystemException and others) the webclient also opens its generic error dialog, which names neither.
+ * The reason replaces the toast body, so a body that must stay readable goes first.
  */
 const _reportError = (tabId, toastText, error, { keepBody = false } = {}) => {
 	const errorMessage = _errorMessage(error)
