@@ -15,8 +15,10 @@
  *  limitations under the License.
  */
 import { inject } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { checkBeforeAction } from '../utils.js'
 import { keyExistsRemote } from '../services/processService.js'
+import { folderErrorMessage } from '../utils/folderErrors.js'
 
 /**
  * Shared save/update logic for BPMN, DMN and Form diagram composables.
@@ -29,6 +31,7 @@ export default function useDiagramSave(props, emit, sessionHooks = {}) {
   const { createSessionHook = null } = sessionHooks
   // EE-only: notified after a successful autosave so it can surface a "saved at" indicator. No-op in OSS.
   const autosaveHook = inject('autosaveHook', null)
+  const { t } = useI18n()
 
   /**
    * Create the edit-lock session after a successful save. The diagram is already
@@ -44,15 +47,21 @@ export default function useDiagramSave(props, emit, sessionHooks = {}) {
     if (isAutosave) {
       if (autosaveHook) autosaveHook(props.tabElement, { state: 'failed' })
     } else {
-      emit('showToastMessage', { isSuccess: false, toastText: _failureToast(error) })
+      emit('showToastMessage', { isSuccess: false, ..._failureToast(error) })
     }
   }
 
   // The backend refuses a key the folder has, also one the checks here could not see: a tab
-  // that does not know its folder, a save meanwhile, or a database that keeps keys unique across folders
-  const _failureToast = error =>
-    ['ExistingProcessKeyException', 'ExistingFormIdException'].includes(error?.response?.data?.type)
-      ? 'toastSaveErrorDuplicateKey' : 'toastSomethingWentWrong'
+  // that does not know its folder, a save meanwhile, or a database that keeps keys unique across folders.
+  // Other refusals it names (a value too long) say why; anything else stays a generic error.
+  const _failureToast = error => {
+    if (['ExistingProcessKeyException', 'ExistingFormIdException'].includes(error?.response?.data?.type)) {
+      return { toastText: 'toastSaveErrorDuplicateKey' }
+    }
+    const refusal = folderErrorMessage(error)
+    if (refusal) return { toastText: 'toastSaveError', bodyTextAlt: `${t('toastSaveError.body')}: ${t(refusal.key, refusal.params)}` }
+    return { toastText: 'toastSomethingWentWrong' }
+  }
 
   const _createSessionSafely = async (response, blob, sessionResponse, isAutosave = false) => {
     if (createSessionHook && sessionResponse?.message === 'NO_SESSION') {
@@ -160,7 +169,7 @@ export default function useDiagramSave(props, emit, sessionHooks = {}) {
         if (functionToExecute) functionToExecute(xml)
         return true
       } catch (error) {
-        emit('showToastMessage', { isSuccess: false, toastText: _failureToast(error) })
+        emit('showToastMessage', { isSuccess: false, ..._failureToast(error) })
         console.error(error)
         return false
       }

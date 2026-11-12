@@ -119,6 +119,10 @@
     "title": "Actualizado con éxito",
     "body": "El proceso ha sido actualizado correctamente."
   },
+  "toastSaveError": {
+    "title": "No guardado",
+    "body": "No se pudo guardar el modelo"
+  },
   "toastSomethingWentWrong": {
     "title": "Error",
     "body": "Ups, algo ha salido mal"

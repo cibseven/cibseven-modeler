@@ -19,6 +19,7 @@ import { mount } from '@vue/test-utils'
 import { defineComponent, ref } from 'vue'
 
 vi.mock('../../services/processService.js', () => ({ keyExistsRemote: vi.fn().mockResolvedValue(false) }))
+vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k, p) => (p ? `${k} ${JSON.stringify(p)}` : k) }) }))
 import { keyExistsRemote } from '../../services/processService.js'
 import useDiagramSave from '../../composables/useDiagramSave.js'
 
@@ -285,6 +286,34 @@ describe('useDiagramSave', () => {
             }))
 
             expect(functionToExecute).not.toHaveBeenCalled()
+        })
+    })
+
+    describe('a save the backend refuses', () => {
+        const refusal = data => Object.assign(new Error('Request failed with status code 400'), { response: { status: 400, data } })
+
+        it('says why when the backend names the refusal, as a value that is too long', async () => {
+            const { save, emitted } = withSetup({ tabElement: makeTabElement() })
+            const createFn = vi.fn().mockRejectedValue(refusal({ type: 'ValueTooLongException', params: ['name', 255] }))
+            vi.spyOn(console, 'error').mockImplementation(() => {})
+
+            expect(await save(makeSaveOpts({ createFn }))).toBe(false)
+
+            expect(emitted.find(e => e.event === 'showToastMessage').args[0]).toEqual({
+                isSuccess: false,
+                toastText: 'toastSaveError',
+                bodyTextAlt: 'toastSaveError.body: folders.valueTooLong {"limit":255}',
+            })
+        })
+
+        it('stays a generic error for a refusal it cannot name', async () => {
+            const { save, emitted } = withSetup({ tabElement: makeTabElement() })
+            const createFn = vi.fn().mockRejectedValue(refusal({ type: 'SystemException', params: ['boom'] }))
+            vi.spyOn(console, 'error').mockImplementation(() => {})
+
+            await save(makeSaveOpts({ createFn }))
+
+            expect(emitted.find(e => e.event === 'showToastMessage').args[0]).toEqual({ isSuccess: false, toastText: 'toastSomethingWentWrong' })
         })
     })
 

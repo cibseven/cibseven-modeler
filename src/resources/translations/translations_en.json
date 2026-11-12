@@ -119,6 +119,10 @@
 		"title": "Updated successfully",
 		"body": "The process has been successfully updated."
 	},
+	"toastSaveError": {
+		"title": "Not saved",
+		"body": "The model could not be saved"
+	},
 	"toastSomethingWentWrong": {
 		"title": "Error",
 		"body": "Ooops, something went wrong"

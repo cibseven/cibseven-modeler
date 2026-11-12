@@ -119,6 +119,10 @@
     "title": "Erfolgreich aktualisiert",
     "body": "Der Prozess wurde erfolgreich aktualisiert."
   },
+  "toastSaveError": {
+    "title": "Nicht gespeichert",
+    "body": "Das Modell konnte nicht gespeichert werden"
+  },
   "toastSomethingWentWrong": {
     "title": "Fehler",
     "body": "Hoppla, etwas ist schief gelaufen."
