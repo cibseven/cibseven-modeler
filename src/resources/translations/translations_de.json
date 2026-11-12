@@ -40,7 +40,8 @@
     "body": "Prozess gestartet - Überprüfen Sie die Aufgabenliste"
   },
   "toastStartProcessError": {
-    "body": "Fehler beim Starten des Prozesses"
+    "title": "Fehler",
+    "body": "Eingespielt, aber der Prozess konnte nicht gestartet werden."
   },
   "toastDeployErrorDeploy": {
     "title": "Fehler",
@@ -198,6 +199,9 @@
     "leaveAccept": "Verlassen"
   },
   "deployForm": {
+    "startProcess": {
+      "label": "Zu startender Prozess"
+    },
     "deploymentName": {
       "label": "Deployment-Name",
       "tooltip": "Der Deployment-Name hilft dabei, den Prozess eindeutig im Bereich 'Deployments' zu identifizieren und zu verwalten. Er muss nicht mit der Prozess-ID übereinstimmen"

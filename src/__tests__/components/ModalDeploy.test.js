@@ -45,6 +45,7 @@ vi.mock('../../services/processService', () => ({
 vi.mock('min-dash', () => ({ debounce: fn => fn }))
 
 import ModalDeploy from '../../components/modals/ModalDeploy.vue'
+import { deployProcess, startProcess } from '../../services/deployService'
 
 // --- fixtures ---
 
@@ -323,5 +324,178 @@ describe('ModalDeploy — form picker', () => {
             await openModal(wrapper)
             expect(wrapper.text()).not.toContain('deployForm.keyInUse')
         })
+    })
+})
+
+// --- deploy and start ---
+
+const BPMN_COLLABORATION =
+    '<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL">' +
+    '<bpmn:collaboration id="collab"><bpmn:participant id="p1" processRef="order"/></bpmn:collaboration>' +
+    '<bpmn:process id="order" isExecutable="true"/>' +
+    '</bpmn:definitions>'
+
+const BPMN_TWO_POOLS =
+    '<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL">' +
+    '<bpmn:collaboration id="collab"/>' +
+    '<bpmn:process id="order" name="Order" isExecutable="true"/>' +
+    '<bpmn:process id="shipping" name="Shipping" isExecutable="true"/>' +
+    '</bpmn:definitions>'
+
+const button = (wrapper, label) => wrapper.findAll('button').find(b => b.text() === label)
+const deployButton = wrapper => button(wrapper, 'buttons.deploy')
+const startButton = wrapper => button(wrapper, 'buttons.startProcess')
+const startedKey = () => startProcess.mock.calls[0][4]
+const toasts = wrapper => (wrapper.emitted('showToastMessage') ?? []).map(([payload]) => payload)
+
+describe('ModalDeploy — deploy and start', () => {
+    beforeEach(() => {
+        vi.clearAllMocks()
+        localStorage.setItem('token', 'user-token')
+        m.fetchFormsByFormId.mockResolvedValue([])
+        m.keyInUseElsewhere.mockResolvedValue(false)
+        deployProcess.mockResolvedValue({ id: 'deployment-1' })
+        startProcess.mockResolvedValue({ id: 'instance-1' })
+        vi.spyOn(console, 'warn').mockImplementation(() => {})
+    })
+
+    it('starts the process of a diagram with a pool by its process id, not by the collaboration id', async () => {
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+        expect(wrapper.find('#deployment-name').element.value).toBe('collab')
+
+        await startButton(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(deployProcess).toHaveBeenCalledTimes(1)
+        expect(startedKey()).toBe('order')
+        expect(toasts(wrapper)).toEqual([{ isSuccess: true, toastText: 'toastStartProcessSucess', bodyTextAlt: '' }])
+    })
+
+    it('starts by the process id whatever the deployment is named', async () => {
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+        await wrapper.find('#deployment-name').setValue('My release')
+
+        await startButton(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(deployProcess.mock.calls[0][4]).toBe('My release')
+        expect(startedKey()).toBe('order')
+    })
+
+    it('lets the user pick the process when several pools are executable, the first by default', async () => {
+        const wrapper = mountModal({ diagram: BPMN_TWO_POOLS })
+        await openModal(wrapper)
+        const select = wrapper.find('#start-process-id')
+        expect(select.findAll('option').map(o => o.text())).toEqual(['Order (order)', 'Shipping (shipping)'])
+        expect(select.element.value).toBe('order')
+
+        await select.setValue('shipping')
+        await startButton(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(startedKey()).toBe('shipping')
+    })
+
+    it('offers no picker for a single process, and no start for a process the engine would not deploy', async () => {
+        const single = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(single)
+        expect(single.find('#start-process-id').exists()).toBe(false)
+        expect(startButton(single).attributes('disabled')).toBeUndefined()
+
+        const notMarked = mountModal({ diagram: BPMN_NO_REF })
+        await openModal(notMarked)
+        expect(startButton(notMarked).attributes('disabled')).toBeDefined()
+    })
+
+    it('says the diagram was deployed but not started when the start fails, with the reason', async () => {
+        startProcess.mockRejectedValue({ response: { data: { message: 'No process definition with key order' } } })
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+
+        await startButton(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(toasts(wrapper)).toEqual([
+            { isSuccess: false, toastText: 'toastStartProcessError', bodyTextAlt: 'No process definition with key order' },
+        ])
+        expect(wrapper.emitted('addErrorMessageToConsole')[0]).toEqual(['tab-1', 'No process definition with key order\n'])
+        expect(startButton(wrapper).attributes('disabled')).toBeUndefined()
+    })
+
+    it('reports a start that answers without an instance', async () => {
+        startProcess.mockResolvedValue(undefined)
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+
+        await startButton(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(toasts(wrapper)).toEqual([{ isSuccess: false, toastText: 'toastStartProcessError', bodyTextAlt: '' }])
+    })
+
+    it('does not start when the deploy fails, and reports the reason of the engine', async () => {
+        deployProcess.mockRejectedValue({ response: { data: { params: ['ENGINE-09005 Could not parse BPMN process'] } } })
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+
+        await startButton(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(startProcess).not.toHaveBeenCalled()
+        expect(toasts(wrapper)).toEqual([
+            { isSuccess: false, toastText: 'toastDeployErrorDeploy', bodyTextAlt: 'ENGINE-09005 Could not parse BPMN process' },
+        ])
+        expect(deployButton(wrapper).attributes('disabled')).toBeUndefined()
+    })
+
+    it('reports a deploy that answers without a deployment', async () => {
+        deployProcess.mockResolvedValue(undefined)
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+
+        await deployButton(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(toasts(wrapper)).toEqual([{ isSuccess: false, toastText: 'toastDeployErrorDeploy', bodyTextAlt: '' }])
+        expect(wrapper.emitted('addErrorMessageToConsole')).toBeUndefined()
+    })
+
+    it('deploys once on a double click and disables both buttons while it runs', async () => {
+        let finishDeploy
+        deployProcess.mockReturnValue(new Promise(resolve => { finishDeploy = resolve }))
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+
+        await deployButton(wrapper).trigger('click')
+        await deployButton(wrapper).trigger('click')
+        await startButton(wrapper).trigger('click')
+        expect(deployButton(wrapper).attributes('disabled')).toBeDefined()
+        expect(startButton(wrapper).attributes('disabled')).toBeDefined()
+
+        finishDeploy({ id: 'deployment-1' })
+        await flushPromises()
+
+        expect(deployProcess).toHaveBeenCalledTimes(1)
+        expect(startProcess).not.toHaveBeenCalled()
+        expect(toasts(wrapper).map(t => t.toastText)).toEqual(['toastDeploySucessDeploy'])
+        expect(deployButton(wrapper).attributes('disabled')).toBeUndefined()
+    })
+
+    it('deploys and starts once on a double click of Deploy and start', async () => {
+        let finishStart
+        startProcess.mockReturnValue(new Promise(resolve => { finishStart = resolve }))
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+
+        await startButton(wrapper).trigger('click')
+        await flushPromises()
+        await startButton(wrapper).trigger('click')
+        finishStart({ id: 'instance-1' })
+        await flushPromises()
+
+        expect(deployProcess).toHaveBeenCalledTimes(1)
+        expect(startProcess).toHaveBeenCalledTimes(1)
     })
 })
