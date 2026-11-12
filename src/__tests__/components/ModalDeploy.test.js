@@ -417,15 +417,17 @@ describe('ModalDeploy — deploy and start', () => {
         await startButton(wrapper).trigger('click')
         await flushPromises()
 
-        expect(toasts(wrapper)).toEqual([
-            { isSuccess: false, toastText: 'toastStartProcessError', bodyTextAlt: 'No process definition with key order' },
-        ])
+        expect(toasts(wrapper)).toEqual([{
+            isSuccess: false,
+            toastText: 'toastStartProcessError',
+            bodyTextAlt: 'toastStartProcessError.body: No process definition with key order',
+        }])
         expect(wrapper.emitted('addErrorMessageToConsole')[0]).toEqual(['tab-1', 'No process definition with key order\n'])
         expect(startButton(wrapper).attributes('disabled')).toBeUndefined()
     })
 
-    it('reports a start that answers without an instance', async () => {
-        startProcess.mockResolvedValue(undefined)
+    it('reports a start that answers without an instance, never as [object Object]', async () => {
+        startProcess.mockResolvedValue({ status: 'ok' })
         const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
         await openModal(wrapper)
 
@@ -433,6 +435,37 @@ describe('ModalDeploy — deploy and start', () => {
         await flushPromises()
 
         expect(toasts(wrapper)).toEqual([{ isSuccess: false, toastText: 'toastStartProcessError', bodyTextAlt: '' }])
+        expect(wrapper.emitted('addErrorMessageToConsole')).toBeUndefined()
+    })
+
+    it('starts the process chosen at the click, though the choice changes while the deploy runs', async () => {
+        let finishDeploy
+        deployProcess.mockReturnValue(new Promise(resolve => { finishDeploy = resolve }))
+        const wrapper = mountModal({ diagram: BPMN_TWO_POOLS })
+        await openModal(wrapper)
+
+        await startButton(wrapper).trigger('click')
+        await wrapper.find('#start-process-id').setValue('shipping')
+        finishDeploy({ id: 'deployment-1' })
+        await flushPromises()
+
+        expect(startedKey()).toBe('order')
+    })
+
+    it('writes a failed start to the console of the tab it was started from, though the dialog opened for another tab meanwhile', async () => {
+        let failStart
+        startProcess.mockReturnValue(new Promise((_, reject) => { failStart = reject }))
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+        await startButton(wrapper).trigger('click')
+        await flushPromises()
+
+        await wrapper.setProps({ showModal: false, tabNavList: { type: 'bpmn-c7', id: 'tab-2', name: 'Other', folderId: null, isSaved: false } })
+        await openModal(wrapper)
+        failStart({ message: 'Network Error' })
+        await flushPromises()
+
+        expect(wrapper.emitted('addErrorMessageToConsole')).toEqual([['tab-1', 'Network Error\n']])
     })
 
     it('does not start when the deploy fails, and reports the reason of the engine', async () => {

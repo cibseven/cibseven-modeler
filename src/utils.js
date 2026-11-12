@@ -98,7 +98,7 @@ export const getStartableProcesses = xml => {
 		.map(process => ({ id: process.getAttribute('id'), name: process.getAttribute('name') }))
 }
 
-export const setTagValueOfXml =(resXmlExternalUrl, xmlTag, attribute, xmlPropertyValue) => {
+export const setTagValueOfXml = (resXmlExternalUrl, xmlTag, attribute, xmlPropertyValue) => {
 	const doc = new DOMParser().parseFromString(resXmlExternalUrl, 'text/xml')
 	// Strip any namespace prefix (e.g. "bpmn:process" → "process") before building
 	// the CSS selector so *|bpmn:process never causes a SyntaxError.

@@ -457,33 +457,48 @@ const _validateAdditionalDeploymentResources = mainResourceName => {
 
 /** The reason a deploy or start failed, as the engine words it; '' when there is none. */
 const _errorMessage = error => {
-	if (!error) return ''
-	let errorMessage = String(error.response?.data?.params?.[0] || error.response?.data?.message || error.message || error)
+	const reason = error?.response?.data?.params?.[0] || error?.response?.data?.message || error?.message
+	if (!reason) return ''
+	let errorMessage = String(reason)
 
 	// Parse nested JSON error if present
 	if (errorMessage.includes('{"type":')) {
 		try {
 			const s = errorMessage.indexOf('{'), e = errorMessage.lastIndexOf('}')
 			// Extract the {...} span with plain string ops (no backtracking regex)
-			const jsonMatch = s !== -1 && e > s ? [errorMessage.slice(s, e + 1)] : null
-			const parsedError = jsonMatch && JSON.parse(jsonMatch[0])
+			const parsedError = s !== -1 && e > s ? JSON.parse(errorMessage.slice(s, e + 1)) : null
 			if (parsedError?.message) errorMessage = parsedError.message
 		} catch { /* ignore JSON parse error, keep original message */ }
 	}
 	return errorMessage
 }
 
-// the reason travels with the toast, so the webclient does not have to report it a second time in a dialog
-const _reportError = (toastText, error) => {
+/**
+ * The reason travels with the toast, so the webclient does not have to report it a second time in a
+ * dialog. The reason replaces the toast body, so a body that must stay readable goes first.
+ */
+const _reportError = (tabId, toastText, error, { keepBody = false } = {}) => {
 	const errorMessage = _errorMessage(error)
-	emit('showToastMessage', { isSuccess: false, toastText, bodyTextAlt: errorMessage })
-	if (errorMessage) emit('addErrorMessageToConsole', deployingTabId.value ?? props.tabNavList.id, `${errorMessage}\n`)
+	const bodyTextAlt = keepBody && errorMessage ? `${t(`${toastText}.body`)}: ${errorMessage}` : errorMessage
+	emit('showToastMessage', { isSuccess: false, toastText, bodyTextAlt })
+	if (errorMessage) emit('addErrorMessageToConsole', tabId, `${errorMessage}\n`)
 }
 
 const _closeModal = () => closeButton.value.click() // simulates on button close clicked to avoid bug that backdrops stays visible
 
+/** What the dialog says at the click: the dialog stays editable while the requests run. */
+const _settingsAtClick = () => ({
+	tabId: deployingTabId.value ?? props.tabNavList.id,
+	auth: [_getAuthType(), _getToken(), _getUsername(), _getPassword()],
+	deploymentName: deploymentName.value,
+	tenantID: tenantID.value,
+	customEndpoint: customEndpoint.value,
+	useCustomEndpoint: useCustomEndpoint.value,
+	startProcessId: startProcessId.value,
+})
+
 /** Deploys the diagram; the deployment when it worked, else null with the reason reported. */
-const _deploy = async () => {
+const _deploy = async settings => {
 	announce(t('a11y.deploying'))
 
 	let type = 'dmn'
@@ -493,29 +508,26 @@ const _deploy = async () => {
 		type = 'form'
 	}
 
-	const mainResourceName = `${deploymentName.value}.${type}`
+	const mainResourceName = `${settings.deploymentName}.${type}`
 	if (!_validateAdditionalDeploymentResources(mainResourceName)) return null
 
 	let res
 	try {
 		res = await deployProcess(
-			_getAuthType(),
-			_getToken(),
-			_getUsername(),
-			_getPassword(),
-			deploymentName.value,
-			customEndpoint.value,
-			tenantID.value, props.diagram, useCustomEndpoint.value, type,
+			...settings.auth,
+			settings.deploymentName,
+			settings.customEndpoint,
+			settings.tenantID, props.diagram, settings.useCustomEndpoint, type,
 			additionalDeploymentResources.value
 		)
 	} catch (error) {
 		console.warn('Error deploying process:', error)
-		_reportError('toastDeployErrorDeploy', error)
+		_reportError(settings.tabId, 'toastDeployErrorDeploy', error)
 		return null
 	}
-	_saveDeployValuesLocalStorage(selected.value, customEndpoint.value, useCustomEndpoint.value)
+	_saveDeployValuesLocalStorage(selected.value, settings.customEndpoint, settings.useCustomEndpoint)
 	if (!res?.id) {
-		_reportError('toastDeployErrorDeploy', res)
+		_reportError(settings.tabId, 'toastDeployErrorDeploy', res)
 		return null
 	}
 	return res
@@ -538,32 +550,30 @@ const _once = action => async () => {
 }
 
 const deploy = _once(async () => {
-	if (!await _deploy()) return
+	if (!await _deploy(_settingsAtClick())) return
 	_closeModal()
 	emit('showToastMessage', { isSuccess: true, toastText: 'toastDeploySucessDeploy', bodyTextAlt: '', actionTo: { name: 'start-process' }, actionLabel: t('buttons.startProcess') })
 })
 
 const deployAndStart = _once(async () => {
-	if (!await _deploy()) return
+	const settings = _settingsAtClick()
+	if (!await _deploy(settings)) return
 	// Deployed by now: the dialog closes whatever the start does, a second try would deploy again
 	_closeModal()
 	try {
 		const res = await startProcess(
-			_getAuthType(),
-			_getToken(),
-			_getUsername(),
-			_getPassword(),
-			startProcessId.value,
-			customEndpoint.value, useCustomEndpoint.value
+			...settings.auth,
+			settings.startProcessId,
+			settings.customEndpoint, settings.useCustomEndpoint
 		)
 		if (!res?.id) {
-			_reportError('toastStartProcessError', res)
+			_reportError(settings.tabId, 'toastStartProcessError', res, { keepBody: true })
 			return
 		}
 		emit('showToastMessage', { isSuccess: true, toastText: 'toastStartProcessSucess', bodyTextAlt: '' })
 	} catch (error) {
 		console.warn('Error starting process:', error)
-		_reportError('toastStartProcessError', error)
+		_reportError(settings.tabId, 'toastStartProcessError', error, { keepBody: true })
 	}
 })
 

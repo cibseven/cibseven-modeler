@@ -41,7 +41,7 @@
   },
   "toastStartProcessError": {
     "title": "Fehler",
-    "body": "Eingespielt, aber der Prozess konnte nicht gestartet werden."
+    "body": "Eingespielt, aber der Prozess konnte nicht gestartet werden"
   },
   "toastDeployErrorDeploy": {
     "title": "Fehler",
