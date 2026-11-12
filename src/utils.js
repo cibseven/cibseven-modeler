@@ -87,6 +87,17 @@ export const getProcessKeyFromBpmn = (resXmlExternalUrl) => {
 	return foundExternalProcessKey
 }
 
+/**
+ * The processes of a BPMN diagram the engine can start, in document order. A new deployment skips a
+ * process without isExecutable="true", so only those count.
+ */
+export const getStartableProcesses = xml => {
+	const doc = new DOMParser().parseFromString(xml ?? '', 'text/xml')
+	return [...doc.querySelectorAll('*|process')]
+		.filter(process => process.getAttribute('id') && process.getAttribute('isExecutable')?.toLowerCase() === 'true')
+		.map(process => ({ id: process.getAttribute('id'), name: process.getAttribute('name') }))
+}
+
 export const setTagValueOfXml = (resXmlExternalUrl, xmlTag, attribute, xmlPropertyValue) => {
 	const doc = new DOMParser().parseFromString(resXmlExternalUrl, 'text/xml')
 	// Strip any namespace prefix (e.g. "bpmn:process" → "process") before building

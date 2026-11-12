@@ -40,7 +40,8 @@
 		"body": "Process started"
 	},
 	"toastStartProcessError": {
-		"body": "Error starting process"
+		"title": "Error",
+		"body": "Deployed, but the process could not be started"
 	},
 	"toastDeployErrorDeploy": {
 		"title": "Error",
@@ -198,6 +199,9 @@
 		"leaveAccept": "Leave"
 	},
 	"deployForm": {
+		"startProcess": {
+			"label": "Process to start"
+		},
 		"deploymentName": {
 			"label": "Deployment name",
 			"tooltip": "The deployment name helps uniquely identify and manage the process in the Deployments pane. It does not have to match the process ID"

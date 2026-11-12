@@ -51,6 +51,16 @@
 								id="deployment-name"
 								v-model="deploymentName" />
 						</div>
+						<div v-if="startableProcesses.length > 1" class="mb-3">
+							<label class="form-check-label" for="start-process-id">
+								{{ $t('deployForm.startProcess.label') }}
+							</label>
+							<select id="start-process-id" class="form-select form-select-sm" v-model="startProcessId">
+								<option v-for="process in startableProcesses" :key="process.id" :value="process.id">
+									{{ process.name ? `${process.name} (${process.id})` : process.id }}
+								</option>
+							</select>
+						</div>
 						<div class="mb-3">
 							<label class="form-check-label" for="tenant-id">
 								{{ $t('deployForm.tenantID.label') }}
@@ -246,7 +256,7 @@
 							{{ $t('buttons.deploy') }}
 						</button>
 						<template v-if="props.tabNavList.type !== 'dmn' && props.tabNavList.type !== 'form'">
-							<span v-if="isExecutable === 'false'"
+							<span v-if="!startableProcesses.length"
 								v-b-popover.hover.top="$t('modalDeploy.notExecutable')"
 								tabindex="0">
 								<button type="button" class="btn btn-secondary mx-2" disabled style="pointer-events: none">
@@ -275,7 +285,7 @@ import { projectOfFolder } from '../../utils/projectRights.js'
 import { debounce } from 'min-dash'
 import { ref, computed, onMounted, watch, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { getProcessKeyFromBpmn, getTagValueFromXml, formatFileSize, getFormRefsFromBpmn } from '../../utils.js'
+import { getProcessKeyFromBpmn, getTagValueFromXml, formatFileSize, getFormRefsFromBpmn, getStartableProcesses } from '../../utils.js'
 import { isHttpOrHttpsUrl } from '../../utils/regexUtils'
 import { DEPLOY_STORAGE_KEYS } from '../../constants/diagramTypes'
 
@@ -338,8 +348,10 @@ const token = ref('')
 // Other
 let modalBootstrap = null
 const modalDeploy = ref(null)
-const disableDeployButton = ref(false)
-const isExecutable = ref(null)
+const deploying = ref(false)
+// The deployment name is free text and a collaboration id is no process key: start by a process id
+const startableProcesses = ref([])
+const startProcessId = ref(null)
 const deployingTabId = ref(null) // snapshotted at open time; prevents wrong-tab attribution on tab-switch
 
 const isBpmn = computed(() => props.tabNavList?.type?.startsWith('bpmn'))
@@ -350,13 +362,10 @@ const addedFormIds = computed(() =>
 		.map(r => r.resourceName.slice(0, -5)))
 )
 
-const canStart = computed(() => {
-	if (isExecutable.value === 'false') return false
-	return canDeploy.value
-})
+const canStart = computed(() => !!startProcessId.value && canDeploy.value)
 
 const canDeploy = computed(() => {
-	if (disableDeployButton.value) return true // to not send the deploy twice
+	if (deploying.value) return false
 
 	if (useCustomEndpoint.value) {
 		_validateCustomEndpoint()
@@ -446,8 +455,53 @@ const _validateAdditionalDeploymentResources = mainResourceName => {
 	return valid
 }
 
-const deploy = async (silent = false) => {
-	disableDeployButton.value = true
+/** The reason a deploy or start failed, as the engine words it; '' when there is none. */
+const _errorMessage = error => {
+	const reason = error?.response?.data?.params?.[0] || error?.response?.data?.message || error?.message
+	if (!reason) return ''
+	let errorMessage = String(reason)
+
+	// Parse nested JSON error if present
+	if (errorMessage.includes('{"type":')) {
+		try {
+			const s = errorMessage.indexOf('{'), e = errorMessage.lastIndexOf('}')
+			// Extract the {...} span with plain string ops (no backtracking regex)
+			const parsedError = s !== -1 && e > s ? JSON.parse(errorMessage.slice(s, e + 1)) : null
+			if (parsedError?.message) errorMessage = parsedError.message
+		} catch { /* ignore JSON parse error, keep original message */ }
+	}
+	return errorMessage
+}
+
+/**
+ * Unlike the rule in utils/toast.js, deploy and start report their backend errors themselves: the
+ * toast carries the engine's reason and whether the deployment went through. For some error types
+ * (SystemException and others) the webclient also opens its generic error dialog, which names neither.
+ * The reason replaces the toast body, so a body that must stay readable goes first.
+ */
+const _reportError = (tabId, toastText, error, { keepBody = false } = {}) => {
+	const errorMessage = _errorMessage(error)
+	const bodyTextAlt = keepBody && errorMessage ? `${t(`${toastText}.body`)}: ${errorMessage}` : errorMessage
+	emit('showToastMessage', { isSuccess: false, toastText, bodyTextAlt })
+	if (errorMessage) emit('addErrorMessageToConsole', tabId, `${errorMessage}\n`)
+}
+
+const _closeModal = () => closeButton.value.click() // simulates on button close clicked to avoid bug that backdrops stays visible
+
+/** What the dialog says at the click: the dialog stays editable while the requests run. */
+const _settingsAtClick = () => ({
+	tabId: deployingTabId.value ?? props.tabNavList.id,
+	selectedAuth: selected.value,
+	auth: [_getAuthType(), _getToken(), _getUsername(), _getPassword()],
+	deploymentName: deploymentName.value,
+	tenantID: tenantID.value,
+	customEndpoint: customEndpoint.value,
+	useCustomEndpoint: useCustomEndpoint.value,
+	startProcessId: startProcessId.value,
+})
+
+/** Deploys the diagram; the deployment when it worked, else null with the reason reported. */
+const _deploy = async settings => {
 	announce(t('a11y.deploying'))
 
 	let type = 'dmn'
@@ -457,61 +511,29 @@ const deploy = async (silent = false) => {
 		type = 'form'
 	}
 
-	const mainResourceName = `${deploymentName.value}.${type}`
-	if (!_validateAdditionalDeploymentResources(mainResourceName)) {
-		disableDeployButton.value = false
-		return
-	}
+	const mainResourceName = `${settings.deploymentName}.${type}`
+	if (!_validateAdditionalDeploymentResources(mainResourceName)) return null
 
-	let hasErrors = false
-
-	const errors = await deployProcess(
-		_getAuthType(),
-		_getToken(),
-		_getUsername(),
-		_getPassword(),
-		deploymentName.value,
-		customEndpoint.value,
-		tenantID.value, props.diagram, useCustomEndpoint.value, type,
-		additionalDeploymentResources.value
-	).then(res => {
-		_saveDeployValuesLocalStorage(selected.value, customEndpoint.value, useCustomEndpoint.value)
-		if (res?.id) {
-			disableDeployButton.value = false
-			if (!silent) {
-				closeButton.value.click() // simulates on button close clicked to avoid bug that backdrops stays visible
-				const payload = { isSuccess: true, toastText: 'toastDeploySucessDeploy', bodyTextAlt: '', actionTo: { name: 'start-process' }, actionLabel: t('buttons.startProcess') }
-				emit('showToastMessage', payload)
-			}
-		} else {
-			hasErrors = true
-			disableDeployButton.value = false
-		}
-		return res
-	}).catch((error) => {
+	let res
+	try {
+		res = await deployProcess(
+			...settings.auth,
+			settings.deploymentName,
+			settings.customEndpoint,
+			settings.tenantID, props.diagram, settings.useCustomEndpoint, type,
+			additionalDeploymentResources.value
+		)
+	} catch (error) {
 		console.warn('Error deploying process:', error)
-		hasErrors = true
-		return error
-	})
-	if (errors && hasErrors) {
-		let errorMessage = String(errors.response?.data?.params?.[0] || errors)
-
-		// Parse nested JSON error if present
-		if (errorMessage.includes('{"type":')) {
-			try {
-				const s = errorMessage.indexOf('{'), e = errorMessage.lastIndexOf('}')
-				// Extract the {...} span with plain string ops (no backtracking regex)
-				const jsonMatch = s !== -1 && e > s ? [errorMessage.slice(s, e + 1)] : null
-				const parsedError = jsonMatch && JSON.parse(jsonMatch[0])
-				if (parsedError?.message) errorMessage = parsedError.message
-			} catch { /* ignore JSON parse error, keep original message */ }
-		}
-		// the reason travels with the toast, so the webclient does not have to report it a second time in a dialog
-		emit('showToastMessage', { isSuccess: false, toastText: 'toastDeployErrorDeploy', bodyTextAlt: errorMessage })
-		emit('addErrorMessageToConsole', deployingTabId.value ?? props.tabNavList.id, `${errorMessage}\n`)
-		return errorMessage
+		_reportError(settings.tabId, 'toastDeployErrorDeploy', error)
+		return null
 	}
-	return errors
+	_saveDeployValuesLocalStorage(settings.selectedAuth, settings.customEndpoint, settings.useCustomEndpoint)
+	if (!res?.id) {
+		_reportError(settings.tabId, 'toastDeployErrorDeploy', res)
+		return null
+	}
+	return res
 }
 
 const _getAuthType = () => asAnotherUser.value ? selected.value : 'token'// 'token' for the current user
@@ -519,33 +541,48 @@ const _getToken = () => asAnotherUser.value ? token.value : localStorage.getItem
 const _getUsername = () => asAnotherUser.value ? username.value : null // current user -> no form data passed
 const _getPassword = () => asAnotherUser.value ? password.value : null // current user -> no form data passed
 
-const deployAndStart = async() => {
-	disableDeployButton.value = true
-	const result = await deploy(true)
-
-	if (result?.id) {
-		await startProcess(
-			_getAuthType(),
-			_getToken(),
-			_getUsername(),
-			_getPassword(),
-			deploymentName.value,
-			customEndpoint.value, useCustomEndpoint.value
-		).then(res => {
-			disableDeployButton.value = false
-
-			if (res?.id) {
-				closeButton.value.click() // simulates on button close clicked to avoid bug that backdrops stays visible
-				emit('showToastMessage', { isSuccess: true, toastText: 'toastStartProcessSucess', bodyTextAlt: '' })
-			} else {
-				emit('showToastMessage', { isSuccess: false, toastText: 'toastStartProcessError', bodyTextAlt: '' })
-			}
-		})
+// Both buttons run one at a time: a second click while one runs would deploy, or start, twice
+const _once = action => async () => {
+	if (deploying.value) return
+	deploying.value = true
+	try {
+		await action()
+	} finally {
+		deploying.value = false
 	}
 }
 
-const checkIfProcessStartable = () => {
-    isExecutable.value = getTagValueFromXml(props.diagram, 'process', 'isExecutable')
+const deploy = _once(async () => {
+	if (!await _deploy(_settingsAtClick())) return
+	_closeModal()
+	emit('showToastMessage', { isSuccess: true, toastText: 'toastDeploySucessDeploy', bodyTextAlt: '', actionTo: { name: 'start-process' }, actionLabel: t('buttons.startProcess') })
+})
+
+const deployAndStart = _once(async () => {
+	const settings = _settingsAtClick()
+	if (!await _deploy(settings)) return
+	// Deployed by now: the dialog closes whatever the start does, a second try would deploy again
+	_closeModal()
+	try {
+		const res = await startProcess(
+			...settings.auth,
+			settings.startProcessId,
+			settings.customEndpoint, settings.useCustomEndpoint
+		)
+		if (!res?.id) {
+			_reportError(settings.tabId, 'toastStartProcessError', res, { keepBody: true })
+			return
+		}
+		emit('showToastMessage', { isSuccess: true, toastText: 'toastStartProcessSucess', bodyTextAlt: '' })
+	} catch (error) {
+		console.warn('Error starting process:', error)
+		_reportError(settings.tabId, 'toastStartProcessError', error, { keepBody: true })
+	}
+})
+
+const _readStartableProcesses = () => {
+	startableProcesses.value = isBpmn.value ? getStartableProcesses(props.diagram) : []
+	startProcessId.value = startableProcesses.value[0]?.id ?? null
 }
 
 const _loadDeployValuesFromLocalStorage = () => {
@@ -665,8 +702,7 @@ const _showModalComp = () => {
 	detectedFormRefs.value = []
 	ambiguousFormRefs.value = []
 	keyUsedElsewhere.value = false
-	checkIfProcessStartable()
-	disableDeployButton.value = false
+	_readStartableProcesses()
 	modalBootstrap.show()
 	const current = ++opening
 	_autoAddReferencedForms(current)

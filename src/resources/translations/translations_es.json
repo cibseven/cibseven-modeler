@@ -40,7 +40,8 @@
     "body": "Proceso iniciado"
   },
   "toastStartProcessError": {
-    "body": "Error iniciando proceso"
+    "title": "Error",
+    "body": "Desplegado, pero no se pudo iniciar el proceso"
   },
   "toastDeployErrorDeploy": {
     "title": "Error",
@@ -198,6 +199,9 @@
     "leaveAccept": "Salir"
   },
   "deployForm": {
+    "startProcess": {
+      "label": "Proceso a iniciar"
+    },
     "deploymentName": {
       "label": "Nombre del despliegue",
       "tooltip": "El nombre del despliegue ayuda a identificar y administrar el proceso de forma única en el panel Despliegues. No es necesario que coincida con el ID del proceso"

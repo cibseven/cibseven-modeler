@@ -36,6 +36,7 @@ import {
     rekeyXml,
     setTagValueOfXml,
     isValidXmlId,
+    getStartableProcesses,
 } from '../../utils.js'
 
 describe('Utils', () => {
@@ -712,5 +713,28 @@ describe('isValidXmlId', () => {
 
     it.each(['', null, undefined, '1invoice', '-invoice', '.invoice', 'my invoice', 'a:b', 'Prüfung', 'a$b'])('refuses %j', id => {
         expect(isValidXmlId(id)).toBe(false)
+    })
+})
+
+describe('getStartableProcesses', () => {
+    const bpmn = processes =>
+        '<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL">' +
+        '<bpmn:collaboration id="collab"><bpmn:participant id="p1" processRef="a"/></bpmn:collaboration>' +
+        processes +
+        '</bpmn:definitions>'
+
+    it('lists the executable processes of a collaboration in document order, never the collaboration', () => {
+        const xml = bpmn('<bpmn:process id="a" name="Order" isExecutable="true"/><bpmn:process id="b" isExecutable="TRUE"/>')
+        expect(getStartableProcesses(xml)).toEqual([{ id: 'a', name: 'Order' }, { id: 'b', name: null }])
+    })
+
+    it('leaves out a process the engine does not deploy: marked not executable, or not marked at all', () => {
+        const xml = bpmn('<bpmn:process id="a" isExecutable="false"/><bpmn:process id="b"/><bpmn:process id="c" isExecutable="true"/>')
+        expect(getStartableProcesses(xml).map(process => process.id)).toEqual(['c'])
+    })
+
+    it('finds nothing in an empty or missing diagram', () => {
+        expect(getStartableProcesses('')).toEqual([])
+        expect(getStartableProcesses(undefined)).toEqual([])
     })
 })
