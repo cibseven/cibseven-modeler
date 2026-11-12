@@ -46,6 +46,7 @@ vi.mock('min-dash', () => ({ debounce: fn => fn }))
 
 import ModalDeploy from '../../components/modals/ModalDeploy.vue'
 import { deployProcess, startProcess } from '../../services/deployService'
+import { DEPLOY_STORAGE_KEYS } from '../../constants/diagramTypes'
 
 // --- fixtures ---
 
@@ -450,6 +451,23 @@ describe('ModalDeploy — deploy and start', () => {
         await flushPromises()
 
         expect(startedKey()).toBe('order')
+    })
+
+    it('remembers the authentication chosen at the click, though it changes while the deploy runs', async () => {
+        let finishDeploy
+        deployProcess.mockReturnValue(new Promise(resolve => { finishDeploy = resolve }))
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+        await wrapper.find('#asAnotherUser').setValue(true)
+        await wrapper.find('#token-auth').setValue(true)
+        await wrapper.find('#token').setValue('other-token')
+
+        await deployButton(wrapper).trigger('click')
+        await wrapper.find('#http-auth').setValue(true)
+        finishDeploy({ id: 'deployment-1' })
+        await flushPromises()
+
+        expect(localStorage.getItem(DEPLOY_STORAGE_KEYS.AUTH)).toBe('token')
     })
 
     it('writes a failed start to the console of the tab it was started from, though the dialog opened for another tab meanwhile', async () => {

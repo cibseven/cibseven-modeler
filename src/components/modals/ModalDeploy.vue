@@ -491,6 +491,7 @@ const _closeModal = () => closeButton.value.click() // simulates on button close
 /** What the dialog says at the click: the dialog stays editable while the requests run. */
 const _settingsAtClick = () => ({
 	tabId: deployingTabId.value ?? props.tabNavList.id,
+	selectedAuth: selected.value,
 	auth: [_getAuthType(), _getToken(), _getUsername(), _getPassword()],
 	deploymentName: deploymentName.value,
 	tenantID: tenantID.value,
@@ -527,7 +528,7 @@ const _deploy = async settings => {
 		_reportError(settings.tabId, 'toastDeployErrorDeploy', error)
 		return null
 	}
-	_saveDeployValuesLocalStorage(selected.value, settings.customEndpoint, settings.useCustomEndpoint)
+	_saveDeployValuesLocalStorage(settings.selectedAuth, settings.customEndpoint, settings.useCustomEndpoint)
 	if (!res?.id) {
 		_reportError(settings.tabId, 'toastDeployErrorDeploy', res)
 		return null
