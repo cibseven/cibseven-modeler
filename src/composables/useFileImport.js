@@ -30,7 +30,17 @@ import { folderErrorMessage } from '../utils/folderErrors.js'
 import { errorReason } from '../utils/toast.js'
 
 /** The file was read, but the backend did not store it: reported as not saved, not as unreadable. */
-class ImportSaveError extends Error {}
+class ImportSaveError extends Error {
+  name = 'ImportSaveError'
+
+  /** No answer at all (the backend is not reachable): the files after it would fail the same way. */
+  get unreachable() {
+    return !!this.cause && !this.cause.response
+  }
+}
+
+/** How many failed file names a batch summary lists before it says how many more there are. */
+const NAMES_LISTED = 3
 
 /**
  * Encapsulates file drag-and-drop / file-input handling and the conflict-resolution
@@ -187,10 +197,17 @@ export default function useFileImport({
     return tabNavList.value.length - 1
   }
 
-  /** The reason the backend refused: in the user's words where the refusal is a known one. */
+  /**
+   * The reason the backend refused: in the user's words where the refusal is a known one. A refusal
+   * of the modeler that is not known names the field first ({ type, params: [field, reason] }), which
+   * says nothing to the user: then there is no reason rather than a field name.
+   */
   const _refusalReason = error => {
     const refusal = folderErrorMessage(error)
-    return refusal ? t(refusal.key, refusal.params) : errorReason(error)
+    if (refusal) return t(refusal.key, refusal.params)
+    const data = error?.response?.data
+    if (data?.type && (data.params?.length ?? 0) > 1) return ''
+    return errorReason(error)
   }
 
   /** Runs a save or update; a refusal becomes an ImportSaveError, so the file is reported as not saved. */
@@ -243,8 +260,9 @@ export default function useFileImport({
 
   /**
    * Replace: update the stored model, then show the import in its tab when one is open. After a
-   * failed update that tab shows the import with unsaved changes, so Save can store it later. Without
-   * a tab (always in a batch) nothing holds the import: the summary names the file to import again.
+   * failed update that tab shows the import with unsaved changes, so Save can store it later. A single
+   * file always has that tab, as accepting the conflict dialog opens it; in a batch only a model the
+   * user had open has one, and for the rest the summary names the file to import again.
    */
   const _replaceStored = async (update, openIdx, content, diagramType, isBatch) => {
     let failure = null
@@ -375,7 +393,8 @@ export default function useFileImport({
       // Only a 404 answers the question. Reading any other failure as "nothing there" would
       // import a second diagram under a key the database then refuses
       if (e?.response?.status === 404) return null
-      throw new Error(t('importErrors.lookupFailed'), { cause: e })
+      // The file is fine, the backend could not be asked: nothing is stored, as with a refused save
+      throw new ImportSaveError(t('importErrors.lookupFailed'), { cause: e })
     }
   }
 
@@ -385,7 +404,7 @@ export default function useFileImport({
       return await fetchFormByFormId(formId, folderId)
     } catch (e) {
       if (e?.response?.status === 404) return null
-      throw new Error(t('importErrors.lookupFailed'), { cause: e })
+      throw new ImportSaveError(t('importErrors.lookupFailed'), { cause: e })
     }
   }
 
@@ -504,6 +523,11 @@ export default function useFileImport({
     }
   }
 
+  // The first few names, then how many more: a summary of a hundred failures stays readable
+  const _listedNames = names => names.length > NAMES_LISTED
+    ? t('importSummary.namesAndMore', { names: names.slice(0, NAMES_LISTED).join(', '), count: names.length - NAMES_LISTED })
+    : names.join(', ')
+
   /** Handle a file drop or file-input change event — supports single and multiple files. */
   const handleFile = async e => {
     const files = Array.from(e.dataTransfer?.files || e.target.files)
@@ -519,10 +543,14 @@ export default function useFileImport({
     const readErrorNames = [] // valid extension but failed to read/parse/import
     let readErrorReason = '' // what was wrong with the file, for a single-file import
     const notSavedNames = []  // read, but the backend refused to save or update it
-    let notSavedReason = ''
+    const notSavedReasons = []
+    let unreachable = false   // a request got no answer at all
 
     for (const file of files) {
       if (isBatch && _batchPolicy.value === 'stop') break
+      // Without an answer from the backend every further file would wait for its own timeout
+      // and fail the same way; they count as skipped
+      if (unreachable) break
       const validExt = file.name.endsWith('.bpmn') || file.name.endsWith('.dmn') || file.name.endsWith('.form')
       if (!validExt) {
         invalidNames.push(file.name)
@@ -553,7 +581,8 @@ export default function useFileImport({
       } catch (err) {
         if (err instanceof ImportSaveError) {
           notSavedNames.push(file.name)
-          notSavedReason = err.message
+          notSavedReasons.push(err.message)
+          unreachable = err.unreachable
           continue
         }
         // Valid extension but the file couldn't be read/parsed — distinct from a
@@ -575,7 +604,8 @@ export default function useFileImport({
       } else if (notSavedNames.length) {
         // The reason replaces the body, so the body goes first: the user learns it is not stored
         const body = t('toastImportSaveError.body')
-        showToastMessage({ isSuccess: false, toastText: 'toastImportSaveError', bodyTextAlt: notSavedReason ? `${body}: ${notSavedReason}` : '' })
+        const reason = notSavedReasons[0]
+        showToastMessage({ isSuccess: false, toastText: 'toastImportSaveError', bodyTextAlt: reason ? `${body}: ${reason}` : '' })
       }
     } else {
       // Batch: compose a summary from all non-zero outcome counts
@@ -588,13 +618,16 @@ export default function useFileImport({
       if (replacedCount > 0) parts.push(t('importSummary.replaced', { count: replacedCount }))
       if (unchangedCount > 0) parts.push(t('importSummary.upToDate', { count: unchangedCount }))
       if (skippedCount > 0) parts.push(t('importSummary.skipped', { count: skippedCount }))
-      if (notSavedNames.length > 0) parts.push(t('importSummary.notSaved', { count: notSavedNames.length, names: notSavedNames.join(', ') }))
+      if (notSavedNames.length > 0) parts.push(t('importSummary.notSaved', { count: notSavedNames.length, names: _listedNames(notSavedNames) }))
       if (failedCount > 0) parts.push(t('importSummary.failed', { count: failedCount }))
+      // One reason for all of them is worth saying; different ones would make the summary a log
+      const sharedReason = notSavedReasons.length && notSavedReasons.every(reason => reason && reason === notSavedReasons[0])
+        ? ` ${notSavedReasons[0]}` : ''
       showToastMessage({
         // A file that was not stored is a loss the user has to see, whatever else went through
         isSuccess: notSavedNames.length === 0 && (savedCount > 0 || unchangedCount > 0 || replacedCount > 0),
         toastText: 'toastImportBatch',
-        bodyTextAlt: parts.join(', ') + '.',
+        bodyTextAlt: parts.join(', ') + '.' + sharedReason,
       })
     }
   }

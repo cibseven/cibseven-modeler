@@ -85,6 +85,7 @@
     "upToDate": "{count} bereits aktuell",
     "skipped": "{count} übersprungen",
     "notSaved": "{count} nicht gespeichert ({names})",
+    "namesAndMore": "{names} und {count} weitere",
     "failed": "{count} fehlgeschlagen"
   },
   "toastCantSaveFailValidationXml": {

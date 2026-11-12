@@ -419,6 +419,8 @@ describe('useFileImport', () => {
             expect(m.saveDiagramProcess).not.toHaveBeenCalled()
             const toast = deps.showToastMessage.mock.calls.at(-1)[0]
             expect(toast.isSuccess).toBe(false)
+            // The file is fine: it is reported as not saved, not as one that could not be loaded
+            expect(toast.toastText).toBe('toastImportSaveError')
             expect(toast.bodyTextAlt).toContain('importErrors.lookupFailed')
         })
     })
@@ -627,6 +629,86 @@ describe('useFileImport', () => {
             await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
 
             expect(lastToast(deps).bodyTextAlt).toBe('toastImportSaveError.body: folders.keyTaken {"key":"procA"}')
+        })
+
+        it('shows no bare field name for a refusal it does not know', async () => {
+            m.saveDiagramProcess.mockRejectedValue(Object.assign(new Error('Request failed with status code 400'), {
+                response: { status: 400, data: { type: 'InvalidFolderException', params: ['folderId', 'a model needs the folder it goes into'] } },
+            }))
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
+
+            expect(lastToast(deps)).toEqual({ isSuccess: false, toastText: 'toastImportSaveError', bodyTextAlt: '' })
+        })
+
+        it('stops a batch when the backend does not answer, and counts the rest as skipped', async () => {
+            m.saveDiagramProcess.mockRejectedValue(new Error('Network Error'))
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([
+                { name: 'a.bpmn', content: bpmn('procA') },
+                { name: 'b.bpmn', content: bpmn('procB') },
+                { name: 'c.bpmn', content: bpmn('procC') },
+            ]))
+
+            expect(m.saveDiagramProcess).toHaveBeenCalledOnce()
+            const toast = lastToast(deps)
+            expect(toast.bodyTextAlt).toContain('importSummary.skipped {"count":2}')
+            expect(toast.bodyTextAlt).toContain('importSummary.notSaved {"count":1,"names":"a.bpmn"}')
+            expect(toast.bodyTextAlt.endsWith('. Network Error')).toBe(true)
+        })
+
+        it('also stops a batch when the key lookup gets no answer', async () => {
+            m.fetchProcessByKey.mockRejectedValue(new Error('Network Error'))
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }, { name: 'b.bpmn', content: bpmn('procB') }]))
+
+            expect(m.fetchProcessByKey).toHaveBeenCalledOnce()
+            expect(lastToast(deps).bodyTextAlt).toContain('importSummary.skipped {"count":1}')
+        })
+
+        it('keeps a batch going after a refusal that got an answer', async () => {
+            m.saveDiagramProcess.mockRejectedValueOnce(refused('Duplicate key'))
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }, { name: 'b.bpmn', content: bpmn('procB') }]))
+
+            expect(m.saveDiagramProcess).toHaveBeenCalledTimes(2)
+        })
+
+        it('lists the first three names and how many more, with the reason they share', async () => {
+            m.saveDiagramProcess.mockRejectedValue(refused('Duplicate key'))
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent(['a', 'b', 'c', 'd', 'e'].map(n => ({ name: `${n}.bpmn`, content: bpmn(`proc${n}`) }))))
+
+            const summary = lastToast(deps).bodyTextAlt
+            expect(summary).toContain('importSummary.namesAndMore')
+            expect(summary).toContain('a.bpmn, b.bpmn, c.bpmn')
+            expect(summary).toContain('\\"count\\":2')
+            expect(summary).not.toContain('d.bpmn')
+            expect(summary.endsWith('. Duplicate key')).toBe(true)
+        })
+
+        it('leaves the reason out of a batch summary when the failures differ', async () => {
+            m.saveDiagramProcess
+                .mockRejectedValueOnce(refused('Duplicate key'))
+                .mockRejectedValueOnce(refused('Locked'))
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }, { name: 'b.bpmn', content: bpmn('procB') }]))
+
+            const summary = lastToast(deps).bodyTextAlt
+            expect(summary.endsWith('.')).toBe(true)
+            expect(summary).not.toContain('Duplicate key')
         })
 
         it('treats a save that answers without an id as not saved', async () => {

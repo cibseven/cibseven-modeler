@@ -85,6 +85,7 @@
     "upToDate": "{count} ya actualizados",
     "skipped": "{count} omitidos",
     "notSaved": "{count} no guardados ({names})",
+    "namesAndMore": "{names} y {count} más",
     "failed": "{count} fallidos"
   },
   "toastCantSaveFailValidationXml": {

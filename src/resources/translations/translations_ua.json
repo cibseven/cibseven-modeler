@@ -85,6 +85,7 @@
     "upToDate": "{count} вже актуальні",
     "skipped": "{count} пропущено",
     "notSaved": "{count} не збережено ({names})",
+    "namesAndMore": "{names} та ще {count}",
     "failed": "{count} не вдалося"
   },
   "toastCantSaveFailValidationXml": {
