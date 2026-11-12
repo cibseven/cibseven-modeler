@@ -22,6 +22,9 @@
  *    host's global axios interceptor surfaces them in the shared ErrorDialog.
  *    Use `console.error` only for diagnostics. Catching and showing your own toast
  *    would double-surface the same failure.
+ *    Exceptions: the deploy dialog and the file import report a refused request
+ *    themselves, because only they can say what was stored and what was not. Their
+ *    toast takes its reason from `errorReason`; the host may still show its dialog.
  * 2. CLIENT-SIDE errors (JSON parse, blob/download, file read, DOM): surface them
  *    with a localized toast. In components inside the CibsevenModeler tree, emit
  *    `showToastMessage` with `errorToast(key, error)`. In standalone components
@@ -43,4 +46,22 @@
 export function errorToast(toastText, error, { bodyTextAlt = '' } = {}) {
 	if (error !== undefined) console.error(error)
 	return { isSuccess: false, toastText, bodyTextAlt }
+}
+
+/**
+ * The reason a backend request failed, as the backend or the engine words it; '' when there is none.
+ * An engine error wrapped by the webclient carries its own JSON, whose message is the readable part.
+ */
+export function errorReason(error) {
+	const reason = error?.response?.data?.params?.[0] || error?.response?.data?.message || error?.message
+	if (!reason) return ''
+	const text = String(reason)
+	if (!text.includes('{"type":')) return text
+	try {
+		// Extract the {...} span with plain string ops (no backtracking regex)
+		const s = text.indexOf('{'), e = text.lastIndexOf('}')
+		return (s !== -1 && e > s ? JSON.parse(text.slice(s, e + 1))?.message : null) || text
+	} catch {
+		return text
+	}
 }

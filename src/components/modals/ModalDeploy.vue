@@ -287,6 +287,7 @@ import { ref, computed, onMounted, watch, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getProcessKeyFromBpmn, getTagValueFromXml, formatFileSize, getFormRefsFromBpmn, getStartableProcesses } from '../../utils.js'
 import { isHttpOrHttpsUrl } from '../../utils/regexUtils'
+import { errorReason } from '../../utils/toast.js'
 import { DEPLOY_STORAGE_KEYS } from '../../constants/diagramTypes'
 
 const closeButton = ref(null)
@@ -455,24 +456,6 @@ const _validateAdditionalDeploymentResources = mainResourceName => {
 	return valid
 }
 
-/** The reason a deploy or start failed, as the engine words it; '' when there is none. */
-const _errorMessage = error => {
-	const reason = error?.response?.data?.params?.[0] || error?.response?.data?.message || error?.message
-	if (!reason) return ''
-	let errorMessage = String(reason)
-
-	// Parse nested JSON error if present
-	if (errorMessage.includes('{"type":')) {
-		try {
-			const s = errorMessage.indexOf('{'), e = errorMessage.lastIndexOf('}')
-			// Extract the {...} span with plain string ops (no backtracking regex)
-			const parsedError = s !== -1 && e > s ? JSON.parse(errorMessage.slice(s, e + 1)) : null
-			if (parsedError?.message) errorMessage = parsedError.message
-		} catch { /* ignore JSON parse error, keep original message */ }
-	}
-	return errorMessage
-}
-
 /**
  * Unlike the rule in utils/toast.js, deploy and start report their backend errors themselves: the
  * toast carries the engine's reason and whether the deployment went through. For some error types
@@ -480,7 +463,7 @@ const _errorMessage = error => {
  * The reason replaces the toast body, so a body that must stay readable goes first.
  */
 const _reportError = (tabId, toastText, error, { keepBody = false } = {}) => {
-	const errorMessage = _errorMessage(error)
+	const errorMessage = errorReason(error)
 	const bodyTextAlt = keepBody && errorMessage ? `${t(`${toastText}.body`)}: ${errorMessage}` : errorMessage
 	emit('showToastMessage', { isSuccess: false, toastText, bodyTextAlt })
 	if (errorMessage) emit('addErrorMessageToConsole', tabId, `${errorMessage}\n`)

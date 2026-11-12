@@ -69,6 +69,10 @@
     "title": "Імпорт завершено",
     "body": "Імпорт завершено."
   },
+  "toastImportSaveError": {
+    "title": "Імпорт не збережено",
+    "body": "Не вдалося зберегти імпортований файл"
+  },
   "importErrors": {
   	"empty": "файл порожній",
   	"notXml": "файл не є коректним XML",
@@ -80,6 +84,8 @@
     "replaced": "{count} замінено",
     "upToDate": "{count} вже актуальні",
     "skipped": "{count} пропущено",
+    "notSaved": "{count} не збережено ({names})",
+    "namesAndMore": "{names} та ще {count}",
     "failed": "{count} не вдалося"
   },
   "toastCantSaveFailValidationXml": {
@@ -113,6 +119,10 @@
   "toastUpdateSuccessful": {
     "title": "Успішно оновлено",
     "body": "Процес успішно оновлено."
+  },
+  "toastSaveError": {
+    "title": "Не збережено",
+    "body": "Не вдалося зберегти модель"
   },
   "toastSomethingWentWrong": {
     "title": "Помилка",

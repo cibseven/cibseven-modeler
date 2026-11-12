@@ -26,6 +26,21 @@ import {
 import { DIAGRAM_TYPE } from '../constants/diagramTypes.js'
 import { saveDiagramProcess, updateDiagramProcess, fetchProcessByKey } from '../services/processService.js'
 import { saveForm, updateForm, fetchFormByFormId } from '../services/formService.js'
+import { folderErrorMessage } from '../utils/folderErrors.js'
+import { errorReason } from '../utils/toast.js'
+
+/** The file was read, but the backend did not store it: reported as not saved, not as unreadable. */
+class ImportSaveError extends Error {
+  name = 'ImportSaveError'
+
+  /** No answer at all (the backend is not reachable): the files after it would fail the same way. */
+  get unreachable() {
+    return !!this.cause && !this.cause.response
+  }
+}
+
+/** How many failed file names a batch summary lists before it says how many more there are. */
+const NAMES_LISTED = 3
 
 /**
  * Encapsulates file drag-and-drop / file-input handling and the conflict-resolution
@@ -182,50 +197,90 @@ export default function useFileImport({
     return tabNavList.value.length - 1
   }
 
-  /** Save a newly imported BPMN/DMN file to the database and mark its tab as saved. */
+  /**
+   * The reason the backend refused: in the user's words where the refusal is a known one. A refusal
+   * of the modeler that is not known names the field first ({ type, params: [field, reason] }), which
+   * says nothing to the user: then there is no reason rather than a field name.
+   */
+  const _refusalReason = error => {
+    const refusal = folderErrorMessage(error)
+    if (refusal) return t(refusal.key, refusal.params)
+    const data = error?.response?.data
+    if (data?.type && (data.params?.length ?? 0) > 1) return ''
+    return errorReason(error)
+  }
+
+  /** Runs a save or update; a refusal becomes an ImportSaveError, so the file is reported as not saved. */
+  const _store = async request => {
+    try {
+      return await request()
+    } catch (error) {
+      console.error('Import could not be saved:', error)
+      throw new ImportSaveError(_refusalReason(error), { cause: error })
+    }
+  }
+
+  /** Mark the tab of a newly stored import as saved. */
+  const _markStored = (idx, id) => {
+    if (idx < 0) return
+    tabNavList.value[idx].id = id
+    tabNavList.value[idx].isSaved = true
+    tabNavList.value[idx].canSave = false
+  }
+
+  /** Save a newly imported BPMN/DMN file to the database and mark its tab as saved. Throws when it is not stored. */
   const _autoSaveProcess = async (xml, processKey, diagramType) => {
-    try {
-      const blob = new Blob([xml], { type: 'text/xml' })
-      const response = await saveDiagramProcess(processKey, processKey, blob, diagramType, importFolderId?.value)
-      if (response?.id) {
-        const idx = _unsavedTab(processKey, false)
-        if (idx > -1) {
-          tabNavList.value[idx].id = response.id
-          tabNavList.value[idx].isSaved = true
-          tabNavList.value[idx].canSave = false
-        }
-      }
-    } catch { /* leave tab as unsaved on save failure */ }
+    const blob = new Blob([xml], { type: 'text/xml' })
+    const response = await _store(() => saveDiagramProcess(processKey, processKey, blob, diagramType, importFolderId?.value))
+    // An answer without an id stored nothing either; the tab stays unsaved, so Save can still store it
+    if (!response?.id) throw new ImportSaveError('')
+    _markStored(_unsavedTab(processKey, false), response.id)
   }
 
-  /** Save a newly imported Form file to the database and mark its tab as saved. */
+  /** Save a newly imported Form file to the database and mark its tab as saved. Throws when it is not stored. */
   const _autoSaveForm = async (jsonString, formId) => {
-    try {
-      const response = await saveForm(formId, JSON.parse(jsonString), importFolderId?.value)
-      if (response?.id) {
-        const idx = _unsavedTab(formId, true)
-        if (idx > -1) {
-          tabNavList.value[idx].id = response.id
-          tabNavList.value[idx].isSaved = true
-          tabNavList.value[idx].canSave = false
-        }
-      }
-    } catch { /* leave tab as unsaved on save failure */ }
+    // Parsed first: a file that is no JSON is unreadable, not refused by the backend
+    const json = JSON.parse(jsonString)
+    const response = await _store(() => saveForm(formId, json, importFolderId?.value))
+    if (!response?.id) throw new ImportSaveError('')
+    _markStored(_unsavedTab(formId, true), response.id)
   }
 
-  /** Overwrite an existing BPMN/DMN record in the database (batch replace). */
+  /** Overwrite an existing BPMN/DMN record in the database (replace). Throws when it is not updated. */
   const _autoUpdateProcess = async (xml, id, processKey, diagramType) => {
-    try {
-      const blob = new Blob([xml], { type: 'text/xml' })
-      await updateDiagramProcess(id, processKey, processKey, blob, diagramType)
-    } catch { /* leave unchanged on failure */ }
+    const blob = new Blob([xml], { type: 'text/xml' })
+    await _store(() => updateDiagramProcess(id, processKey, processKey, blob, diagramType))
   }
 
-  /** Overwrite an existing Form record in the database (batch replace). */
+  /** Overwrite an existing Form record in the database (replace). Throws when it is not updated. */
   const _autoUpdateForm = async (jsonString, id, formId) => {
+    const json = JSON.parse(jsonString)
+    await _store(() => updateForm(id, formId, json))
+  }
+
+  /**
+   * Replace: update the stored model, then show the import in its tab when one is open. After a
+   * failed update that tab shows the import with unsaved changes, so Save can store it later. A single
+   * file always has that tab, as accepting the conflict dialog opens it; in a batch only a model the
+   * user had open has one, and for the rest the summary names the file to import again.
+   */
+  const _replaceStored = async (update, openIdx, content, diagramType, isBatch) => {
+    let failure = null
     try {
-      await updateForm(id, formId, JSON.parse(jsonString))
-    } catch { /* leave unchanged on failure */ }
+      await update()
+    } catch (error) {
+      if (!(error instanceof ImportSaveError)) throw error
+      failure = error
+    }
+    if (openIdx > -1) {
+      updateDiagramXml?.(content, openIdx, false, diagramType)
+      // Wait for the editor's change event (it sets canSave=true), then set the state that holds
+      await nextTick()
+      tabNavList.value[openIdx].isSaved = true
+      tabNavList.value[openIdx].canSave = !!failure
+      if (!isBatch) await switchTabFromTabNav(openIdx)
+    }
+    if (failure) throw failure
   }
 
   const _openFormFromImportedFile = async (jsonExternal, isBatch = false) => {
@@ -257,17 +312,10 @@ export default function useFileImport({
       if (!isEqual) {
         const { choice, payload } = await _awaitConflictModal(DIAGRAM_TYPE.FORM, isBatch)
         if (choice === 'replace') {
-          await _autoUpdateForm(jsonExternal, foundForm.id, jsonId)
-          const openIdx = foundTabIndex
-          if (openIdx > -1) {
-            // updateDiagramXml -> _validate -> importJson updates the form's `json` closure
-            // synchronously, so a tab switch re-inits the editor with the new content.
-            updateDiagramXml?.(jsonExternal, openIdx, false, DIAGRAM_TYPE.FORM)
-            await nextTick()
-            tabNavList.value[openIdx].isSaved = true
-            tabNavList.value[openIdx].canSave = false
-            if (!isBatch) await switchTabFromTabNav(openIdx)
-          }
+          // updateDiagramXml -> _validate -> importJson updates the form's `json` closure
+          // synchronously, so a tab switch re-inits the editor with the new content.
+          // Looked up again: accepting the conflict dialog may have opened the tab
+          await _replaceStored(() => _autoUpdateForm(jsonExternal, foundForm.id, jsonId), _tabOfStored(foundForm.id), jsonExternal, DIAGRAM_TYPE.FORM, isBatch)
           return true
         } else if (choice === 'rename' && payload?.newKey) {
           const renamedJson = JSON.stringify({ ...JSON.parse(jsonExternal), id: payload.newKey })
@@ -345,7 +393,8 @@ export default function useFileImport({
       // Only a 404 answers the question. Reading any other failure as "nothing there" would
       // import a second diagram under a key the database then refuses
       if (e?.response?.status === 404) return null
-      throw new Error(t('importErrors.lookupFailed'), { cause: e })
+      // The file is fine, the backend could not be asked: nothing is stored, as with a refused save
+      throw new ImportSaveError(t('importErrors.lookupFailed'), { cause: e })
     }
   }
 
@@ -355,7 +404,7 @@ export default function useFileImport({
       return await fetchFormByFormId(formId, folderId)
     } catch (e) {
       if (e?.response?.status === 404) return null
-      throw new Error(t('importErrors.lookupFailed'), { cause: e })
+      throw new ImportSaveError(t('importErrors.lookupFailed'), { cause: e })
     }
   }
 
@@ -419,16 +468,9 @@ export default function useFileImport({
       } else {
         const { choice, payload } = await _awaitConflictModal(diagramType, isBatch)
         if (choice === 'replace') {
-          await _autoUpdateProcess(resXmlExternalUrl, foundModelerProcess.id, foundExternalProcessKey, diagramType)
-          const openIdx = _tabOfStored(foundModelerProcess.id)
-          if (openIdx > -1) {
-            updateDiagramXml?.(resXmlExternalUrl, openIdx, false, diagramType)
-            // Wait for bpmn-js commandStack.changed to fire (it sets canSave=true), then override back to saved state
-            await nextTick()
-            tabNavList.value[openIdx].isSaved = true
-            tabNavList.value[openIdx].canSave = false
-            if (!isBatch) await switchTabFromTabNav(openIdx)
-          }
+          await _replaceStored(
+            () => _autoUpdateProcess(resXmlExternalUrl, foundModelerProcess.id, foundExternalProcessKey, diagramType),
+            _tabOfStored(foundModelerProcess.id), resXmlExternalUrl, diagramType, isBatch)
           return true
         } else if (choice === 'rename' && payload?.newKey) {
           const renamedXml = rekeyXml(resXmlExternalUrl, payload.newKey, diagramType === DIAGRAM_TYPE.DMN)
@@ -481,6 +523,11 @@ export default function useFileImport({
     }
   }
 
+  // The first few names, then how many more: a summary of a hundred failures stays readable
+  const _listedNames = names => names.length > NAMES_LISTED
+    ? t('importSummary.namesAndMore', { names: names.slice(0, NAMES_LISTED).join(', '), count: names.length - NAMES_LISTED })
+    : names.join(', ')
+
   /** Handle a file drop or file-input change event — supports single and multiple files. */
   const handleFile = async e => {
     const files = Array.from(e.dataTransfer?.files || e.target.files)
@@ -495,9 +542,15 @@ export default function useFileImport({
     const invalidNames = []   // wrong extension — not a supported diagram file
     const readErrorNames = [] // valid extension but failed to read/parse/import
     let readErrorReason = '' // what was wrong with the file, for a single-file import
+    const notSavedNames = []  // read, but the backend refused to save or update it
+    const notSavedReasons = []
+    let unreachable = false   // a request got no answer at all
 
     for (const file of files) {
       if (isBatch && _batchPolicy.value === 'stop') break
+      // Without an answer from the backend every further file would wait for its own timeout
+      // and fail the same way; they count as skipped
+      if (unreachable) break
       const validExt = file.name.endsWith('.bpmn') || file.name.endsWith('.dmn') || file.name.endsWith('.form')
       if (!validExt) {
         invalidNames.push(file.name)
@@ -526,6 +579,12 @@ export default function useFileImport({
         else if (didSave === 'unchanged') unchangedCount++
         else if (didSave === 'replaced') replacedCount++
       } catch (err) {
+        if (err instanceof ImportSaveError) {
+          notSavedNames.push(file.name)
+          notSavedReasons.push(err.message)
+          unreachable = err.unreachable
+          continue
+        }
         // Valid extension but the file couldn't be read/parsed — distinct from a
         // wrong extension, so it gets the "could not be loaded" message, not "not a BPMN file".
         console.error('Error importing file:', file.name, err)
@@ -542,23 +601,33 @@ export default function useFileImport({
         showToastMessage({ isSuccess: false, toastText: 'toastLoadErrorFileExtension' })
       } else if (readErrorNames.length) {
         showToastMessage({ isSuccess: false, toastText: 'toastLoadErrorFile', bodyTextAlt: readErrorReason })
+      } else if (notSavedNames.length) {
+        // The reason replaces the body, so the body goes first: the user learns it is not stored
+        const body = t('toastImportSaveError.body')
+        const reason = notSavedReasons[0]
+        showToastMessage({ isSuccess: false, toastText: 'toastImportSaveError', bodyTextAlt: reason ? `${body}: ${reason}` : '' })
       }
     } else {
       // Batch: compose a summary from all non-zero outcome counts
       // skippedCount covers both user-skipped conflicts AND files not reached due to "Cancel remaining"
       const failedCount = invalidNames.length + readErrorNames.length
       const validTotal = files.length - invalidNames.length
-      const skippedCount = validTotal - savedCount - unchangedCount - replacedCount - readErrorNames.length
+      const skippedCount = validTotal - savedCount - unchangedCount - replacedCount - readErrorNames.length - notSavedNames.length
       const parts = []
       if (savedCount > 0) parts.push(t('importSummary.imported', { count: savedCount }))
       if (replacedCount > 0) parts.push(t('importSummary.replaced', { count: replacedCount }))
       if (unchangedCount > 0) parts.push(t('importSummary.upToDate', { count: unchangedCount }))
       if (skippedCount > 0) parts.push(t('importSummary.skipped', { count: skippedCount }))
+      if (notSavedNames.length > 0) parts.push(t('importSummary.notSaved', { count: notSavedNames.length, names: _listedNames(notSavedNames) }))
       if (failedCount > 0) parts.push(t('importSummary.failed', { count: failedCount }))
+      // One reason for all of them is worth saying; different ones would make the summary a log
+      const sharedReason = notSavedReasons.length && notSavedReasons.every(reason => reason && reason === notSavedReasons[0])
+        ? ` ${notSavedReasons[0]}` : ''
       showToastMessage({
-        isSuccess: savedCount > 0 || unchangedCount > 0 || replacedCount > 0,
+        // A file that was not stored is a loss the user has to see, whatever else went through
+        isSuccess: notSavedNames.length === 0 && (savedCount > 0 || unchangedCount > 0 || replacedCount > 0),
         toastText: 'toastImportBatch',
-        bodyTextAlt: parts.join(', ') + '.',
+        bodyTextAlt: parts.join(', ') + '.' + sharedReason,
       })
     }
   }

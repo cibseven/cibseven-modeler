@@ -69,6 +69,10 @@
     "title": "Importación completada",
     "body": "Importación finalizada."
   },
+  "toastImportSaveError": {
+    "title": "Importación no guardada",
+    "body": "No se pudo guardar el archivo importado"
+  },
   "importErrors": {
   	"empty": "el archivo está vacío",
   	"notXml": "el archivo no es XML válido",
@@ -80,6 +84,8 @@
     "replaced": "{count} reemplazados",
     "upToDate": "{count} ya actualizados",
     "skipped": "{count} omitidos",
+    "notSaved": "{count} no guardados ({names})",
+    "namesAndMore": "{names} y {count} más",
     "failed": "{count} fallidos"
   },
   "toastCantSaveFailValidationXml": {
@@ -113,6 +119,10 @@
   "toastUpdateSuccessful": {
     "title": "Actualizado con éxito",
     "body": "El proceso ha sido actualizado correctamente."
+  },
+  "toastSaveError": {
+    "title": "No guardado",
+    "body": "No se pudo guardar el modelo"
   },
   "toastSomethingWentWrong": {
     "title": "Error",

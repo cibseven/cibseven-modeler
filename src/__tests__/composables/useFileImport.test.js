@@ -27,7 +27,7 @@ const m = vi.hoisted(() => ({
     updateForm: vi.fn(),
 }))
 
-vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k, p) => (p ? `${k}` : k) }) }))
+vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k, p) => (p ? `${k} ${JSON.stringify(p)}` : k) }) }))
 vi.mock('../../services/processService.js', () => ({
     saveDiagramProcess: m.saveDiagramProcess,
     updateDiagramProcess: m.updateDiagramProcess,
@@ -419,6 +419,8 @@ describe('useFileImport', () => {
             expect(m.saveDiagramProcess).not.toHaveBeenCalled()
             const toast = deps.showToastMessage.mock.calls.at(-1)[0]
             expect(toast.isSuccess).toBe(false)
+            // The file is fine: it is reported as not saved, not as one that could not be loaded
+            expect(toast.toastText).toBe('toastImportSaveError')
             expect(toast.bodyTextAlt).toContain('importErrors.lookupFailed')
         })
     })
@@ -578,6 +580,237 @@ describe('useFileImport', () => {
             await p
 
             expect(m.updateDiagramProcess).not.toHaveBeenCalled()
+        })
+    })
+
+    describe('a save or update the backend refuses', () => {
+        const refused = message => Object.assign(new Error('Request failed with status code 500'), { response: { status: 500, data: { params: [message] } } })
+        const lastToast = deps => deps.showToastMessage.mock.calls.at(-1)[0]
+
+        it('counts a batch file whose save fails as not saved, with its name, not as imported', async () => {
+            m.saveDiagramProcess
+                .mockResolvedValueOnce({ id: 'id-a' })
+                .mockRejectedValueOnce(refused('Duplicate key'))
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }, { name: 'b.bpmn', content: bpmn('procB') }]))
+
+            const toast = lastToast(deps)
+            expect(toast.isSuccess).toBe(false)
+            expect(toast.bodyTextAlt).toContain('importSummary.imported {"count":1}')
+            expect(toast.bodyTextAlt).toContain('importSummary.notSaved {"count":1,"names":"b.bpmn"}')
+            expect(toast.bodyTextAlt).not.toContain('importSummary.skipped')
+            expect(deps.onBatchComplete).toHaveBeenCalledOnce()
+        })
+
+        it('says a single file was not saved, with the reason, and leaves its tab unsaved for Save', async () => {
+            m.saveDiagramProcess.mockRejectedValue(refused('Duplicate key'))
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
+
+            expect(lastToast(deps)).toEqual({
+                isSuccess: false,
+                toastText: 'toastImportSaveError',
+                bodyTextAlt: 'toastImportSaveError.body: Duplicate key',
+            })
+            expect(deps.tabNavList.value[0]).toMatchObject({ key: 'procA', isSaved: false, canSave: true })
+        })
+
+        it('says a known refusal in the user\'s words rather than the bare key the backend sends', async () => {
+            m.saveDiagramProcess.mockRejectedValue(Object.assign(new Error('Request failed with status code 500'), {
+                response: { status: 500, data: { type: 'ExistingProcessKeyException', params: ['procA'] } },
+            }))
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
+
+            expect(lastToast(deps).bodyTextAlt).toBe('toastImportSaveError.body: folders.keyTaken {"key":"procA"}')
+        })
+
+        it('shows no bare field name for a refusal it does not know', async () => {
+            m.saveDiagramProcess.mockRejectedValue(Object.assign(new Error('Request failed with status code 400'), {
+                response: { status: 400, data: { type: 'InvalidFolderException', params: ['folderId', 'a model needs the folder it goes into'] } },
+            }))
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
+
+            expect(lastToast(deps)).toEqual({ isSuccess: false, toastText: 'toastImportSaveError', bodyTextAlt: '' })
+        })
+
+        it('stops a batch when the backend does not answer, and counts the rest as skipped', async () => {
+            m.saveDiagramProcess.mockRejectedValue(new Error('Network Error'))
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([
+                { name: 'a.bpmn', content: bpmn('procA') },
+                { name: 'b.bpmn', content: bpmn('procB') },
+                { name: 'c.bpmn', content: bpmn('procC') },
+            ]))
+
+            expect(m.saveDiagramProcess).toHaveBeenCalledOnce()
+            const toast = lastToast(deps)
+            expect(toast.bodyTextAlt).toContain('importSummary.skipped {"count":2}')
+            expect(toast.bodyTextAlt).toContain('importSummary.notSaved {"count":1,"names":"a.bpmn"}')
+            expect(toast.bodyTextAlt.endsWith('. Network Error')).toBe(true)
+        })
+
+        it('also stops a batch when the key lookup gets no answer', async () => {
+            m.fetchProcessByKey.mockRejectedValue(new Error('Network Error'))
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }, { name: 'b.bpmn', content: bpmn('procB') }]))
+
+            expect(m.fetchProcessByKey).toHaveBeenCalledOnce()
+            expect(lastToast(deps).bodyTextAlt).toContain('importSummary.skipped {"count":1}')
+        })
+
+        it('keeps a batch going after a refusal that got an answer', async () => {
+            m.saveDiagramProcess.mockRejectedValueOnce(refused('Duplicate key'))
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }, { name: 'b.bpmn', content: bpmn('procB') }]))
+
+            expect(m.saveDiagramProcess).toHaveBeenCalledTimes(2)
+        })
+
+        it('lists the first three names and how many more, with the reason they share', async () => {
+            m.saveDiagramProcess.mockRejectedValue(refused('Duplicate key'))
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent(['a', 'b', 'c', 'd', 'e'].map(n => ({ name: `${n}.bpmn`, content: bpmn(`proc${n}`) }))))
+
+            const summary = lastToast(deps).bodyTextAlt
+            expect(summary).toContain('importSummary.namesAndMore')
+            expect(summary).toContain('a.bpmn, b.bpmn, c.bpmn')
+            expect(summary).toContain('\\"count\\":2')
+            expect(summary).not.toContain('d.bpmn')
+            expect(summary.endsWith('. Duplicate key')).toBe(true)
+        })
+
+        it('leaves the reason out of a batch summary when the failures differ', async () => {
+            m.saveDiagramProcess
+                .mockRejectedValueOnce(refused('Duplicate key'))
+                .mockRejectedValueOnce(refused('Locked'))
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }, { name: 'b.bpmn', content: bpmn('procB') }]))
+
+            const summary = lastToast(deps).bodyTextAlt
+            expect(summary.endsWith('.')).toBe(true)
+            expect(summary).not.toContain('Duplicate key')
+        })
+
+        it('treats a save that answers without an id as not saved', async () => {
+            m.saveForm.mockResolvedValue({})
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'f.form', content: form('formA') }]))
+
+            expect(lastToast(deps)).toMatchObject({ isSuccess: false, toastText: 'toastImportSaveError' })
+            expect(deps.tabNavList.value[0]).toMatchObject({ isSaved: false, canSave: true })
+        })
+
+        const openStoredProcess = deps => {
+            deps.processes.value = [{ id: 'db1', name: 'Proc A', processkey: 'procA', folderId: 'general' }]
+            deps.store.state.modeler.processes.processSelected = bpmn('procA-OLD')
+            deps.tabNavList.value = [{ id: 'db1', key: 'procA', type: 'bpmn-c7', isSaved: true, canSave: false }]
+        }
+
+        it('leaves the open tab with unsaved changes when Replace fails, so Save can store the import', async () => {
+            m.updateDiagramProcess.mockRejectedValue(refused('Locked by another user'))
+            const deps = makeDeps()
+            openStoredProcess(deps)
+            const { handleFile, resolveConflict } = useFileImport(deps)
+
+            const p = handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
+            await waitForModal(deps)
+            resolveConflict('replace')
+            await p
+
+            expect(deps.updateDiagramXml).toHaveBeenCalledWith(bpmn('procA'), 0, false, 'bpmn-c7')
+            expect(deps.tabNavList.value[0]).toMatchObject({ isSaved: true, canSave: true })
+            expect(lastToast(deps)).toMatchObject({ isSuccess: false, toastText: 'toastImportSaveError', bodyTextAlt: 'toastImportSaveError.body: Locked by another user' })
+        })
+
+        it('marks the open tab as saved when Replace works', async () => {
+            const deps = makeDeps()
+            openStoredProcess(deps)
+            const { handleFile, resolveConflict } = useFileImport(deps)
+
+            const p = handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
+            await waitForModal(deps)
+            resolveConflict('replace')
+            await p
+
+            expect(deps.tabNavList.value[0]).toMatchObject({ isSaved: true, canSave: false })
+            expect(deps.showToastMessage).not.toHaveBeenCalled()
+        })
+
+        it('leaves an open form tab with unsaved changes when its Replace fails', async () => {
+            m.updateForm.mockRejectedValue(refused('Locked'))
+            const deps = makeDeps()
+            deps.forms.value = [{ id: 'fdb1', formId: 'formA', folderId: 'general' }]
+            deps.store.state.modeler.forms.formSelected = form('formA', [{ type: 'textfield', key: 'old' }])
+            deps.tabNavList.value = [{ id: 'fdb1', key: 'formA', type: 'form', isSaved: true, canSave: false }]
+            const { handleFile, resolveConflict } = useFileImport(deps)
+
+            const p = handleFile(fileEvent([{ name: 'f.form', content: form('formA') }]))
+            await waitForModal(deps)
+            resolveConflict('replace')
+            await p
+
+            expect(deps.tabNavList.value[0]).toMatchObject({ isSaved: true, canSave: true })
+            expect(lastToast(deps)).toMatchObject({ isSuccess: false, toastText: 'toastImportSaveError' })
+        })
+
+        it('marks the form tab the conflict dialog opened as saved after Replace', async () => {
+            const deps = makeDeps()
+            deps.forms.value = [{ id: 'fdb1', formId: 'formA', folderId: 'general' }]
+            deps.store.state.modeler.forms.formSelected = form('formA', [{ type: 'textfield', key: 'old' }])
+            const { handleFile, resolveConflict } = useFileImport(deps)
+
+            const p = handleFile(fileEvent([{ name: 'f.form', content: form('formA') }]))
+            await waitForModal(deps)
+            // Accepting the dialog opens the stored form before it answers 'replace'
+            deps.tabNavList.value.push({ id: 'fdb1', key: 'formA', type: 'form', isSaved: true, canSave: true })
+            resolveConflict('replace')
+            await p
+
+            expect(deps.tabNavList.value[0]).toMatchObject({ isSaved: true, canSave: false })
+            expect(deps.switchTabFromTabNav).toHaveBeenCalledWith(0)
+        })
+
+        it('counts a batch "replace all" whose update fails as not saved, not as imported', async () => {
+            m.updateDiagramProcess.mockRejectedValue(refused('Locked'))
+            const deps = makeDeps()
+            deps.processes.value = [
+                { id: 'db1', name: 'A', processkey: 'procA', folderId: 'general' },
+                { id: 'db2', name: 'B', processkey: 'procB', folderId: 'general' },
+            ]
+            deps.store.state.modeler.processes.processSelected = bpmn('OLD')
+            const { handleFile, resolveConflict } = useFileImport(deps)
+
+            const p = handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }, { name: 'b.bpmn', content: bpmn('procB') }]))
+            await waitForModal(deps)
+            resolveConflict('replace', true)
+            await p
+
+            const toast = lastToast(deps)
+            expect(toast.bodyTextAlt).toContain('importSummary.notSaved {"count":2,"names":"a.bpmn, b.bpmn"}')
+            expect(toast.bodyTextAlt).not.toContain('importSummary.imported')
+            expect(deps.onBatchComplete).not.toHaveBeenCalled()
         })
     })
 
