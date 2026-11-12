@@ -69,6 +69,10 @@
     "title": "Імпорт завершено",
     "body": "Імпорт завершено."
   },
+  "toastImportSaveError": {
+    "title": "Імпорт не збережено",
+    "body": "Не вдалося зберегти імпортований файл"
+  },
   "importErrors": {
   	"empty": "файл порожній",
   	"notXml": "файл не є коректним XML",
@@ -80,6 +84,7 @@
     "replaced": "{count} замінено",
     "upToDate": "{count} вже актуальні",
     "skipped": "{count} пропущено",
+    "notSaved": "{count} не збережено ({names})",
     "failed": "{count} не вдалося"
   },
   "toastCantSaveFailValidationXml": {

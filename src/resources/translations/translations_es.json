@@ -69,6 +69,10 @@
     "title": "Importación completada",
     "body": "Importación finalizada."
   },
+  "toastImportSaveError": {
+    "title": "Importación no guardada",
+    "body": "No se pudo guardar el archivo importado"
+  },
   "importErrors": {
   	"empty": "el archivo está vacío",
   	"notXml": "el archivo no es XML válido",
@@ -80,6 +84,7 @@
     "replaced": "{count} reemplazados",
     "upToDate": "{count} ya actualizados",
     "skipped": "{count} omitidos",
+    "notSaved": "{count} no guardados ({names})",
     "failed": "{count} fallidos"
   },
   "toastCantSaveFailValidationXml": {
