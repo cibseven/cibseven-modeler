@@ -26,6 +26,8 @@ import {
 import { DIAGRAM_TYPE } from '../constants/diagramTypes.js'
 import { saveDiagramProcess, updateDiagramProcess, fetchProcessByKey } from '../services/processService.js'
 import { saveForm, updateForm, fetchFormByFormId } from '../services/formService.js'
+import { folderErrorMessage } from '../utils/folderErrors.js'
+import { errorReason } from '../utils/toast.js'
 
 /** The file was read, but the backend did not store it: reported as not saved, not as unreadable. */
 class ImportSaveError extends Error {}
@@ -185,17 +187,20 @@ export default function useFileImport({
     return tabNavList.value.length - 1
   }
 
+  /** The reason the backend refused: in the user's words where the refusal is a known one. */
+  const _refusalReason = error => {
+    const refusal = folderErrorMessage(error)
+    return refusal ? t(refusal.key, refusal.params) : errorReason(error)
+  }
+
   /** Runs a save or update; a refusal becomes an ImportSaveError, so the file is reported as not saved. */
   const _store = async request => {
-    let response
     try {
-      response = await request()
+      return await request()
     } catch (error) {
       console.error('Import could not be saved:', error)
-      const reason = error?.response?.data?.params?.[0] || error?.response?.data?.message || error?.message
-      throw new ImportSaveError(reason ? String(reason) : '', { cause: error })
+      throw new ImportSaveError(_refusalReason(error), { cause: error })
     }
-    return response
   }
 
   /** Mark the tab of a newly stored import as saved. */
@@ -217,7 +222,9 @@ export default function useFileImport({
 
   /** Save a newly imported Form file to the database and mark its tab as saved. Throws when it is not stored. */
   const _autoSaveForm = async (jsonString, formId) => {
-    const response = await _store(() => saveForm(formId, JSON.parse(jsonString), importFolderId?.value))
+    // Parsed first: a file that is no JSON is unreadable, not refused by the backend
+    const json = JSON.parse(jsonString)
+    const response = await _store(() => saveForm(formId, json, importFolderId?.value))
     if (!response?.id) throw new ImportSaveError('')
     _markStored(_unsavedTab(formId, true), response.id)
   }
@@ -230,12 +237,14 @@ export default function useFileImport({
 
   /** Overwrite an existing Form record in the database (replace). Throws when it is not updated. */
   const _autoUpdateForm = async (jsonString, id, formId) => {
-    await _store(() => updateForm(id, formId, JSON.parse(jsonString)))
+    const json = JSON.parse(jsonString)
+    await _store(() => updateForm(id, formId, json))
   }
 
   /**
-   * Replace: update the stored model, then show the import in its open tab. A failed update still
-   * shows the import, but leaves the tab with unsaved changes, so Save can store it later.
+   * Replace: update the stored model, then show the import in its tab when one is open. After a
+   * failed update that tab shows the import with unsaved changes, so Save can store it later. Without
+   * a tab (always in a batch) nothing holds the import: the summary names the file to import again.
    */
   const _replaceStored = async (update, openIdx, content, diagramType, isBatch) => {
     let failure = null
@@ -287,7 +296,8 @@ export default function useFileImport({
         if (choice === 'replace') {
           // updateDiagramXml -> _validate -> importJson updates the form's `json` closure
           // synchronously, so a tab switch re-inits the editor with the new content.
-          await _replaceStored(() => _autoUpdateForm(jsonExternal, foundForm.id, jsonId), foundTabIndex, jsonExternal, DIAGRAM_TYPE.FORM, isBatch)
+          // Looked up again: accepting the conflict dialog may have opened the tab
+          await _replaceStored(() => _autoUpdateForm(jsonExternal, foundForm.id, jsonId), _tabOfStored(foundForm.id), jsonExternal, DIAGRAM_TYPE.FORM, isBatch)
           return true
         } else if (choice === 'rename' && payload?.newKey) {
           const renamedJson = JSON.stringify({ ...JSON.parse(jsonExternal), id: payload.newKey })

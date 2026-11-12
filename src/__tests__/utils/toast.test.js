@@ -15,7 +15,7 @@
  *  limitations under the License.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { errorToast } from '../../utils/toast.js'
+import { errorToast, errorReason } from '../../utils/toast.js'
 
 describe('errorToast', () => {
     afterEach(() => vi.restoreAllMocks())
@@ -42,5 +42,30 @@ describe('errorToast', () => {
     it('passes through an optional bodyTextAlt detail', () => {
         vi.spyOn(console, 'error').mockImplementation(() => {})
         expect(errorToast('k', new Error('x'), { bodyTextAlt: 'detail' }).bodyTextAlt).toBe('detail')
+    })
+})
+
+describe('errorReason', () => {
+    it('takes the first param, then the message of the answer, then the message of the error', () => {
+        expect(errorReason({ response: { data: { params: ['Duplicate key'], message: 'other' } } })).toBe('Duplicate key')
+        expect(errorReason({ response: { data: { message: 'Locked' } } })).toBe('Locked')
+        expect(errorReason(new Error('Network Error'))).toBe('Network Error')
+    })
+
+    it('unwraps the message of an engine error the webclient wrapped in its own text', () => {
+        const wrapped = 'Some unexpected technical problem occured: {"type":"RestException","message":"No matching process definition","code":null}'
+        expect(errorReason({ response: { data: { params: [wrapped] } } })).toBe('No matching process definition')
+    })
+
+    it('keeps the text when the wrapped part is no JSON or has no message', () => {
+        const broken = 'failed: {"type": oops}'
+        expect(errorReason({ response: { data: { params: [broken] } } })).toBe(broken)
+        const noMessage = 'failed: {"type":"X"}'
+        expect(errorReason({ response: { data: { params: [noMessage] } } })).toBe(noMessage)
+    })
+
+    it('is empty without a reason, never [object Object]', () => {
+        expect(errorReason(undefined)).toBe('')
+        expect(errorReason({ status: 'ok' })).toBe('')
     })
 })

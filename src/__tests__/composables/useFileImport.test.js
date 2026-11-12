@@ -617,6 +617,18 @@ describe('useFileImport', () => {
             expect(deps.tabNavList.value[0]).toMatchObject({ key: 'procA', isSaved: false, canSave: true })
         })
 
+        it('says a known refusal in the user\'s words rather than the bare key the backend sends', async () => {
+            m.saveDiagramProcess.mockRejectedValue(Object.assign(new Error('Request failed with status code 500'), {
+                response: { status: 500, data: { type: 'ExistingProcessKeyException', params: ['procA'] } },
+            }))
+            const deps = makeDeps()
+            const { handleFile } = useFileImport(deps)
+
+            await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
+
+            expect(lastToast(deps).bodyTextAlt).toBe('toastImportSaveError.body: folders.keyTaken {"key":"procA"}')
+        })
+
         it('treats a save that answers without an id as not saved', async () => {
             m.saveForm.mockResolvedValue({})
             const deps = makeDeps()
@@ -679,6 +691,23 @@ describe('useFileImport', () => {
 
             expect(deps.tabNavList.value[0]).toMatchObject({ isSaved: true, canSave: true })
             expect(lastToast(deps)).toMatchObject({ isSuccess: false, toastText: 'toastImportSaveError' })
+        })
+
+        it('marks the form tab the conflict dialog opened as saved after Replace', async () => {
+            const deps = makeDeps()
+            deps.forms.value = [{ id: 'fdb1', formId: 'formA', folderId: 'general' }]
+            deps.store.state.modeler.forms.formSelected = form('formA', [{ type: 'textfield', key: 'old' }])
+            const { handleFile, resolveConflict } = useFileImport(deps)
+
+            const p = handleFile(fileEvent([{ name: 'f.form', content: form('formA') }]))
+            await waitForModal(deps)
+            // Accepting the dialog opens the stored form before it answers 'replace'
+            deps.tabNavList.value.push({ id: 'fdb1', key: 'formA', type: 'form', isSaved: true, canSave: true })
+            resolveConflict('replace')
+            await p
+
+            expect(deps.tabNavList.value[0]).toMatchObject({ isSaved: true, canSave: false })
+            expect(deps.switchTabFromTabNav).toHaveBeenCalledWith(0)
         })
 
         it('counts a batch "replace all" whose update fails as not saved, not as imported', async () => {
