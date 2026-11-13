@@ -501,6 +501,17 @@ describe('ModalDeploy — deploy and start', () => {
         expect(deployButton(wrapper).attributes('disabled')).toBeUndefined()
     })
 
+    it('says the login entered was not accepted, rather than the user name the refusal carries', async () => {
+        deployProcess.mockRejectedValue({ response: { status: 401, data: { type: 'AuthenticationException', params: ['demo'] } } })
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+
+        await deployButton(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(toasts(wrapper)).toEqual([{ isSuccess: false, toastText: 'toastDeployErrorDeploy', bodyTextAlt: 'deployForm.loginRefused' }])
+    })
+
     it('reports a deploy that answers without a deployment', async () => {
         deployProcess.mockResolvedValue(undefined)
         const wrapper = mountModal({ diagram: BPMN_COLLABORATION })

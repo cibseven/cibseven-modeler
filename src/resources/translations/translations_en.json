@@ -209,6 +209,7 @@
 		"leaveAccept": "Leave"
 	},
 	"deployForm": {
+		"loginRefused": "The user name, password or token was not accepted",
 		"startProcess": {
 			"label": "Process to start"
 		},

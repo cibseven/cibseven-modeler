@@ -28,6 +28,7 @@ import { saveDiagramProcess, updateDiagramProcess, fetchProcessByKey } from '../
 import { saveForm, updateForm, fetchFormByFormId } from '../services/formService.js'
 import { folderErrorMessage } from '../utils/folderErrors.js'
 import { errorReason } from '../utils/toast.js'
+import { REPORTS_OWN_ERRORS } from '../axiosConfig.js'
 
 /** The file was read, but the backend did not store it: reported as not saved, not as unreadable. */
 class ImportSaveError extends Error {
@@ -231,7 +232,7 @@ export default function useFileImport({
   /** Save a newly imported BPMN/DMN file to the database and mark its tab as saved. Throws when it is not stored. */
   const _autoSaveProcess = async (xml, processKey, diagramType) => {
     const blob = new Blob([xml], { type: 'text/xml' })
-    const response = await _store(() => saveDiagramProcess(processKey, processKey, blob, diagramType, importFolderId?.value))
+    const response = await _store(() => saveDiagramProcess(processKey, processKey, blob, diagramType, importFolderId?.value, REPORTS_OWN_ERRORS))
     // An answer without an id stored nothing either; the tab stays unsaved, so Save can still store it
     if (!response?.id) throw new ImportSaveError('')
     _markStored(_unsavedTab(processKey, false), response.id)
@@ -241,7 +242,7 @@ export default function useFileImport({
   const _autoSaveForm = async (jsonString, formId) => {
     // Parsed first: a file that is no JSON is unreadable, not refused by the backend
     const json = JSON.parse(jsonString)
-    const response = await _store(() => saveForm(formId, json, importFolderId?.value))
+    const response = await _store(() => saveForm(formId, json, importFolderId?.value, REPORTS_OWN_ERRORS))
     if (!response?.id) throw new ImportSaveError('')
     _markStored(_unsavedTab(formId, true), response.id)
   }
@@ -249,13 +250,13 @@ export default function useFileImport({
   /** Overwrite an existing BPMN/DMN record in the database (replace). Throws when it is not updated. */
   const _autoUpdateProcess = async (xml, id, processKey, diagramType) => {
     const blob = new Blob([xml], { type: 'text/xml' })
-    await _store(() => updateDiagramProcess(id, processKey, processKey, blob, diagramType))
+    await _store(() => updateDiagramProcess(id, processKey, processKey, blob, diagramType, REPORTS_OWN_ERRORS))
   }
 
   /** Overwrite an existing Form record in the database (replace). Throws when it is not updated. */
   const _autoUpdateForm = async (jsonString, id, formId) => {
     const json = JSON.parse(jsonString)
-    await _store(() => updateForm(id, formId, json))
+    await _store(() => updateForm(id, formId, json, REPORTS_OWN_ERRORS))
   }
 
   /**
@@ -388,7 +389,7 @@ export default function useFileImport({
   const _findProcessRemotely = async (key, folderId) => {
     if (!folderId) return null
     try {
-      return await fetchProcessByKey(key, folderId)
+      return await fetchProcessByKey(key, folderId, REPORTS_OWN_ERRORS)
     } catch (e) {
       // Only a 404 answers the question. Reading any other failure as "nothing there" would
       // import a second diagram under a key the database then refuses
@@ -401,7 +402,7 @@ export default function useFileImport({
   const _findFormRemotely = async (formId, folderId) => {
     if (!folderId) return null
     try {
-      return await fetchFormByFormId(formId, folderId)
+      return await fetchFormByFormId(formId, folderId, REPORTS_OWN_ERRORS)
     } catch (e) {
       if (e?.response?.status === 404) return null
       throw new ImportSaveError(t('importErrors.lookupFailed'), { cause: e })

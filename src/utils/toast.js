@@ -24,7 +24,8 @@
  *    would double-surface the same failure.
  *    Exceptions: the deploy dialog and the file import report a refused request
  *    themselves, because only they can say what was stored and what was not. Their
- *    toast takes its reason from `errorReason`; the host may still show its dialog.
+ *    toast takes its reason from `errorReason`, and their requests carry
+ *    `REPORTS_OWN_ERRORS` (axiosConfig.js), so the host shows no dialog of its own.
  * 2. CLIENT-SIDE errors (JSON parse, blob/download, file read, DOM): surface them
  *    with a localized toast. In components inside the CibsevenModeler tree, emit
  *    `showToastMessage` with `errorToast(key, error)`. In standalone components

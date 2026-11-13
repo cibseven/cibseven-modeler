@@ -30,9 +30,9 @@ const fetchFormById = id => {
 
 // Exact lookup by formId in the folder given, or the latest visible one without a folder: a form id
 // is unique only within a folder. Resolves with the form, or rejects (404) when none exists.
-const fetchFormByFormId = (formId, folderId = null) => {
+const fetchFormByFormId = (formId, folderId = null, config = {}) => {
   const params = folderId ? { formId, folderId } : { formId }
-  return getAxios().get(getModelerServicePath() + '/form/find-by-formid', { params })
+  return getAxios().get(getModelerServicePath() + '/form/find-by-formid', { ...config, params })
 }
 
 // Every form with this formId the user may see, the latest change first
@@ -40,7 +40,8 @@ const fetchFormsByFormId = async formId => {
   return (await getAxios().get(getModelerServicePath() + '/form/find-all-by-formid', { params: { formId } })) ?? []
 }
 
-const saveForm = (id, formJson, folderId = null) => {
+// config: extra axios config, as REPORTS_OWN_ERRORS for a caller that reports a refusal itself
+const saveForm = (id, formJson, folderId = null, config = {}) => {
   const blob = new Blob([JSON.stringify(formJson)], { type: 'application/json' })
 
   const formData = new FormData()
@@ -50,11 +51,12 @@ const saveForm = (id, formJson, folderId = null) => {
   if (folderId) formData.append('folderId', folderId)
 
   return getAxios().post(getModelerServicePath() + '/form/save', formData, {
+      ...config,
       headers: { 'Content-Type': 'multipart/form-data' }
   })
 }
 
-const updateForm = (id, formid, formJson) => {
+const updateForm = (id, formid, formJson, config = {}) => {
   const blob = new Blob([JSON.stringify(formJson)], { type: 'application/json' })
 
   const formData = new FormData() 
@@ -63,6 +65,7 @@ const updateForm = (id, formid, formJson) => {
   formData.append('form_schema', blob)
 
   return getAxios().post(getModelerServicePath() + '/form/update', formData, {
+      ...config,
       headers: { 'Content-Type': 'multipart/form-data' }
   })
 }

@@ -458,12 +458,13 @@ const _validateAdditionalDeploymentResources = mainResourceName => {
 
 /**
  * Unlike the rule in utils/toast.js, deploy and start report their backend errors themselves: the
- * toast carries the engine's reason and whether the deployment went through. For some error types
- * (SystemException and others) the webclient also opens its generic error dialog, which names neither.
+ * toast carries the engine's reason and whether the deployment went through. Their requests carry
+ * REPORTS_OWN_ERRORS, so the webclient adds no generic error dialog, which would name neither.
  * The reason replaces the toast body, so a body that must stay readable goes first.
  */
 const _reportError = (tabId, toastText, error, { keepBody = false } = {}) => {
-	const errorMessage = errorReason(error)
+	// A refused login names only the user: what failed is the login entered here, not the session
+	const errorMessage = error?.response?.status === 401 ? t('deployForm.loginRefused') : errorReason(error)
 	const bodyTextAlt = keepBody && errorMessage ? `${t(`${toastText}.body`)}: ${errorMessage}` : errorMessage
 	emit('showToastMessage', { isSuccess: false, toastText, bodyTextAlt })
 	if (errorMessage) emit('addErrorMessageToConsole', tabId, `${errorMessage}\n`)

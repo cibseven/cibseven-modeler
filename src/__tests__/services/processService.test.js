@@ -84,6 +84,12 @@ describe('processService', () => {
             expect(m.get).toHaveBeenNthCalledWith(1, 'svc/process/find-by-key', { params: { key: 'proc-1' } })
             expect(m.get).toHaveBeenNthCalledWith(2, 'svc/process/find-by-key', { params: { key: 'proc-1', folderId: 'sales' } })
         })
+
+        it('passes extra axios config on, as the flag of a caller that reports errors itself', async () => {
+            m.get.mockResolvedValue({})
+            await fetchProcessByKey('proc-1', 'sales', { reportsOwnErrors: true })
+            expect(m.get).toHaveBeenCalledWith('svc/process/find-by-key', { reportsOwnErrors: true, params: { key: 'proc-1', folderId: 'sales' } })
+        })
     })
 
     describe('keyInUseElsewhere', () => {
@@ -213,6 +219,25 @@ describe('processService', () => {
 
             expect(m.post).toHaveBeenCalled()
             expect(result.data).toEqual({ id: 'p1', name: 'Updated Process' })
+        })
+    })
+
+    describe('extra axios config on save and update', () => {
+        const blob = new Blob(['<bpmn />'], { type: 'text/xml' })
+
+        it('sends none unless the caller gives it, so the host reports the failure', async () => {
+            m.post.mockResolvedValue({})
+            await saveDiagramProcess('p', 'p', blob, 'bpmn-c7', 'sales')
+            expect(m.post.mock.calls[0][2]).toEqual({ headers: { 'Content-Type': 'multipart/form-data' } })
+        })
+
+        it('passes the flag of a caller that reports errors itself, keeping the content type', async () => {
+            m.post.mockResolvedValue({})
+            await saveDiagramProcess('p', 'p', blob, 'bpmn-c7', 'sales', { reportsOwnErrors: true })
+            await updateDiagramProcess('id', 'p', 'p', blob, 'bpmn-c7', { reportsOwnErrors: true })
+            for (const [, , config] of m.post.mock.calls) {
+                expect(config).toEqual({ reportsOwnErrors: true, headers: { 'Content-Type': 'multipart/form-data' } })
+            }
         })
     })
 

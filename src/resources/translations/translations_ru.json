@@ -209,6 +209,7 @@
     "leaveAccept": "Покинуть"
   },
   "deployForm": {
+    "loginRefused": "Имя пользователя, пароль или токен не приняты",
     "startProcess": {
       "label": "Процесс для запуска"
     },
