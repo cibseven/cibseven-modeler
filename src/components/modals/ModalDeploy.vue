@@ -485,7 +485,7 @@ const _settingsAtClick = () => ({
 	credentialsEntered: asAnotherUser.value || useCustomEndpoint.value,
 	auth: [_getAuthType(), _getToken(), _getUsername(), _getPassword()],
 	deploymentName: deploymentName.value,
-	tenantID: tenantID.value,
+	tenantID: (tenantID.value ?? '').trim(),
 	customEndpoint: customEndpoint.value,
 	useCustomEndpoint: useCustomEndpoint.value,
 	startProcessId: startProcessId.value,
@@ -551,7 +551,8 @@ const deploy = _once(async () => {
 
 const deployAndStart = _once(async () => {
 	const settings = _settingsAtClick()
-	if (!await _deploy(settings)) return
+	const deployment = await _deploy(settings)
+	if (!deployment) return
 	// Deployed by now: the dialog closes whatever the start does, a second try would deploy again
 	_closeModal()
 	try {
@@ -559,8 +560,8 @@ const deployAndStart = _once(async () => {
 			...settings.auth,
 			settings.startProcessId,
 			settings.customEndpoint, settings.useCustomEndpoint,
-			// the tenant the deploy went to, or the start finds no definition
-			settings.tenantID
+			// The tenant the engine deployed for, which it may also have set itself
+			'tenantId' in deployment ? deployment.tenantId : settings.tenantID
 		)
 		if (!res?.id) {
 			_reportError(settings, 'toastStartProcessError', res, { keepBody: true })

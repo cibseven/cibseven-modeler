@@ -37,9 +37,8 @@ const deploy = async (myAuthorization, deploymentName, deployUrl, tenantID, diag
   myFormData.value.append('deployment-source', 'CIB seven Web Modeler')
   myFormData.value.append('enable-duplicate-filtering', 'true')
   myFormData.value.append(mainResourceName, blob, mainResourceName)
-  // Trimmed as the start trims it, so both name the same tenant
-  if (tenantID?.trim()) {
-    myFormData.value.append('tenant-id', tenantID.trim())
+  if (tenantID) {
+    myFormData.value.append('tenant-id', tenantID)
   }
   additionalResources.forEach(({ resourceName, blob: partBlob }) => {
     const name = resourceName.trim()
@@ -118,8 +117,8 @@ const startProcess = async (
       },
       {
         ...REPORTS_OWN_ERRORS,
-        // A key alone starts only a definition of no tenant; an older webclient ignores the parameter
-        ...(tenantId?.trim() ? { params: { tenantId: tenantId.trim() } } : {}),
+        // An older webclient ignores the parameter
+        ...(tenantId ? { params: { tenantId } } : {}),
         headers: { authorization: headers['headers']['authorization'] },
       }
     )

@@ -239,22 +239,26 @@ describe('deployService', () => {
 
     // A key alone starts only a definition of no tenant
     describe('the tenant of the deployment', () => {
-        it('goes with the start, trimmed as the deploy trims it', async () => {
+        it('goes with the deploy and the start, also to another instance', async () => {
             m.post.mockResolvedValue({ id: 'x' })
 
-            await deployProcess('token', 'Bearer t', '', '', 'P', '', ' acme ', '<bpmn />', false, 'bpmn')
-            await startProcess('token', 'Bearer t', '', '', 'proc', '', false, ' acme ')
+            await deployProcess('token', 'Bearer t', '', '', 'P', '', 'acme', '<bpmn />', false, 'bpmn')
+            await startProcess('token', 'Bearer t', '', '', 'proc', '', false, 'acme')
+            await startProcess('token', 'Bearer t', '', '', 'proc', 'https://other.example.com', true, 'acme')
 
-            const [[, deployBody], [, , startConfig]] = m.post.mock.calls
+            const [[, deployBody], [, , startConfig], [otherUrl, , otherConfig]] = m.post.mock.calls
             expect(deployBody.get('tenant-id')).toBe('acme')
             expect(startConfig.params).toEqual({ tenantId: 'acme' })
+            expect(otherUrl).toMatch(/^https:\/\/other\.example\.com\/.*\/start\/proc$/)
+            expect(otherConfig.params).toEqual({ tenantId: 'acme' })
         })
 
         it('stays out of the start and the deploy when there is none', async () => {
             m.post.mockResolvedValue({ id: 'x' })
 
-            await deployProcess('token', 'Bearer t', '', '', 'P', '', '  ', '<bpmn />', false, 'bpmn')
+            await deployProcess('token', 'Bearer t', '', '', 'P', '', '', '<bpmn />', false, 'bpmn')
             await startProcess('token', 'Bearer t', '', '', 'proc', '', false, '')
+            await startProcess('token', 'Bearer t', '', '', 'proc', '', false, null)
             await startProcess('token', 'Bearer t', '', '', 'proc', '', false)
 
             const [[, deployBody], ...starts] = m.post.mock.calls

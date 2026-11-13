@@ -385,16 +385,41 @@ describe('ModalDeploy — deploy and start', () => {
         expect(startedKey()).toBe('order')
     })
 
-    it('starts the definition of the tenant the deploy went to', async () => {
+    it('deploys for the tenant typed, trimmed, and starts for the tenant the engine deployed for', async () => {
+        deployProcess.mockResolvedValue({ id: 'deployment-1', tenantId: 'acme' })
         const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
         await openModal(wrapper)
-        await wrapper.find('#tenant-id').setValue('acme')
+        await wrapper.find('#tenant-id').setValue('  acme  ')
 
         await startButton(wrapper).trigger('click')
         await flushPromises()
 
         expect(deployProcess.mock.calls[0][6]).toBe('acme')
         expect(startProcess.mock.calls[0][7]).toBe('acme')
+    })
+
+    // The engine may set the tenant itself (a tenant id provider), or match an existing deployment
+    it('starts for the tenant of the deployment also when none was typed', async () => {
+        deployProcess.mockResolvedValue({ id: 'deployment-1', tenantId: 'set-by-engine' })
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+
+        await startButton(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(deployProcess.mock.calls[0][6]).toBe('')
+        expect(startProcess.mock.calls[0][7]).toBe('set-by-engine')
+    })
+
+    it('starts with no tenant when the deployment has none', async () => {
+        deployProcess.mockResolvedValue({ id: 'deployment-1', tenantId: null })
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+
+        await startButton(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(startProcess.mock.calls[0][7]).toBeNull()
     })
 
     it('lets the user pick the process when several pools are executable, the first by default', async () => {
