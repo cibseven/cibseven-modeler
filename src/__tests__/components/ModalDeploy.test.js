@@ -404,6 +404,44 @@ describe('ModalDeploy — deploy and start', () => {
         expect(startedKey()).toBe('order')
     })
 
+    it('deploys for the tenant typed, trimmed, and starts for the tenant the engine deployed for', async () => {
+        deployProcess.mockResolvedValue({ id: 'deployment-1', tenantId: 'acme' })
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+        await wrapper.find('#tenant-id').setValue('  acme  ')
+
+        await startButton(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(deployProcess.mock.calls[0][6]).toBe('acme')
+        expect(startProcess.mock.calls[0][7]).toBe('acme')
+    })
+
+    // The engine may set the tenant itself (a tenant id provider), or match an existing deployment
+    it('starts for the tenant of the deployment also when none was typed', async () => {
+        deployProcess.mockResolvedValue({ id: 'deployment-1', tenantId: 'set-by-engine' })
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+
+        await startButton(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(deployProcess.mock.calls[0][6]).toBe('')
+        expect(startProcess.mock.calls[0][7]).toBe('set-by-engine')
+    })
+
+    // With null values left out of the answer, a deployment of no tenant has no tenantId at all
+    it.each([[{ id: 'deployment-1', tenantId: null }], [{ id: 'deployment-1' }]])('starts with no tenant when the deployment has none: %j', async deployment => {
+        deployProcess.mockResolvedValue(deployment)
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+
+        await startButton(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(startProcess.mock.calls[0][7]).toBe('')
+    })
+
     it('lets the user pick the process when several pools are executable, the first by default', async () => {
         const wrapper = mountModal({ diagram: BPMN_TWO_POOLS })
         await openModal(wrapper)

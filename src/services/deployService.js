@@ -37,7 +37,7 @@ const deploy = async (myAuthorization, deploymentName, deployUrl, tenantID, diag
   myFormData.value.append('deployment-source', 'CIB seven Web Modeler')
   myFormData.value.append('enable-duplicate-filtering', 'true')
   myFormData.value.append(mainResourceName, blob, mainResourceName)
-  if (tenantID !== '') {
+  if (tenantID) {
     myFormData.value.append('tenant-id', tenantID)
   }
   additionalResources.forEach(({ resourceName, blob: partBlob }) => {
@@ -94,7 +94,8 @@ const startProcess = async (
   password,
   processName,
   cibsevenInstanceUrl,
-  ownEndPoint
+  ownEndPoint,
+  tenantId = ''
 ) => {
   const baseDeploymentUrl = getBaseDeploymentUrl()
   const startUrl = ownEndPoint
@@ -114,7 +115,12 @@ const startProcess = async (
           }
         }
       },
-      { ...REPORTS_OWN_ERRORS, headers: { authorization: headers['headers']['authorization'] } }
+      {
+        ...REPORTS_OWN_ERRORS,
+        // An older webclient ignores the parameter
+        ...(tenantId ? { params: { tenantId } } : {}),
+        headers: { authorization: headers['headers']['authorization'] },
+      }
     )
   }
 }
