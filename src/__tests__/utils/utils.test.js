@@ -14,7 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import {
     wildcardCleanupRegex,
     cleanupTemplateCriteria,
@@ -37,6 +37,8 @@ import {
     setTagValueOfXml,
     isValidXmlId,
     getStartableProcesses,
+    getSessionToken,
+    getBearerToken,
 } from '../../utils.js'
 
 describe('Utils', () => {
@@ -736,5 +738,29 @@ describe('getStartableProcesses', () => {
     it('finds nothing in an empty or missing diagram', () => {
         expect(getStartableProcesses('')).toEqual([])
         expect(getStartableProcesses(undefined)).toEqual([])
+    })
+})
+
+// The webclient keeps the token in sessionStorage after a login without "Remember me", else in localStorage
+describe('getSessionToken', () => {
+    afterEach(() => { sessionStorage.clear(); localStorage.removeItem('token') })
+
+    it('finds the token of a login without "Remember me" in sessionStorage', () => {
+        sessionStorage.setItem('token', 'Bearer session-tok')
+        expect(getSessionToken()).toBe('Bearer session-tok')
+        expect(getBearerToken()).toBe('session-tok')
+    })
+
+    it('finds the token of a remembered login in localStorage', () => {
+        localStorage.setItem('token', 'Bearer remembered-tok')
+        expect(getSessionToken()).toBe('Bearer remembered-tok')
+    })
+
+    it('prefers sessionStorage, as the webclient does, and has none without a login', () => {
+        expect(getSessionToken()).toBeNull()
+        expect(getBearerToken()).toBeNull()
+        localStorage.setItem('token', 'Bearer remembered-tok')
+        sessionStorage.setItem('token', 'Bearer session-tok')
+        expect(getSessionToken()).toBe('Bearer session-tok')
     })
 })

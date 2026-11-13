@@ -259,10 +259,16 @@ export const getTheme = () => {
 	return localStorage.getItem('theme') || 'light'
 }
 
+/**
+ * The user's session token, where the webclient keeps it: in sessionStorage after a login without
+ * "Remember me" (or a token passed in the URL), in localStorage after one with it.
+ */
+export const getSessionToken = () => sessionStorage.getItem('token') || localStorage.getItem('token')
+
 export const getBearerToken = () => {
-	const localStorageToken = localStorage.getItem('token')
-	if (!localStorageToken) return null
-	return localStorageToken.split(' ')[1] ?? null
+	const sessionToken = getSessionToken()
+	if (!sessionToken) return null
+	return sessionToken.split(' ')[1] ?? null
 }
 
 /**
