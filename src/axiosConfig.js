@@ -36,4 +36,11 @@ export function getAxios() {
 	return axios
 }
 
+/**
+ * Axios config for a request whose caller tells the user itself what failed (deploy, start, import).
+ * The webclient's error handler then shows no dialog of its own and does not log the user out on a
+ * 401 for the credentials that request carried. A webclient without that support ignores it.
+ */
+export const REPORTS_OWN_ERRORS = Object.freeze({ reportsOwnErrors: true })
+
 export { axios }

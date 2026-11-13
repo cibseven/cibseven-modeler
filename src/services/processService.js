@@ -47,9 +47,9 @@ const getUnifiedDiagramById = id => {
  * The diagram with this key in the folder given. Without a folder, the latest among those the
  * user may see: a key is unique only within a folder, so several folders may hold it.
  */
-const fetchProcessByKey = (key, folderId = null) => {
+const fetchProcessByKey = (key, folderId = null, config = {}) => {
   const params = folderId ? { key, folderId } : { key }
-  return getAxios().get(getModelerServicePath() + '/process/find-by-key', { params })
+  return getAxios().get(getModelerServicePath() + '/process/find-by-key', { ...config, params })
 }
 
 /**
@@ -105,7 +105,8 @@ const deleteProcessById = id => {
   return getAxios().delete(getModelerServicePath() + '/process/delete/' + id)
 }
 
-const saveDiagramProcess = (name, processkey, blob, type, folderId = null) => {
+// config: extra axios config, as REPORTS_OWN_ERRORS for a caller that reports a refusal itself
+const saveDiagramProcess = (name, processkey, blob, type, folderId = null, config = {}) => {
 
   const formData = new FormData()
   formData.append('name', name)
@@ -115,11 +116,12 @@ const saveDiagramProcess = (name, processkey, blob, type, folderId = null) => {
   // Left out the backend files it under its default folder, which is rarely what the user meant
   if (folderId) formData.append('folderId', folderId)
   return getAxios().post(getModelerServicePath() + '/process/save', formData, {
+    ...config,
     headers: { 'Content-Type': 'multipart/form-data' }
   })
 }
 
-const updateDiagramProcess = (id, name, processkey, blob, type) => {
+const updateDiagramProcess = (id, name, processkey, blob, type, config = {}) => {
   const formData = new FormData()
   formData.append('id', id)
   formData.append('name', name)
@@ -128,6 +130,7 @@ const updateDiagramProcess = (id, name, processkey, blob, type) => {
   formData.append('type', type)
 
   return getAxios().post(getModelerServicePath() + '/process/update', formData, {
+    ...config,
     headers: { 'Content-Type': 'multipart/form-data' }
   })
 }

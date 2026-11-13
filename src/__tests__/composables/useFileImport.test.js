@@ -111,6 +111,8 @@ describe('useFileImport', () => {
             await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
 
             expect(m.saveDiagramProcess).toHaveBeenCalledOnce()
+            // The import reports a refusal itself, so the host must not add its dialog
+            expect(m.saveDiagramProcess).toHaveBeenCalledWith('procA', 'procA', expect.anything(), 'bpmn-c7', 'general', { reportsOwnErrors: true })
             expect(deps.showModalAcceptCancelMessage.value.show).toBe(false)
         })
 
@@ -240,7 +242,7 @@ describe('useFileImport', () => {
             resolveConflict('replace')
             await p
 
-            expect(m.fetchProcessByKey).toHaveBeenCalledWith('procA', 'general')
+            expect(m.fetchProcessByKey).toHaveBeenCalledWith('procA', 'general', { reportsOwnErrors: true })
             expect(m.updateDiagramProcess).toHaveBeenCalledOnce()
             expect(deps.modalData.value.folderId).toBe('general')
         })
@@ -274,7 +276,7 @@ describe('useFileImport', () => {
             resolveConflict('replace')
             await p
 
-            expect(m.updateDiagramProcess).toHaveBeenCalledWith('db1', 'procA', 'procA', expect.anything(), 'bpmn-c7')
+            expect(m.updateDiagramProcess).toHaveBeenCalledWith('db1', 'procA', 'procA', expect.anything(), 'bpmn-c7', { reportsOwnErrors: true })
             expect(deps.updateDiagramXml).not.toHaveBeenCalled()
             expect(deps.tabNavList.value[0].canSave).toBe(true)
         })
@@ -318,7 +320,7 @@ describe('useFileImport', () => {
 
             await handleFile(fileEvent([{ name: 'a.bpmn', content: bpmn('procA') }]))
 
-            expect(m.fetchProcessByKey).toHaveBeenCalledWith('procA', 'general')
+            expect(m.fetchProcessByKey).toHaveBeenCalledWith('procA', 'general', { reportsOwnErrors: true })
             expect(m.saveDiagramProcess).toHaveBeenCalledOnce()
             expect(deps.showModalAcceptCancelMessage.value.show).toBe(false)
         })
@@ -483,7 +485,7 @@ describe('useFileImport', () => {
             const p = handleFile(fileEvent([{ name: 'f.form', content: form('formA') }]))
             await waitForModal(deps)
 
-            expect(m.fetchFormByFormId).toHaveBeenCalledWith('formA', 'general')
+            expect(m.fetchFormByFormId).toHaveBeenCalledWith('formA', 'general', { reportsOwnErrors: true })
             expect(deps.modalData.value.folderName).toBe('General')
             resolveConflict('replace')
             await p

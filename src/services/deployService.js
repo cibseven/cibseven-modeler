@@ -14,7 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { getAxios } from '../axiosConfig'
+import { getAxios, REPORTS_OWN_ERRORS } from '../axiosConfig'
 import { ref } from 'vue'
 import { language } from '../i18n.js'
 import { isHttpOrHttpsUrl } from '../utils/regexUtils'
@@ -45,7 +45,9 @@ const deploy = async (myAuthorization, deploymentName, deployUrl, tenantID, diag
     myFormData.value.append(name, partBlob, name)
   })
 
+  // The deploy dialog reports a failure itself, and a 401 here is about the credentials entered there
   return await getAxios().post(`${deployUrl}/create`, myFormData.value, {
+    ...REPORTS_OWN_ERRORS,
     headers: {
       authorization: myAuthorization,
       'Content-Type': 'multipart/form-data'
@@ -112,7 +114,7 @@ const startProcess = async (
           }
         }
       },
-      { headers: { authorization: headers['headers']['authorization'] } }
+      { ...REPORTS_OWN_ERRORS, headers: { authorization: headers['headers']['authorization'] } }
     )
   }
 }

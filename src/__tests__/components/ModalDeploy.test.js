@@ -501,6 +501,34 @@ describe('ModalDeploy — deploy and start', () => {
         expect(deployButton(wrapper).attributes('disabled')).toBeUndefined()
     })
 
+    it('says the login entered was not accepted, rather than the user name the refusal carries', async () => {
+        deployProcess.mockRejectedValue({ response: { status: 401, data: { type: 'AuthenticationException', params: ['demo'] } } })
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+        await wrapper.find('#asAnotherUser').setValue(true)
+        await wrapper.find('#http-auth').setValue(true)
+        await wrapper.find('#username').setValue('demo')
+        await wrapper.find('#password').setValue('wrong')
+
+        await deployButton(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(toasts(wrapper)).toEqual([{ isSuccess: false, toastText: 'toastDeployErrorDeploy', bodyTextAlt: 'deployForm.loginRefused' }])
+    })
+
+    // The user's own session ran out: the webclient takes them to the login page, no login was entered here
+    it('blames no entered login when the user deployed with their own session', async () => {
+        deployProcess.mockRejectedValue({ response: { status: 401, data: { type: 'AuthenticationException', params: ['Bearer tok'] } } })
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+
+        await deployButton(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(toasts(wrapper)).toEqual([{ isSuccess: false, toastText: 'toastDeployErrorDeploy', bodyTextAlt: '' }])
+        expect(wrapper.emitted('addErrorMessageToConsole')).toBeUndefined()
+    })
+
     it('reports a deploy that answers without a deployment', async () => {
         deployProcess.mockResolvedValue(undefined)
         const wrapper = mountModal({ diagram: BPMN_COLLABORATION })

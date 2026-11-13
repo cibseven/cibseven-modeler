@@ -23,7 +23,10 @@ const m = vi.hoisted(() => ({
     delete: vi.fn(),
 }))
 
-vi.mock('../../axiosConfig', () => ({ getAxios: () => ({ get: m.get, post: m.post, put: m.put, delete: m.delete }) }))
+vi.mock('../../axiosConfig', () => ({
+    getAxios: () => ({ get: m.get, post: m.post, put: m.put, delete: m.delete }),
+    REPORTS_OWN_ERRORS: Object.freeze({ reportsOwnErrors: true }),
+}))
 vi.mock('../../services/servicesConfig', () => ({ 
     getModelerServicePath: () => '/api/modeler',
     getServicesBasePath: () => '/api/services'
@@ -217,6 +220,20 @@ describe('deployService', () => {
             )
 
             expect(m.post).toHaveBeenCalled()
+        })
+    })
+
+    // The deploy dialog reports a failure itself, and a 401 is about the credentials entered there
+    describe('the flag of a caller that reports errors itself', () => {
+        it('goes with the deploy and the start', async () => {
+            m.post.mockResolvedValue({ id: 'x' })
+
+            await deployProcess('token', 'Bearer t', '', '', 'P', '', '', '<bpmn />', false, 'bpmn')
+            await startProcess('basicauth', '', 'other', 'wrong', 'proc', '', false)
+
+            const [deployConfig, startConfig] = m.post.mock.calls.map(call => call[2])
+            expect(deployConfig).toMatchObject({ reportsOwnErrors: true, headers: { authorization: 'Bearer t' } })
+            expect(startConfig).toMatchObject({ reportsOwnErrors: true, headers: { authorization: `Basic ${btoa('other:wrong')}` } })
         })
     })
 

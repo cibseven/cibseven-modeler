@@ -222,6 +222,29 @@ describe('formService', () => {
         })
     })
 
+    describe('extra axios config', () => {
+        it('passes the flag of a caller that reports errors itself on lookup, save and update', async () => {
+            m.get.mockResolvedValue({})
+            m.post.mockResolvedValue({})
+            const flag = { reportsOwnErrors: true }
+
+            await fetchFormByFormId('contact-form', 'sales', flag)
+            await saveForm('contact-form', { components: [] }, 'sales', flag)
+            await updateForm('f1', 'contact-form', { components: [] }, flag)
+
+            expect(m.get).toHaveBeenCalledWith('/api/modeler/form/find-by-formid', { reportsOwnErrors: true, params: { formId: 'contact-form', folderId: 'sales' } })
+            for (const [, , config] of m.post.mock.calls) {
+                expect(config).toEqual({ reportsOwnErrors: true, headers: { 'Content-Type': 'multipart/form-data' } })
+            }
+        })
+
+        it('sends none unless the caller gives it', async () => {
+            m.post.mockResolvedValue({})
+            await saveForm('contact-form', { components: [] }, 'sales')
+            expect(m.post.mock.calls[0][2]).toEqual({ headers: { 'Content-Type': 'multipart/form-data' } })
+        })
+    })
+
     describe('updateForm', () => {
         it('updates an existing form', async () => {
             m.post.mockResolvedValue({ data: { id: 'f1', formId: 'myform', version: 2 } })
