@@ -360,6 +360,25 @@ describe('ModalDeploy — deploy and start', () => {
         vi.spyOn(console, 'warn').mockImplementation(() => {})
     })
 
+    // A login without "Remember me" leaves the token in sessionStorage only
+    it('deploys as the current user with a session token from sessionStorage', async () => {
+        localStorage.removeItem('token')
+        sessionStorage.setItem('token', 'Bearer session-tok')
+        try {
+            const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+            await openModal(wrapper)
+            expect(deployButton(wrapper).attributes('disabled')).toBeUndefined()
+
+            await deployButton(wrapper).trigger('click')
+            await flushPromises()
+
+            expect(deployProcess).toHaveBeenCalledOnce()
+            expect(deployProcess.mock.calls[0].slice(0, 2)).toEqual(['token', 'Bearer session-tok'])
+        } finally {
+            sessionStorage.clear()
+        }
+    })
+
     it('starts the process of a diagram with a pool by its process id, not by the collaboration id', async () => {
         const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
         await openModal(wrapper)

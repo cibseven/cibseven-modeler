@@ -285,7 +285,7 @@ import { projectOfFolder } from '../../utils/projectRights.js'
 import { debounce } from 'min-dash'
 import { ref, computed, onMounted, watch, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { getProcessKeyFromBpmn, getTagValueFromXml, formatFileSize, getFormRefsFromBpmn, getStartableProcesses } from '../../utils.js'
+import { getProcessKeyFromBpmn, getTagValueFromXml, formatFileSize, getFormRefsFromBpmn, getStartableProcesses, getSessionToken } from '../../utils.js'
 import { isHttpOrHttpsUrl } from '../../utils/regexUtils'
 import { errorReason } from '../../utils/toast.js'
 import { DEPLOY_STORAGE_KEYS } from '../../constants/diagramTypes'
@@ -374,7 +374,7 @@ const canDeploy = computed(() => {
 		return isCustomEndpointValid.value
 	}
 
-	if (!asAnotherUser.value && localStorage.getItem('token')) { // Current user and is logged in
+	if (!asAnotherUser.value && getSessionToken()) { // Current user and is logged in
 		return true
 	}
 
@@ -528,7 +528,7 @@ const _deploy = async settings => {
 }
 
 const _getAuthType = () => asAnotherUser.value ? selected.value : 'token'// 'token' for the current user
-const _getToken = () => asAnotherUser.value ? token.value : localStorage.getItem('token') // current user -> token from localStorage
+const _getToken = () => asAnotherUser.value ? token.value : getSessionToken() // current user -> the session token
 const _getUsername = () => asAnotherUser.value ? username.value : null // current user -> no form data passed
 const _getPassword = () => asAnotherUser.value ? password.value : null // current user -> no form data passed
 
