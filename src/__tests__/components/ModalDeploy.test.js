@@ -385,6 +385,18 @@ describe('ModalDeploy — deploy and start', () => {
         expect(startedKey()).toBe('order')
     })
 
+    it('starts the definition of the tenant the deploy went to', async () => {
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+        await wrapper.find('#tenant-id').setValue('acme')
+
+        await startButton(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(deployProcess.mock.calls[0][6]).toBe('acme')
+        expect(startProcess.mock.calls[0][7]).toBe('acme')
+    })
+
     it('lets the user pick the process when several pools are executable, the first by default', async () => {
         const wrapper = mountModal({ diagram: BPMN_TWO_POOLS })
         await openModal(wrapper)

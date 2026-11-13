@@ -237,6 +237,32 @@ describe('deployService', () => {
         })
     })
 
+    // A key alone starts only a definition of no tenant
+    describe('the tenant of the deployment', () => {
+        it('goes with the start, trimmed as the deploy trims it', async () => {
+            m.post.mockResolvedValue({ id: 'x' })
+
+            await deployProcess('token', 'Bearer t', '', '', 'P', '', ' acme ', '<bpmn />', false, 'bpmn')
+            await startProcess('token', 'Bearer t', '', '', 'proc', '', false, ' acme ')
+
+            const [[, deployBody], [, , startConfig]] = m.post.mock.calls
+            expect(deployBody.get('tenant-id')).toBe('acme')
+            expect(startConfig.params).toEqual({ tenantId: 'acme' })
+        })
+
+        it('stays out of the start and the deploy when there is none', async () => {
+            m.post.mockResolvedValue({ id: 'x' })
+
+            await deployProcess('token', 'Bearer t', '', '', 'P', '', '  ', '<bpmn />', false, 'bpmn')
+            await startProcess('token', 'Bearer t', '', '', 'proc', '', false, '')
+            await startProcess('token', 'Bearer t', '', '', 'proc', '', false)
+
+            const [[, deployBody], ...starts] = m.post.mock.calls
+            expect(deployBody.has('tenant-id')).toBe(false)
+            for (const [, , config] of starts) expect(config).not.toHaveProperty('params')
+        })
+    })
+
     describe('startProcess', () => {
         it('starts process with token authentication', async () => {
             m.post.mockResolvedValue({ data: { processInstanceId: 'pi1' } })

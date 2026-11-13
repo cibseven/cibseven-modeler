@@ -558,7 +558,9 @@ const deployAndStart = _once(async () => {
 		const res = await startProcess(
 			...settings.auth,
 			settings.startProcessId,
-			settings.customEndpoint, settings.useCustomEndpoint
+			settings.customEndpoint, settings.useCustomEndpoint,
+			// the tenant the deploy went to, or the start finds no definition
+			settings.tenantID
 		)
 		if (!res?.id) {
 			_reportError(settings, 'toastStartProcessError', res, { keepBody: true })
