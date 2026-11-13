@@ -462,13 +462,19 @@ const _validateAdditionalDeploymentResources = mainResourceName => {
  * REPORTS_OWN_ERRORS, so the webclient adds no generic error dialog, which would name neither.
  * The reason replaces the toast body, so a body that must stay readable goes first.
  */
-const _reportError = (tabId, toastText, error, { keepBody = false } = {}) => {
-	// A refused login names only the user: what failed is the login entered here, not the session
-	const errorMessage = error?.response?.status === 401 ? t('deployForm.loginRefused') : errorReason(error)
+const _reportError = (settings, toastText, error, { keepBody = false } = {}) => {
+	const errorMessage = error?.response?.status === 401 ? _refusedLogin(settings) : errorReason(error)
 	const bodyTextAlt = keepBody && errorMessage ? `${t(`${toastText}.body`)}: ${errorMessage}` : errorMessage
 	emit('showToastMessage', { isSuccess: false, toastText, bodyTextAlt })
-	if (errorMessage) emit('addErrorMessageToConsole', tabId, `${errorMessage}\n`)
+	if (errorMessage) emit('addErrorMessageToConsole', settings.tabId, `${errorMessage}\n`)
 }
+
+/**
+ * A refused login names only the user. Entered here (another user) or sent to another instance, it is
+ * that login that failed; with the user's own session the session ran out, and the webclient takes
+ * the user to the login page, so the toast adds no reason that would blame a login nobody entered.
+ */
+const _refusedLogin = settings => settings.credentialsEntered ? t('deployForm.loginRefused') : ''
 
 const _closeModal = () => closeButton.value.click() // simulates on button close clicked to avoid bug that backdrops stays visible
 
@@ -476,6 +482,7 @@ const _closeModal = () => closeButton.value.click() // simulates on button close
 const _settingsAtClick = () => ({
 	tabId: deployingTabId.value ?? props.tabNavList.id,
 	selectedAuth: selected.value,
+	credentialsEntered: asAnotherUser.value || useCustomEndpoint.value,
 	auth: [_getAuthType(), _getToken(), _getUsername(), _getPassword()],
 	deploymentName: deploymentName.value,
 	tenantID: tenantID.value,
@@ -509,12 +516,12 @@ const _deploy = async settings => {
 		)
 	} catch (error) {
 		console.warn('Error deploying process:', error)
-		_reportError(settings.tabId, 'toastDeployErrorDeploy', error)
+		_reportError(settings, 'toastDeployErrorDeploy', error)
 		return null
 	}
 	_saveDeployValuesLocalStorage(settings.selectedAuth, settings.customEndpoint, settings.useCustomEndpoint)
 	if (!res?.id) {
-		_reportError(settings.tabId, 'toastDeployErrorDeploy', res)
+		_reportError(settings, 'toastDeployErrorDeploy', res)
 		return null
 	}
 	return res
@@ -554,13 +561,13 @@ const deployAndStart = _once(async () => {
 			settings.customEndpoint, settings.useCustomEndpoint
 		)
 		if (!res?.id) {
-			_reportError(settings.tabId, 'toastStartProcessError', res, { keepBody: true })
+			_reportError(settings, 'toastStartProcessError', res, { keepBody: true })
 			return
 		}
 		emit('showToastMessage', { isSuccess: true, toastText: 'toastStartProcessSucess', bodyTextAlt: '' })
 	} catch (error) {
 		console.warn('Error starting process:', error)
-		_reportError(settings.tabId, 'toastStartProcessError', error, { keepBody: true })
+		_reportError(settings, 'toastStartProcessError', error, { keepBody: true })
 	}
 })
 
