@@ -561,7 +561,7 @@ const deployAndStart = _once(async () => {
 			settings.startProcessId,
 			settings.customEndpoint, settings.useCustomEndpoint,
 			// The tenant the engine deployed for, which it may also have set itself
-			'tenantId' in deployment ? deployment.tenantId : settings.tenantID
+			deployment.tenantId ?? settings.tenantID
 		)
 		if (!res?.id) {
 			_reportError(settings, 'toastStartProcessError', res, { keepBody: true })

@@ -411,15 +411,16 @@ describe('ModalDeploy — deploy and start', () => {
         expect(startProcess.mock.calls[0][7]).toBe('set-by-engine')
     })
 
-    it('starts with no tenant when the deployment has none', async () => {
-        deployProcess.mockResolvedValue({ id: 'deployment-1', tenantId: null })
+    // With null values left out of the answer, a deployment of no tenant has no tenantId at all
+    it.each([[{ id: 'deployment-1', tenantId: null }], [{ id: 'deployment-1' }]])('starts with no tenant when the deployment has none: %j', async deployment => {
+        deployProcess.mockResolvedValue(deployment)
         const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
         await openModal(wrapper)
 
         await startButton(wrapper).trigger('click')
         await flushPromises()
 
-        expect(startProcess.mock.calls[0][7]).toBeNull()
+        expect(startProcess.mock.calls[0][7]).toBe('')
     })
 
     it('lets the user pick the process when several pools are executable, the first by default', async () => {
