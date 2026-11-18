@@ -240,6 +240,84 @@ describe('FolderNameModal', () => {
 
         expect(wrapper.find('.invalid-feedback').text()).toBe('The folder could not be saved.')
     })
+
+    // A double click on Accept created the project twice (CIB7-2828)
+    describe('while the name is being saved', () => {
+        const pending = () => {
+            let resolve
+            const accept = vi.fn(() => new Promise(done => { resolve = done }))
+            return { accept, resolve: () => resolve() }
+        }
+        const showWith = async accept => {
+            const wrapper = mountModal(FolderNameModal)
+            wrapper.vm.show('create', '', accept, 'project')
+            await flushPromises()
+            await wrapper.find('input').setValue('race-test')
+            return wrapper
+        }
+
+        it('sends the name once however often Accept is clicked', async () => {
+            const { accept, resolve } = pending()
+            const wrapper = await showWith(accept)
+
+            await wrapper.find('button.btn-primary').trigger('click')
+            await wrapper.find('button.btn-primary').trigger('click')
+            resolve()
+            await flushPromises()
+
+            expect(accept).toHaveBeenCalledOnce()
+        })
+
+        it('sends the name once however often Enter is pressed', async () => {
+            const { accept, resolve } = pending()
+            const wrapper = await showWith(accept)
+
+            await wrapper.find('input').trigger('keyup.enter')
+            await wrapper.find('input').trigger('keyup.enter')
+            resolve()
+            await flushPromises()
+
+            expect(accept).toHaveBeenCalledOnce()
+        })
+
+        it('disables Accept until the answer is there', async () => {
+            const { accept } = pending()
+            const wrapper = await showWith(accept)
+
+            await wrapper.find('button.btn-primary').trigger('click')
+
+            expect(wrapper.find('button.btn-primary').attributes('disabled')).toBeDefined()
+        })
+
+        it('can be accepted again after a refusal kept it open', async () => {
+            const accept = vi.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValue()
+            const wrapper = await showWith(accept)
+
+            await wrapper.find('button.btn-primary').trigger('click')
+            await flushPromises()
+            expect(wrapper.find('button.btn-primary').attributes('disabled')).toBeUndefined()
+            await wrapper.find('button.btn-primary').trigger('click')
+            await flushPromises()
+
+            expect(accept).toHaveBeenCalledTimes(2)
+        })
+
+        it('accepts anew when it is opened again', async () => {
+            const first = vi.fn().mockResolvedValue()
+            const second = vi.fn().mockResolvedValue()
+            const wrapper = await showWith(first)
+            await wrapper.find('button.btn-primary').trigger('click')
+            await flushPromises()
+
+            wrapper.vm.show('create', '', second, 'project')
+            await flushPromises()
+            await wrapper.find('input').setValue('Next')
+            await wrapper.find('button.btn-primary').trigger('click')
+            await flushPromises()
+
+            expect(second).toHaveBeenCalledWith('Next')
+        })
+    })
 })
 
 describe('FolderPickerModal', () => {

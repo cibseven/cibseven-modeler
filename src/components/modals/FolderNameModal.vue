@@ -33,7 +33,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ $t('buttons.cancel') }}</button>
-                    <button type="submit" class="btn btn-primary" @click="handleAccept">{{ $t('buttons.accept') }}</button>
+                    <button type="submit" class="btn btn-primary" :disabled="accepting" @click="handleAccept">{{ $t('buttons.accept') }}</button>
                 </div>
             </div>
         </div>
@@ -56,6 +56,8 @@ const name = ref('')
 const error = ref('')
 const mode = ref('create')
 const kind = ref('folder')
+// One click is one request: a double click or a second Enter would otherwise send the name twice
+const accepting = ref(false)
 let modalBootstrap = null
 let onAccept = null
 
@@ -80,6 +82,7 @@ onMounted(() => {
 })
 
 const handleAccept = async () => {
+    if (accepting.value) return
     const trimmed = name.value.trim()
     if (!trimmed) {
         error.value = t(texts.value.required)
@@ -91,6 +94,7 @@ const handleAccept = async () => {
         return
     }
     // The backend owns the duplicate rule; what it refused is told in the user's language
+    accepting.value = true
     try {
         await onAccept?.(trimmed)
     } catch (e) {
@@ -98,8 +102,10 @@ const handleAccept = async () => {
         if (!refusal) error.value = t(texts.value.failed)
         else if (refusal.key === 'folders.nameTaken') error.value = t(texts.value.taken)
         else error.value = t(refusal.key, refusal.params)
+        accepting.value = false
         return
     }
+    // Stays taken while the dialog fades out, so the name is not sent again
     modalBootstrap?.hide()
 }
 
@@ -114,6 +120,7 @@ const show = (nextMode, currentName, accept, nextKind = 'folder') => {
     kind.value = nextKind
     name.value = currentName ?? ''
     error.value = ''
+    accepting.value = false
     onAccept = accept
     modalBootstrap?.show()
 }
