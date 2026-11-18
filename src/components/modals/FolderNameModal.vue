@@ -33,7 +33,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ $t('buttons.cancel') }}</button>
-                    <button type="submit" class="btn btn-primary" @click="handleAccept">{{ $t('buttons.accept') }}</button>
+                    <button type="submit" class="btn btn-primary" :disabled="accepting" @click="handleAccept">{{ $t('buttons.accept') }}</button>
                 </div>
             </div>
         </div>
@@ -41,10 +41,10 @@
 </template>
 
 <script setup>
-import * as bootstrap from 'bootstrap'
-import { computed, onMounted, ref, useId } from 'vue'
+import { computed, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { folderErrorMessage } from '../../utils/folderErrors.js'
+import { useModal } from '../../composables/useModal.js'
 
 const { t } = useI18n()
 const titleId = useId()
@@ -56,7 +56,12 @@ const name = ref('')
 const error = ref('')
 const mode = ref('create')
 const kind = ref('folder')
-let modalBootstrap = null
+// One click is one request: a double click or a second Enter would otherwise send the name twice
+const accepting = ref(false)
+// Counts the openings, so a request that answers after the dialog closed or opened anew leaves it alone
+let opening = 0
+// A request still running keeps Accept taken in the next opening too: two at once could both pass
+let requestRunning = false
 let onAccept = null
 
 /** Every text the dialog shows, per kind: a folder at the top level is a project. */
@@ -73,13 +78,13 @@ const TEXTS = {
 const texts = computed(() => TEXTS[kind.value] ?? TEXTS.folder)
 const title = computed(() => t(mode.value === 'rename' ? texts.value.rename : texts.value.create))
 
-onMounted(() => {
-    if (!modalRoot.value) return
-    modalBootstrap = new bootstrap.Modal(modalRoot.value)
-    modalRoot.value.addEventListener('shown.bs.modal', () => nameInput.value?.focus())
+const modal = useModal(modalRoot, {
+    onShown: () => nameInput.value?.focus(),
+    onHide: () => { opening++ },
 })
 
 const handleAccept = async () => {
+    if (accepting.value) return
     const trimmed = name.value.trim()
     if (!trimmed) {
         error.value = t(texts.value.required)
@@ -91,16 +96,36 @@ const handleAccept = async () => {
         return
     }
     // The backend owns the duplicate rule; what it refused is told in the user's language
+    const asked = opening
+    accepting.value = true
+    requestRunning = true
+    // A flag, not the reason: a promise may be rejected with nothing at all
+    let failed = false
+    let failure
     try {
         await onAccept?.(trimmed)
     } catch (e) {
-        const refusal = folderErrorMessage(e)
+        failed = true
+        failure = e
+    }
+    requestRunning = false
+    if (asked !== opening) {
+        // Closed meanwhile: what came back is not this opening's, but its Accept may be used now
+        accepting.value = false
+        return
+    }
+    if (failed) {
+        const refusal = folderErrorMessage(failure)
         if (!refusal) error.value = t(texts.value.failed)
         else if (refusal.key === 'folders.nameTaken') error.value = t(texts.value.taken)
         else error.value = t(refusal.key, refusal.params)
+        accepting.value = false
+        // The name is what has to change, so the keyboard goes back to it
+        nameInput.value?.focus()
         return
     }
-    modalBootstrap?.hide()
+    // Stays taken while the dialog fades out, so the name is not sent again
+    modal.hide()
 }
 
 /**
@@ -114,8 +139,10 @@ const show = (nextMode, currentName, accept, nextKind = 'folder') => {
     kind.value = nextKind
     name.value = currentName ?? ''
     error.value = ''
+    opening++
+    accepting.value = requestRunning
     onAccept = accept
-    modalBootstrap?.show()
+    modal.show()
 }
 
 defineExpose({ show })
