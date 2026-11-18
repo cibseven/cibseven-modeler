@@ -319,6 +319,49 @@ describe('FolderNameModal', () => {
             expect(second).toHaveBeenCalledWith('Next')
         })
 
+        it('leaves a dialog closed meanwhile alone when the request is refused', async () => {
+            let refuse
+            const accept = vi.fn(() => new Promise((_, reject) => { refuse = reject }))
+            const wrapper = await showWith(accept)
+            const modal = Modal.mock.instances.at(-1)
+            await wrapper.find('button.btn-primary').trigger('click')
+
+            // Cancel, the X or Esc
+            wrapper.element.dispatchEvent(new Event('hide.bs.modal'))
+            refuse({ response: { data: { type: 'InvalidFolderException', params: ['name', 'a folder with that name is already there'] } } })
+            await flushPromises()
+
+            expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+            expect(modal.hide).not.toHaveBeenCalled()
+        })
+
+        it('keeps Accept taken in a dialog opened anew until the earlier request answers', async () => {
+            const { accept, resolve } = pending()
+            const next = vi.fn().mockResolvedValue()
+            const wrapper = await showWith(accept)
+            const modal = Modal.mock.instances.at(-1)
+            await wrapper.find('button.btn-primary').trigger('click')
+            wrapper.element.dispatchEvent(new Event('hide.bs.modal'))
+
+            wrapper.vm.show('create', '', next, 'project')
+            await flushPromises()
+            await wrapper.find('input').setValue('race-test')
+            await wrapper.find('input').trigger('keyup.enter')
+            expect(next).not.toHaveBeenCalled()
+            expect(wrapper.find('button.btn-primary').attributes('disabled')).toBeDefined()
+
+            resolve()
+            await flushPromises()
+            // The earlier request does not close the dialog opened since
+            wrapper.element.dispatchEvent(new Event('shown.bs.modal'))
+            expect(modal.hide).not.toHaveBeenCalled()
+            expect(wrapper.find('button.btn-primary').attributes('disabled')).toBeUndefined()
+
+            await wrapper.find('button.btn-primary').trigger('click')
+            await flushPromises()
+            expect(next).toHaveBeenCalledWith('race-test')
+        })
+
         // Bootstrap ignores hide() during the fade-in, which left the dialog open (CIB7-2827)
         it('closes once fully shown when accepted during the fade-in', async () => {
             const accept = vi.fn().mockResolvedValue()

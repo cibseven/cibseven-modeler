@@ -26,8 +26,9 @@ import { onBeforeUnmount, onMounted } from 'vue'
  * @param {import('vue').Ref<HTMLElement|null>} rootRef the element with the class modal
  * @param {object} [options]
  * @param {Function} [options.onShown] runs once the dialog is fully shown, unless it is closing again
+ * @param {Function} [options.onHide] runs when the dialog starts to close, by any button, Esc or code
  */
-export function useModal(rootRef, { onShown } = {}) {
+export function useModal(rootRef, { onShown, onHide } = {}) {
   let modal = null
   let element = null
   // 'hidden', 'showing' (fading in) or 'shown'
@@ -43,6 +44,9 @@ export function useModal(rootRef, { onShown } = {}) {
     }
     onShown?.()
   }
+  const handleHide = () => {
+    onHide?.()
+  }
   const handleHidden = () => {
     state = 'hidden'
   }
@@ -52,11 +56,13 @@ export function useModal(rootRef, { onShown } = {}) {
     if (!element) return
     modal = new bootstrap.Modal(element)
     element.addEventListener('shown.bs.modal', handleShown)
+    element.addEventListener('hide.bs.modal', handleHide)
     element.addEventListener('hidden.bs.modal', handleHidden)
   })
 
   onBeforeUnmount(() => {
     element?.removeEventListener('shown.bs.modal', handleShown)
+    element?.removeEventListener('hide.bs.modal', handleHide)
     element?.removeEventListener('hidden.bs.modal', handleHidden)
   })
 

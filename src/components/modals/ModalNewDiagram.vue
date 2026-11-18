@@ -26,11 +26,11 @@
                 <div class="modal-body">
                     <div class="mb-3" v-if="type !=='form'">
                         <label class="form-label" for="processNameInput">{{ modalNewDiagramText.processName }}</label>
-                        <input id="processNameInput" ref="processNameInputRef" type="text" maxlength="255" class="form-control form-control-sm" v-model="nameOfProcess" @keyup.enter="handleClick">
+                        <input id="processNameInput" ref="processNameInputRef" type="text" maxlength="255" class="form-control form-control-sm" v-model="nameOfProcess" :readonly="answering" @keyup.enter="handleClick">
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="processIdInput">{{ modalNewDiagramText.processId }}</label>
-                        <input id="processIdInput" ref="processIdInputRef" type="text" maxlength="100" class="form-control form-control-sm" v-model="idOfProcess" @input="isIdDuplicated = false" @keyup.enter="handleClick">
+                        <input id="processIdInput" ref="processIdInputRef" type="text" maxlength="100" class="form-control form-control-sm" v-model="idOfProcess" :readonly="answering" @input="isIdDuplicated = false" @keyup.enter="handleClick">
                         <div v-if="!isValidId && idOfProcess !== ''" tabindex="-1" role="alert" aria-live="assertive"
                             aria-atomic="true" class="d-block invalid-feedback">{{
                         $t("modalNewDiagram.qnameError") }}
@@ -93,6 +93,8 @@ const isIdDuplicated = ref(false)
 // One answer per opening: every answer opens a diagram tab, so a double click, a second Enter or
 // Accept followed by "Do it later" would open two (CIB7-2827)
 const answering = ref(false)
+// Counts the openings; an answer still being checked when the dialog closes or opens anew is dropped
+let opening = 0
 
 const type = ref('bpmn-c7')
 const dontShowAgain = ref(localStorage.getItem(SKIP_CREATION_MODAL_KEY) === 'true')
@@ -106,6 +108,8 @@ const modal = useModal(modalNewDiagram, {
         const target = type.value !== 'form' ? processNameInputRef.value : processIdInputRef.value
         target?.focus()
     },
+    // Closed by the X or Esc while an Accept is being checked: the user no longer asks for the diagram
+    onHide: () => { opening++ },
 })
 
 const modalNewDiagramText = computed(() => {
@@ -122,15 +126,30 @@ const handleClick = async () => {
     isIdFilled.value = idOfProcess.value !== ''
     if (!isIdFilled.value || !isValidId.value) return
 
+    // What is checked is what is created: the fields are read once, and stay read-only meanwhile
+    const name = nameOfProcess.value
+    const id = idOfProcess.value
+    const callback = functionOnCallback
+    const asked = opening
     answering.value = true
-    isIdDuplicated.value = !!(await props.checkDuplicateId?.(idOfProcess.value.trim(), type.value))
-    if (isIdDuplicated.value) {
+    let duplicated
+    try {
+        duplicated = !!(await props.checkDuplicateId?.(id.trim(), type.value))
+    } catch (e) {
+        // A check that failed leaves the answer open, not the buttons dead
+        if (asked === opening) answering.value = false
+        throw e
+    }
+    if (asked !== opening) return
+
+    isIdDuplicated.value = duplicated
+    if (duplicated) {
         // Another id may still be tried
         answering.value = false
         return
     }
 
-    functionOnCallback(nameOfProcess.value, idOfProcess.value)
+    callback(name, id)
     _resetField()
     modal.hide()
 }
@@ -148,6 +167,7 @@ const _toggleModalNewDiagram = async (comp, callback, elementType) => {
     if (comp) {
         functionOnCallback = callback
         _resetField()
+        opening++
         answering.value = false
         // Another tab may have changed the preference since this one loaded
         dontShowAgain.value = localStorage.getItem(SKIP_CREATION_MODAL_KEY) === 'true'

@@ -119,16 +119,28 @@ describe('useModal', () => {
     expect(bootstrapModal.hide).toHaveBeenCalledOnce()
   })
 
+  it('runs onHide when the dialog starts to close', () => {
+    const onHide = vi.fn()
+    const { wrapper } = mountWith({ onHide })
+
+    fire(wrapper, 'hide.bs.modal')
+
+    expect(onHide).toHaveBeenCalledOnce()
+  })
+
   it('stops listening once unmounted', () => {
     const onShown = vi.fn()
-    const { wrapper, modal } = mountWith({ onShown })
+    const onHide = vi.fn()
+    const { wrapper, modal } = mountWith({ onShown, onHide })
     const element = wrapper.element
     modal.show()
     wrapper.unmount()
 
     element.dispatchEvent(new Event('shown.bs.modal'))
+    element.dispatchEvent(new Event('hide.bs.modal'))
 
     expect(onShown).not.toHaveBeenCalled()
+    expect(onHide).not.toHaveBeenCalled()
   })
 
   it('does nothing without an element', () => {

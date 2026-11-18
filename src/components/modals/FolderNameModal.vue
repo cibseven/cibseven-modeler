@@ -58,6 +58,10 @@ const mode = ref('create')
 const kind = ref('folder')
 // One click is one request: a double click or a second Enter would otherwise send the name twice
 const accepting = ref(false)
+// Counts the openings, so a request that answers after the dialog closed or opened anew leaves it alone
+let opening = 0
+// A request still running keeps Accept taken in the next opening too: two at once could both pass
+let requestRunning = false
 let onAccept = null
 
 /** Every text the dialog shows, per kind: a folder at the top level is a project. */
@@ -74,7 +78,10 @@ const TEXTS = {
 const texts = computed(() => TEXTS[kind.value] ?? TEXTS.folder)
 const title = computed(() => t(mode.value === 'rename' ? texts.value.rename : texts.value.create))
 
-const modal = useModal(modalRoot, { onShown: () => nameInput.value?.focus() })
+const modal = useModal(modalRoot, {
+    onShown: () => nameInput.value?.focus(),
+    onHide: () => { opening++ },
+})
 
 const handleAccept = async () => {
     if (accepting.value) return
@@ -89,11 +96,23 @@ const handleAccept = async () => {
         return
     }
     // The backend owns the duplicate rule; what it refused is told in the user's language
+    const asked = opening
     accepting.value = true
+    requestRunning = true
+    let failure = null
     try {
         await onAccept?.(trimmed)
     } catch (e) {
-        const refusal = folderErrorMessage(e)
+        failure = e
+    }
+    requestRunning = false
+    if (asked !== opening) {
+        // Closed meanwhile: what came back is not this opening's, but its Accept may be used now
+        accepting.value = false
+        return
+    }
+    if (failure) {
+        const refusal = folderErrorMessage(failure)
         if (!refusal) error.value = t(texts.value.failed)
         else if (refusal.key === 'folders.nameTaken') error.value = t(texts.value.taken)
         else error.value = t(refusal.key, refusal.params)
@@ -115,7 +134,8 @@ const show = (nextMode, currentName, accept, nextKind = 'folder') => {
     kind.value = nextKind
     name.value = currentName ?? ''
     error.value = ''
-    accepting.value = false
+    opening++
+    accepting.value = requestRunning
     onAccept = accept
     modal.show()
 }

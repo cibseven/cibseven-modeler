@@ -258,6 +258,88 @@ describe('ModalNewDiagram one answer per opening', () => {
         wrapper.unmount()
     })
 
+    it('creates the id that was checked, and keeps the fields read-only meanwhile', async () => {
+        const { check, answer } = slowCheck()
+        const cb = vi.fn()
+        const wrapper = mountModal(check)
+        await open(wrapper, cb)
+        await withId(wrapper, 'Checked')
+
+        await accept(wrapper)
+        expect(wrapper.find('#processIdInput').attributes('readonly')).toBeDefined()
+        expect(wrapper.find('#processNameInput').attributes('readonly')).toBeDefined()
+        // A script can still change the value; what was checked is what gets created
+        await withId(wrapper, 'Unchecked')
+        answer(false)
+        await flushPromises()
+
+        expect(check).toHaveBeenCalledWith('Checked', 'bpmn-c7')
+        expect(cb).toHaveBeenCalledWith('', 'Checked')
+        wrapper.unmount()
+    })
+
+    it('opens nothing when the dialog is closed while Accept is being checked', async () => {
+        const { check, answer } = slowCheck()
+        const cb = vi.fn()
+        const wrapper = mountModal(check)
+        await open(wrapper, cb)
+        await withId(wrapper)
+
+        await accept(wrapper)
+        // The X or Esc
+        wrapper.element.dispatchEvent(new Event('hide.bs.modal'))
+        answer(false)
+        await flushPromises()
+
+        expect(cb).not.toHaveBeenCalled()
+        wrapper.unmount()
+    })
+
+    it('leaves a dialog opened anew alone when an earlier Accept answers', async () => {
+        const { check, answer } = slowCheck()
+        const first = vi.fn()
+        const second = vi.fn()
+        const wrapper = mountModal(check)
+        await open(wrapper, first)
+        await withId(wrapper)
+        await accept(wrapper)
+
+        await open(wrapper, second)
+        answer(false)
+        await flushPromises()
+
+        expect(first).not.toHaveBeenCalled()
+        expect(second).not.toHaveBeenCalled()
+        expect(wrapper.find('.btn-primary').attributes('disabled')).toBeUndefined()
+        wrapper.element.dispatchEvent(new Event('shown.bs.modal'))
+        expect(lastModal().hide).not.toHaveBeenCalled()
+        wrapper.unmount()
+    })
+
+    it('can be answered again when the duplicate check fails', async () => {
+        const failure = new Error('offline')
+        const errorHandler = vi.fn()
+        const check = vi.fn().mockRejectedValueOnce(failure).mockResolvedValue(false)
+        const cb = vi.fn()
+        const wrapper = mount(ModalNewDiagram, {
+            attachTo: document.body,
+            props: { checkDuplicateId: check },
+            global: { mocks: { $t: k => k }, config: { errorHandler } },
+        })
+        await open(wrapper, cb)
+        await withId(wrapper)
+
+        await accept(wrapper)
+        await flushPromises()
+        expect(errorHandler).toHaveBeenCalledWith(failure, expect.anything(), expect.anything())
+        expect(wrapper.find('.btn-primary').attributes('disabled')).toBeUndefined()
+
+        await accept(wrapper)
+        await flushPromises()
+        expect(cb).toHaveBeenCalledOnce()
+        wrapper.unmount()
+    })
+
     // Bootstrap ignores hide() during the fade-in, which left the dialog open for a second click
     it('closes once fully shown when answered during the fade-in', async () => {
         const wrapper = mountModal()
