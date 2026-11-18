@@ -144,8 +144,9 @@ const handleClick = async () => {
 
     isIdDuplicated.value = duplicated
     if (duplicated) {
-        // Another id may still be tried
+        // Another id may still be tried, so the keyboard goes back to it
         answering.value = false
+        processIdInputRef.value?.focus()
         return
     }
 

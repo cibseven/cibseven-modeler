@@ -21,7 +21,7 @@ import { onBeforeUnmount, onMounted } from 'vue'
  * A Bootstrap modal on the element of rootRef that closes when asked, however early. Bootstrap's
  * hide() does nothing while the dialog is still fading in, so a dialog answered during the fade-in
  * ran its action and stayed open, ready to run it again (CIB7-2827). Asked then, it closes as soon
- * as it is fully shown.
+ * as it is fully shown. Unmounted, the component's dialog is closed and its Bootstrap instance disposed.
  *
  * @param {import('vue').Ref<HTMLElement|null>} rootRef the element with the class modal
  * @param {object} [options]
@@ -60,10 +60,23 @@ export function useModal(rootRef, { onShown, onHide } = {}) {
     element.addEventListener('hidden.bs.modal', handleHidden)
   })
 
+  const dispose = () => {
+    element.removeEventListener('shown.bs.modal', handleShown)
+    element.removeEventListener('hide.bs.modal', handleHide)
+    element.removeEventListener('hidden.bs.modal', handleHidden)
+    modal.dispose()
+  }
+
   onBeforeUnmount(() => {
-    element?.removeEventListener('shown.bs.modal', handleShown)
-    element?.removeEventListener('hide.bs.modal', handleHide)
-    element?.removeEventListener('hidden.bs.modal', handleHidden)
+    if (!modal) return
+    if (state === 'hidden') {
+      dispose()
+      return
+    }
+    // Still open: Bootstrap's dispose() leaves the scroll lock on the page and breaks a fade it
+    // has under way, so the dialog closes first and is disposed once it is gone
+    element.addEventListener('hidden.bs.modal', dispose, { once: true })
+    hide()
   })
 
   const show = () => {

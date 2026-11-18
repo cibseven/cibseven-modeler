@@ -22,6 +22,7 @@ vi.mock('bootstrap', () => ({
     Modal: vi.fn(function() {
         this.show = vi.fn()
         this.hide = vi.fn()
+        this.dispose = vi.fn()
     })
 }))
 
@@ -317,6 +318,32 @@ describe('FolderNameModal', () => {
             await flushPromises()
 
             expect(second).toHaveBeenCalledWith('Next')
+        })
+
+        it('stays open when the request is rejected with no reason at all', async () => {
+            const accept = vi.fn(() => Promise.reject())
+            const wrapper = await showWith(accept)
+            const modal = Modal.mock.instances.at(-1)
+
+            await wrapper.find('button.btn-primary').trigger('click')
+            await flushPromises()
+            wrapper.element.dispatchEvent(new Event('shown.bs.modal'))
+
+            expect(wrapper.find('[role="alert"]').text()).toBe('The project could not be saved.')
+            expect(modal.hide).not.toHaveBeenCalled()
+        })
+
+        it('gives the keyboard back to the name after a refusal', async () => {
+            const accept = vi.fn().mockRejectedValue({
+                response: { data: { type: 'InvalidFolderException', params: ['name', 'a folder with that name is already there'] } }
+            })
+            const wrapper = await showWith(accept)
+            wrapper.find('button.btn-primary').element.focus()
+
+            await wrapper.find('button.btn-primary').trigger('click')
+            await flushPromises()
+
+            expect(document.activeElement).toBe(wrapper.find('input').element)
         })
 
         it('leaves a dialog closed meanwhile alone when the request is refused', async () => {

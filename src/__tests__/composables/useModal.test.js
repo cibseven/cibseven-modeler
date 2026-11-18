@@ -19,7 +19,7 @@ import { mount } from '@vue/test-utils'
 import { defineComponent, h, ref } from 'vue'
 
 vi.mock('bootstrap', () => ({
-  Modal: vi.fn(function () { return { show: vi.fn(), hide: vi.fn() } }),
+  Modal: vi.fn(function () { return { show: vi.fn(), hide: vi.fn(), dispose: vi.fn() } }),
 }))
 
 import { Modal } from 'bootstrap'
@@ -128,19 +128,50 @@ describe('useModal', () => {
     expect(onHide).toHaveBeenCalledOnce()
   })
 
-  it('stops listening once unmounted', () => {
+  it('disposes a closed dialog and stops listening once unmounted', () => {
     const onShown = vi.fn()
     const onHide = vi.fn()
-    const { wrapper, modal } = mountWith({ onShown, onHide })
+    const { wrapper, bootstrapModal } = mountWith({ onShown, onHide })
     const element = wrapper.element
-    modal.show()
     wrapper.unmount()
 
     element.dispatchEvent(new Event('shown.bs.modal'))
     element.dispatchEvent(new Event('hide.bs.modal'))
 
+    expect(bootstrapModal.dispose).toHaveBeenCalledOnce()
     expect(onShown).not.toHaveBeenCalled()
     expect(onHide).not.toHaveBeenCalled()
+  })
+
+  // dispose() alone leaves Bootstrap's scroll lock on the body, which only a hide removes
+  it('closes an open dialog when unmounted and disposes it once hidden', () => {
+    const { wrapper, modal, bootstrapModal } = mountWith()
+    const element = wrapper.element
+    modal.show()
+    fire(wrapper, 'shown.bs.modal')
+
+    wrapper.unmount()
+    expect(bootstrapModal.hide).toHaveBeenCalledOnce()
+    expect(bootstrapModal.dispose).not.toHaveBeenCalled()
+
+    element.dispatchEvent(new Event('hidden.bs.modal'))
+    expect(bootstrapModal.dispose).toHaveBeenCalledOnce()
+  })
+
+  it('lets a dialog unmounted during its fade-in finish showing, then closes and disposes it', () => {
+    const { wrapper, modal, bootstrapModal } = mountWith()
+    const element = wrapper.element
+    modal.show()
+
+    wrapper.unmount()
+    expect(bootstrapModal.hide).not.toHaveBeenCalled()
+
+    element.dispatchEvent(new Event('shown.bs.modal'))
+    expect(bootstrapModal.hide).toHaveBeenCalledOnce()
+    expect(bootstrapModal.dispose).not.toHaveBeenCalled()
+
+    element.dispatchEvent(new Event('hidden.bs.modal'))
+    expect(bootstrapModal.dispose).toHaveBeenCalledOnce()
   })
 
   it('does nothing without an element', () => {

@@ -99,10 +99,13 @@ const handleAccept = async () => {
     const asked = opening
     accepting.value = true
     requestRunning = true
-    let failure = null
+    // A flag, not the reason: a promise may be rejected with nothing at all
+    let failed = false
+    let failure
     try {
         await onAccept?.(trimmed)
     } catch (e) {
+        failed = true
         failure = e
     }
     requestRunning = false
@@ -111,12 +114,14 @@ const handleAccept = async () => {
         accepting.value = false
         return
     }
-    if (failure) {
+    if (failed) {
         const refusal = folderErrorMessage(failure)
         if (!refusal) error.value = t(texts.value.failed)
         else if (refusal.key === 'folders.nameTaken') error.value = t(texts.value.taken)
         else error.value = t(refusal.key, refusal.params)
         accepting.value = false
+        // The name is what has to change, so the keyboard goes back to it
+        nameInput.value?.focus()
         return
     }
     // Stays taken while the dialog fades out, so the name is not sent again

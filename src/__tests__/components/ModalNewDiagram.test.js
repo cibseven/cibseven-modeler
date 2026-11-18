@@ -18,7 +18,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 
 vi.mock('bootstrap', () => ({
-    Modal: vi.fn(function () { return { show: vi.fn(), hide: vi.fn() } }),
+    Modal: vi.fn(function () { return { show: vi.fn(), hide: vi.fn(), dispose: vi.fn() } }),
     Tooltip: vi.fn(),
 }))
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: k => k }) }))
@@ -241,6 +241,19 @@ describe('ModalNewDiagram one answer per opening', () => {
 
         expect(cb).toHaveBeenCalledOnce()
         expect(cb).toHaveBeenCalledWith('', 'Free')
+        wrapper.unmount()
+    })
+
+    it('gives the keyboard back to the id when it is taken', async () => {
+        const wrapper = mountModal(() => true)
+        await open(wrapper, vi.fn())
+        await withId(wrapper, 'Taken')
+        wrapper.find('.btn-primary').element.focus()
+
+        await accept(wrapper)
+        await flushPromises()
+
+        expect(document.activeElement).toBe(wrapper.find('#processIdInput').element)
         wrapper.unmount()
     })
 
