@@ -53,11 +53,11 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" ref="closeButton" @click="handleCancel"
-                        data-bs-dismiss="modal">{{
+                    <button type="button" class="btn btn-secondary" ref="closeButton" :disabled="answering"
+                        @click="handleCancel" data-bs-dismiss="modal">{{
                         $t('modalNewDiagram.cancel') }}
                     </button>
-                    <button type="submit" class="btn btn-primary" @click="handleClick">{{
+                    <button type="submit" class="btn btn-primary" :disabled="answering" @click="handleClick">{{
                         $t('buttons.accept') }}</button>
                 </div>
             </div>
@@ -66,13 +66,13 @@
 </template>
 
 <script setup>
-import * as bootstrap from 'bootstrap'
-import { onMounted, ref, computed, useId } from 'vue'
+import { ref, computed, useId } from 'vue'
 
 const titleId = useId()
 import { useI18n } from 'vue-i18n'
 import { SKIP_CREATION_MODAL_KEY } from '../../constants/diagramTypes.js'
 import { isValidXmlId } from '../../utils.js'
+import { useModal } from '../../composables/useModal.js'
 const { t } = useI18n()
 
 const props = defineProps({
@@ -90,8 +90,9 @@ const isIdFilled = ref(true)
 const isValidId = computed(() => isValidXmlId(idOfProcess.value))
 // Set on Create-click by the parent-supplied check (loaded list + backend); cleared on input.
 const isIdDuplicated = ref(false)
-
-let modalBootstrap = null
+// One answer per opening: every answer opens a diagram tab, so a double click, a second Enter or
+// Accept followed by "Do it later" would open two (CIB7-2827)
+const answering = ref(false)
 
 const type = ref('bpmn-c7')
 const dontShowAgain = ref(localStorage.getItem(SKIP_CREATION_MODAL_KEY) === 'true')
@@ -100,13 +101,11 @@ const savePreference = () => {
     localStorage.setItem(SKIP_CREATION_MODAL_KEY, String(dontShowAgain.value))
 }
 
-onMounted(() => {
-    if (!modalNewDiagram.value) return
-    modalBootstrap = new bootstrap.Modal(modalNewDiagram.value)
-    modalNewDiagram.value.addEventListener('shown.bs.modal', () => {
+const modal = useModal(modalNewDiagram, {
+    onShown: () => {
         const target = type.value !== 'form' ? processNameInputRef.value : processIdInputRef.value
         target?.focus()
-    })
+    },
 })
 
 const modalNewDiagramText = computed(() => {
@@ -119,21 +118,29 @@ const modalNewDiagramText = computed(() => {
       } )  }
 })
 const handleClick = async () => {
+    if (answering.value) return
     isIdFilled.value = idOfProcess.value !== ''
     if (!isIdFilled.value || !isValidId.value) return
 
+    answering.value = true
     isIdDuplicated.value = !!(await props.checkDuplicateId?.(idOfProcess.value.trim(), type.value))
-    if (isIdDuplicated.value) return
+    if (isIdDuplicated.value) {
+        // Another id may still be tried
+        answering.value = false
+        return
+    }
 
     functionOnCallback(nameOfProcess.value, idOfProcess.value)
     _resetField()
-    modalBootstrap.hide()
+    modal.hide()
 }
 
 const handleCancel = () => {
+    if (answering.value) return
+    answering.value = true
     functionOnCallback(null, null)
     _resetField()
-    modalBootstrap.hide()
+    modal.hide()
 }
 
 const _toggleModalNewDiagram = async (comp, callback, elementType) => {
@@ -141,12 +148,13 @@ const _toggleModalNewDiagram = async (comp, callback, elementType) => {
     if (comp) {
         functionOnCallback = callback
         _resetField()
+        answering.value = false
         // Another tab may have changed the preference since this one loaded
         dontShowAgain.value = localStorage.getItem(SKIP_CREATION_MODAL_KEY) === 'true'
-        modalBootstrap.show()
+        modal.show()
     }
     else {
-        modalBootstrap.hide()
+        modal.hide()
         _resetField()
     }
 }

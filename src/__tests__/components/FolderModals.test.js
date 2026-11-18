@@ -25,6 +25,7 @@ vi.mock('bootstrap', () => ({
     })
 }))
 
+import { Modal } from 'bootstrap'
 import FolderNameModal from '../../components/modals/FolderNameModal.vue'
 import FolderPickerModal from '../../components/modals/FolderPickerModal.vue'
 
@@ -316,6 +317,20 @@ describe('FolderNameModal', () => {
             await flushPromises()
 
             expect(second).toHaveBeenCalledWith('Next')
+        })
+
+        // Bootstrap ignores hide() during the fade-in, which left the dialog open (CIB7-2827)
+        it('closes once fully shown when accepted during the fade-in', async () => {
+            const accept = vi.fn().mockResolvedValue()
+            const wrapper = await showWith(accept)
+            const modal = Modal.mock.instances.at(-1)
+
+            await wrapper.find('button.btn-primary').trigger('click')
+            await flushPromises()
+            expect(modal.hide).not.toHaveBeenCalled()
+
+            wrapper.element.dispatchEvent(new Event('shown.bs.modal'))
+            expect(modal.hide).toHaveBeenCalledOnce()
         })
     })
 })

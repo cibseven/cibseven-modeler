@@ -23,6 +23,7 @@ vi.mock('bootstrap', () => ({
 }))
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: k => k }) }))
 
+import { Modal } from 'bootstrap'
 import ModalNewDiagram from '../../components/modals/ModalNewDiagram.vue'
 import { SKIP_CREATION_MODAL_KEY } from '../../constants/diagramTypes.js'
 
@@ -129,6 +130,144 @@ describe('ModalNewDiagram duplicate-id validation', () => {
         await flushPromises()
 
         expect(check).toHaveBeenCalledWith('some-form', 'form')
+        wrapper.unmount()
+    })
+})
+
+// Every answer opens a diagram tab, so the dialog takes one per opening (CIB7-2827)
+describe('ModalNewDiagram one answer per opening', () => {
+    /** A duplicate check that answers every pending call only when told to, as a slow backend does. */
+    const slowCheck = () => {
+        const pending = []
+        const check = vi.fn(() => new Promise(done => pending.push(done)))
+        return { check, answer: duplicated => pending.forEach(done => done(duplicated)) }
+    }
+    const withId = async (wrapper, id = 'Process_1') => {
+        await wrapper.find('#processIdInput').setValue(id)
+    }
+    const accept = wrapper => wrapper.find('.btn-primary').trigger('click')
+    const later = wrapper => wrapper.find('.btn-secondary').trigger('click')
+    const lastModal = () => Modal.mock.results.at(-1).value
+
+    it('opens one diagram however often Accept is clicked', async () => {
+        const { check, answer } = slowCheck()
+        const cb = vi.fn()
+        const wrapper = mountModal(check)
+        await open(wrapper, cb)
+        await withId(wrapper)
+
+        await accept(wrapper)
+        await accept(wrapper)
+        answer(false)
+        await flushPromises()
+
+        expect(cb).toHaveBeenCalledOnce()
+        wrapper.unmount()
+    })
+
+    it('opens one diagram however often Enter is pressed', async () => {
+        const { check, answer } = slowCheck()
+        const cb = vi.fn()
+        const wrapper = mountModal(check)
+        await open(wrapper, cb)
+        await withId(wrapper)
+
+        await wrapper.find('#processIdInput').trigger('keyup.enter')
+        await wrapper.find('#processIdInput').trigger('keyup.enter')
+        answer(false)
+        await flushPromises()
+
+        expect(cb).toHaveBeenCalledOnce()
+        wrapper.unmount()
+    })
+
+    it('opens one diagram however often "Do it later" is clicked', async () => {
+        const cb = vi.fn()
+        const wrapper = mountModal()
+        await open(wrapper, cb)
+
+        // Called directly: the disabled button would not pass the second click on at all
+        await later(wrapper)
+        wrapper.vm.$.setupState.handleCancel()
+        await flushPromises()
+
+        expect(cb).toHaveBeenCalledOnce()
+        expect(cb).toHaveBeenCalledWith(null, null)
+        wrapper.unmount()
+    })
+
+    it('ignores "Do it later" while an Accept is being checked', async () => {
+        const { check, answer } = slowCheck()
+        const cb = vi.fn()
+        const wrapper = mountModal(check)
+        await open(wrapper, cb)
+        await withId(wrapper)
+
+        await accept(wrapper)
+        wrapper.vm.$.setupState.handleCancel()
+        answer(false)
+        await flushPromises()
+
+        expect(cb).toHaveBeenCalledOnce()
+        expect(cb).toHaveBeenCalledWith('', 'Process_1')
+        wrapper.unmount()
+    })
+
+    it('disables both answers once one is given', async () => {
+        const { check } = slowCheck()
+        const wrapper = mountModal(check)
+        await open(wrapper, vi.fn())
+        await withId(wrapper)
+
+        await accept(wrapper)
+
+        expect(wrapper.find('.btn-primary').attributes('disabled')).toBeDefined()
+        expect(wrapper.find('.btn-secondary').attributes('disabled')).toBeDefined()
+        wrapper.unmount()
+    })
+
+    it('can be answered again after the id was taken', async () => {
+        const check = vi.fn().mockResolvedValueOnce(true).mockResolvedValue(false)
+        const cb = vi.fn()
+        const wrapper = mountModal(check)
+        await open(wrapper, cb)
+        await withId(wrapper, 'Taken')
+        await accept(wrapper)
+        await flushPromises()
+
+        await withId(wrapper, 'Free')
+        await accept(wrapper)
+        await flushPromises()
+
+        expect(cb).toHaveBeenCalledOnce()
+        expect(cb).toHaveBeenCalledWith('', 'Free')
+        wrapper.unmount()
+    })
+
+    it('takes an answer again when it is opened again', async () => {
+        const first = vi.fn()
+        const second = vi.fn()
+        const wrapper = mountModal()
+        await open(wrapper, first)
+        await later(wrapper)
+
+        await open(wrapper, second)
+        await later(wrapper)
+
+        expect(second).toHaveBeenCalledOnce()
+        wrapper.unmount()
+    })
+
+    // Bootstrap ignores hide() during the fade-in, which left the dialog open for a second click
+    it('closes once fully shown when answered during the fade-in', async () => {
+        const wrapper = mountModal()
+        await open(wrapper, vi.fn())
+
+        await later(wrapper)
+        expect(lastModal().hide).not.toHaveBeenCalled()
+
+        wrapper.element.dispatchEvent(new Event('shown.bs.modal'))
+        expect(lastModal().hide).toHaveBeenCalledOnce()
         wrapper.unmount()
     })
 })

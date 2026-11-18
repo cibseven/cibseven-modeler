@@ -41,10 +41,10 @@
 </template>
 
 <script setup>
-import * as bootstrap from 'bootstrap'
-import { computed, onMounted, ref, useId } from 'vue'
+import { computed, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { folderErrorMessage } from '../../utils/folderErrors.js'
+import { useModal } from '../../composables/useModal.js'
 
 const { t } = useI18n()
 const titleId = useId()
@@ -58,7 +58,6 @@ const mode = ref('create')
 const kind = ref('folder')
 // One click is one request: a double click or a second Enter would otherwise send the name twice
 const accepting = ref(false)
-let modalBootstrap = null
 let onAccept = null
 
 /** Every text the dialog shows, per kind: a folder at the top level is a project. */
@@ -75,11 +74,7 @@ const TEXTS = {
 const texts = computed(() => TEXTS[kind.value] ?? TEXTS.folder)
 const title = computed(() => t(mode.value === 'rename' ? texts.value.rename : texts.value.create))
 
-onMounted(() => {
-    if (!modalRoot.value) return
-    modalBootstrap = new bootstrap.Modal(modalRoot.value)
-    modalRoot.value.addEventListener('shown.bs.modal', () => nameInput.value?.focus())
-})
+const modal = useModal(modalRoot, { onShown: () => nameInput.value?.focus() })
 
 const handleAccept = async () => {
     if (accepting.value) return
@@ -106,7 +101,7 @@ const handleAccept = async () => {
         return
     }
     // Stays taken while the dialog fades out, so the name is not sent again
-    modalBootstrap?.hide()
+    modal.hide()
 }
 
 /**
@@ -122,7 +117,7 @@ const show = (nextMode, currentName, accept, nextKind = 'folder') => {
     error.value = ''
     accepting.value = false
     onAccept = accept
-    modalBootstrap?.show()
+    modal.show()
 }
 
 defineExpose({ show })
