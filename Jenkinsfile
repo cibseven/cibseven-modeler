@@ -6,7 +6,7 @@ import de.cib.pipeline.library.Constants
 import de.cib.pipeline.library.ConstantsInternal
 
 standardNPMPipeline(
-    primaryBranch: 'main',
+    primaryBranch: 'release-1.2.1',
 
     // Auto enable unit test and SAST
     uiParamPresets: [
