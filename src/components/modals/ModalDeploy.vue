@@ -371,8 +371,16 @@ const canStart = computed(() => !!startProcessId.value && canDeploy.value)
 // as this user on this webclient
 const usesEnteredCredentials = computed(() => asAnotherUser.value || useCustomEndpoint.value)
 
+// Switched back to how the user left it, so this instance gets the session again, not the other's login
+let asAnotherUserBefore = null
 watch(useCustomEndpoint, value => {
-	if (value) asAnotherUser.value = true
+	if (value) {
+		asAnotherUserBefore = asAnotherUser.value
+		asAnotherUser.value = true
+	} else if (asAnotherUserBefore !== null) {
+		asAnotherUser.value = asAnotherUserBefore
+		asAnotherUserBefore = null
+	}
 })
 
 const canDeploy = computed(() => {
@@ -532,7 +540,7 @@ const _deploy = async settings => {
 }
 
 const _getAuthType = () => usesEnteredCredentials.value ? selected.value : 'token'// 'token' for the current user
-const _getToken = () => usesEnteredCredentials.value ? token.value : getSessionToken() // current user -> the session token
+const _getToken = () => usesEnteredCredentials.value ? token.value?.trim() : getSessionToken() // current user -> the session token
 const _getUsername = () => usesEnteredCredentials.value ? username.value : null // current user -> no form data passed
 const _getPassword = () => usesEnteredCredentials.value ? password.value : null // current user -> no form data passed
 
