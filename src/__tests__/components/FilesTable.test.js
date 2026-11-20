@@ -49,7 +49,7 @@ const { BDropdown, BDropdownItemButton } = vi.hoisted(() => ({
 
 vi.mock('@cib/common-frontend', async () => {
   const actual = await vi.importActual('@cib/common-frontend')
-  return { FlowTable: actual.FlowTable, BDropdown, BDropdownItemButton }
+  return { FlowTable: actual.FlowTable, UserNameDisplay: actual.UserNameDisplay, BDropdown, BDropdownItemButton }
 })
 
 function mountTable(props = {}) {
@@ -210,7 +210,7 @@ describe('FilesTable', () => {
       const cells = row(wrapper, 'Invoice.bpmn').findAll('td')
 
       expect(cells[1].find('span').attributes('title')).not.toBe('')
-      expect(cells[2].find('span').attributes('title')).toBe('bob')
+      expect(cells[2].find('[title]').attributes('title')).toBe('bob')
     })
 
     it('names the row on the menu button', () => {

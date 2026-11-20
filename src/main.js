@@ -17,6 +17,7 @@
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import * as monaco from './monaco-setup.js'
+import '@mdi/font/css/materialdesignicons.css'
 
 import { createApp } from 'vue'
 import App from './App.vue'

@@ -49,9 +49,7 @@
         </template>
 
         <template #cell(updatedBy)="{ item }">
-            <span v-if="item.updatedBy" class="d-inline-flex align-items-center gap-1" style="min-width: 0" :title="item.updatedBy">
-                <span class="mdi mdi-account" aria-hidden="true"></span><span class="text-truncate">{{ item.updatedBy }}</span>
-            </span>
+            <UserNameDisplay :name="item.updatedBy" @copy="copyName" />
         </template>
 
         <template #cell(actions)="{ item }">
@@ -78,7 +76,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { BDropdown, BDropdownItemButton, FlowTable } from '@cib/common-frontend'
+import { BDropdown, BDropdownItemButton, FlowTable, UserNameDisplay } from '@cib/common-frontend'
 import { folderIcon, formatDate, modelName, toMoment } from '../../utils'
 import { DIAGRAM_FILE_EXT, DIAGRAM_ICON, DIAGRAM_TYPE } from '../../constants/diagramTypes.js'
 
@@ -198,6 +196,9 @@ const open = item => {
     if (item.isFolder) emit('openFolder', item.source.id)
     else emit('openModel', item.source)
 }
+
+// The cell leaves the clipboard to its parent
+const copyName = name => navigator.clipboard?.writeText(name)
 
 const run = (item, { id, event }) => {
     menus[item.key]?.hide()
