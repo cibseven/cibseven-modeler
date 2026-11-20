@@ -529,7 +529,9 @@ const getters = {
     // Use filterTemplates function to check if template is excluded
     // If filterTemplates returns empty array, the template is excluded
     const config = { excludeTemplates: state.excludeTemplates }
-    return filterTemplates([template], config).length === 0
+    // A stored row's id is its database id; the exclusions name the template's own id
+    const candidate = { ...template, id: template.templateId ?? template.id }
+    return filterTemplates([candidate], config).length === 0
   },
   categorizedTemplateData: (state) => {
     return categorizeTemplates(state.elementTemplates, { filterActive: true })
