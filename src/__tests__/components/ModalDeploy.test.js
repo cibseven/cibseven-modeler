@@ -14,7 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 
 const m = vi.hoisted(() => ({
@@ -633,5 +633,123 @@ describe('ModalDeploy — deploy and start', () => {
 
         expect(deployProcess).toHaveBeenCalledTimes(1)
         expect(startProcess).toHaveBeenCalledTimes(1)
+    })
+})
+
+// The session token would let another instance act as this user on this webclient
+describe('ModalDeploy — another instance never gets the session token', () => {
+    const SESSION_TOKEN = 'Bearer session-tok'
+
+    beforeEach(() => {
+        vi.clearAllMocks()
+        localStorage.setItem('token', SESSION_TOKEN)
+        m.fetchFormsByFormId.mockResolvedValue([])
+        m.keyInUseElsewhere.mockResolvedValue(false)
+        deployProcess.mockResolvedValue({ id: 'deployment-1' })
+        startProcess.mockResolvedValue({ id: 'instance-1' })
+        vi.spyOn(console, 'warn').mockImplementation(() => {})
+    })
+
+    afterEach(() => {
+        localStorage.clear()
+        vi.restoreAllMocks()
+    })
+
+    const toOtherInstance = async wrapper => {
+        await wrapper.find('#anotherEndpoint').setValue(true)
+        await wrapper.find('#customEndpoint').setValue('https://other.example.com')
+    }
+
+    it('turns "As another user" on and locks it, saying why', async () => {
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+        await toOtherInstance(wrapper)
+
+        const toggle = wrapper.find('#asAnotherUser')
+        expect(toggle.element.checked).toBe(true)
+        expect(toggle.attributes('disabled')).toBeDefined()
+        expect(toggle.attributes('aria-describedby')).toBe('asAnotherUserHint')
+        expect(wrapper.find('#asAnotherUserHint').text()).toBe('deployForm.anotherEndpoint.credentialsHint')
+    })
+
+    it('keeps both buttons disabled until credentials are entered', async () => {
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+        await toOtherInstance(wrapper)
+        expect(deployButton(wrapper).attributes('disabled')).toBeDefined()
+        expect(startButton(wrapper).attributes('disabled')).toBeDefined()
+
+        await wrapper.find('#http-auth').setValue(true)
+        await wrapper.find('#username').setValue('demo')
+        expect(deployButton(wrapper).attributes('disabled')).toBeDefined()
+
+        await wrapper.find('#password').setValue('secret')
+        expect(deployButton(wrapper).attributes('disabled')).toBeUndefined()
+        expect(startButton(wrapper).attributes('disabled')).toBeUndefined()
+
+        await wrapper.find('#token-auth').setValue(true)
+        await wrapper.find('#token').setValue('   ')
+        expect(deployButton(wrapper).attributes('disabled')).toBeDefined()
+    })
+
+    it('deploys and starts with the entered credentials only', async () => {
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+        await toOtherInstance(wrapper)
+        await wrapper.find('#token-auth').setValue(true)
+        // Pasted with the spaces around it: they would break the header
+        await wrapper.find('#token').setValue('  other-instance-token ')
+
+        await startButton(wrapper).trigger('click')
+        await flushPromises()
+
+        const [deployCall] = deployProcess.mock.calls
+        const [startCall] = startProcess.mock.calls
+        expect(deployCall.slice(0, 2)).toEqual(['token', 'other-instance-token'])
+        expect(startCall.slice(0, 2)).toEqual(['token', 'other-instance-token'])
+        expect(deployCall).toContain('https://other.example.com')
+        expect([...deployCall, ...startCall]).not.toContain(SESSION_TOKEN)
+    })
+
+    it('asks for credentials when the dialog opens with another instance remembered', async () => {
+        localStorage.setItem(DEPLOY_STORAGE_KEYS.OWN_ENDPOINT, 'true')
+        localStorage.setItem(DEPLOY_STORAGE_KEYS.CIBSEVEN_INSTANCE, 'https://other.example.com')
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+
+        expect(wrapper.find('#asAnotherUser').element.checked).toBe(true)
+        expect(wrapper.find('#asAnotherUser').attributes('disabled')).toBeDefined()
+        expect(deployButton(wrapper).attributes('disabled')).toBeDefined()
+    })
+
+    // The login typed for the other instance must not go to this one
+    it('deploys to this instance with the session again once another instance is switched off', async () => {
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+        await toOtherInstance(wrapper)
+        await wrapper.find('#token-auth').setValue(true)
+        await wrapper.find('#token').setValue('other-instance-token')
+
+        await wrapper.find('#anotherEndpoint').setValue(false)
+        const toggle = wrapper.find('#asAnotherUser')
+        expect(toggle.attributes('disabled')).toBeUndefined()
+        expect(toggle.element.checked).toBe(false)
+        expect(wrapper.find('#asAnotherUserHint').exists()).toBe(false)
+
+        await deployButton(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(deployProcess.mock.calls[0].slice(0, 2)).toEqual(['token', SESSION_TOKEN])
+    })
+
+    it('keeps "As another user" on after another instance, when the user had switched it on before', async () => {
+        const wrapper = mountModal({ diagram: BPMN_COLLABORATION })
+        await openModal(wrapper)
+        await wrapper.find('#asAnotherUser').setValue(true)
+        await toOtherInstance(wrapper)
+
+        await wrapper.find('#anotherEndpoint').setValue(false)
+
+        expect(wrapper.find('#asAnotherUser').element.checked).toBe(true)
     })
 })
