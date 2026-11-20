@@ -224,6 +224,7 @@
     "anotherEndpoint": {
       "label": "In einer anderen Instanz bereitstellen",
       "inputTitle": "Instanz-URL",
+      "credentialsHint": "Eine andere Instanz erhält nie Ihre Sitzung. Geben Sie einen Benutzer und ein Passwort oder ein Token für diese Instanz ein.",
       "errors": {
         "required": "Dieses Feld ist erforderlich, wenn in einer anderen Instanz bereitgestellt wird.",
         "invalid": "Bitte geben Sie eine gültige URL mit http:// oder https:// ein."
