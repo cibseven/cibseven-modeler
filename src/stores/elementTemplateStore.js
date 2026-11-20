@@ -82,7 +82,8 @@ const mutations = {
     state.error = null
   },
   setExcludeTemplates(state, excludeTemplates) {
-    state.excludeTemplates = excludeTemplates || []
+    // A copy: the list comes from the app config, which a change here must not rewrite
+    state.excludeTemplates = Array.isArray(excludeTemplates) ? [...excludeTemplates] : []
   },
   addToExcludeTemplates(state, templateIdentifier) {
     if (!state.excludeTemplates.includes(templateIdentifier)) {
@@ -185,21 +186,9 @@ const actions = {
       const updatedTemplate = await setTemplateIsActive(templateId, newActiveState)
       
       if (updatedTemplate) {
+        // The exclusions stay what config.json says: the modeler only gets active templates, so
+        // a hidden one is gone from it already, and the eye must stay usable to show it again
         commit('updateTemplate', updatedTemplate)
-        
-        // Manage excludeTemplates list based on active state
-        // Use template.templateId (the ID from template content) for excludeTemplates
-        // since that's what filterTemplates function matches against
-        const templateContentId = template.templateId
-        
-        if (!newActiveState) {
-          // Template was deactivated, add to excludeTemplates
-          commit('addToExcludeTemplates', templateContentId)
-        } else {
-          // Template was activated, remove from excludeTemplates
-          commit('removeFromExcludeTemplates', templateContentId)
-        }
-        
         return updatedTemplate
       } else {
         console.error('Failed to switch template active state. Likely nothing was modified.')
@@ -529,7 +518,9 @@ const getters = {
     // Use filterTemplates function to check if template is excluded
     // If filterTemplates returns empty array, the template is excluded
     const config = { excludeTemplates: state.excludeTemplates }
-    return filterTemplates([template], config).length === 0
+    // A stored row's id is its database id; the exclusions name the template's own id
+    const candidate = { ...template, id: template.templateId ?? template.id }
+    return filterTemplates([candidate], config).length === 0
   },
   categorizedTemplateData: (state) => {
     return categorizeTemplates(state.elementTemplates, { filterActive: true })
