@@ -163,6 +163,17 @@ describe('elementTemplateStore', () => {
             expect(store.state.elementTemplates.excludeTemplates).toEqual(excludes)
         })
 
+        it('setExcludeTemplates keeps a copy, so a change to it leaves the config alone', () => {
+            const store = makeStore()
+            const config = ['t1']
+            store.commit('elementTemplates/setExcludeTemplates', config)
+            store.commit('elementTemplates/addToExcludeTemplates', 't2')
+            expect(config).toEqual(['t1'])
+
+            store.commit('elementTemplates/setExcludeTemplates', 'not a list')
+            expect(store.state.elementTemplates.excludeTemplates).toEqual([])
+        })
+
         it('addToExcludeTemplates adds template to exclude list', () => {
             const store = makeStore()
             store.commit('elementTemplates/addToExcludeTemplates', 't1')
@@ -417,6 +428,27 @@ describe('elementTemplateStore', () => {
 
             it('matches the id of a template without a templateId, as in the parsed content', () => {
                 expect(excluded(['com.example.*'], { id: 'com.example.mail-1', name: 'Mail - Send' })).toBe(true)
+            })
+
+            // Hidden with its eye is not disabled in config.json: the eye must stay usable to show it again
+            it('leaves the exclusions alone when the eye hides or shows a template', async () => {
+                const config = ['Other']
+                const store = makeStore()
+                store.commit('elementTemplates/setExcludeTemplates', config)
+                store.commit('elementTemplates/setElementTemplates', [{ ...row, active: true }])
+                const stored = () => store.state.elementTemplates.elementTemplates[0]
+
+                m.setTemplateIsActive.mockResolvedValueOnce({ ...row, active: false })
+                await store.dispatch('elementTemplates/switchTemplateActiveState', row.id)
+                expect(stored().active).toBe(false)
+                expect(store.getters['elementTemplates/isTemplateExcluded'](stored())).toBe(false)
+
+                m.setTemplateIsActive.mockResolvedValueOnce({ ...row, active: true })
+                await store.dispatch('elementTemplates/switchTemplateActiveState', row.id)
+                expect(stored().active).toBe(true)
+
+                expect(store.state.elementTemplates.excludeTemplates).toEqual(['Other'])
+                expect(config).toEqual(['Other'])
             })
         })
     })
