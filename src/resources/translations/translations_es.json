@@ -224,6 +224,7 @@
     "anotherEndpoint": {
       "label": "Desplegar en otra instancia",
       "inputTitle": "URL de la instancia",
+      "credentialsHint": "Otra instancia nunca recibe su sesión. Introduzca un usuario y una contraseña, o un token, para esa instancia.",
       "errors": {
         "required": "Este campo es obligatorio para desplegar en otra instancia.",
         "invalid": "Por favor, introduce una URL válida que comience con http:// o https://."

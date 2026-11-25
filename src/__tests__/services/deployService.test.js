@@ -101,6 +101,21 @@ describe('deployService', () => {
             expect(m.post).toHaveBeenCalled()
         })
 
+        // The dialog sends another instance only what was entered: this is the header that carries it
+        it('sends the entered login, and nothing else, to another instance for the deploy and the start', async () => {
+            m.post.mockResolvedValue({ data: { id: 'd4' } })
+            const basic = `Basic ${btoa('other-user:other-pass')}`
+
+            await deployProcess('basicauth', '', 'other-user', 'other-pass', 'Process 4', 'https://other.example.com', '', '<bpmn />', true, 'bpmn')
+            await startProcess('basicauth', '', 'other-user', 'other-pass', 'proc', 'https://other.example.com', true)
+
+            const [[deployUrl, , deployConfig], [startUrl, , startConfig]] = m.post.mock.calls
+            expect(deployUrl).toMatch(/^https:\/\/other\.example\.com\/.*\/modeler\/deployment\/create$/)
+            expect(startUrl).toMatch(/^https:\/\/other\.example\.com\/.*\/modeler\/deployment\/start\/proc$/)
+            expect(deployConfig.headers.authorization).toBe(basic)
+            expect(startConfig.headers).toEqual({ authorization: basic })
+        })
+
         it('includes additional resources', async () => {
             m.post.mockResolvedValue({ data: { deploymentId: 'd4' } })
 

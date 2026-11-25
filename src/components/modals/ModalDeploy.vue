@@ -189,10 +189,12 @@
 								</template>
 						</div>
 
-						<!-- Toggle: asAnotherUser -->
+						<!-- Toggle: asAnotherUser, locked on for another instance: it never gets the session token -->
 						 <div class="mb-3 form-check form-switch">
-							<input type="checkbox" class="form-check-input" id="asAnotherUser" v-model="asAnotherUser">
+							<input type="checkbox" class="form-check-input" id="asAnotherUser" v-model="asAnotherUser"
+								:disabled="useCustomEndpoint" :aria-describedby="useCustomEndpoint ? 'asAnotherUserHint' : null">
 							<label class="form-check-label" for="asAnotherUser">{{ $t('deployForm.asAnotherUser') }}</label>
+							<div v-if="useCustomEndpoint" id="asAnotherUserHint" class="form-text">{{ $t('deployForm.anotherEndpoint.credentialsHint') }}</div>
 						</div>
 
 						<!-- Authentication -->
@@ -365,25 +367,35 @@ const addedFormIds = computed(() =>
 
 const canStart = computed(() => !!startProcessId.value && canDeploy.value)
 
+// Another instance only ever gets credentials entered here: the session token would let it act
+// as this user on this webclient
+const usesEnteredCredentials = computed(() => asAnotherUser.value || useCustomEndpoint.value)
+
+// Switched back to how the user left it, so this instance gets the session again, not the other's login
+let asAnotherUserBefore = null
+watch(useCustomEndpoint, value => {
+	if (value) {
+		asAnotherUserBefore = asAnotherUser.value
+		asAnotherUser.value = true
+	} else if (asAnotherUserBefore !== null) {
+		asAnotherUser.value = asAnotherUserBefore
+		asAnotherUserBefore = null
+	}
+})
+
 const canDeploy = computed(() => {
 	if (deploying.value) return false
 
 	if (useCustomEndpoint.value) {
 		_validateCustomEndpoint()
-
-		return isCustomEndpointValid.value
+		if (!isCustomEndpointValid.value) return false
 	}
 
-	if (!asAnotherUser.value && getSessionToken()) { // Current user and is logged in
-		return true
-	}
+	if (!usesEnteredCredentials.value) return !!getSessionToken()
 
-	if (asAnotherUser.value && selected.value === 'basicauth') { // As a different user
-		return username.value && password.value
-	}
+	if (selected.value === 'basicauth') return !!(username.value && password.value)
 
-	return token.value
-
+	return !!token.value?.trim()
 })
 
 onMounted(() => {
@@ -482,7 +494,7 @@ const _closeModal = () => closeButton.value.click() // simulates on button close
 const _settingsAtClick = () => ({
 	tabId: deployingTabId.value ?? props.tabNavList.id,
 	selectedAuth: selected.value,
-	credentialsEntered: asAnotherUser.value || useCustomEndpoint.value,
+	credentialsEntered: usesEnteredCredentials.value,
 	auth: [_getAuthType(), _getToken(), _getUsername(), _getPassword()],
 	deploymentName: deploymentName.value,
 	tenantID: (tenantID.value ?? '').trim(),
@@ -527,10 +539,10 @@ const _deploy = async settings => {
 	return res
 }
 
-const _getAuthType = () => asAnotherUser.value ? selected.value : 'token'// 'token' for the current user
-const _getToken = () => asAnotherUser.value ? token.value : getSessionToken() // current user -> the session token
-const _getUsername = () => asAnotherUser.value ? username.value : null // current user -> no form data passed
-const _getPassword = () => asAnotherUser.value ? password.value : null // current user -> no form data passed
+const _getAuthType = () => usesEnteredCredentials.value ? selected.value : 'token'// 'token' for the current user
+const _getToken = () => usesEnteredCredentials.value ? token.value?.trim() : getSessionToken() // current user -> the session token
+const _getUsername = () => usesEnteredCredentials.value ? username.value : null // current user -> no form data passed
+const _getPassword = () => usesEnteredCredentials.value ? password.value : null // current user -> no form data passed
 
 // Both buttons run one at a time: a second click while one runs would deploy, or start, twice
 const _once = action => async () => {

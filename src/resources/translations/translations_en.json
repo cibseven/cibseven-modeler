@@ -224,6 +224,7 @@
 		"anotherEndpoint": {
 			"label": "Deploy in another instance",
 			"inputTitle": "Instance URL",
+			"credentialsHint": "Another instance never receives your session. Enter a user and password, or a token, for that instance.",
 			"errors": {
 				"required": "This field is required if deploying on another instance.",
 				"invalid": "Please enter a valid http:// or https:// url."
