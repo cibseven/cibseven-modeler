@@ -158,6 +158,12 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
   // to be called from parent CIB Seven modeler and get the modeler
   const getProcessInformation = modeler => {
     if (!modeler) return
+    // The canvas root is the plane on screen, a sub-process after a drill-down; name and key belong to the root plane
+    const rootPlaneElement = _getRootPlaneElement(modeler)
+    if (rootPlaneElement) {
+      processInformation.value = rootPlaneElement
+      return processInformation.value
+    }
     let canvas;
 
     try {
@@ -174,6 +180,19 @@ export default function useModeler(propsRef, emitRef, monacoEditorConsole, conso
       processInformation.value = canvas.getRootElement().businessObject
       return processInformation.value
     }
+
+  // The process, or the collaboration of a diagram with pools; null for a DMN modeler
+  const _getRootPlaneElement = modeler => {
+    let diagrams
+    try {
+      diagrams = modeler.getDefinitions?.()?.diagrams
+    } catch {
+      return null
+    }
+    if (!diagrams?.length) return null
+    const elements = diagrams.map(diagram => diagram.plane?.bpmnElement).filter(Boolean)
+    return elements.find(element => element.$instanceOf?.('bpmn:Process') || element.$instanceOf?.('bpmn:Collaboration')) ?? null
+  }
 
   const getElementRegistryFromModeler = (modeler, type) => {
     const elementsRegistry = modeler.get('elementRegistry')._elements
