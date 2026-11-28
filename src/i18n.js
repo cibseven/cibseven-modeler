@@ -22,6 +22,12 @@ import translations_de from './resources/translations/translations_de.json'
 import translations_es from './resources/translations/translations_es.json'
 import translations_ua from './resources/translations/translations_ua.json'
 import translations_ru from './resources/translations/translations_ru.json'
+import translations_zh from './resources/translations/translations_zh.json'
+import translations_zh_tw from './resources/translations/translations_zh-tw.json'
+
+import { normalizeLanguage } from './utils/language.js'
+
+export { normalizeLanguage }
 
 const defaultLanguage = 'en'
 let language = null
@@ -32,12 +38,16 @@ const messages = {
 	de: translations_de,
 	es: translations_es,
 	ua: translations_ua,
-	ru: translations_ru
+	ru: translations_ru,
+	zh: translations_zh,
+	'zh-tw': translations_zh_tw
 }
 
 export function createI18n() {
 	const urlParams = new URLSearchParams(window.location.search)
-	language = urlParams.get('locale') || localStorage.getItem('language') || navigator.language.split('-')[0] || navigator.userLanguage
+	language = normalizeLanguage(
+		urlParams.get('locale') || localStorage.getItem('language') || navigator.language || navigator.userLanguage
+	)
 
 	if (!Object.hasOwn(messages, language)) {
 		language = defaultLanguage
@@ -56,10 +66,11 @@ export function createI18n() {
 export const i18n = createI18n()
 
 export function setLocale(locale) {
-	if (Object.hasOwn(messages, locale)) {
-		language = locale
+	const normalized = normalizeLanguage(locale)
+	if (Object.hasOwn(messages, normalized)) {
+		language = normalized
 		if (i18n.global) {
-			i18n.global.locale.value = locale
+			i18n.global.locale.value = normalized
 		}
 	}
 }

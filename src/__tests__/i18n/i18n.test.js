@@ -19,7 +19,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { findComponents } from '../utils.js'
 
-const languages = ['de', 'en', 'es', 'ru', 'ua']
+const languages = ['de', 'en', 'es', 'ru', 'ua', 'zh', 'zh-tw']
 
 function getTranslation(lang) {
   // eslint-disable-next-line no-undef
@@ -106,6 +106,10 @@ function skipValue(value, lang) {
     'ua': [
     ],
     'ru': [
+    ],
+    'zh': [
+    ],
+    'zh-tw': [
     ]
   }
 
